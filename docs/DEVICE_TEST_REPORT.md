@@ -3,13 +3,13 @@
 Gebruik dit document voor de eerste fysieke toesteltest van de gids. Vul alleen concrete observaties in; geen aannames.
 
 ## Toestel
-- Datum/tijd test: 11 september 2026, circa 19:43 CEST
+- Datum/tijd test: 11 september 2026, circa 19:43–19:46 CEST
 - Platform: iOS
 - Toestelmodel: nog niet genoteerd
 - OS-versie: nog niet genoteerd
 - Expo Go-versie (indien zichtbaar): nog niet genoteerd
 - Netwerk: wifi
-- App-commit (optioneel): build vóór commit `1d9169bfe6e91e43e1fe1e04615e30f50c448878`
+- App-commit (optioneel): eerste test vóór commit `df6873e24d24cf2747da6936fab1b0f60f0d1073`
 
 ## Kerncheck
 Markeer per onderdeel: **goed / twijfel / probleem** en voeg alleen toelichting toe wanneer nodig.
@@ -23,7 +23,7 @@ Markeer per onderdeel: **goed / twijfel / probleem** en voeg alleen toelichting 
 | `Nu` brengt je logisch terug | nog te testen |  |
 | Huidige-tijdlijn staat correct | goed | Screenshot rond 19:43 toont de huidige-tijdlijn op de verwachte positie. |
 | Voortgang lopend programma klopt | nog te testen |  |
-| Vandaag → morgen → vandaag | nog te testen |  |
+| Vandaag → morgen → vandaag | probleem | Bij wisselen naar morgen blijft de tijdcontext niet logisch behouden; de gids springt naar het begin van het venster. |
 | Korte programmablokken blijven bruikbaar | nog te testen |  |
 | Programma aantikken opent detail | nog te testen |  |
 | Detail sluiten voelt logisch | nog te testen |  |
@@ -34,10 +34,12 @@ Markeer per onderdeel: **goed / twijfel / probleem** en voeg alleen toelichting 
 ### Horizontaal scrollen
 - Soepel / lichte hapering / duidelijke hapering: meestal soepel, maar interactieprobleem bij terug scrollen.
 - Wanneer precies: incidenteel bij horizontaal terug in de tijd vegen; de gids lijkt dan soms niet te reageren.
+- Aanvullende wens: horizontale tijdnavigatie mag meer doorrollen dan verticale zendernavigatie.
 
 ### Verticaal scrollen
 - Soepel / lichte hapering / duidelijke hapering: soepel volgens eerste indruk.
 - Wanneer precies: geen probleem gemeld.
+- Randgedrag: boven- en onderkant stoppen te hard; gewenst is een kleine natuurlijke iOS-bounce.
 
 ### Synchronisatie zenderkolom
 - Loopt gelijk / incidenteel achter / structureel achter: loopt gelijk volgens eerste indruk.
@@ -48,12 +50,10 @@ Markeer per onderdeel: **goed / twijfel / probleem** en voeg alleen toelichting 
 - Andere vertragingen: horizontale terug-scrollgesture voelt incidenteel alsof deze niet wordt geregistreerd.
 
 ## Productgevoel
-Beantwoord kort, vanuit gebruik en niet vanuit technische verwachtingen.
-
 - Voelt dit al als een mobiele tv-gids in plaats van een verkleinde desktopgids? nog niet beoordeeld
 - Is de informatiedichtheid prettig? nog niet beoordeeld
-- Is direct duidelijk waar je in tijd en zenders bent? nog niet beoordeeld
-- Wat stoort het meest tijdens normaal gebruik? incidenteel niet reageren bij terug scrollen in de tijd
+- Is direct duidelijk waar je in tijd en zenders bent? deels; dagwissel verliest tijdcontext
+- Wat stoort het meest tijdens normaal gebruik? incidenteel niet reageren bij terug scrollen en harde verticale eindstop
 - Wat voelt verrassend goed? algemene scrollperformance voelt in eerste test prima
 
 ## Screenshots / screenrecording
@@ -61,7 +61,7 @@ Beantwoord kort, vanuit gebruik en niet vanuit technische verwachtingen.
 - Bij blijvende terug-scrollproblemen heeft een korte screenrecording voorkeur.
 
 ## Samenvatting
-- Grootste probleem: horizontaal terug scrollen reageert incidenteel niet.
+- Grootste probleem: horizontale gesture reageert incidenteel niet en dagwissel verliest tijdpositie.
 - Grootste pluspunt: algemene scrollperformance op de eerste iPhone-test voelt prima.
-- Blokkeert dit verdere ontwikkeling? nee, maar moet vóór Phase 1-exit opgelost of verklaard zijn.
-- Aanbevolen eerstvolgende verbetering: voorkom onbedoelde horizontale scroll-reset en verbeter direction locking zonder meteen gespecialiseerde virtualisatie toe te voegen.
+- Blokkeert dit verdere ontwikkeling? nee, maar deze UX-punten moeten vóór Phase 1-exit opgelost of verklaard zijn.
+- Aanbevolen eerstvolgende verbetering: tijdpositie bij dagwissel behouden, horizontale en verticale inertie verschillend tunen en native bounce aan de verticale grenzen herstellen.
