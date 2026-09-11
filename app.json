@@ -1,0 +1,21 @@
+{
+  "expo": {
+    "name": "Teevee",
+    "slug": "teevee",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "automatic",
+    "scheme": "teevee",
+    "plugins": ["expo-router"],
+    "ios": {
+      "supportsTablet": false,
+      "bundleIdentifier": "nl.bindinc.teevee"
+    },
+    "android": {
+      "package": "nl.bindinc.teevee"
+    },
+    "experiments": {
+      "typedRoutes": true
+    }
+  }
+}
