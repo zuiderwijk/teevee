@@ -16,6 +16,31 @@ Dit document is bedoeld voor product- en engineeringstakeholders, niet alleen vo
 
 ---
 
+## 11 september 2026, 19:05 CEST — Gids gebruikt nu de echte actuele tijd
+
+### Wat is veranderd
+De gids is niet langer gekoppeld aan een vast demo-tijdstip. De rode huidige-tijdlijn, de voortgang van het lopende programma en de `Nu`-actie worden nu gevoed door de echte klok van het toestel.
+
+Daardoor gedraagt de Phase 1-prototype zich tijdens een fysieke test veel realistischer: de actuele positie schuift mee en voortgang verandert zonder dat de app opnieuw hoeft te worden gestart.
+
+### Waarom
+Een vaste demo-klok was nuttig om de eerste layout voorspelbaar te bouwen, maar is ongeschikt voor echte device-validatie. De `Nu`-ervaring is een kernonderdeel van het product en moet daarom voor de eerste mobiele test al realistisch werken.
+
+### Technische details
+- Een kleine `useGuideClock`-hook toegevoegd.
+- De klok ververst elke 30 seconden; dat is frequent genoeg voor gidsprogressie zonder onnodige continue renders.
+- De current-time-lijn en programma-progress gebruiken nu dezelfde live tijdbron.
+- De `Nu`-actie gebruikt de actuele tijd en scrollt alleen naar een current-time positie wanneer die binnen het zichtbare fixture-venster valt.
+- Geen nieuwe native of externe dependency toegevoegd.
+
+### Verificatie
+De voorgaande Phase 1-increments, inclusief narrow-programme rendering en het fysieke testpad, hebben inmiddels een groene GitHub Actions-run. De CI-run voor deze live-klokwijziging moet nog afronden voordat deze increment als volledig geverifieerd geldt.
+
+### Volgende stap
+CI van deze wijziging controleren en eventuele fouten autonoom oplossen. Daarna de Phase 1-gids geschikt maken voor een eerste daadwerkelijke fysieke toesteltest en de resultaten gebruiken om te beslissen of standaard React Native-scrollprimitives voldoende performant zijn.
+
+---
+
 ## 11 september 2026, 19:00 CEST — Programmadetail, voortgang en dagwissel toegevoegd
 
 ### Wat is veranderd
@@ -36,10 +61,10 @@ Na de eerste 2D-viewport moesten we valideren of de gids niet alleen technisch a
 - Nog steeds uitsluitend deterministische fixture-data; geen externe EPG-integratie.
 
 ### Verificatie
-De vorige repositorystand had een volledig groene CI. Voor deze nieuwe increment is GitHub Actions-run #13 gestart; die stond bij het vastleggen van deze vermelding nog in de wachtrij/in uitvoering. Deze increment wordt daarom nog niet als volledig geverifieerd aangemerkt.
+De eerdere repositorystand had een volledig groene CI. Latere CI-runs voor de daaropvolgende Phase 1-increments zijn eveneens groen geworden.
 
 ### Volgende stap
-CI van deze increment afronden. Daarna de Guide technisch aanscherpen voor realistische mobiele performance en de eerste testbare device-build voorbereiden, zonder scope uit latere fases naar voren te halen.
+De Guide technisch aanscherpen voor realistische mobiele performance en de eerste testbare device-build voorbereiden, zonder scope uit latere fases naar voren te halen.
 
 ---
 
