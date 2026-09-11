@@ -14,12 +14,12 @@ import {
   timeToX,
   timelineWidth,
 } from '@/features/guide/geometry';
+import { useGuideClock } from '@/features/guide/useGuideClock';
 import { useTeeveeTheme } from '@/theme/useTeeveeTheme';
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 const BASE_WINDOW_START = Date.parse('2026-09-11T16:00:00.000Z');
 const WINDOW_DURATION_MS = 12 * 60 * 60 * 1000;
-const DEMO_NOW = Date.parse('2026-09-11T18:30:00.000Z');
 
 function formatTime(timeMs: number) {
   return new Date(timeMs).toLocaleTimeString('nl-NL', {
@@ -44,18 +44,19 @@ export default function GuideScreen() {
   const channelRef = useRef<ScrollView>(null);
   const [dayOffset, setDayOffset] = useState(0);
   const [selectedProgramme, setSelectedProgramme] = useState<Programme | null>(null);
+  const nowMs = useGuideClock();
 
   const windowStart = BASE_WINDOW_START + dayOffset * DAY_MS;
   const windowEnd = windowStart + WINDOW_DURATION_MS;
   const width = timelineWidth(windowStart, windowEnd);
   const ticks = useMemo(() => buildTimeTicks(windowStart, windowEnd), [windowStart, windowEnd]);
-  const nowX = timeToX(DEMO_NOW, windowStart);
-  const nowInWindow = DEMO_NOW >= windowStart && DEMO_NOW <= windowEnd;
+  const nowX = timeToX(nowMs, windowStart);
+  const nowInWindow = nowMs >= windowStart && nowMs <= windowEnd;
 
   const jumpToNow = () => {
     if (dayOffset !== 0) setDayOffset(0);
     requestAnimationFrame(() => {
-      const x = timeToX(DEMO_NOW, BASE_WINDOW_START);
+      const x = timeToX(nowMs, BASE_WINDOW_START);
       horizontalRef.current?.scrollTo({ x: Math.max(0, x - 120), animated: true });
     });
   };
@@ -125,7 +126,7 @@ export default function GuideScreen() {
           horizontal
           bounces={false}
           showsHorizontalScrollIndicator={false}
-          contentOffset={{ x: dayOffset === 0 ? Math.max(0, nowX - 120) : 0, y: 0 }}
+          contentOffset={{ x: dayOffset === 0 && nowInWindow ? Math.max(0, nowX - 120) : 0, y: 0 }}
         >
           <View style={{ width }}>
             <View style={[styles.timeAxis, { height: GUIDE_TIME_AXIS_HEIGHT, backgroundColor: theme.colors.surface, borderBottomColor: theme.colors.border }]}>
@@ -155,8 +156,8 @@ export default function GuideScreen() {
 
                       const startMs = Date.parse(programme.startAt);
                       const endMs = Date.parse(programme.endAt);
-                      const isCurrent = DEMO_NOW >= startMs && DEMO_NOW < endMs;
-                      const progress = isCurrent ? programmeProgress(programme, new Date(DEMO_NOW)) : 0;
+                      const isCurrent = nowMs >= startMs && nowMs < endMs;
+                      const progress = isCurrent ? programmeProgress(programme, new Date(nowMs)) : 0;
                       const contentMode = programmeContentMode(frame.width);
 
                       return (
