@@ -3,7 +3,7 @@ import { Modal, Pressable, SafeAreaView, ScrollView, StyleSheet, Text, View } fr
 
 import type { Programme } from '@/data/domain/epg';
 import { programmeProgress } from '@/data/domain/epg';
-import { guideFixture, programmesForChannel } from '@/data/fixtures/guideFixture';
+import { buildRuntimeGuideFixture, programmesForRuntimeChannel } from '@/data/fixtures/runtimeGuideFixture';
 import {
   buildTimeTicks,
   GUIDE_CHANNEL_WIDTH,
@@ -17,9 +17,9 @@ import {
 import { useGuideClock } from '@/features/guide/useGuideClock';
 import { useTeeveeTheme } from '@/theme/useTeeveeTheme';
 
-const DAY_MS = 24 * 60 * 60 * 1000;
-const BASE_WINDOW_START = Date.parse('2026-09-11T16:00:00.000Z');
-const WINDOW_DURATION_MS = 12 * 60 * 60 * 1000;
+const HOUR_MS = 60 * 60 * 1000;
+const DAY_MS = 24 * HOUR_MS;
+const WINDOW_DURATION_MS = 12 * HOUR_MS;
 
 function formatTime(timeMs: number) {
   return new Date(timeMs).toLocaleTimeString('nl-NL', {
@@ -42,11 +42,15 @@ export default function GuideScreen() {
   const theme = useTeeveeTheme();
   const horizontalRef = useRef<ScrollView>(null);
   const channelRef = useRef<ScrollView>(null);
+  const initialNowRef = useRef(Date.now());
+  const baseWindowStartRef = useRef(Math.floor(initialNowRef.current / HOUR_MS) * HOUR_MS - 2 * HOUR_MS);
+  const runtimeFixture = useMemo(() => buildRuntimeGuideFixture(initialNowRef.current), []);
   const [dayOffset, setDayOffset] = useState(0);
   const [selectedProgramme, setSelectedProgramme] = useState<Programme | null>(null);
   const nowMs = useGuideClock();
 
-  const windowStart = BASE_WINDOW_START + dayOffset * DAY_MS;
+  const baseWindowStart = baseWindowStartRef.current;
+  const windowStart = baseWindowStart + dayOffset * DAY_MS;
   const windowEnd = windowStart + WINDOW_DURATION_MS;
   const width = timelineWidth(windowStart, windowEnd);
   const ticks = useMemo(() => buildTimeTicks(windowStart, windowEnd), [windowStart, windowEnd]);
@@ -56,7 +60,7 @@ export default function GuideScreen() {
   const jumpToNow = () => {
     if (dayOffset !== 0) setDayOffset(0);
     requestAnimationFrame(() => {
-      const x = timeToX(nowMs, BASE_WINDOW_START);
+      const x = timeToX(nowMs, baseWindowStart);
       horizontalRef.current?.scrollTo({ x: Math.max(0, x - 120), animated: true });
     });
   };
@@ -100,7 +104,7 @@ export default function GuideScreen() {
               ]}
             >
               <Text style={[styles.dayButtonText, { color: active ? theme.colors.background : theme.colors.textSecondary }]}>
-                {offset === 0 ? 'Vandaag' : formatDay(BASE_WINDOW_START + offset * DAY_MS)}
+                {offset === 0 ? 'Vandaag' : formatDay(baseWindowStart + offset * DAY_MS)}
               </Text>
             </Pressable>
           );
@@ -113,7 +117,7 @@ export default function GuideScreen() {
             <Text style={[styles.axisCornerText, { color: theme.colors.textMuted }]}>ZENDER</Text>
           </View>
           <ScrollView ref={channelRef} showsVerticalScrollIndicator={false} scrollEnabled={false}>
-            {guideFixture.channels.map((channel) => (
+            {runtimeFixture.channels.map((channel) => (
               <View key={channel.id} style={[styles.channelCell, { height: GUIDE_ROW_HEIGHT, borderBottomColor: theme.colors.border }]}>
                 <Text numberOfLines={2} style={[styles.channelName, { color: theme.colors.text }]}>{channel.displayName}</Text>
               </View>
@@ -146,10 +150,10 @@ export default function GuideScreen() {
               scrollEventThrottle={16}
               onScroll={(event) => syncVerticalScroll(event.nativeEvent.contentOffset.y)}
             >
-              <View style={{ width, height: guideFixture.channels.length * GUIDE_ROW_HEIGHT }}>
-                {guideFixture.channels.map((channel, rowIndex) => (
+              <View style={{ width, height: runtimeFixture.channels.length * GUIDE_ROW_HEIGHT }}>
+                {runtimeFixture.channels.map((channel, rowIndex) => (
                   <View key={channel.id} style={[styles.programmeRow, { top: rowIndex * GUIDE_ROW_HEIGHT, height: GUIDE_ROW_HEIGHT, width, borderBottomColor: theme.colors.border }]}>
-                    {programmesForChannel(channel.id).map((programme) => {
+                    {programmesForRuntimeChannel(runtimeFixture, channel.id).map((programme) => {
                       const frame = programmeFrame(programme, windowStart);
                       const end = frame.left + frame.width;
                       if (end < 0 || frame.left > width) return null;
@@ -200,7 +204,7 @@ export default function GuideScreen() {
                   </View>
                 ))}
                 {nowInWindow ? (
-                  <View pointerEvents="none" style={[styles.currentTimeLine, { left: nowX, backgroundColor: theme.colors.currentTime, height: guideFixture.channels.length * GUIDE_ROW_HEIGHT }]} />
+                  <View pointerEvents="none" style={[styles.currentTimeLine, { left: nowX, backgroundColor: theme.colors.currentTime, height: runtimeFixture.channels.length * GUIDE_ROW_HEIGHT }]} />
                 ) : null}
               </View>
             </ScrollView>
@@ -217,7 +221,7 @@ export default function GuideScreen() {
                   <View style={[styles.detailHandle, { backgroundColor: theme.colors.border }]} />
                 </View>
                 <Text style={[styles.detailMeta, { color: theme.colors.textMuted }]}>
-                  {guideFixture.channels.find((channel) => channel.id === selectedProgramme.channelId)?.displayName ?? 'Zender'} · {formatTime(Date.parse(selectedProgramme.startAt))}–{formatTime(Date.parse(selectedProgramme.endAt))}
+                  {runtimeFixture.channels.find((channel) => channel.id === selectedProgramme.channelId)?.displayName ?? 'Zender'} · {formatTime(Date.parse(selectedProgramme.startAt))}–{formatTime(Date.parse(selectedProgramme.endAt))}
                 </Text>
                 <Text style={[styles.detailTitle, { color: theme.colors.text }]}>{selectedProgramme.title}</Text>
                 <Text style={[styles.detailDescription, { color: theme.colors.textSecondary }]}>
