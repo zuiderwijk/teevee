@@ -42,14 +42,13 @@ export default function GuideScreen() {
   const theme = useTeeveeTheme();
   const horizontalRef = useRef<ScrollView>(null);
   const channelRef = useRef<ScrollView>(null);
-  const initialNowRef = useRef(Date.now());
-  const baseWindowStartRef = useRef(Math.floor(initialNowRef.current / HOUR_MS) * HOUR_MS - 2 * HOUR_MS);
-  const runtimeFixture = useMemo(() => buildRuntimeGuideFixture(initialNowRef.current), []);
+  const [initialNow] = useState(() => Date.now());
+  const [baseWindowStart] = useState(() => Math.floor(initialNow / HOUR_MS) * HOUR_MS - 2 * HOUR_MS);
+  const runtimeFixture = useMemo(() => buildRuntimeGuideFixture(initialNow), [initialNow]);
   const [dayOffset, setDayOffset] = useState(0);
   const [selectedProgramme, setSelectedProgramme] = useState<Programme | null>(null);
   const nowMs = useGuideClock();
 
-  const baseWindowStart = baseWindowStartRef.current;
   const windowStart = baseWindowStart + dayOffset * DAY_MS;
   const windowEnd = windowStart + WINDOW_DURATION_MS;
   const width = timelineWidth(windowStart, windowEnd);
