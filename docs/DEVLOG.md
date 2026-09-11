@@ -16,6 +16,33 @@ Dit document is bedoeld voor product- en engineeringstakeholders, niet alleen vo
 
 ---
 
+## 11 september 2026, 19:46 CEST — Scrollgedrag aangepast op basis van eerste iPhone-test
+
+### Wat is veranderd
+De eerste fysieke iPhone-test leverde drie concrete UX-punten op. Bij wisselen naar morgen ging de horizontale tijdpositie verloren, horizontaal en verticaal scrollen voelden te veel hetzelfde en de gids stopte boven en onder te hard zonder natuurlijke iOS-bounce.
+
+De Guide bewaart nu de horizontale tijdpositie bij dagwissel. Horizontale tijdnavigatie gebruikt de normale, langere native inertie; verticale zendernavigatie gebruikt de snellere afremming zodat kanaalnavigatie preciezer stopt. Verticale bounce is weer ingeschakeld voor een kleine natuurlijke bump aan boven- en onderzijde.
+
+### Waarom
+Een tv-gids heeft twee verschillende navigatie-intenties: horizontaal wil je relatief veel tijd kunnen overbruggen, verticaal wil je snel maar gecontroleerd tussen zenders bewegen. Die twee assen hoeven daarom niet identiek aan te voelen. Daarnaast hoort een iOS-scrollvlak aan de rand niet dood aan te voelen.
+
+### Technische details
+- horizontale offset wordt tijdens scrollen bijgehouden;
+- dagwissel behoudt die offset in plaats van terug te springen naar het begin;
+- horizontale `ScrollView`: `decelerationRate="normal"`;
+- verticale `ScrollView`: `decelerationRate="fast"`;
+- verticale `bounces` en `alwaysBounceVertical` ingeschakeld;
+- horizontale bounce eveneens toegestaan;
+- bestaande directional lock blijft actief.
+
+### Verificatie
+De wijziging is gecommit, maar moet nog via CI en opnieuw op de iPhone worden gevalideerd. De onderliggende keuze voor inertie sluit aan op de native React Native/iOS scrollparameters; het uiteindelijke gevoel moet op device worden beoordeeld.
+
+### Volgende stap
+CI controleren en daarna dezelfde iPhone-test opnieuw uitvoeren, specifiek op terugscrollen, behoud van tijdpositie bij Vandaag/Morgen en het verschil in horizontale versus verticale inertie.
+
+---
+
 ## 11 september 2026, 19:16 CEST — Testdata tijdrelatief gemaakt en toesteltest vereenvoudigd
 
 ### Wat is veranderd
