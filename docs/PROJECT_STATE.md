@@ -1,6 +1,6 @@
 # Teevee — Canonical Project State
 
-Last updated: 2026-09-11
+Last updated: 2026-09-11 19:00 CEST
 Status: ACTIVE
 Current phase: **Phase 1 — Guide Interaction Prototype**
 Previous phase: **Phase 0 — Project Foundation: COMPLETE**
@@ -32,57 +32,68 @@ Primary navigation later: Guide / Tonight / Search. RevenueCat preferred for sub
 Existing light/dark concepts are **Visual Direction 01 — reference, not specification**. Preserve calm premium utility, hierarchy, restrained chrome and functional density. Light is the primary exploration direction; both themes are required.
 
 ## Implementation reality
-The first Phase 1 foundation increment is implemented on `main`:
-- Expo SDK 57 / React Native / Expo Router project manifest and app configuration;
-- strict TypeScript configuration;
+The current Phase 1 prototype on `main` includes:
+- Expo SDK 57 / React Native / Expo Router project foundation;
+- strict TypeScript;
 - semantic light/dark theme tokens and system theme resolver;
-- app opens directly to a minimal Guide route;
 - Teevee-owned `Channel`, `Programme` and `GuideFixture` domain types;
 - deterministic fixture generator with 16 synthetic channels and 49 hours of programme data;
-- fixture edge cases include varied duration/title length, missing metadata, live/repeat flags and a deliberate schedule gap;
-- domain helpers for programme duration/progress;
-- Vitest coverage for fixture horizon/edge cases and programme geometry helpers;
-- Expo lint configuration;
-- GitHub Actions CI definition for install, typecheck, lint and tests.
+- edge cases for varied duration/title length, missing metadata, live/repeat flags and a deliberate schedule gap;
+- pure Guide time-to-pixel geometry with automated tests;
+- a real two-dimensional Guide viewport;
+- fixed/anchored channel column and horizontally scrollable timeline;
+- synchronised vertical channel movement;
+- programme widths based on real duration;
+- current-time marker;
+- `Nu` action;
+- current-programme progress indication;
+- minimal day switching between today and tomorrow;
+- programme selection with a simple bottom-sheet-style detail modal;
+- GitHub Actions CI for install, typecheck, lint and tests.
 
-No external EPG provider has been integrated. No production assets/logos are used.
+No external EPG provider has been integrated. No production channel logos or programme artwork are used.
 
-### Verification status
-Repository writes are complete, but this agent environment cannot execute the mobile repository directly. A GitHub Actions workflow has been added to provide an external quality gate. At the time of this update GitHub reported no workflow runs yet, so runtime/typecheck/lint/test verification remains **PENDING**, not assumed green.
+## Verification status
+The repository reached a fully green CI state before the latest programme-interaction increment. GitHub Actions run #13 was started for the new increment and was queued/in progress at the time of this update. Therefore the newest interaction changes are **PENDING CI VERIFICATION** until that run completes successfully.
 
 ## Phase 1 objective
 Validate the defining UX/technical risk: a high-performance touch-native two-dimensional TV Guide using realistic deterministic fixture data.
 
-Phase 1 still needs:
-- verified build/typecheck/lint/tests;
-- two-dimensional schedule surface;
-- persistent channel/time context;
-- vertical channel movement and horizontal time movement;
-- current-time marker and programme progress;
-- jump-to-Now;
-- minimal day navigation;
-- programme selection/detail;
-- realistic performance validation on iOS and Android.
+## Phase 1 remaining work
+- keep latest CI green and resolve any failures;
+- validate rendering/scroll behaviour under realistic mobile conditions;
+- inspect whether the current nested ScrollView strategy remains smooth enough before adding specialised virtualisation;
+- improve programme-cell usability at short durations and narrow widths;
+- verify programme selection/detail interaction on device;
+- verify light/dark appearance on device;
+- prepare the first practical device-test path/build;
+- perform representative iOS and Android performance validation.
 
 ## Phase 1 exit gate
 Do not leave Phase 1 until the Guide is smooth at realistic volume, movement preserves time/channel context, Now is predictable, current/progress state is understandable, programme cells remain useful at practical density, light/dark both work, programme selection works, geometry/domain logic is tested, and the Guide interaction is strong enough to justify proceeding.
 
 ## Known risks
-Primary risk remains two-dimensional virtualised Guide performance and scroll synchronisation in React Native. Prototype and measure before selecting specialised primitives. Production EPG rights/source, exact subscription model and final visual design remain later gates.
+### Primary technical risk
+The current implementation deliberately uses standard React Native primitives first. The nested scrolling/layout approach must be measured on real devices before introducing specialised virtualisation or gesture dependencies.
+
+### Production data gate — later
+The external development EPG source is not approved for commercial production. Production schedule, metadata, channel-logo and artwork rights remain later gates.
+
+### Commercial gate — later
+Exact subscription price, trial and paywall timing are not decided and do not block Phase 1.
+
+### Design gate — later
+Visual Direction 01 is not a frozen UI design. Avoid expensive brand polishing before Guide interaction and performance are validated.
 
 ## EXACT NEXT STEP
-**Verify the Phase 1 foundation through CI/runtime, resolve any dependency/type/lint/test failures, then implement the first real two-dimensional Guide viewport using the deterministic fixture/domain layer.**
+**Wait for/inspect CI for the latest Guide interaction increment; fix any failures autonomously. Once green, harden the Guide for first-device validation by improving narrow-programme rendering and adding a lightweight development build/test path without introducing real EPG or later-phase product scope.**
 
-For that Guide increment:
-1. define time-to-pixel schedule geometry as pure tested domain/layout functions;
-2. render a time axis plus a fixed/anchored channel column and programme cells for realistic fixture volume;
-3. support vertical channel movement and horizontal time movement while preserving context;
-4. do not yet add real EPG, Tonight, subscriptions, accounts or enrichment;
-5. measure before adding specialised virtualisation dependencies.
-
-If CI cannot run because repository Actions are disabled, treat enabling/running CI as the first verification action rather than assuming the foundation is valid.
-
-After completing the increment, update this file with implementation reality and exactly one next step.
+For that increment:
+1. verify CI before claiming success;
+2. keep standard React Native primitives unless measurement demonstrates a need for specialised virtualisation;
+3. ensure very short programme blocks degrade gracefully instead of becoming unreadable/broken;
+4. define the simplest repeatable way to launch/install the Phase 1 prototype on a physical iOS/Android device;
+5. update `docs/DEVLOG.md` and this file after completion.
 
 ## Resume instruction
-> Read `AGENTS.md` and `docs/PROJECT_STATE.md` from `zuiderwijk/teevee`. Treat PROJECT_STATE as canonical. Execute the EXACT NEXT STEP autonomously, follow the Definition of Done, and update PROJECT_STATE when finished. Ask only when a decision crosses the human-approval boundaries in AGENTS.md.
+> Read `AGENTS.md` and `docs/PROJECT_STATE.md` from `zuiderwijk/teevee`. Treat PROJECT_STATE as canonical. Execute the EXACT NEXT STEP autonomously, follow the Definition of Done, and update PROJECT_STATE and the Dutch `docs/DEVLOG.md` when finished. Ask only when a decision crosses the human-approval boundaries in AGENTS.md.
