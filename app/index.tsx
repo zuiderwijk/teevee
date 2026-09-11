@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Modal, Pressable, SafeAreaView, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import type { Programme } from '@/data/domain/epg';
@@ -55,6 +55,14 @@ export default function GuideScreen() {
   const ticks = useMemo(() => buildTimeTicks(windowStart, windowEnd), [windowStart, windowEnd]);
   const nowX = timeToX(nowMs, windowStart);
   const nowInWindow = nowMs >= windowStart && nowMs <= windowEnd;
+
+  useEffect(() => {
+    if (dayOffset !== 0) return;
+    const initialX = timeToX(initialNow, baseWindowStart);
+    requestAnimationFrame(() => {
+      horizontalRef.current?.scrollTo({ x: Math.max(0, initialX - 120), animated: false });
+    });
+  }, [baseWindowStart, dayOffset, initialNow]);
 
   const jumpToNow = () => {
     if (dayOffset !== 0) setDayOffset(0);
@@ -128,8 +136,8 @@ export default function GuideScreen() {
           ref={horizontalRef}
           horizontal
           bounces={false}
+          directionalLockEnabled
           showsHorizontalScrollIndicator={false}
-          contentOffset={{ x: dayOffset === 0 && nowInWindow ? Math.max(0, nowX - 120) : 0, y: 0 }}
         >
           <View style={{ width }}>
             <View style={[styles.timeAxis, { height: GUIDE_TIME_AXIS_HEIGHT, backgroundColor: theme.colors.surface, borderBottomColor: theme.colors.border }]}>
@@ -145,6 +153,7 @@ export default function GuideScreen() {
 
             <ScrollView
               bounces={false}
+              directionalLockEnabled
               showsVerticalScrollIndicator
               scrollEventThrottle={16}
               onScroll={(event) => syncVerticalScroll(event.nativeEvent.contentOffset.y)}
