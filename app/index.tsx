@@ -42,6 +42,8 @@ export default function GuideScreen() {
   const theme = useTeeveeTheme();
   const horizontalRef = useRef<ScrollView>(null);
   const channelRef = useRef<ScrollView>(null);
+  const horizontalOffsetRef = useRef(0);
+  const pendingDayOffsetRef = useRef<number | null>(null);
   const [initialNow] = useState(() => Date.now());
   const [baseWindowStart] = useState(() => Math.floor(initialNow / HOUR_MS) * HOUR_MS - 2 * HOUR_MS);
   const runtimeFixture = useMemo(() => buildRuntimeGuideFixture(initialNow), [initialNow]);
@@ -57,19 +59,33 @@ export default function GuideScreen() {
   const nowInWindow = nowMs >= windowStart && nowMs <= windowEnd;
 
   useEffect(() => {
+    const pendingX = pendingDayOffsetRef.current;
+    if (pendingX !== null) {
+      requestAnimationFrame(() => {
+        horizontalRef.current?.scrollTo({ x: pendingX, animated: false });
+      });
+      pendingDayOffsetRef.current = null;
+      return;
+    }
+
     if (dayOffset !== 0) return;
     const initialX = timeToX(initialNow, baseWindowStart);
     requestAnimationFrame(() => {
-      horizontalRef.current?.scrollTo({ x: Math.max(0, initialX - 120), animated: false });
+      const x = Math.max(0, initialX - 120);
+      horizontalOffsetRef.current = x;
+      horizontalRef.current?.scrollTo({ x, animated: false });
     });
   }, [baseWindowStart, dayOffset, initialNow]);
 
   const jumpToNow = () => {
-    if (dayOffset !== 0) setDayOffset(0);
-    requestAnimationFrame(() => {
-      const x = timeToX(nowMs, baseWindowStart);
-      horizontalRef.current?.scrollTo({ x: Math.max(0, x - 120), animated: true });
-    });
+    const x = Math.max(0, timeToX(nowMs, baseWindowStart) - 120);
+    horizontalOffsetRef.current = x;
+    if (dayOffset !== 0) {
+      pendingDayOffsetRef.current = x;
+      setDayOffset(0);
+      return;
+    }
+    horizontalRef.current?.scrollTo({ x, animated: true });
   };
 
   const syncVerticalScroll = (y: number) => {
@@ -77,8 +93,9 @@ export default function GuideScreen() {
   };
 
   const changeDay = (nextOffset: number) => {
+    if (nextOffset === dayOffset) return;
+    pendingDayOffsetRef.current = horizontalOffsetRef.current;
     setDayOffset(nextOffset);
-    horizontalRef.current?.scrollTo({ x: 0, animated: false });
   };
 
   return (
@@ -135,9 +152,14 @@ export default function GuideScreen() {
         <ScrollView
           ref={horizontalRef}
           horizontal
-          bounces={false}
+          bounces
           directionalLockEnabled
+          decelerationRate="normal"
           showsHorizontalScrollIndicator={false}
+          scrollEventThrottle={16}
+          onScroll={(event) => {
+            horizontalOffsetRef.current = event.nativeEvent.contentOffset.x;
+          }}
         >
           <View style={{ width }}>
             <View style={[styles.timeAxis, { height: GUIDE_TIME_AXIS_HEIGHT, backgroundColor: theme.colors.surface, borderBottomColor: theme.colors.border }]}>
@@ -152,8 +174,10 @@ export default function GuideScreen() {
             </View>
 
             <ScrollView
-              bounces={false}
+              bounces
+              alwaysBounceVertical
               directionalLockEnabled
+              decelerationRate="fast"
               showsVerticalScrollIndicator
               scrollEventThrottle={16}
               onScroll={(event) => syncVerticalScroll(event.nativeEvent.contentOffset.y)}
