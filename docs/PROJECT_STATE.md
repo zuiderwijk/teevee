@@ -1,6 +1,6 @@
 # Teevee — Canonical Project State
 
-Last updated: 2026-09-11 19:18 CEST
+Last updated: 2026-09-11 19:47 CEST
 Status: ACTIVE
 Current phase: **Phase 1 — Guide Interaction Prototype**
 Previous phase: **Phase 0 — Project Foundation: COMPLETE**
@@ -50,32 +50,37 @@ The current Phase 1 prototype on `main` includes:
 - `Nu` action;
 - minimal today/tomorrow switching;
 - programme selection with a simple bottom-sheet-style detail modal;
-- `npm run start:device` for Expo Go device testing;
+- physical-device testing via Expo Go;
+- first iPhone validation completed;
+- horizontal offset preservation across day switching implemented after device feedback;
+- differentiated native scroll inertia: longer horizontal glide and quicker vertical stop;
+- native bounce restored at guide boundaries;
 - `docs/TESTING.md` plus `docs/DEVICE_TEST_REPORT.md` for repeatable physical-device validation;
 - GitHub Actions CI for install, typecheck, lint, tests and Expo web export.
 
 No external EPG provider has been integrated. No production channel logos or programme artwork are used.
 
 ## Verification status
-**GREEN.** The runtime-fixture implementation initially failed React lint because `Date.now()` and refs were accessed during render. That failure was fixed using lazy React state initialisation rather than suppressing lint. CI run #32 then completed successfully across typecheck, lint, tests and Expo web export. The repository is technically ready for first physical-device validation.
+The base runtime-fixture implementation is green in CI. First physical iPhone validation succeeded: app opens, guide renders, general horizontal/vertical performance feels smooth and channel synchronisation appears good. Device feedback exposed three UX issues: intermittent reluctance when scrolling back in time, loss of horizontal time context when switching to tomorrow, and an unnaturally hard vertical stop at top/bottom. A targeted native-scroll fix is committed and awaiting CI plus device retest before it is considered verified.
 
 ## Phase 1 objective
 Validate the defining UX/technical risk: a high-performance touch-native two-dimensional TV Guide using realistic deterministic fixture data.
 
 ## Phase 1 remaining work
-- perform first physical-device validation through Expo Go;
-- validate horizontal and vertical scroll smoothness and channel-column synchronisation;
-- verify `Nu`, current-time/progress, today/tomorrow, narrow cells, programme detail and light/dark on device;
-- capture device model/OS and concrete performance observations;
-- decide only from device evidence whether specialised virtualisation is necessary;
-- perform representative iOS and Android validation before Phase 1 exit.
+- verify CI for the iPhone-driven scroll-tuning commit;
+- retest on the same iPhone: back-in-time gestures, day-switch position preservation and boundary bounce;
+- judge whether horizontal `normal` and vertical `fast` deceleration produce the desired distinction in navigation feel;
+- test `Nu`, current-time/progress, narrow cells, programme detail and light/dark on device;
+- record device model/OS when available;
+- perform representative Android validation before Phase 1 exit;
+- decide only from device evidence whether specialised virtualisation is necessary.
 
 ## Phase 1 exit gate
 Do not leave Phase 1 until the Guide is smooth at realistic volume, movement preserves time/channel context, Now is predictable, current/progress state is understandable, programme cells remain useful at practical density, light/dark both work, programme selection works, geometry/domain logic is tested, and the Guide interaction is strong enough to justify proceeding.
 
 ## Known risks
 ### Primary technical risk
-The current implementation deliberately uses standard React Native primitives first. The nested scrolling/layout approach must be measured on real devices before introducing specialised virtualisation or gesture dependencies.
+Standard React Native scroll primitives currently perform well in the first iPhone test, so specialised virtualisation remains unjustified. Gesture reliability and scroll feel still require one more targeted retest after the latest native-scroll tuning.
 
 ### Production data gate — later
 The external development EPG source is not approved for commercial production. Production schedule, metadata, channel-logo and artwork rights remain later gates.
@@ -87,17 +92,9 @@ Exact subscription price, trial and paywall timing are not decided and do not bl
 Visual Direction 01 is not a frozen UI design. Avoid expensive brand polishing before Guide interaction and performance are validated.
 
 ## EXACT NEXT STEP
-**Run the first physical-device Phase 1 validation using `docs/TESTING.md`, then capture the outcome in `docs/DEVICE_TEST_REPORT.md`. This device evidence is now the gate before any scroll-architecture change or Phase 2 work.**
+**Verify CI for commit `df6873e24d24cf2747da6936fab1b0f60f0d1073` and then retest the current Guide on the same iPhone. Validate specifically: (1) repeated back-in-time horizontal gestures, (2) Vandaag → Morgen → Vandaag preserving the same horizontal time position, and (3) a small natural bounce at top/bottom. Also compare whether horizontal scrolling now glides farther than vertical scrolling. Record the result in `docs/DEVICE_TEST_REPORT.md` before any further scroll-architecture change.**
 
-During device validation:
-1. test horizontal time scrolling and vertical channel scrolling;
-2. inspect channel-column synchronisation and any visible jank;
-3. test `Nu`, current-time/progress and today/tomorrow;
-4. test short programme cells and programme detail;
-5. test light and dark mode;
-6. record device/OS and findings before changing scroll architecture.
-
-Do not introduce real EPG, subscriptions, accounts, Tonight, enrichment or specialised virtualisation before this evidence exists.
+Do not introduce real EPG, subscriptions, accounts, Tonight, enrichment or specialised virtualisation before this retest evidence exists.
 
 ## Resume instruction
 > Read `AGENTS.md` and `docs/PROJECT_STATE.md` from `zuiderwijk/teevee`. Treat PROJECT_STATE as canonical. Execute the EXACT NEXT STEP autonomously, follow the Definition of Done, and update PROJECT_STATE and the Dutch `docs/DEVLOG.md` when finished. Ask only when a decision crosses the human-approval boundaries in AGENTS.md.
