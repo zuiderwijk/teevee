@@ -8,6 +8,7 @@ import {
   GUIDE_ROW_HEIGHT,
   GUIDE_TIME_AXIS_HEIGHT,
   programmeFrame,
+  timeToX,
   timelineWidth,
 } from '@/features/guide/geometry';
 import { useTeeveeTheme } from '@/theme/useTeeveeTheme';
@@ -26,16 +27,19 @@ function formatTime(timeMs: number) {
 
 export default function GuideScreen() {
   const theme = useTeeveeTheme();
+  const horizontalRef = useRef<ScrollView>(null);
+  const channelRef = useRef<ScrollView>(null);
   const timelineRef = useRef<ScrollView>(null);
   const width = timelineWidth(WINDOW_START, WINDOW_END);
   const ticks = useMemo(() => buildTimeTicks(WINDOW_START, WINDOW_END), []);
-  const nowX = programmeFrame(
-    { id: 'now', channelId: 'now', startAt: new Date(DEMO_NOW).toISOString(), endAt: new Date(DEMO_NOW + 60_000).toISOString(), title: 'Now' },
-    WINDOW_START,
-  ).left;
+  const nowX = timeToX(DEMO_NOW, WINDOW_START);
 
   const jumpToNow = () => {
-    timelineRef.current?.scrollTo({ x: Math.max(0, nowX - 120), animated: true });
+    horizontalRef.current?.scrollTo({ x: Math.max(0, nowX - 120), animated: true });
+  };
+
+  const syncVerticalScroll = (y: number) => {
+    channelRef.current?.scrollTo({ y, animated: false });
   };
 
   return (
@@ -55,7 +59,7 @@ export default function GuideScreen() {
           <View style={[styles.channelAxisCorner, { height: GUIDE_TIME_AXIS_HEIGHT, borderBottomColor: theme.colors.border }]}>
             <Text style={[styles.axisCornerText, { color: theme.colors.textMuted }]}>ZENDER</Text>
           </View>
-          <ScrollView showsVerticalScrollIndicator={false} scrollEnabled={false} contentContainerStyle={styles.channelRows}>
+          <ScrollView ref={channelRef} showsVerticalScrollIndicator={false} scrollEnabled={false}>
             {guideFixture.channels.map((channel) => (
               <View key={channel.id} style={[styles.channelCell, { height: GUIDE_ROW_HEIGHT, borderBottomColor: theme.colors.border }]}>
                 <Text numberOfLines={2} style={[styles.channelName, { color: theme.colors.text }]}>{channel.displayName}</Text>
@@ -65,7 +69,7 @@ export default function GuideScreen() {
         </View>
 
         <ScrollView
-          ref={timelineRef}
+          ref={horizontalRef}
           horizontal
           bounces={false}
           showsHorizontalScrollIndicator={false}
@@ -74,10 +78,7 @@ export default function GuideScreen() {
           <View style={{ width }}>
             <View style={[styles.timeAxis, { height: GUIDE_TIME_AXIS_HEIGHT, backgroundColor: theme.colors.surface, borderBottomColor: theme.colors.border }]}>
               {ticks.map((tick) => {
-                const left = programmeFrame(
-                  { id: String(tick), channelId: 'tick', startAt: new Date(tick).toISOString(), endAt: new Date(tick + 60_000).toISOString(), title: 'Tick' },
-                  WINDOW_START,
-                ).left;
+                const left = timeToX(tick, WINDOW_START);
                 return (
                   <View key={tick} style={[styles.tick, { left, borderLeftColor: theme.colors.border }]}>
                     <Text style={[styles.tickLabel, { color: theme.colors.textMuted }]}>{formatTime(tick)}</Text>
@@ -86,7 +87,13 @@ export default function GuideScreen() {
               })}
             </View>
 
-            <ScrollView showsVerticalScrollIndicator contentContainerStyle={{ height: guideFixture.channels.length * GUIDE_ROW_HEIGHT }}>
+            <ScrollView
+              ref={timelineRef}
+              bounces={false}
+              showsVerticalScrollIndicator
+              scrollEventThrottle={16}
+              onScroll={(event) => syncVerticalScroll(event.nativeEvent.contentOffset.y)}
+            >
               <View style={{ width, height: guideFixture.channels.length * GUIDE_ROW_HEIGHT }}>
                 {guideFixture.channels.map((channel, rowIndex) => (
                   <View key={channel.id} style={[styles.programmeRow, { top: rowIndex * GUIDE_ROW_HEIGHT, height: GUIDE_ROW_HEIGHT, width, borderBottomColor: theme.colors.border }]}>
@@ -129,7 +136,6 @@ const styles = StyleSheet.create({
   channelColumn: { zIndex: 2, borderRightWidth: StyleSheet.hairlineWidth },
   channelAxisCorner: { justifyContent: 'center', paddingHorizontal: 10, borderBottomWidth: StyleSheet.hairlineWidth },
   axisCornerText: { fontSize: 9, fontWeight: '700', letterSpacing: 0.8 },
-  channelRows: { paddingBottom: 0 },
   channelCell: { justifyContent: 'center', paddingHorizontal: 10, borderBottomWidth: StyleSheet.hairlineWidth },
   channelName: { fontSize: 12, fontWeight: '700' },
   timeAxis: { position: 'relative', borderBottomWidth: StyleSheet.hairlineWidth },
