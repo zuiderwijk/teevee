@@ -16,6 +16,32 @@ Dit document is bedoeld voor product- en engineeringstakeholders, niet alleen vo
 
 ---
 
+## 11 september 2026, 19:16 CEST — Testdata tijdrelatief gemaakt en toesteltest vereenvoudigd
+
+### Wat is veranderd
+De Phase 1-gids gebruikt voor handmatige toesteltests niet langer een fixture die alleen op 11 september 2026 bruikbaar is. Bij het starten van de app wordt dezelfde deterministische dataset rond het actuele tijdstip gelegd. Daardoor blijven `Nu`, programma-progress en vandaag/morgen ook op een later testmoment logisch werken.
+
+Het fysieke testpad is daarnaast teruggebracht tot één duidelijk startcommando (`npm run start:device`) en er is een vast `DEVICE_TEST_REPORT.md` toegevoegd voor concrete UX- en performancebevindingen.
+
+### Waarom
+Een testprototype dat alleen op één vaste datum realistisch werkt, is onnodig fragiel. Tegelijk moeten CI-tests reproduceerbaar blijven. Daarom blijven de bronfixtures deterministisch en wordt alleen de runtime-kopie verschoven voor handmatige tests.
+
+### Technische details
+- `buildRuntimeGuideFixture()` toegevoegd: verschuift alleen timestamps en bewaart ids, volgorde, programmaduur en edge cases.
+- Tests toegevoegd die bewaken dat de verschuiving deterministisch is en programmaduur intact blijft.
+- De Guide gebruikt een runtime-fixture die één keer bij appstart wordt opgebouwd.
+- Het zichtbare tijdvenster wordt relatief aan het startmoment geplaatst.
+- `npm run start:device` en `npm run start:clean` toegevoegd.
+- `docs/TESTING.md` vereenvoudigd en `docs/DEVICE_TEST_REPORT.md` toegevoegd.
+
+### Verificatie
+De uitgebreidere CI met typecheck, lint, tests én Expo-webexport was vóór deze wijziging groen. De eerste implementatie van de runtime-fixture faalde daarna terecht op de React purity/refs-lintregels. De implementatie is daarop aangepast naar lazy React-state-initialisatie in plaats van de lintregel te onderdrukken. De CI-run voor deze fix loopt nog en is daarom nog niet als geslaagd geregistreerd.
+
+### Volgende stap
+CI van de purity-fix volledig groen krijgen. Daarna is de repository technisch klaar voor de eerste fysieke Phase 1-toesteltest; de uitkomst daarvan bepaalt of de huidige standaard React Native-scrolloplossing behouden kan blijven of dat gespecialiseerde virtualisatie nodig is.
+
+---
+
 ## 11 september 2026, 19:05 CEST — Gids gebruikt nu de echte actuele tijd
 
 ### Wat is veranderd
