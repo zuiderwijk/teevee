@@ -5,134 +5,84 @@ Status: ACTIVE
 Current phase: **Phase 1 — Guide Interaction Prototype**
 Previous phase: **Phase 0 — Project Foundation: COMPLETE**
 
-> This is the mandatory starting point for every development-agent session. Read `AGENTS.md` and this file before making changes. If repository reality conflicts with this document, investigate and correct PROJECT_STATE before proceeding.
+> Mandatory start point for every development-agent session. Read `AGENTS.md` and this file before changing the repository.
 
-## 1. Product in one paragraph
-Teevee is a new premium, paid and ad-free television-guide app for iOS and Android, developed under supervision of Bindinc/TVgids.nl. The Guide is the product: the app should be the fastest, calmest and most pleasant way to see what is on television now and next. The Dutch market is first. Core use must not require an account. Feature breadth is subordinate to Guide usability, speed, reliability and polish.
+## Product
+Teevee is a new premium, paid and ad-free television-guide app for iOS and Android, developed under supervision of Bindinc/TVgids.nl. The Guide is the product: fast, calm, reliable and polished. Netherlands first; no mandatory account for core Guide use.
 
-## 2. Current objective
-Phase 1 exists to validate the defining UX and largest technical risk before broad product development: a high-performance, touch-native two-dimensional TV Guide on mobile using realistic deterministic fixture data.
-
-No external EPG integration is required in Phase 1.
-
-## 3. Frozen decisions
-These may not be materially changed by an autonomous agent without human product approval or a clearly documented blocking technical finding.
-
-- iOS + Android.
-- React Native + Expo + strict TypeScript baseline.
-- Paid, ad-free positioning.
-- Guide-first; Guide is default destination.
-- Netherlands first.
-- No mandatory account for core Guide use.
+## Frozen decisions
+- iOS + Android via React Native/Expo and strict TypeScript.
+- Paid, ad-free, Guide-first.
 - Light, dark and system appearance.
-- External EPG providers are replaceable adapters behind a Teevee-owned canonical model.
-- Mobile client never parses/calls an external EPG provider directly.
-- Deterministic fixture data is mandatory.
-- Free external EPG data is development-only until commercial rights/reliability are approved.
-- Core Guide functionality cannot depend on programme artwork/enrichment.
-- `docs/PROJECT_STATE.md` is canonical session-to-session agent memory.
-- Complexity requires evidence; no speculative microservices/infrastructure.
+- No mandatory account for core Guide use.
+- Provider-independent Teevee EPG domain model.
+- Mobile client never consumes/parses external EPG directly.
+- Deterministic fixtures are mandatory.
+- Free external EPG data is development-only until rights/reliability are approved.
+- Core Guide cannot depend on artwork/enrichment.
+- `docs/PROJECT_STATE.md` is canonical cross-session agent memory.
+- Complexity requires evidence.
 
-Relevant ADRs:
-- `docs/decisions/0001-guide-first-paid-ad-free.md`
-- `docs/decisions/0002-cross-platform-expo.md`
-- `docs/decisions/0003-provider-independent-epg.md`
-- `docs/decisions/0004-project-state-as-canonical-memory.md`
+Relevant ADRs: `0001` through `0004` in `docs/decisions/`.
 
-## 4. Working but not frozen product hypotheses
-- Working name: Teevee.
-- Primary navigation later: Guide / Tonight / Search.
-- Saved/reminders do not initially need a permanent primary tab.
-- Tonight is a discovery presentation of schedule data, not a news feed.
-- RevenueCat is preferred for subscriptions.
-- Supabase/PostgreSQL is the initial backend preference once real-data work begins.
-- Sentry is the preferred observability layer.
+## Working hypotheses
+Primary navigation later: Guide / Tonight / Search. RevenueCat preferred for subscriptions. Supabase/PostgreSQL is the initial real-data backend preference. Sentry is preferred for observability. These are not required for Phase 1.
 
-These hypotheses may be refined without reopening the frozen product promise, but material scope changes still require product approval.
+## Visual state
+Existing light/dark concepts are **Visual Direction 01 — reference, not specification**. Preserve calm premium utility, hierarchy, restrained chrome and functional density. Light is the primary exploration direction; both themes are required.
 
-## 5. Visual state
-The supplied light/dark concept work is registered as **Visual Direction 01 — reference, not specification**.
+## Implementation reality
+The first Phase 1 foundation increment is implemented on `main`:
+- Expo SDK 57 / React Native / Expo Router project manifest and app configuration;
+- strict TypeScript configuration;
+- semantic light/dark theme tokens and system theme resolver;
+- app opens directly to a minimal Guide route;
+- Teevee-owned `Channel`, `Programme` and `GuideFixture` domain types;
+- deterministic fixture generator with 16 synthetic channels and 49 hours of programme data;
+- fixture edge cases include varied duration/title length, missing metadata, live/repeat flags and a deliberate schedule gap;
+- domain helpers for programme duration/progress;
+- Vitest coverage for fixture horizon/edge cases and programme geometry helpers;
+- Expo lint configuration;
+- GitHub Actions CI definition for install, typecheck, lint and tests.
 
-Direction worth retaining: clean, contemporary, premium utility; restrained chrome; strong typography; functional Guide density; richer imagery outside the timeline. Exact colours, typography, spacing, components and navigation styling are not frozen.
+No external EPG provider has been integrated. No production assets/logos are used.
 
-Light mode is the primary exploration direction, but both themes are required.
+### Verification status
+Repository writes are complete, but this agent environment cannot execute the mobile repository directly. A GitHub Actions workflow has been added to provide an external quality gate. At the time of this update GitHub reported no workflow runs yet, so runtime/typecheck/lint/test verification remains **PENDING**, not assumed green.
 
-## 6. Repository implementation state
-At completion of Phase 0 the repository intentionally contains project foundation/documentation only. There is no production app implementation yet.
+## Phase 1 objective
+Validate the defining UX/technical risk: a high-performance touch-native two-dimensional TV Guide using realistic deterministic fixture data.
 
-Foundation documents:
-- `AGENTS.md` — agent operating model and Definition of Done
-- `docs/PRODUCT.md` — product vision and MVP
-- `docs/UX.md` — UX/IA and Guide interaction baseline
-- `docs/ARCHITECTURE.md` — technical architecture
-- `docs/DATA.md` — provider-independent EPG/data strategy
-- `docs/DESIGN_SYSTEM.md` — visual/design-system direction
-- `docs/BUILD_SPEC.md` — phased build specification
-- `docs/decisions/*` — accepted durable decisions
-
-## 7. Phase 1 scope
-Build only enough product infrastructure to validate the Guide interaction:
-
-- bootstrap Expo/React Native/TypeScript app;
-- establish minimal semantic light/dark theme tokens;
-- create realistic deterministic Dutch-style fixture schedule data;
-- render a two-dimensional schedule with channel identity and time context;
-- vertical channel navigation;
-- horizontal time navigation;
-- current-time marker;
-- progress representation for currently airing programmes;
+Phase 1 still needs:
+- verified build/typecheck/lint/tests;
+- two-dimensional schedule surface;
+- persistent channel/time context;
+- vertical channel movement and horizontal time movement;
+- current-time marker and programme progress;
 - jump-to-Now;
 - minimal day navigation;
-- programme tap to minimal detail presentation;
-- instrument/profile rendering performance where useful.
+- programme selection/detail;
+- realistic performance validation on iOS and Android.
 
-Do not implement real EPG ingestion, Tonight, subscriptions, accounts, broad search, editorial content or metadata enrichment in this phase.
+## Phase 1 exit gate
+Do not leave Phase 1 until the Guide is smooth at realistic volume, movement preserves time/channel context, Now is predictable, current/progress state is understandable, programme cells remain useful at practical density, light/dark both work, programme selection works, geometry/domain logic is tested, and the Guide interaction is strong enough to justify proceeding.
 
-## 8. Phase 1 validation dataset
-Fixtures must be designed for engineering/UX stress rather than screenshots. Include a realistic number of channels and programme cells, varied programme durations, very short and long titles, missing metadata, midnight boundaries, simultaneous prime-time starts, schedule gaps and at least 48 hours of data.
+## Known risks
+Primary risk remains two-dimensional virtualised Guide performance and scroll synchronisation in React Native. Prototype and measure before selecting specialised primitives. Production EPG rights/source, exact subscription model and final visual design remain later gates.
 
-Exact fixture channel names/logos do not need to reproduce protected production assets. Synthetic or clearly development-only channel identities are acceptable.
+## EXACT NEXT STEP
+**Verify the Phase 1 foundation through CI/runtime, resolve any dependency/type/lint/test failures, then implement the first real two-dimensional Guide viewport using the deterministic fixture/domain layer.**
 
-## 9. Phase 1 exit gate
-Phase 1 is complete only when all of the following are true:
+For that Guide increment:
+1. define time-to-pixel schedule geometry as pure tested domain/layout functions;
+2. render a time axis plus a fixed/anchored channel column and programme cells for realistic fixture volume;
+3. support vertical channel movement and horizontal time movement while preserving context;
+4. do not yet add real EPG, Tonight, subscriptions, accounts or enrichment;
+5. measure before adding specialised virtualisation dependencies.
 
-- Guide scrolling/panning feels smooth at realistic data volume on representative iOS and Android targets.
-- Horizontal and vertical movement preserve clear channel/time context.
-- No material scroll synchronisation or layout instability remains.
-- Now returns predictably to the current schedule position.
-- Current-time/progress representation is understandable.
-- Programme cells remain useful at realistic density.
-- Light and dark themes both work.
-- Programme selection/detail works sufficiently to validate navigation from the grid.
-- Automated tests cover important schedule geometry/domain logic.
-- The interaction is judged strong enough to justify proceeding rather than adding features to compensate for a weak Guide.
+If CI cannot run because repository Actions are disabled, treat enabling/running CI as the first verification action rather than assuming the foundation is valid.
 
-If performance or interaction is inadequate, iterate Phase 1. Do not hide the problem by proceeding to later phases.
+After completing the increment, update this file with implementation reality and exactly one next step.
 
-## 10. Known risks / gates
-### Primary technical risk
-Two-dimensional virtualised Guide performance and synchronised interaction in React Native. Do not pre-optimise blindly; prototype, measure and select primitives based on evidence.
-
-### Production data gate — later
-The initial free external EPG provider still requires technical evaluation and is not approved for commercial production. Production schedule, metadata, channel-logo and artwork rights remain explicit later gates.
-
-### Commercial gate — later
-Exact subscription price, trial and paywall timing are not decided and do not block Phase 1.
-
-### Design gate — later
-Visual Direction 01 is not a frozen UI design. Phase 1 should establish a coherent working visual baseline but avoid expensive brand polishing before the Guide interaction is validated.
-
-## 11. Definition of Done reminder
-Follow `AGENTS.md`. In particular: acceptance criteria, relevant states, light/dark, accessibility, strict TypeScript, lint/tests, realistic performance, no secrets and updated project documentation are required before declaring work DONE.
-
-## 12. EXACT NEXT STEP
-**Bootstrap the Phase 1 Expo/React Native application foundation and implement the deterministic Guide fixture/domain layer required for the first Guide screen — without integrating any external EPG provider yet.**
-
-The increment is complete when the repository can run an iOS/Android Expo app that opens directly to a minimal Guide route, has semantic light/dark theme plumbing, and exposes deterministic typed fixture data for at least 48 hours with realistic schedule edge cases. Do not build the full two-dimensional Guide interaction in the same increment; that is the following step after this foundation is verified.
-
-After completing this increment, update this file with implementation reality and replace this EXACT NEXT STEP with the single next Guide-interaction increment.
-
-## 13. Resume instruction
-A fresh agent should be instructed:
-
+## Resume instruction
 > Read `AGENTS.md` and `docs/PROJECT_STATE.md` from `zuiderwijk/teevee`. Treat PROJECT_STATE as canonical. Execute the EXACT NEXT STEP autonomously, follow the Definition of Done, and update PROJECT_STATE when finished. Ask only when a decision crosses the human-approval boundaries in AGENTS.md.
