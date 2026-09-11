@@ -16,6 +16,33 @@ Dit document is bedoeld voor product- en engineeringstakeholders, niet alleen vo
 
 ---
 
+## 11 september 2026, 19:00 CEST — Programmadetail, voortgang en dagwissel toegevoegd
+
+### Wat is veranderd
+De gids is nu voor het eerst echt interactief als productprototype. Een gebruiker kan op een programmablok tikken en krijgt een rustige detailweergave met zender, uitzendtijd, titel en beschikbare beschrijving. Lopende programma's tonen voortgang en de huidige-tijdlijn blijft zichtbaar op de relevante dag.
+
+Ook is een minimale dagwissel toegevoegd tussen vandaag en de volgende dag. De `Nu`-actie brengt de gebruiker vanuit een andere dag terug naar vandaag en naar het actuele punt in de tijdlijn.
+
+### Waarom
+Na de eerste 2D-viewport moesten we valideren of de gids niet alleen technisch als raster werkt, maar ook als bruikbare mobiele interactie. Programma selecteren, begrijpen waar je in de tijd bent en eenvoudig naar een andere dag bewegen zijn daarvoor minimale voorwaarden.
+
+### Technische details
+- Programmablokken zijn nu aanklikbaar.
+- Een eenvoudige bottom-sheet-achtige detailmodal toegevoegd zonder extra UI-dependency.
+- Lopende programma's krijgen een voortgangsbalk op basis van de bestaande domeinhelper.
+- Current-time-lijn wordt alleen getoond wanneer `Nu` binnen het gekozen tijdvenster valt.
+- Dagselectie voor vandaag en morgen toegevoegd.
+- `Nu` reset de dagselectie en scrollt terug naar het actuele punt.
+- Nog steeds uitsluitend deterministische fixture-data; geen externe EPG-integratie.
+
+### Verificatie
+De vorige repositorystand had een volledig groene CI. Voor deze nieuwe increment is GitHub Actions-run #13 gestart; die stond bij het vastleggen van deze vermelding nog in de wachtrij/in uitvoering. Deze increment wordt daarom nog niet als volledig geverifieerd aangemerkt.
+
+### Volgende stap
+CI van deze increment afronden. Daarna de Guide technisch aanscherpen voor realistische mobiele performance en de eerste testbare device-build voorbereiden, zonder scope uit latere fases naar voren te halen.
+
+---
+
 ## 11 september 2026, 18:41 CEST — Eerste 2D-gidsviewport geïmplementeerd
 
 ### Wat is veranderd
@@ -34,10 +61,10 @@ De tweedimensionale gids is de belangrijkste interactie van Teevee en tegelijk h
 - Nog steeds uitsluitend gebruik van deterministische fixture-data.
 
 ### Verificatie
-CI was op dit moment nog in stabilisatie. Het eerste dependencyprobleem was opgelost. Daarna kwam een TypeScript 6-configuratiefout naar voren door het gebruik van de verouderde `baseUrl`-optie; ook die fout is gecorrigeerd. De nieuwste CI-run liep nog toen deze vermelding werd vastgelegd.
+CI was op dit moment nog in stabilisatie. Het eerste dependencyprobleem was opgelost. Daarna kwam een TypeScript 6-configuratiefout naar voren door het gebruik van de verouderde `baseUrl`-optie; ook die fout is gecorrigeerd. Latere runs zijn groen geworden.
 
 ### Volgende stap
-CI volledig groen krijgen en daarna de gidsinteractie, programmaselectie en performance verder verfijnen voordat scope uit latere fases wordt toegevoegd.
+De gidsinteractie, programmaselectie en performance verder verfijnen voordat scope uit latere fases wordt toegevoegd.
 
 ---
 
