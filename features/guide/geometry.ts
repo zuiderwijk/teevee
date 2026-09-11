@@ -11,6 +11,8 @@ export type ProgrammeFrame = {
   width: number;
 };
 
+export type ProgrammeContentMode = 'compact' | 'standard' | 'comfortable';
+
 export function minutesBetween(fromMs: number, toMs: number): number {
   return (toMs - fromMs) / 60_000;
 }
@@ -31,6 +33,12 @@ export function programmeFrame(
     left: timeToX(start, windowStartMs, minuteWidth),
     width: Math.max(1, minutesBetween(start, end) * minuteWidth - GUIDE_PROGRAMME_GAP),
   };
+}
+
+export function programmeContentMode(width: number): ProgrammeContentMode {
+  if (width < 64) return 'compact';
+  if (width < 126) return 'standard';
+  return 'comfortable';
 }
 
 export function timelineWidth(windowStartMs: number, windowEndMs: number, minuteWidth = GUIDE_MINUTE_WIDTH): number {
