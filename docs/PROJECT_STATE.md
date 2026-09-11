@@ -1,6 +1,6 @@
 # Teevee — Canonical Project State
 
-Last updated: 2026-09-11 19:17 CEST
+Last updated: 2026-09-11 19:18 CEST
 Status: ACTIVE
 Current phase: **Phase 1 — Guide Interaction Prototype**
 Previous phase: **Phase 0 — Project Foundation: COMPLETE**
@@ -57,13 +57,12 @@ The current Phase 1 prototype on `main` includes:
 No external EPG provider has been integrated. No production channel logos or programme artwork are used.
 
 ## Verification status
-The repository was fully green through the expanded CI quality gate including Expo web export. The first runtime-fixture implementation then failed React lint because `Date.now()` and refs were accessed during render. That failure was treated as valid and fixed by using lazy React state initialisation instead of disabling lint rules. The CI run for that fix is still pending; do not mark the newest runtime-fixture increment verified until it is green.
+**GREEN.** The runtime-fixture implementation initially failed React lint because `Date.now()` and refs were accessed during render. That failure was fixed using lazy React state initialisation rather than suppressing lint. CI run #32 then completed successfully across typecheck, lint, tests and Expo web export. The repository is technically ready for first physical-device validation.
 
 ## Phase 1 objective
 Validate the defining UX/technical risk: a high-performance touch-native two-dimensional TV Guide using realistic deterministic fixture data.
 
 ## Phase 1 remaining work
-- get the runtime-fixture/purity fix fully green in CI;
 - perform first physical-device validation through Expo Go;
 - validate horizontal and vertical scroll smoothness and channel-column synchronisation;
 - verify `Nu`, current-time/progress, today/tomorrow, narrow cells, programme detail and light/dark on device;
@@ -88,7 +87,7 @@ Exact subscription price, trial and paywall timing are not decided and do not bl
 Visual Direction 01 is not a frozen UI design. Avoid expensive brand polishing before Guide interaction and performance are validated.
 
 ## EXACT NEXT STEP
-**Verify the CI run for the React purity fix. If green, hand the current Phase 1 prototype to the product owner for the first physical-device test using `docs/TESTING.md` and capture results with `docs/DEVICE_TEST_REPORT.md`. If CI fails, fix it autonomously before requesting device validation.**
+**Run the first physical-device Phase 1 validation using `docs/TESTING.md`, then capture the outcome in `docs/DEVICE_TEST_REPORT.md`. This device evidence is now the gate before any scroll-architecture change or Phase 2 work.**
 
 During device validation:
 1. test horizontal time scrolling and vertical channel scrolling;
