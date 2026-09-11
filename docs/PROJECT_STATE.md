@@ -1,6 +1,6 @@
 # Teevee — Canonical Project State
 
-Last updated: 2026-09-11 19:05 CEST
+Last updated: 2026-09-11 19:17 CEST
 Status: ACTIVE
 Current phase: **Phase 1 — Guide Interaction Prototype**
 Previous phase: **Phase 0 — Project Foundation: COMPLETE**
@@ -37,7 +37,8 @@ The current Phase 1 prototype on `main` includes:
 - strict TypeScript;
 - semantic light/dark theme tokens and system theme resolver;
 - Teevee-owned `Channel`, `Programme` and `GuideFixture` domain types;
-- deterministic fixture generator with 16 synthetic channels and 49 hours of programme data;
+- deterministic source fixture with 16 synthetic channels and 49 hours of programme data;
+- runtime fixture rebasing around app-start time so manual tests remain useful on any date while CI fixtures stay deterministic;
 - edge cases for varied duration/title length, missing metadata, live/repeat flags and a deliberate schedule gap;
 - pure Guide time-to-pixel geometry with automated tests;
 - a real two-dimensional Guide viewport;
@@ -45,32 +46,30 @@ The current Phase 1 prototype on `main` includes:
 - synchronised vertical channel movement;
 - programme widths based on real duration;
 - compact rendering mode for very narrow programme cells;
-- current-time marker;
+- live current-time marker and current-programme progress refreshed every 30 seconds;
 - `Nu` action;
-- current-programme progress indication;
-- live device-time source refreshed every 30 seconds for current-time/progress behaviour;
-- minimal day switching between today and tomorrow;
+- minimal today/tomorrow switching;
 - programme selection with a simple bottom-sheet-style detail modal;
-- first documented physical-device test path through Expo Go;
-- GitHub Actions CI for install, typecheck, lint and tests.
+- `npm run start:device` for Expo Go device testing;
+- `docs/TESTING.md` plus `docs/DEVICE_TEST_REPORT.md` for repeatable physical-device validation;
+- GitHub Actions CI for install, typecheck, lint, tests and Expo web export.
 
 No external EPG provider has been integrated. No production channel logos or programme artwork are used.
 
 ## Verification status
-GitHub Actions runs through the physical-device test-path increment are green, including narrow-programme rendering. The newest live-clock increment has been committed and must complete CI before it is considered verified.
+The repository was fully green through the expanded CI quality gate including Expo web export. The first runtime-fixture implementation then failed React lint because `Date.now()` and refs were accessed during render. That failure was treated as valid and fixed by using lazy React state initialisation instead of disabling lint rules. The CI run for that fix is still pending; do not mark the newest runtime-fixture increment verified until it is green.
 
 ## Phase 1 objective
 Validate the defining UX/technical risk: a high-performance touch-native two-dimensional TV Guide using realistic deterministic fixture data.
 
 ## Phase 1 remaining work
-- keep latest CI green and resolve any failures;
-- perform first physical-device validation through the documented Expo Go path;
-- validate rendering/scroll behaviour under realistic mobile conditions;
-- inspect whether the current nested ScrollView strategy remains smooth enough before adding specialised virtualisation;
-- verify programme selection/detail interaction on device;
-- verify light/dark appearance on device;
-- perform representative iOS and Android performance validation;
-- capture findings and only then decide whether specialised virtualisation is justified.
+- get the runtime-fixture/purity fix fully green in CI;
+- perform first physical-device validation through Expo Go;
+- validate horizontal and vertical scroll smoothness and channel-column synchronisation;
+- verify `Nu`, current-time/progress, today/tomorrow, narrow cells, programme detail and light/dark on device;
+- capture device model/OS and concrete performance observations;
+- decide only from device evidence whether specialised virtualisation is necessary;
+- perform representative iOS and Android validation before Phase 1 exit.
 
 ## Phase 1 exit gate
 Do not leave Phase 1 until the Guide is smooth at realistic volume, movement preserves time/channel context, Now is predictable, current/progress state is understandable, programme cells remain useful at practical density, light/dark both work, programme selection works, geometry/domain logic is tested, and the Guide interaction is strong enough to justify proceeding.
@@ -78,9 +77,6 @@ Do not leave Phase 1 until the Guide is smooth at realistic volume, movement pre
 ## Known risks
 ### Primary technical risk
 The current implementation deliberately uses standard React Native primitives first. The nested scrolling/layout approach must be measured on real devices before introducing specialised virtualisation or gesture dependencies.
-
-### Fixture-time limitation
-The deterministic Phase 1 schedule covers a fixed development date/time range. Live device time is now used for current-state behaviour; outside the fixture window the app correctly omits current-time/progress markers. Before broader testing, fixtures may need a deterministic rolling-time strategy or a real development EPG source.
 
 ### Production data gate — later
 The external development EPG source is not approved for commercial production. Production schedule, metadata, channel-logo and artwork rights remain later gates.
@@ -92,14 +88,17 @@ Exact subscription price, trial and paywall timing are not decided and do not bl
 Visual Direction 01 is not a frozen UI design. Avoid expensive brand polishing before Guide interaction and performance are validated.
 
 ## EXACT NEXT STEP
-**Verify CI for the live-clock increment and fix any failure autonomously. Once green, execute the first physical-device validation path for Phase 1 or, if this environment cannot run a physical device, make the repository test-ready for the product owner and provide the smallest exact test procedure. Do not introduce specialised virtualisation before measurement.**
+**Verify the CI run for the React purity fix. If green, hand the current Phase 1 prototype to the product owner for the first physical-device test using `docs/TESTING.md` and capture results with `docs/DEVICE_TEST_REPORT.md`. If CI fails, fix it autonomously before requesting device validation.**
 
-For that increment:
-1. verify the latest CI result before claiming success;
-2. keep the current standard React Native primitives unless device evidence shows jank or synchronisation problems;
-3. validate horizontal time scrolling, vertical channel scrolling, `Nu`, today/tomorrow, short programme cells, programme detail and light/dark;
-4. record device model/OS and concrete UX/performance findings;
-5. update `docs/DEVLOG.md` and this file with evidence and exactly one next step.
+During device validation:
+1. test horizontal time scrolling and vertical channel scrolling;
+2. inspect channel-column synchronisation and any visible jank;
+3. test `Nu`, current-time/progress and today/tomorrow;
+4. test short programme cells and programme detail;
+5. test light and dark mode;
+6. record device/OS and findings before changing scroll architecture.
+
+Do not introduce real EPG, subscriptions, accounts, Tonight, enrichment or specialised virtualisation before this evidence exists.
 
 ## Resume instruction
 > Read `AGENTS.md` and `docs/PROJECT_STATE.md` from `zuiderwijk/teevee`. Treat PROJECT_STATE as canonical. Execute the EXACT NEXT STEP autonomously, follow the Definition of Done, and update PROJECT_STATE and the Dutch `docs/DEVLOG.md` when finished. Ask only when a decision crosses the human-approval boundaries in AGENTS.md.
