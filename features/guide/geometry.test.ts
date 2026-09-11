@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import type { Programme } from '@/data/domain/epg';
-import { buildTimeTicks, programmeFrame, timeToX, timelineWidth } from './geometry';
+import { buildTimeTicks, programmeContentMode, programmeFrame, timeToX, timelineWidth } from './geometry';
 
 const start = Date.parse('2026-09-11T18:00:00.000Z');
 
@@ -33,5 +33,11 @@ describe('Guide timeline geometry', () => {
       start + 60 * 60_000,
       start + 90 * 60_000,
     ]);
+  });
+
+  it('chooses a deterministic content mode for narrow programme cells', () => {
+    expect(programmeContentMode(45)).toBe('compact');
+    expect(programmeContentMode(90)).toBe('standard');
+    expect(programmeContentMode(180)).toBe('comfortable');
   });
 });
