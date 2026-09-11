@@ -14,6 +14,8 @@ Teevee is designed for autonomous AI-agent development under human product super
 7. `docs/BUILD_SPEC.md`
 8. `docs/decisions/*`
 
+`docs/DEVLOG.md` is the human-readable history of substantive development work. It is not a higher source of truth than PROJECT_STATE; when they differ, PROJECT_STATE wins and the DEVLOG should be corrected.
+
 If documents conflict, resolve the conflict before proceeding and update the lower-priority document.
 
 ## Working rules
@@ -26,6 +28,7 @@ If documents conflict, resolve the conflict before proceeding and update the low
 - Work in small complete vertical increments.
 - Record long-lived architectural decisions as ADRs.
 - Update `docs/PROJECT_STATE.md` after every substantive milestone with completed work, known issues and exactly one next step.
+- Add a concise, understandable entry to `docs/DEVLOG.md` after every substantive development increment. Explain what changed, why, verification status and what comes next. Never claim a check passed unless it actually did.
 
 ## Definition of Done
 A feature is DONE only when acceptance criteria are met; relevant loading, empty, error and offline states are handled; light and dark themes work; accessibility is acceptable; strict TypeScript, lint and tests pass; critical flows have automated coverage; performance is acceptable at realistic EPG volume; required observability exists; no secrets are committed; and documentation reflects reality.
