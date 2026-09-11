@@ -9,6 +9,7 @@ import {
   GUIDE_CHANNEL_WIDTH,
   GUIDE_ROW_HEIGHT,
   GUIDE_TIME_AXIS_HEIGHT,
+  programmeContentMode,
   programmeFrame,
   timeToX,
   timelineWidth,
@@ -156,6 +157,7 @@ export default function GuideScreen() {
                       const endMs = Date.parse(programme.endAt);
                       const isCurrent = DEMO_NOW >= startMs && DEMO_NOW < endMs;
                       const progress = isCurrent ? programmeProgress(programme, new Date(DEMO_NOW)) : 0;
+                      const contentMode = programmeContentMode(frame.width);
 
                       return (
                         <Pressable
@@ -165,6 +167,7 @@ export default function GuideScreen() {
                           onPress={() => setSelectedProgramme(programme)}
                           style={[
                             styles.programme,
+                            contentMode === 'compact' ? styles.programmeCompact : null,
                             {
                               left: frame.left,
                               width: frame.width,
@@ -172,13 +175,24 @@ export default function GuideScreen() {
                             },
                           ]}
                         >
-                          {isCurrent ? (
+                          {isCurrent && contentMode !== 'compact' ? (
                             <View style={[styles.progressTrack, { backgroundColor: theme.colors.border }]}>
                               <View style={[styles.progressFill, { width: `${Math.round(progress * 100)}%`, backgroundColor: theme.colors.currentTime }]} />
                             </View>
                           ) : null}
-                          <Text numberOfLines={2} style={[styles.programmeTitle, { color: theme.colors.text }]}>{programme.title}</Text>
-                          <Text style={[styles.programmeTime, { color: theme.colors.textMuted }]}>{formatTime(startMs)}</Text>
+                          <Text
+                            numberOfLines={contentMode === 'comfortable' ? 2 : 1}
+                            style={[
+                              styles.programmeTitle,
+                              contentMode === 'compact' ? styles.programmeTitleCompact : null,
+                              { color: theme.colors.text },
+                            ]}
+                          >
+                            {programme.title}
+                          </Text>
+                          {contentMode !== 'compact' ? (
+                            <Text numberOfLines={1} style={[styles.programmeTime, { color: theme.colors.textMuted }]}>{formatTime(startMs)}</Text>
+                          ) : null}
                         </Pressable>
                       );
                     })}
@@ -241,7 +255,9 @@ const styles = StyleSheet.create({
   tickLabel: { fontSize: 10, fontWeight: '600', width: 42 },
   programmeRow: { position: 'absolute', left: 0, borderBottomWidth: StyleSheet.hairlineWidth },
   programme: { position: 'absolute', top: 4, bottom: 4, borderRadius: 8, paddingHorizontal: 8, paddingVertical: 7, justifyContent: 'space-between', overflow: 'hidden' },
+  programmeCompact: { paddingHorizontal: 5, paddingVertical: 6, justifyContent: 'center' },
   programmeTitle: { fontSize: 12, lineHeight: 15, fontWeight: '600' },
+  programmeTitleCompact: { fontSize: 10, lineHeight: 12 },
   programmeTime: { fontSize: 10, marginTop: 4 },
   progressTrack: { height: 2, borderRadius: 1, overflow: 'hidden', marginBottom: 4 },
   progressFill: { height: '100%' },
