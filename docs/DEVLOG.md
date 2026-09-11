@@ -1,102 +1,103 @@
-# Teevee Development Log
+# Teevee Development Logboek
 
-Purpose: a human-readable running log of what the autonomous development agent changed, why it changed, what was verified, and what comes next.
+Doel: een begrijpelijk en leesbaar overzicht van wat de autonome development-agent heeft gewijzigd, waarom dat is gedaan, wat daadwerkelijk is gecontroleerd en wat de volgende stap is.
 
-This file is intentionally written for product/engineering stakeholders, not only developers. It complements `docs/PROJECT_STATE.md`: PROJECT_STATE is the canonical current state; DEVLOG is the readable history.
+Dit document is bedoeld voor product- en engineeringstakeholders, niet alleen voor developers. Het vult `docs/PROJECT_STATE.md` aan: `PROJECT_STATE.md` beschrijft de canonieke actuele stand van het project; dit logboek beschrijft de geschiedenis van de ontwikkeling.
 
-## Logging rules
-- Add one entry for every substantive development increment.
-- Write newest entries at the top.
-- Keep each entry concise and understandable.
-- Explain impact in plain language before technical detail.
-- Never claim a build, test or CI check passed unless it actually did.
-- Link problems to the fix or current status.
-- End each entry with the next intended increment.
-
----
-
-## 2026-09-11 — First 2D Guide viewport implemented
-
-### What changed
-The app now has the first real version of the TV-guide surface instead of only a simple list. Programme blocks are laid out on a time axis, their width reflects programme duration, channel labels remain separate from the timeline, and vertical/horizontal scrolling are synchronised.
-
-A current-time indicator and a `Nu` action have also been introduced so the user can return to the current point in the schedule.
-
-### Why
-The two-dimensional Guide is the defining interaction of Teevee and the largest technical/UX risk. We therefore validate this before adding broad product features.
-
-### Technical notes
-- Added pure time-to-pixel schedule geometry helpers.
-- Added automated tests for Guide timeline geometry.
-- Implemented a fixed channel column plus horizontally scrollable schedule timeline.
-- Synchronised channel labels with the vertical Guide scroll.
-- Continued using deterministic fixture data only.
-
-### Verification
-CI is still being stabilised. The first dependency issue has been fixed. A subsequent TypeScript 6 configuration failure was identified and fixed by removing deprecated `baseUrl` usage. The most recent CI run was still in progress when this entry was written.
-
-### Next
-Get CI fully green, then continue refining Guide interaction, programme selection and performance before moving to later product scope.
+## Logboekregels
+- Voeg voor iedere substantiële development-increment één nieuwe logboekvermelding toe.
+- Plaats de nieuwste vermeldingen bovenaan.
+- Noteer altijd **datum én tijd** waarop de wijziging is vastgelegd.
+- Gebruik de lokale tijdzone **Europe/Amsterdam**.
+- Schrijf eerst in gewone taal wat er voor product of gebruiker is veranderd; geef daarna pas technische details.
+- Meld alleen dat build, tests of CI zijn geslaagd wanneer dat aantoonbaar zo is.
+- Benoem fouten en blokkades expliciet, inclusief de status van de oplossing.
+- Sluit iedere vermelding af met de eerstvolgende geplande development-increment.
 
 ---
 
-## 2026-09-11 — Expo/React Native foundation created
+## 11 september 2026, 18:41 CEST — Eerste 2D-gidsviewport geïmplementeerd
 
-### What changed
-Teevee now has an executable cross-platform app foundation for iOS and Android. The application opens directly into a minimal Guide screen and already supports semantic light/dark theming.
+### Wat is veranderd
+De app heeft nu de eerste echte versie van het tv-gidsscherm in plaats van alleen een eenvoudige lijst. Programmablokken worden op een tijdas geplaatst, de breedte van een blok weerspiegelt de programmaduur, de zenderkolom staat los van de tijdlijn en horizontaal en verticaal scrollen worden op elkaar afgestemd.
 
-### Why
-This establishes the smallest viable runtime foundation for Phase 1 while keeping the codebase simple enough for autonomous agents to maintain.
+Ook zijn een huidige-tijdindicator en een `Nu`-actie toegevoegd, zodat de gebruiker kan terugkeren naar het actuele punt in de programmering.
 
-### Technical notes
-- Expo / React Native / Expo Router bootstrap.
-- Strict TypeScript configuration.
-- Semantic light and dark theme tokens.
-- System theme resolver.
-- Minimal Guide route.
-- Linting and GitHub Actions CI configuration.
+### Waarom
+De tweedimensionale gids is de belangrijkste interactie van Teevee en tegelijk het grootste technische en UX-risico. Daarom wordt deze eerst gevalideerd voordat bredere productfeatures worden toegevoegd.
 
-### Verification
-Initial CI runs exposed dependency-version conflicts between Expo-related packages. These were real configuration issues, not ignored warnings, and were corrected by aligning dependencies with the Expo SDK 57 stack.
+### Technische details
+- Pure functies toegevoegd voor het omrekenen van tijd naar pixels op de gids-tijdlijn.
+- Geautomatiseerde tests toegevoegd voor de geometrie van de gids.
+- Vaste zenderkolom gecombineerd met een horizontaal scrollbare programma-tijdlijn.
+- Zenderlabels gesynchroniseerd met verticaal scrollen in de gids.
+- Nog steeds uitsluitend gebruik van deterministische fixture-data.
 
-### Next
-Verify typecheck, lint and tests, then build the actual 2D Guide interaction.
+### Verificatie
+CI was op dit moment nog in stabilisatie. Het eerste dependencyprobleem was opgelost. Daarna kwam een TypeScript 6-configuratiefout naar voren door het gebruik van de verouderde `baseUrl`-optie; ook die fout is gecorrigeerd. De nieuwste CI-run liep nog toen deze vermelding werd vastgelegd.
 
----
-
-## 2026-09-11 — Deterministic Guide data layer created
-
-### What changed
-A development-only TV schedule dataset now exists so the Guide can be built and tested without any external EPG provider.
-
-### Why
-Autonomous development must not stop when an external feed is unavailable or changes format. The fixture layer also makes automated tests repeatable.
-
-### Technical notes
-- Added Teevee-owned `Channel`, `Programme` and `GuideFixture` domain types.
-- Added 16 synthetic channels.
-- Added 49 hours of deterministic programme data.
-- Included edge cases such as short/long programmes, long titles, missing metadata, live/repeat flags and a deliberate schedule gap.
-- Added programme duration and progress helpers plus tests.
-
-### Verification
-Fixture/domain tests were added. Full CI verification was pending at the time of this increment.
-
-### Next
-Use the fixture layer to build schedule geometry and the first Guide viewport.
+### Volgende stap
+CI volledig groen krijgen en daarna de gidsinteractie, programmaselectie en performance verder verfijnen voordat scope uit latere fases wordt toegevoegd.
 
 ---
 
-## 2026-09-11 — Project Foundation completed
+## 11 september 2026, 18:40 CEST — Expo/React Native-basis opgezet
 
-### What changed
-The project was converted from an idea/concept into an agent-operable product repository with a canonical product, UX, architecture, data and build baseline.
+### Wat is veranderd
+Teevee heeft nu een uitvoerbare cross-platform basis voor iOS en Android. De applicatie opent direct op een minimale gidsroute en ondersteunt al semantische light- en dark-mode theming.
 
-### Why
-Every autonomous agent session needs the same source of truth. Without this, each new session could reinterpret the product and architecture.
+### Waarom
+Dit vormt de kleinste bruikbare runtime-basis voor Phase 1 en houdt de codebase tegelijk eenvoudig genoeg om grotendeels autonoom door agents te laten onderhouden.
 
-### Technical/product notes
-Created:
+### Technische details
+- Expo / React Native / Expo Router-bootstrap.
+- Strict TypeScript-configuratie.
+- Semantische light- en dark-theme tokens.
+- Resolver voor het systeemthema.
+- Minimale gidsroute.
+- Linting en GitHub Actions CI-configuratie.
+
+### Verificatie
+De eerste CI-runs brachten dependencyconflicten tussen Expo-gerelateerde packages aan het licht. Deze configuratiefouten zijn niet genegeerd, maar opgelost door de dependencies uit te lijnen met de Expo SDK 57-stack.
+
+### Volgende stap
+Typecheck, lint en tests verifiëren en vervolgens de echte 2D-gidsinteractie bouwen.
+
+---
+
+## 11 september 2026, 18:35 CEST — Deterministische gidsdatalaag toegevoegd
+
+### Wat is veranderd
+Er is nu een development-only tv-programmeringsdataset beschikbaar waarmee de gids gebouwd en getest kan worden zonder afhankelijk te zijn van een externe EPG-provider.
+
+### Waarom
+Autonome ontwikkeling mag niet stilvallen wanneer een externe feed onbeschikbaar is of zijn formaat wijzigt. De fixture-laag zorgt bovendien dat geautomatiseerde tests reproduceerbaar blijven.
+
+### Technische details
+- Teevee-eigen domeintypes toegevoegd voor `Channel`, `Programme` en `GuideFixture`.
+- 16 synthetische zenders toegevoegd.
+- 49 uur deterministische programmadata toegevoegd.
+- Edge cases opgenomen, waaronder korte en lange programma's, lange titels, ontbrekende metadata, live/herhaling en een bewuste onderbreking in het schema.
+- Helpers voor programmaduur en voortgang toegevoegd, inclusief tests.
+
+### Verificatie
+Tests voor fixtures en domeinlogica zijn toegevoegd. Volledige CI-verificatie was op dat moment nog niet afgerond.
+
+### Volgende stap
+De fixture-laag gebruiken voor schedule geometry en de eerste echte gidsviewport.
+
+---
+
+## 11 september 2026, 18:33 CEST — Project Foundation afgerond
+
+### Wat is veranderd
+Het project is omgezet van een concept naar een repository die door autonome development-agents kan worden bestuurd, met een vaste product-, UX-, architectuur-, data- en buildbaseline.
+
+### Waarom
+Iedere autonome agentsessie moet met dezelfde bron van waarheid starten. Zonder die basis zou iedere nieuwe sessie het product of de architectuur opnieuw kunnen interpreteren.
+
+### Product- en technische onderdelen
+Aangemaakt:
 - `AGENTS.md`
 - `docs/PRODUCT.md`
 - `docs/UX.md`
@@ -105,10 +106,10 @@ Created:
 - `docs/DESIGN_SYSTEM.md`
 - `docs/BUILD_SPEC.md`
 - `docs/PROJECT_STATE.md`
-- ADRs for guide-first positioning, Expo, provider-independent EPG and canonical project memory.
+- ADR's voor guide-first positionering, Expo, provider-onafhankelijke EPG en canoniek projectgeheugen.
 
-### Verification
-Phase 0 was marked complete only after the canonical `PROJECT_STATE.md` and core ADRs existed.
+### Verificatie
+Phase 0 is pas als afgerond gemarkeerd nadat `docs/PROJECT_STATE.md` en de belangrijkste ADR's daadwerkelijk in de repository stonden.
 
-### Next
-Phase 1: build and validate the Guide interaction using deterministic fixture data.
+### Volgende stap
+Phase 1 starten: de gidsinteractie bouwen en valideren met deterministische fixture-data.
