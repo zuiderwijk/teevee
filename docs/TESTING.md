@@ -2,7 +2,7 @@
 
 Status: Phase 1 development testpad.
 
-Doel: de gidsinteractie zo vroeg mogelijk op echte iOS- en Android-hardware kunnen beoordelen zonder te wachten op TestFlight, Google Play of production-data.
+Doel: de gidsinteractie zo vroeg mogelijk op echte iOS- en Android-hardware beoordelen zonder te wachten op TestFlight, Google Play of production-data.
 
 ## Snelste testpad in Phase 1: Expo Go
 
@@ -12,16 +12,27 @@ De huidige app gebruikt alleen Expo-compatible libraries en heeft nog geen custo
 1. Installeer **Expo Go** uit de Apple App Store of Google Play Store.
 2. Zorg dat telefoon en developmentcomputer op hetzelfde netwerk zitten.
 
-### Op de developmentcomputer
+### Eerste keer op de developmentcomputer
 1. Clone de repository:
    `git clone https://github.com/zuiderwijk/teevee.git`
 2. Ga naar de projectmap:
    `cd teevee`
 3. Installeer dependencies:
    `npm ci`
-4. Start Expo:
-   `npm start`
+4. Start de toestelmodus:
+   `npm run start:device`
 5. Scan de QR-code met de camera/Expo Go.
+
+### Volgende testsessies
+Na een `git pull` is meestal alleen nodig:
+
+`npm run start:device`
+
+Als Expo-cachegedrag vreemd lijkt:
+
+`npm run start:clean`
+
+De runtime-fixture wordt bij het starten rond de actuele tijd gelegd. Daardoor blijven `Nu`, programma-progress en vandaag/morgen bruikbaar, ook wanneer de test op een latere datum wordt uitgevoerd. De onderliggende testfixture blijft deterministisch voor CI.
 
 ## Wat in Phase 1 getest moet worden
 
@@ -51,14 +62,15 @@ Let op:
 - vertraagde respons bij het openen van programma-details;
 - duidelijk verschil tussen oudere en nieuwere toestellen.
 
-Noteer toestelmodel + OS-versie bij performancefeedback.
+Noteer toestelmodel + OS-versie bij performancefeedback. Gebruik `docs/DEVICE_TEST_REPORT.md` als compact rapportformat. Een korte screenrecording is bij scroll- of synchronisatieproblemen waardevoller dan alleen een omschrijving.
 
 ## Geautomatiseerde kwaliteitscontrole
 Iedere push naar `main` start GitHub Actions met:
 - dependency-installatie;
 - TypeScript typecheck;
 - lint;
-- tests.
+- tests;
+- een volledige Expo-webexport als bundler/route-check.
 
 Een groene CI zegt dat de code technisch door de afgesproken checks komt. Het zegt **niet** dat scrollgevoel en mobiele UX goed zijn; daarvoor blijft testen op echte hardware noodzakelijk.
 
