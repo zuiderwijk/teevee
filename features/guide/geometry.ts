@@ -48,8 +48,24 @@ export function programmeVisibleContent(
   minimumTimeWidth = GUIDE_PROGRAMME_TIME_MIN_VISIBLE_WIDTH,
 ): ProgrammeVisibleContent {
   const safeViewportX = Number.isFinite(viewportX) ? Math.max(0, viewportX) : 0;
-  const hiddenLeft = Math.min(frame.width, Math.max(0, safeViewportX - frame.left));
-  const visibleWidth = Math.max(0, frame.width - hiddenLeft);
+  const frameEnd = frame.left + frame.width;
+
+  // Settled readability may intentionally move content right only while the
+  // settled viewport cuts through this programme. If that remembered viewport
+  // is already beyond the programme, keep the cell's normal content geometry.
+  // This matters during reverse scrolling: the native ScrollView can move left
+  // before the settled React state updates, and a stale later viewport must not
+  // collapse newly visible programme text to zero width.
+  if (safeViewportX <= frame.left || safeViewportX >= frameEnd) {
+    return {
+      contentTranslateX: 0,
+      visibleWidth: frame.width,
+      canShowStartTime: frame.width >= minimumTimeWidth,
+    };
+  }
+
+  const hiddenLeft = safeViewportX - frame.left;
+  const visibleWidth = frame.width - hiddenLeft;
 
   return {
     contentTranslateX: hiddenLeft,
