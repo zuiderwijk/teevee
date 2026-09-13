@@ -11,7 +11,7 @@ import {
   View,
 } from 'react-native';
 
-import { isProgrammeCurrent, type Channel, type GuideFixture, type Programme } from '@/data/domain/epg';
+import { isProgrammeCurrent, type Channel, type GuideFixture } from '@/data/domain/epg';
 import { guideDayStart, GUIDE_TIME_ZONE } from '@/data/domain/guideTime';
 import {
   buildRuntimeGuideFixture,
@@ -95,19 +95,22 @@ const SchedulePage = memo(function SchedulePage({
 
   return (
     <View style={{ width, height }}>
-      {ticks.map((tick) => {
-        const top = scheduleYForTime(tick, dayStartMs);
-        return (
-          <View
-            key={tick}
-            pointerEvents="none"
-            accessible={false}
-            style={[styles.hourTick, { top, borderTopColor: theme.colors.border }]}
-          >
-            <Text style={[styles.hourLabel, { color: theme.colors.textMuted }]}>{formatTime(tick)}</Text>
-          </View>
-        );
-      })}
+      {ticks.map((tick) => (
+        <View
+          key={tick}
+          pointerEvents="none"
+          accessible={false}
+          style={[
+            styles.hourTick,
+            {
+              top: scheduleYForTime(tick, dayStartMs),
+              borderTopColor: theme.colors.border,
+            },
+          ]}
+        >
+          <Text style={[styles.hourLabel, { color: theme.colors.textMuted }]}>{formatTime(tick)}</Text>
+        </View>
+      ))}
 
       {programmes.map((programme) => {
         const frame = programmeVerticalFrame(programme, dayStartMs, dayEndMs);
@@ -140,21 +143,25 @@ const SchedulePage = memo(function SchedulePage({
               },
             ]}
           >
-            {!veryCompact ? (
-              <Text
-                numberOfLines={compact ? 1 : 2}
-                ellipsizeMode="tail"
-                style={[styles.programmeTitle, compact ? styles.programmeTitleCompact : null, { color: theme.colors.text }]}
-              >
-                {programme.title}
-              </Text>
-            ) : (
-              <Text numberOfLines={1} style={[styles.programmeTitleTiny, { color: theme.colors.text }]}>
-                {programme.title}
-              </Text>
-            )}
+            <Text
+              numberOfLines={1}
+              ellipsizeMode="tail"
+              style={[
+                veryCompact ? styles.programmeTitleTiny : styles.programmeTitle,
+                compact && !veryCompact ? styles.programmeTitleCompact : null,
+                { color: theme.colors.text },
+              ]}
+            >
+              {programme.title}
+            </Text>
             {!compact ? (
-              <Text numberOfLines={1} style={[styles.programmeTime, { color: current ? theme.colors.currentTime : theme.colors.textMuted }]}>
+              <Text
+                numberOfLines={1}
+                style={[
+                  styles.programmeTime,
+                  { color: current ? theme.colors.currentTime : theme.colors.textMuted },
+                ]}
+              >
                 {timeText}
               </Text>
             ) : null}
@@ -198,7 +205,6 @@ export const PerChannelGuideView = memo(function PerChannelGuideView({
   const channelStripRef = useRef<ScrollView>(null);
   const pagerRef = useRef<ScrollView>(null);
   const scheduleRef = useRef<ScrollView>(null);
-  const scheduleYRef = useRef(0);
   const [fixtureAnchorMs, setFixtureAnchorMs] = useState(() => Date.now());
   const fixture = useMemo(() => buildRuntimeGuideFixture(fixtureAnchorMs), [fixtureAnchorMs]);
   const nowMs = useGuideClock();
@@ -235,9 +241,8 @@ export const PerChannelGuideView = memo(function PerChannelGuideView({
       if (!channels[index] || index === selectedIndex) return;
       setSelectedIndex(index);
       centreSelectedChannel(index);
-      requestAnimationFrame(() => centrePager(false));
     },
-    [centrePager, centreSelectedChannel, channels, selectedIndex],
+    [centreSelectedChannel, channels, selectedIndex],
   );
 
   const handlePagerEnd = useCallback(
@@ -272,31 +277,25 @@ export const PerChannelGuideView = memo(function PerChannelGuideView({
     [fixture, fixtureAnchorMs],
   );
 
-  const changeDay = useCallback((nextOffset: PerChannelDayOffset) => {
-    setDayOffset(nextOffset);
-  }, []);
+  useEffect(() => {
+    const frame = requestAnimationFrame(() => centrePager(false));
+    return () => cancelAnimationFrame(frame);
+  }, [centrePager, dayOffset, selectedIndex]);
 
   useEffect(() => {
-    const frame = requestAnimationFrame(() => {
-      centrePager(false);
-      centreSelectedChannel(selectedIndex, false);
-      if (dayOffset === 0) scrollToNow(false);
-    });
+    centreSelectedChannel(selectedIndex, false);
+  }, [centreSelectedChannel, selectedIndex]);
+
+  useEffect(() => {
+    const frame = requestAnimationFrame(() => scrollToNow(false));
     return () => cancelAnimationFrame(frame);
-    // Initial anchor only. Day/channel changes deliberately preserve scheduleY.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [fixtureAnchorMs, windowWidth]);
+  }, [fixtureAnchorMs, scrollToNow]);
 
   useEffect(() => {
     if (!runtimeGuideFixtureNeedsRefresh(fixture, nowMs)) return;
     setDayOffset(0);
     setFixtureAnchorMs(nowMs);
   }, [fixture, nowMs]);
-
-  useEffect(() => {
-    const frame = requestAnimationFrame(() => centrePager(false));
-    return () => cancelAnimationFrame(frame);
-  }, [centrePager, dayOffset, selectedIndex]);
 
   if (!selectedChannel) return null;
 
@@ -318,6 +317,7 @@ export const PerChannelGuideView = memo(function PerChannelGuideView({
         horizontal
         bounces
         directionalLockEnabled
+        nestedScrollEnabled
         showsHorizontalScrollIndicator={false}
         style={[styles.channelStrip, { borderBottomColor: theme.colors.border }]}
         contentContainerStyle={styles.channelStripContent}
@@ -359,7 +359,7 @@ export const PerChannelGuideView = memo(function PerChannelGuideView({
                 key={offset}
                 accessibilityRole="button"
                 accessibilityState={{ selected: active }}
-                onPress={() => changeDay(offset)}
+                onPress={() => setDayOffset(offset)}
                 style={[
                   styles.dayButton,
                   {
@@ -371,7 +371,10 @@ export const PerChannelGuideView = memo(function PerChannelGuideView({
                 <Text
                   numberOfLines={1}
                   maxFontSizeMultiplier={CONTROL_MAX_FONT_SIZE_MULTIPLIER}
-                  style={[styles.dayButtonText, { color: active ? theme.colors.background : theme.colors.textSecondary }]}
+                  style={[
+                    styles.dayButtonText,
+                    { color: active ? theme.colors.background : theme.colors.textSecondary },
+                  ]}
                 >
                   {offset === 0 ? 'Vandaag' : 'Morgen'}
                 </Text>
@@ -402,7 +405,9 @@ export const PerChannelGuideView = memo(function PerChannelGuideView({
         <Text numberOfLines={1} style={[styles.channelName, { color: theme.colors.text }]}>
           {selectedChannel.displayName}
         </Text>
-        <Text style={[styles.swipeHint, { color: theme.colors.textMuted }]}>Veeg horizontaal voor een andere zender</Text>
+        <Text style={[styles.swipeHint, { color: theme.colors.textMuted }]}>
+          Veeg horizontaal voor een andere zender
+        </Text>
       </View>
 
       <ScrollView
@@ -411,12 +416,9 @@ export const PerChannelGuideView = memo(function PerChannelGuideView({
         bounces
         alwaysBounceVertical
         directionalLockEnabled
+        nestedScrollEnabled
         decelerationRate="normal"
         showsVerticalScrollIndicator
-        onScroll={(event) => {
-          scheduleYRef.current = event.nativeEvent.contentOffset.y;
-        }}
-        scrollEventThrottle={16}
         contentContainerStyle={{ height: scheduleHeight }}
       >
         <ScrollView
@@ -426,6 +428,7 @@ export const PerChannelGuideView = memo(function PerChannelGuideView({
           pagingEnabled
           bounces
           directionalLockEnabled
+          nestedScrollEnabled
           decelerationRate="fast"
           showsHorizontalScrollIndicator={false}
           onMomentumScrollEnd={handlePagerEnd}
@@ -579,7 +582,7 @@ const styles = StyleSheet.create({
     left: 12,
     width: 42,
     fontSize: 10,
-    fontWeight: '650',
+    fontWeight: '600',
     fontVariant: ['tabular-nums'],
   },
   programme: {
@@ -604,7 +607,7 @@ const styles = StyleSheet.create({
   programmeTitleTiny: {
     fontSize: 12,
     lineHeight: 14,
-    fontWeight: '650',
+    fontWeight: '600',
   },
   programmeTime: {
     marginTop: 3,
