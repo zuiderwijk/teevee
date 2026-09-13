@@ -25,6 +25,10 @@ describe('Guide timeline geometry', () => {
     expect(timeToX(start + 30 * 60_000, start, 3)).toBe(90);
   });
 
+  it('preserves sub-minute precision for the current-time marker', () => {
+    expect(timeToX(start + 45_000, start, 3)).toBeCloseTo(2.25, 8);
+  });
+
   it('maps programme start and duration to a frame', () => {
     expect(programmeFrame(programme, start, 3)).toEqual({ left: 90, width: 178 });
   });
