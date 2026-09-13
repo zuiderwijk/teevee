@@ -1,7 +1,7 @@
 # Teevee — Canonical Project State
 
-Last updated: 2026-09-13 13:17 CEST.
-Status: ACTIVE — Phase 1 Guide prototype. PR #9 remains the physically accepted/frozen Guide scroll/readability baseline. PR #10 is physically rejected from the 13:09 iPhone recording. PR #11 replaces the rejected per-tick animation approach with one left-edge time-axis mask, is merged on main as `9ed7113bc114911218107263b6df224940d5dd09`, and is technically green on PR CI #145 pending focused iPhone validation.
+Last updated: 2026-09-13 13:55 CEST.
+Status: ACTIVE — Phase 1 Guide prototype. PR #9 remains the physically accepted/frozen Guide scroll/readability baseline. The PR #11 single-mask time-axis mechanism is physically accepted from the 13:48 iPhone recording, but that recording exposed a separate latent reverse-scroll text bug in the older settled-readability fallback. PR #12 fixes that bug, is merged on main as `b76edfab972b1d6194b2cbf1460515256de0e5c4`, and is technically green on PR CI #150 pending one focused iPhone validation.
 Current phase: **Phase 1 — Guide Interaction Prototype**
 Previous phase: **Phase 0 — Project Foundation: COMPLETE**
 
@@ -54,8 +54,9 @@ Tonight/Vanavond remains promising but provisional.
 - Optional `Channel.logoUrl`; target treatment is logo first, channel name second, with accessible textual fallback.
 - Totaal adapts content geometry to larger system text; the tested iPhone large-text correction is accepted.
 - **Vandaag · Morgen · Nu** remain on one row; only these compact labels cap scaling at 1.2x. Explicit day state updates immediately; `Nu` restores today/current time.
-- PR #5 settled readability remains the geometry-safe fallback after horizontal movement settles.
+- PR #5 settled readability remains the geometry-safe fallback after horizontal movement settles, with the PR #12 correction that a stale settled viewport beyond a programme may never collapse that programme's text geometry.
 - PR #9 live partial-left programme readability is physically accepted on iPhone through drag, momentum and programme boundaries.
+- PR #11 single left-edge mask is physically accepted for the time-axis clipping problem: departing time labels disappear without partial `:30`/`30` fragments while tick coordinates remain truthful.
 - CI runs install, strict TypeScript, lint, tests and iOS/Android/web Expo bundle exports. Bundle export is not a signed/native device test.
 
 No real production EPG, production artwork, account system or subscription/paywall has been introduced.
@@ -68,9 +69,10 @@ Do not retune without concrete regression evidence:
 - programme-detail response and retained Guide position;
 - button/backdrop close and deliberate swipe-down dismissal;
 - PR #7 one-row controls and immediate selected-day state;
-- PR #9 UI-thread edge-readability synchronisation, programme-boundary disappearance semantics and programme geometry.
+- PR #9 UI-thread edge-readability synchronisation, programme-boundary disappearance semantics and programme geometry;
+- PR #11 single-mask time-axis treatment and truthful tick coordinates.
 
-The product owner previously described targeted scroll/detail/swipe-dismiss retests as **"perfect"**. PR #7 and PR #9 are physically accepted. This is not blanket accessibility/performance approval.
+The product owner previously described targeted scroll/detail/swipe-dismiss retests as **"perfect"**. PR #7 and PR #9 are physically accepted. PR #11 is additionally physically accepted for the isolated time-axis clipping behaviour. This is not blanket accessibility/performance approval.
 
 ## Recovery history that constrains implementation
 ### PR #6 — physically rejected
@@ -85,17 +87,14 @@ PR #9 moved edge geometry to shared UI-thread positions, with React only changin
 ## PR #10 — physically rejected time-axis implementation
 PR #10 added a Reanimated opacity style to every half-hour time label and reused PR #9 `scrollX`. It was technically green: final head `efeedc08d3a6c50f3ef3fc9f119e8da5e3860b2b` passed PR CI #140 / `34750478071`, and main subsequently passed CI as well.
 
-The product owner then supplied `ScreenRecording_09-13-2026 13-09-16_1.MP4`. Frame-by-frame review physically rejects this implementation:
-- around 8.7 s the left time axis still shows only `30` from an otherwise clipped time label;
-- during fast horizontal movement, programme titles disappear for sustained intervals and reappear after settling, violating the frozen PR #9 expectation that partial-left titles remain useful during drag/momentum;
-- programme frames themselves still appear geometrically stable; no evidence justifies changing their position/width or native scroll physics.
+The product owner supplied `ScreenRecording_09-13-2026 13-09-16_1.MP4`. Frame-by-frame review physically rejected PR #10 because around 8.7 s the left time axis still showed only `30` from an otherwise clipped label. That recording also showed programme-title disappearance during fast horizontal movement.
 
-The likely implementation risk is the added per-tick animated workload (roughly two animated labels per elapsed hour) competing with the already accepted PR #9 live edge layer. This is an evidence-backed hypothesis, not a proven native root cause.
+At the time, extra per-tick animated workload was considered a plausible explanation for the title disappearance. The later PR #11 recording disproved that as the primary root cause: the same title blanking remained after per-tick animations were removed. The actual cause was the older settled-readability state described under PR #12.
 
-**PR #10 is physically rejected. Do not restore the per-tick Reanimated-opacity architecture.**
+**PR #10 remains physically rejected. Do not restore the per-tick Reanimated-opacity architecture.**
 
-## PR #11 — single left-edge time-axis mask
-PR #11 (`Replace per-tick animations with one left-edge time-axis mask`) replaces only PR #10's rejected label mechanism:
+## PR #11 — single left-edge time-axis mask: time-axis mechanism physically accepted
+PR #11 (`Replace per-tick animations with one left-edge time-axis mask`) replaced only PR #10's rejected label mechanism:
 - all half-hour tick lines and text are static/native ScrollView content again;
 - no Reanimated style exists per tick label;
 - one small `TimeAxisLeftMask` sits at the fixed left edge of the time-axis viewport;
@@ -105,16 +104,42 @@ PR #11 (`Replace per-tick animations with one left-edge time-axis mask`) replace
 - the existing PR #9 `scrollX` shared value is reused; no new React state is written per scroll frame;
 - programme geometry, PR #9 edge-readability, inertia, bounce, directional lock, controls and detail interactions are unchanged.
 
-Focused pure tests cover first/subsequent labels, exact boundaries, negative bounce and large-text metrics.
-
 Technical evidence:
-- PR head `8cba485c4c24bbf5160c652a13aba685c5520b3e` passed PR CI #145 / run `34754026981` completely: install, strict TypeScript, lint, tests and iOS/Android/web Expo exports;
+- PR head `8cba485c4c24bbf5160c652a13aba685c5520b3e` passed PR CI #145 / run `34754026981` completely;
 - PR #11 merged to main as `9ed7113bc114911218107263b6df224940d5dd09`.
 
-This is technical evidence only. PR #11 is not physically accepted until the focused iPhone test below.
+Physical evidence from `ScreenRecording_09-13-2026 13-48-10_1.MP4`:
+- the time-axis mask behaves correctly across slow and fast horizontal movement;
+- the 13:30 → 14:00 transition was checked frame-by-frame: 13:30 disappears as a whole between frames, without an intermediate `:30`/`30` fragment;
+- the same whole-label disappearance pattern is visible across other sampled transitions;
+- tick positions remain visually stable and time-truthful;
+- programme block position/width remains stable.
+
+The same recording exposed a **separate latent reverse-scroll defect**: around 7.0–7.4 s, after a rapid scroll back toward earlier times, visible programme blocks temporarily contain no title text. This is not caused by the PR #11 mask and does not invalidate the accepted time-axis mechanism.
+
+## PR #12 — reverse-scroll programme-title blanking fix
+Root cause from the 13:48 recording:
+- the PR #5 settled-readability state stores `readabilityViewportX` only at drag/momentum settle points;
+- during a rapid reverse scroll, native content can move left before that React state updates;
+- `programmeVisibleContent(frame, readabilityViewportX)` previously interpreted a stale viewport already beyond a newly visible programme as if the entire programme were hidden, producing `visibleWidth: 0` and temporarily blanking its text;
+- this asymmetry mainly appears when scrolling back toward earlier times; forward scrolling does not create the same stale-ahead condition.
+
+PR #12 changes only this pure settled-readability calculation:
+- re-anchoring is applied only when the remembered viewport actually cuts through a programme frame;
+- if the remembered viewport is before the programme or already at/past its end, normal full content geometry is retained;
+- PR #9 remains responsible for the live partial-left edge title;
+- programme `left`/`width`, native inertia/bounce/directional lock, PR #11 time-axis mask, controls and detail behaviour are untouched.
+
+Regression tests explicitly cover a stale remembered viewport beyond the programme end and the exact end boundary.
+
+Technical evidence:
+- PR head `0f00e69b3fc7d5211e8522367a8217ce360b9649` passed PR CI #150 / run `34755583818` completely: install, strict TypeScript, lint, tests and iOS/Android/web Expo exports;
+- PR #12 merged to main as `b76edfab972b1d6194b2cbf1460515256de0e5c4`.
+
+PR #12 is technically accepted but still requires one focused physical iPhone validation because the defect was device-observed during native movement.
 
 ## Remaining Phase 1 work
-- physically validate PR #11: no partial left-edge time labels and frozen PR #9 programme-title behaviour restored during drag/momentum;
+- physically validate PR #12 with strong reverse and forward horizontal swipes: programme titles must no longer mass-blank during reverse movement, while PR #9 live edge readability and PR #11 atomic time-axis labels remain intact;
 - VoiceOver/screen-reader behaviour and live theme switching;
 - explicit progress/current-time accuracy checks;
 - Android gesture/back behaviour and release-like performance;
@@ -124,7 +149,7 @@ This is technical evidence only. PR #11 is not physically accepted until the foc
 - production EPG/logo/artwork rights/reliability, pricing/trial/paywall, production tokens/font licensing and final Tonight composition remain later gates.
 
 ## EXACT NEXT STEP
-**On the same iPhone, pull current `main` and restart Metro cleanly. Make one short screen recording focused on horizontal Guide movement. Confirm: (1) Teevee remains stable; (2) slowly scroll across several half-hour ticks and then fling with momentum — a label leaving on the left must never appear as a partial `:30`, `30`, hour fragment or other chopped text; (3) tick positions remain time-truthful with no timeline jump; (4) programme blocks keep their real position/width; (5) during both drag and momentum, the frozen PR #9 partial-left programme titles remain visible/coherent instead of disappearing until settle. Do not re-test Vandaag/Morgen/Nu or Programme Detail unless a spontaneous regression appears.**
+**On the same iPhone, pull current `main` and restart Metro cleanly. Make one short screen recording with at least one strong fling toward later times and one strong reverse fling back toward earlier times. Confirm: (1) Teevee remains stable; (2) programme titles remain rendered throughout reverse drag/momentum and do not mass-disappear in otherwise visible blocks; (3) the physically accepted PR #9 partial-left title remains coherent at the left edge; (4) the PR #11 time axis still never shows chopped `:30`/`30` fragments and ticks do not jump; (5) programme blocks retain their real position/width. Do not re-test Vandaag/Morgen/Nu or Programme Detail unless a spontaneous regression appears.**
 
 Owner checkout: `~/projects/teevee`. Test with: stop Metro using Control+C, run `git pull --ff-only`, then `npm run start:clean`, and reopen Expo Go.
 
