@@ -15,7 +15,7 @@ import Animated, {
 } from 'react-native-reanimated';
 import { scheduleOnRN } from 'react-native-worklets';
 
-import { programmeProgress } from '@/data/domain/epg';
+import { isProgrammeCurrent, programmeProgress } from '@/data/domain/epg';
 import { guideDayStart, GUIDE_TIME_ZONE } from '@/data/domain/guideTime';
 import { buildRuntimeGuideFixture, programmesForRuntimeChannel } from '@/data/fixtures/runtimeGuideFixture';
 import { useTeeveeTheme } from '@/theme/useTeeveeTheme';
@@ -342,8 +342,8 @@ export const GuideView = memo(function GuideView({ onSelectProgramme }: GuideVie
                       if (end < 0 || frame.left > width) return null;
                       const startMs = Date.parse(programme.startAt);
                       const endMs = Date.parse(programme.endAt);
-                      const isCurrent = nowMs >= startMs && nowMs < endMs;
-                      const progress = isCurrent ? programmeProgress(programme, new Date(nowMs)) : 0;
+                      const isCurrent = isProgrammeCurrent(programme, nowMs);
+                      const progress = isCurrent ? programmeProgress(programme, nowMs) : 0;
                       const contentMode = programmeContentMode(frame.width);
                       const horizontalPadding = contentMode === 'compact' ? 5 : 8;
                       const programmeTextWidth = Math.max(0, frame.width - horizontalPadding * 2);
@@ -377,7 +377,7 @@ export const GuideView = memo(function GuideView({ onSelectProgramme }: GuideVie
                                 style={[
                                   styles.progressFill,
                                   {
-                                    width: `${Math.round(progress * 100)}%`,
+                                    width: `${progress * 100}%`,
                                     backgroundColor: theme.colors.currentTime,
                                   },
                                 ]}
