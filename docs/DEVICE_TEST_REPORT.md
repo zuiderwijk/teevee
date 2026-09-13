@@ -1,6 +1,6 @@
 # Teevee Phase 1 — Device Test Report
 
-Bijgewerkt op **13 september 2026, 09:01 CEST — Europe/Amsterdam**. Exacte committijd staat in GitHub. Een groene CI of een test met gemockte native hosts is geen geslaagde toesteltest.
+Bijgewerkt op **13 september 2026, 09:12 CEST — Europe/Amsterdam**. Exacte committijd staat in GitHub. Een groene CI of een test met gemockte native hosts is geen geslaagde toesteltest.
 
 ## Toestel en versies
 - Eigen iPhone van de product owner; wifi; testperiode 11–13 september 2026.
@@ -70,24 +70,36 @@ Visueel toestelbewijs:
 
 Daarmee is de **gerichte grote-tekst/chrome-correctie fysiek geaccepteerd voor deze iPhone-test**.
 
-De screenshot bevestigt tegelijk opnieuw een reeds apart geregistreerd punt: programma-inhoud die horizontaal gedeeltelijk achter de vaste zenderrail ligt kan aan de linkerkant worden afgesneden. Voorbeelden in het beeld zijn een titel waarvan alleen het achterste deel zichtbaar is en een smal programmablok met `De...`. Dit is **geen regressie van PR #4** en blokkeert het afsluiten van deze grotere-tekstincrement niet; het wordt de eerstvolgende afzonderlijke readability-increment.
+De screenshot bevestigde tegelijk opnieuw het reeds apart geregistreerde punt dat programma-inhoud die horizontaal gedeeltelijk achter de vaste zenderrail ligt aan de linkerkant kan worden afgesneden. Dat was geen regressie van PR #4.
 
 De blauwe zwevende tandwielknop overlapt opnieuw delen van de UI, maar de herkomst is nog steeds niet vastgesteld en hij wordt niet als Teevee-productchrome beoordeeld.
+
+## Nieuwe correctie — gedeeltelijk links verborgen programma-inhoud
+PR #5 pakt uitsluitend dit afzonderlijke readability-punt aan. De echte EPG-geometrie wordt niet aangepast:
+- het programmablok behoudt zijn originele left-position en duur-gebaseerde breedte;
+- alleen de tekstinhoud krijgt na drag-/momentum-einde een viewport-afhankelijke inset wanneer de echte programmastart links buiten beeld ligt;
+- de tekstcontainer wordt beperkt tot de daadwerkelijk resterende zichtbare breedte zodat titel-ellipsis eerlijk blijft;
+- de starttijd wordt alleen getoond als er genoeg zichtbare breedte over is om de volledige tijd te tonen;
+- accessibility-labels blijven volledige titel, begin- en eindtijd bevatten;
+- de nieuwe readability-offset wordt niet op ieder scrollframe in React-state gezet, zodat de zware Guide niet op scrollfrequentie opnieuw hoeft te renderen.
+
+Geen wijziging aan `decelerationRate`, bounce, directional lock, dag/Nu-semantiek, programmadetail of swipe-dismissal.
 
 ## Technische verificatie
 - Eerste Dynamic Type-increment: PR #3 geïntegreerd als `da61b3cf10f8bf79e552f2b3eacdb289439810ce`; PR-CI #69 en main-CI #70 waren groen.
 - Documentatiestatus `a858525ac40c4c4807a6e1a9e0afa6fc77eadf9f`: CI #71 groen.
 - Grote-tekstcorrectie PR #4 exact head **`536de5b778725d2f91dba3f734c4efecd8d78028`**: **CI #74, run `34743728065`, geslaagd**.
-- PR #4 geïntegreerd op main als **`4f4fa94c6b1968ca03bb551fde9bb7ed376b2113`**.
-- Exacte main-integratie: **CI #75, run `34743812493`, geslaagd**. Installatie, strict TypeScript, lint, tests en iOS/Android/web Expo exports waren allemaal succesvol.
+- PR #4 geïntegreerd op main als **`4f4fa94c6b1968ca03bb551fde9bb7ed376b2113`**; main-CI #75 / run `34743812493` geslaagd.
+- Partial-left readability PR #5 exact head **`de308881e102b40d4f7739944b32c0c5e9e22888`**: **CI #86, run `34744460640`, geslaagd**.
+- PR #5 geïntegreerd op main als **`1e8aa125819472eb6ac76b0a41c0243973c4a003`**; **main-CI #87 / run `34744549991` geslaagd** met installatie, strict TypeScript, lint, tests en iOS/Android/web Expo exports.
 
-De 08:59-screenshot levert het ontbrekende fysieke bewijs voor de gecorrigeerde grote-tekstlayout; CI blijft alleen technisch bewijs.
+De 08:59-screenshot levert het fysieke bewijs voor de large-textcorrectie. De nieuwe partial-left tekstverankering heeft nog **geen** fysiek toestelbewijs; CI bewijst alleen code/buildintegriteit.
 
 ## Kernstatus Phase 1
 | Onderdeel | Status |
 |---|---|
 | App opent/rendert via Expo Go | Bevestigd in eerdere tests |
-| Horizontaal bereik / dagovergang / Nu | Kwalitatief akkoord; ongewijzigd |
+| Horizontaal bereik / dagovergang / Nu | Kwalitatief akkoord; settings ongewijzigd in PR #5 |
 | Verticale inertie/bounce | Kwalitatief akkoord; ongewijzigd |
 | Detail openen/respons | Kwalitatief akkoord |
 | Sluiten knop/achtergrond | Kwalitatief akkoord |
@@ -97,11 +109,22 @@ De 08:59-screenshot levert het ontbrekende fysieke bewijs voor de gecorrigeerde 
 | Zender-/programmarijalignment bij grote tekst | **Fysiek bevestigd** |
 | Detailinhoud + Sluiten bij grote tekst | **Fysiek bevestigd voor geteste inhoud** |
 | Gidsheader/daglabels/tijdas bij grote tekst | **Fysiek bevestigd na correctie** |
-| Deels verborgen programme-informatie achter zenderrail | **Open apart readability-punt; zichtbaar in 08:59 screenshot** |
+| Deels verborgen programme-informatie achter zenderrail | **Codecorrectie geïntegreerd en CI-groen; gerichte iPhone-hertest nodig** |
 | VoiceOver/screenreader | Open |
 | Themawisseling tijdens gebruik | Open |
 | Progress/current-time nauwkeurigheid | Open |
 | Android/release-achtige performance | Open |
 
+## Volgende gerichte iPhone-validatie
+Gebruik main **`1e8aa125819472eb6ac76b0a41c0243973c4a003`** of nieuwer. Na `git pull --ff-only` en `npm run start:clean`:
+
+1. Horizontaal scrollen tot een **langer** programmablok links gedeeltelijk achter de vaste zenderrail ligt.
+2. Vinger loslaten en eventuele momentumscroll volledig laten stoppen.
+3. Controleren dat het programmablok zelf niet springt of van breedte verandert, maar de titel in het zichtbare restant leesbaar begint.
+4. Als een starttijd zichtbaar is, moet die volledig leesbaar zijn; bij te weinig ruimte hoort hij te ontbreken in plaats van als fragment te verschijnen.
+5. Alleen melden als de eerder geaccepteerde horizontale scroll nu merkbaar springerig of anders aanvoelt.
+
+Een enkele screenshot **nadat de horizontale beweging volledig gestopt is** is voldoende. Geen uitgebreide herhaling van de overige reeds geaccepteerde flows nodig.
+
 ## Samenvatting
-**De grote-tekstincrement is op de iPhone fysiek gevalideerd: de eerder afgekapt weergegeven titel, daglabels en tijdas zijn na de correctie volledig leesbaar en de bestaande rij-uitlijning blijft intact. Het afzonderlijke probleem van programma-inhoud die tijdens horizontaal scrollen achter de vaste zenderrail wordt afgesneden blijft open en wordt de volgende readability-increment.**
+**Dynamic Type/chrome is fysiek geaccepteerd. Het afzonderlijke partial-left programme-readability-probleem is nu geometry-safe geïmplementeerd en technisch groen op main, maar heeft nog één gerichte iPhone-hertest nodig voordat ook deze increment kan worden geaccepteerd.**
