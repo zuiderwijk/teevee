@@ -11,6 +11,23 @@ Doel: een begrijpelijk chronologisch overzicht van substantiële wijzigingen, to
 
 ---
 
+## 13 september 2026, 11:19 CEST — PR #9 geïntegreerd; nieuwe iPhone-gate klaar
+
+### Technische afronding
+Na de 10:49-screenrecording is de PR #8 React-state overlay fysiek afgewezen en vervangen door PR #9 met UI-thread-gesynchroniseerde edge-geometrie.
+
+De eerste PR #9 implementation head **`ff39a16e717e5f89f57509d6b18b54b72e9d1d3a`** passeerde CI #125 volledig. Na het vastleggen van PROJECT_STATE, DEVICE_TEST_REPORT en DEVLOG passeerde ook de definitieve PR-head **`8a37cef550e0558a03d0876a356e295ff4ac424b`** **PR CI #128 / `34749068020`** volledig: installatie, strict TypeScript, lint, tests en iOS/Android/web Expo exports.
+
+De standaard GitHub merge-call gaf tweemaal een upstream 502 zonder de PR te wijzigen. Omdat main nog exact op de PR-base stond en de definitieve PR-head groen was, is main vervolgens non-force fast-forward naar **`8a37cef550e0558a03d0876a356e295ff4ac424b`** gezet. GitHub markeert PR #9 sindsdien als **merged**. De exacte main-SHA passeerde daarna **main CI #129 / `34749225666`** volledig.
+
+### Fysieke status
+Dit is nog geen toestelacceptatie. Zowel PR #6 als PR #8 hebben eerder aangetoond dat een volledig groene CI native/runtimeproblemen kan missen.
+
+### Volgende stap
+Op dezelfde iPhone current main binnenhalen en één korte screen recording maken waarin normale startup plus horizontale drag en momentum zichtbaar zijn. Te beoordelen: titel volgt de linker rand zonder lag, een oude edge stopt uiterlijk op zijn echte programma-einde en bedekt nooit de volgende uitzending, blokgeometrie blijft stabiel en scrollgevoel blijft natuurlijk.
+
+---
+
 ## 13 september 2026, 11:08 CEST — PR #8 fysiek afgewezen; PR #9 rebuilt met UI-thread synchronisatie
 
 ### Toestelbewijs uit screen recording
@@ -34,16 +51,11 @@ De edge-readability is opnieuw gebouwd in PR #9, nu met een andere verantwoordel
 
 Nieuwe pure tests dekken programmaboundaries en exacte switching-semantiek. De bestaande 48-zender Guide/detail-integratietest blijft actief met aangepaste Reanimated/workletmocks.
 
-### Technische verificatie
-PR #9 implementation head **`ff39a16e717e5f89f57509d6b18b54b72e9d1d3a`** passeerde **CI #125 / `34748926153`** volledig: installatie, strict TypeScript, lint, tests en iOS/Android/web Expo exports.
-
-Daarna zijn PROJECT_STATE, DEVICE_TEST_REPORT en dit DEVLOG bijgewerkt. Die documentatiecommits wijzigen de PR-head en vereisen daarom nog een finale CI voordat er gemerged wordt.
+### Technische verificatie op dit moment
+PR #9 implementation head **`ff39a16e717e5f89f57509d6b18b54b72e9d1d3a`** passeerde **CI #125 / `34748926153`** volledig. De finale integratie staat in de entry hierboven.
 
 ### Apart open punt
 De recording toont ook opnieuw een gedeeltelijk afgesneden tijdaslabel wanneer een tick precies aan de linker viewportgrens ligt. Dit is separaat van de stale-overlayfout en wordt pas aangepakt nadat PR #9 fysiek is beoordeeld.
-
-### Volgende stap
-Laat de finale PR #9-head CI volledig slagen; merge daarna naar main en bevestig exact-main CI. Pas daarna opnieuw een korte iPhone-screenrecording vragen voor startup, drag, momentum, geen stale overlap en ongewijzigd scrollgevoel.
 
 ---
 
@@ -75,7 +87,7 @@ Final PR-head **`35282fffc558115f60eded7534c4eb03266cf4f7`** passeerde **CI #120
 PR #8 is gesquasht naar main als **`1fbc4095ea50959f80a87db5db1f91905f46c2e2`**. De exacte merge passeerde ook **main-CI #121 / `34747935259`** volledig met dezelfde gates.
 
 ### Latere fysieke uitkomst
-Zie de entry hierboven: de 10:49-screenrecording toonde runtime-desynchronisatie tussen native scroll en React-overlay. PR #8 is daardoor alsnog fysiek afgewezen.
+Zie de 11:08-entry: de 10:49-screenrecording toonde runtime-desynchronisatie tussen native scroll en React-overlay. PR #8 is daardoor alsnog fysiek afgewezen.
 
 ---
 
@@ -146,7 +158,7 @@ Projectfoundation, deterministische EPG-fixture, Expo/React Native strict TypeSc
 ---
 
 ## Doorlopende open technische punten
-- PR #9 native-synced edge readability is technisch gebouwd maar wacht eerst op finale PR/main-CI en daarna fysieke iPhone-validatie.
+- PR #9 native-synced edge readability is geïntegreerd en technisch groen, maar wacht op fysieke iPhone-validatie.
 - Het linker time-axis ticklabel kan gedeeltelijk worden afgeknipt; separaat readability-punt.
 - Android gesture/back en release-achtige performance zijn nog niet fysiek gevalideerd.
 - VoiceOver/screenreader, live theme switching en expliciete current-time/progress-validatie staan open.
