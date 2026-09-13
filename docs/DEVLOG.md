@@ -16,6 +16,44 @@ Dit document is bedoeld voor product- en engineeringstakeholders, niet alleen vo
 
 ---
 
+## 13 september 2026, 07:36 CEST — Programmadetails naar beneden wegvegen
+
+Vastlegging gestart om 07:36 CEST (Europe/Amsterdam). Eerste codecommit `4e450141`, testcorrectie `26a733d5`; uitbreiding van de bundelcontrole `762f0f46` vastgelegd om 07:35:24 CEST. Exacte documentatie- en integratietijden staan in GitHub, PR #2.
+
+### Wat is veranderd
+De product owner noemt de verbeterde detailrespons "perfect" en bevestigt dat zowel Sluiten als tikken buiten het paneel werkt. Dat akkoord is vastgelegd. De gevraagde derde manier om te sluiten is toegevoegd: het detailpaneel naar beneden wegvegen.
+
+Het paneel volgt de vinger. Een kleine, afgebroken veeg laat het terugveren; een duidelijke neerwaartse veeg sluit. De knop en achtergrondtik blijven bestaan. Bij heropenen moet het paneel weer op de normale plek staan, terwijl de gids zijn tijd- en zenderpositie bewaart.
+
+### Waarom
+Wegvegen is een extra bediening voor hetzelfde detailpaneel, geen reden om het goedgekeurde scrollgedrag of de snellere detailrespons opnieuw te veranderen. We bewaken daarom ook annuleren, heropenen en de bestaande sluitroutes.
+
+### Technische details
+- Gebruik van reeds geïnstalleerde Gesture Handler 2, Reanimated 4 en Worklets. Geen packagewijziging en geen nieuwe gids-scrollbibliotheek.
+- Alleen een neerwaartse gesture activeert; horizontale/opwaartse start, multitouch en systeemannulering sluiten niet. Afstand is in logische punten; snelheid in punten per seconde.
+- Gedeelde animatiewaarden volgen de vinger zonder React-statusupdate per frame. De terugveer respecteert de systeeminstelling voor minder beweging.
+- Een geslaagde swipe gebruikt de bestaande native Modal-slide voor de exit. De reeds verplaatste positie blijft staan tijdens sluiten; geen tweede animatie en niet eerst terugspringen.
+- Een eigen GestureHandlerRootView binnen de modal ondersteunt Android's afzonderlijke modalvenster. Werkelijke Android-acceptatie blijft open.
+- Knop, achtergrondtik, toegankelijkheids-escape en native terugactie blijven beschikbaar. De memo-grens met de gids is ongewijzigd.
+- Pure drempeltests en React-integratietests uitgebreid voor volgen, annuleren, eenmaal sluiten, heropenen en behoud van de gidsrender/scrollhosts.
+- CI controleert voortaan ook iOS- en Android-bundels naast web, om native imports/worklets mee te bouwen. Dit is geen ondertekende native appbuild.
+
+Het huidige paneel heeft geen scrollbare tekstcontainer. Zodra die wordt toegevoegd, moet wegvegen op de header of de bovenrand van de tekstscroll worden afgestemd. Lezen mag niet onbedoeld tot sluiten leiden.
+
+### Verificatie
+Het eerdere detailwerk is geïntegreerd als `1211630` met geslaagde main-CI #56; daar is nu kwalitatief iPhone-akkoord bij gekomen. Er is nog geen native test van de nieuwe swipefunctie.
+
+De eerste swipe-PR-run #57 faalde bij TypeScript. De callbacktypes in de nieuwe testmock zijn expliciet gemaakt onder strict optional typing. **CI #58 voor `26a733d5` is geslaagd**: installatie, TypeScript, lint, tests en webexport. De uitgebreide iOS/Android/web-export en de documentatie-/integratieruns hebben afzonderlijke resultaten, die vóór overdracht worden gecontroleerd.
+
+De tests gebruiken echte React-componenten maar gemockte native hosts, shared values en gesture-events. Ze bewaken logica, niet het native veeggevoel, echte schermpositie, animatieduur of toegankelijkheid. De container kon GitHub niet klonen wegens DNS; er is geen lokale native runtime uitgevoerd.
+
+Bronnen voor de implementatie: [Gesture Handler 2 pan](https://docs.swmansion.com/react-native-gesture-handler/docs/2.x/gestures/pan-gesture/), [modal-root setup](https://docs.swmansion.com/react-native-gesture-handler/docs/2.x/fundamentals/installation/), [Reanimated spring](https://docs.swmansion.com/react-native-reanimated/docs/animations/withSpring/), [Worklets scheduleOnRN](https://docs.swmansion.com/react-native-worklets/docs/threading/scheduleOnRN/) en [Expo Reanimated](https://docs.expo.dev/versions/latest/sdk/reanimated/). Dit zijn API-bronnen, geen bewijs voor de gebruikerservaring van deze build.
+
+### Volgende stap
+Na groene integratie dezelfde iPhone hertesten: kort trekken/annuleren, naar beneden sluiten, opnieuw openen en sluiten via knop/achtergrond, met behoud van de gidspositie. Daarna verder met de overige leesbaarheids- en toegankelijkheidschecks binnen Phase 1.
+
+---
+
 ## 13 september 2026, 07:18 CEST — Detailweergave losgemaakt van het zware gidswerk
 
 Codeversie `85e3d408cfbbe73c0f7402baadaae22089650f92` vastgelegd om **07:18:07 CEST (Europe/Amsterdam)**. De eerste implementatie staat in `7ab9b73`; het resultaat is hieronder aangevuld na de geslaagde PR-controle. De exacte tijd van de documentatiecommit staat in GitHub.
