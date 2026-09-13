@@ -1,4 +1,4 @@
-import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { memo, useEffect, useMemo, useRef, useState } from 'react';
 import {
   Pressable,
   SafeAreaView,
@@ -8,13 +8,7 @@ import {
   useWindowDimensions,
   View,
 } from 'react-native';
-import Animated, {
-  type SharedValue,
-  useAnimatedScrollHandler,
-  useAnimatedStyle,
-  useSharedValue,
-} from 'react-native-reanimated';
-import { scheduleOnRN } from 'react-native-worklets';
+import Animated, { type SharedValue, useAnimatedStyle, useSharedValue } from 'react-native-reanimated';
 
 import { programmeProgress } from '@/data/domain/epg';
 import { guideDayStart, GUIDE_TIME_ZONE } from '@/data/domain/guideTime';
@@ -134,12 +128,12 @@ export const GuideView = memo(function GuideView({ onSelectProgramme }: GuideVie
   const layout = useMemo(() => guideLayoutForFontScale(fontScale), [fontScale]);
   const horizontalRef = useRef<ScrollView>(null);
   const channelRef = useRef<ScrollView>(null);
+  const visibleDayOffsetRef = useRef(0);
+  const dayJumpTargetXRef = useRef<number | null>(null);
   const [initialNow] = useState(() => Date.now());
   const runtimeFixture = useMemo(() => buildRuntimeGuideFixture(initialNow), [initialNow]);
   const [dayOffset, setDayOffset] = useState(0);
   const readabilityViewportX = useSharedValue(0);
-  const visibleDayOffset = useSharedValue(0);
-  const dayJumpTargetX = useSharedValue(-1);
   const nowMs = useGuideClock();
 
   const windowStart = useMemo(
@@ -157,69 +151,29 @@ export const GuideView = memo(function GuideView({ onSelectProgramme }: GuideVie
   const tomorrowStart = useMemo(() => guideDayStart(initialNow, 1), [initialNow]);
   const guideHeight = runtimeFixture.channels.length * layout.rowHeight;
 
-  const updateDayOffsetFromScroll = useCallback((nextOffset: number) => {
-    setDayOffset((currentOffset) => (currentOffset === nextOffset ? currentOffset : nextOffset));
-  }, []);
-
-  const horizontalScrollHandler = useAnimatedScrollHandler(
-    {
-      onBeginDrag: () => {
-        dayJumpTargetX.value = -1;
-      },
-      onScroll: (event) => {
-        const viewportX = Math.max(0, event.contentOffset.x);
-        readabilityViewportX.value = viewportX;
-
-        if (dayJumpTargetX.value >= 0) {
-          if (Math.abs(viewportX - dayJumpTargetX.value) <= 1) {
-            dayJumpTargetX.value = -1;
-          }
-          return;
-        }
-
-        const visibleTime = windowStart + (viewportX / layout.minuteWidth) * 60_000;
-        const nextOffset = visibleTime >= tomorrowStart ? 1 : 0;
-        if (visibleDayOffset.value !== nextOffset) {
-          visibleDayOffset.value = nextOffset;
-          scheduleOnRN(updateDayOffsetFromScroll, nextOffset);
-        }
-      },
-      onMomentumEnd: (event) => {
-        dayJumpTargetX.value = -1;
-        const viewportX = Math.max(0, event.contentOffset.x);
-        readabilityViewportX.value = viewportX;
-        const visibleTime = windowStart + (viewportX / layout.minuteWidth) * 60_000;
-        const nextOffset = visibleTime >= tomorrowStart ? 1 : 0;
-        if (visibleDayOffset.value !== nextOffset) {
-          visibleDayOffset.value = nextOffset;
-          scheduleOnRN(updateDayOffsetFromScroll, nextOffset);
-        }
-      },
-    },
-    [layout.minuteWidth, tomorrowStart, updateDayOffsetFromScroll, windowStart],
-  );
+  const syncDayFromViewport = (viewportX: number) => {
+    const visibleTime = windowStart + (viewportX / layout.minuteWidth) * 60_000;
+    const nextOffset = visibleTime >= tomorrowStart ? 1 : 0;
+    if (visibleDayOffsetRef.current !== nextOffset) {
+      visibleDayOffsetRef.current = nextOffset;
+      setDayOffset(nextOffset);
+    }
+  };
 
   useEffect(() => {
     const initialX = Math.max(0, timeToX(initialNow, windowStart, layout.minuteWidth) - 120);
     readabilityViewportX.value = initialX;
-    visibleDayOffset.value = 0;
-    dayJumpTargetX.value = -1;
+    visibleDayOffsetRef.current = 0;
+    dayJumpTargetXRef.current = null;
     const frame = requestAnimationFrame(() => horizontalRef.current?.scrollTo({ x: initialX, animated: false }));
     return () => cancelAnimationFrame(frame);
-  }, [
-    dayJumpTargetX,
-    initialNow,
-    layout.minuteWidth,
-    readabilityViewportX,
-    visibleDayOffset,
-    windowStart,
-  ]);
+  }, [initialNow, layout.minuteWidth, readabilityViewportX, windowStart]);
 
   const jumpToNow = () => {
     const x = Math.max(0, timeToX(Date.now(), windowStart, layout.minuteWidth) - 120);
     setDayOffset(0);
-    visibleDayOffset.value = 0;
-    dayJumpTargetX.value = x;
+    visibleDayOffsetRef.current = 0;
+    dayJumpTargetXRef.current = x;
     horizontalRef.current?.scrollTo({ x, animated: true });
   };
 
@@ -229,8 +183,8 @@ export const GuideView = memo(function GuideView({ onSelectProgramme }: GuideVie
     const targetTime = nextOffset === 0 ? windowStart : tomorrowStart;
     const x = Math.max(0, timeToX(targetTime, windowStart, layout.minuteWidth));
     setDayOffset(nextOffset);
-    visibleDayOffset.value = nextOffset;
-    dayJumpTargetX.value = x;
+    visibleDayOffsetRef.current = nextOffset;
+    dayJumpTargetXRef.current = x;
     horizontalRef.current?.scrollTo({ x, animated: true });
   };
 
@@ -329,7 +283,7 @@ export const GuideView = memo(function GuideView({ onSelectProgramme }: GuideVie
           </ScrollView>
         </View>
 
-        <Animated.ScrollView
+        <ScrollView
           testID="guide-time-scroll"
           ref={horizontalRef}
           horizontal
@@ -338,7 +292,27 @@ export const GuideView = memo(function GuideView({ onSelectProgramme }: GuideVie
           decelerationRate="normal"
           showsHorizontalScrollIndicator={false}
           scrollEventThrottle={16}
-          onScroll={horizontalScrollHandler}
+          onScrollBeginDrag={() => {
+            dayJumpTargetXRef.current = null;
+          }}
+          onScroll={(event) => {
+            const viewportX = Math.max(0, event.nativeEvent.contentOffset.x);
+            readabilityViewportX.value = viewportX;
+
+            const jumpTarget = dayJumpTargetXRef.current;
+            if (jumpTarget !== null) {
+              if (Math.abs(viewportX - jumpTarget) <= 1) dayJumpTargetXRef.current = null;
+              return;
+            }
+
+            syncDayFromViewport(viewportX);
+          }}
+          onMomentumScrollEnd={(event) => {
+            const viewportX = Math.max(0, event.nativeEvent.contentOffset.x);
+            readabilityViewportX.value = viewportX;
+            dayJumpTargetXRef.current = null;
+            syncDayFromViewport(viewportX);
+          }}
         >
           <View style={{ width }}>
             <View
@@ -467,7 +441,7 @@ export const GuideView = memo(function GuideView({ onSelectProgramme }: GuideVie
               </View>
             </ScrollView>
           </View>
-        </Animated.ScrollView>
+        </ScrollView>
       </View>
     </SafeAreaView>
   );
