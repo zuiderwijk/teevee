@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import { guideFixture } from '../fixtures/guideFixture';
-import { programmeDurationMinutes, programmeProgress } from './epg';
+import { isProgrammeCurrent, programmeDurationMinutes, programmeProgress } from './epg';
 
 describe('Guide fixture', () => {
   it('contains realistic multi-channel data covering at least 48 hours', () => {
@@ -28,7 +28,7 @@ describe('Guide fixture', () => {
   });
 });
 
-describe('programme geometry helpers', () => {
+describe('programme timing helpers', () => {
   const programme = {
     id: 'test',
     channelId: 'channel-1',
@@ -36,14 +36,29 @@ describe('programme geometry helpers', () => {
     endAt: '2026-09-11T19:00:00.000Z',
     title: 'Test',
   };
+  const start = Date.parse(programme.startAt);
+  const end = Date.parse(programme.endAt);
 
   it('calculates duration in minutes', () => {
     expect(programmeDurationMinutes(programme)).toBe(60);
   });
 
-  it('clamps progress before, during and after broadcast', () => {
-    expect(programmeProgress(programme, new Date('2026-09-11T17:00:00.000Z'))).toBe(0);
-    expect(programmeProgress(programme, new Date('2026-09-11T18:30:00.000Z'))).toBe(0.5);
-    expect(programmeProgress(programme, new Date('2026-09-11T20:00:00.000Z'))).toBe(1);
+  it('uses start-inclusive and end-exclusive current-programme semantics', () => {
+    expect(isProgrammeCurrent(programme, start - 1)).toBe(false);
+    expect(isProgrammeCurrent(programme, start)).toBe(true);
+    expect(isProgrammeCurrent(programme, end - 1)).toBe(true);
+    expect(isProgrammeCurrent(programme, end)).toBe(false);
+  });
+
+  it('clamps progress exactly at programme boundaries', () => {
+    expect(programmeProgress(programme, start - 1)).toBe(0);
+    expect(programmeProgress(programme, start)).toBe(0);
+    expect(programmeProgress(programme, start + 30 * 60_000)).toBe(0.5);
+    expect(programmeProgress(programme, end)).toBe(1);
+    expect(programmeProgress(programme, end + 1)).toBe(1);
+  });
+
+  it('keeps Date input compatibility for callers outside the Guide', () => {
+    expect(programmeProgress(programme, new Date(start + 15 * 60_000))).toBe(0.25);
   });
 });
