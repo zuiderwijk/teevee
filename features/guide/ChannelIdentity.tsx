@@ -34,7 +34,7 @@ export const ChannelIdentity = memo(function ChannelIdentity({
       ) : null}
       <Text
         numberOfLines={1}
-        ellipsizeMode="tail"
+        ellipsizeMode={showLogo ? 'tail' : 'middle'}
         style={[
           styles.name,
           showLogo ? styles.nameWithLogo : null,
