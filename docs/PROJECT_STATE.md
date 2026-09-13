@@ -154,6 +154,7 @@ CI history:
 - PR CI #139 / run **`34750401708`**: install, typecheck, lint and the new pure time-axis tests passed, but the Guide integration test failed because its test-only Reanimated mock did not expose `Animated.Text`; Expo export was therefore skipped. This was a test-harness defect, not a runtime failure.
 - After adding `Animated.Text` to that mock, final implementation head **`efeedc08d3a6c50f3ef3fc9f119e8da5e3860b2b`** passed PR CI #140 / run **`34750478071`** completely: install, strict TypeScript, lint, all **75 tests**, and iOS/Android/web Expo exports.
 - GitHub's merge write timed out at the connector response layer, but the squash write itself landed on `main` as **`b18e0b0e153f17b417dd13dd4a3ff02a45157b45`**. PR metadata still showed open immediately afterwards; this is administrative metadata drift, not missing code.
+- The fully documented current-main state at **`d0328898f07269fea2bfe1c9968e70ca15d9d6b3`** passed main CI #143 / run **`34750669530`** completely: install, strict TypeScript, lint, all tests and iOS/Android/web Expo exports.
 
 PR #10 is **technically accepted but not yet physically accepted**. Because the change adds animated text nodes and PR #6 previously exposed a device-only native failure after green CI, one focused iPhone validation remains mandatory.
 
