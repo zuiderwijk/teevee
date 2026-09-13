@@ -26,6 +26,17 @@ export function buildRuntimeGuideFixture(nowMs = Date.now()): GuideFixture {
   };
 }
 
+/**
+ * Runtime fixture days are relative labels: today + tomorrow. Rebuild as soon
+ * as the Amsterdam calendar day changes so those labels and the finite horizon
+ * cannot remain anchored to yesterday after midnight or a long background.
+ */
+export function runtimeGuideFixtureNeedsRefresh(fixture: GuideFixture, nowMs: number): boolean {
+  const generatedAtMs = Date.parse(fixture.generatedAt);
+  if (!Number.isFinite(generatedAtMs)) return true;
+  return guideDayStart(generatedAtMs) !== guideDayStart(nowMs);
+}
+
 export function programmesForRuntimeChannel(fixture: GuideFixture, channelId: string) {
   return fixture.programmes.filter((programme) => programme.channelId === channelId);
 }
