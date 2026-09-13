@@ -11,6 +11,42 @@ Doel: een begrijpelijk chronologisch overzicht van substantiële wijzigingen, to
 
 ---
 
+## 13 september 2026, 14:42 CEST — PR #13 fysiek geaccepteerd; PR #14 post-scroll latencyfix geïntegreerd
+
+### PR #13 toestelbewijs
+De product owner bevestigt na de gerichte VoiceOver-test:
+- focus-/traversalvolgorde is goed;
+- een programmebutton wordt uitgesproken als `NPO 1, titel, 14:00 tot 15:00`;
+- de VoiceOver twee-vinger-scrub sluit Programme Detail.
+
+`ScreenRecording_09-13-2026 14-28-46_1.MP4` (43,75 s, 1170×2532) bevestigt daarnaast live system-theme switching: de Guide schakelt licht → donker → licht zonder reload en de interface/statusbar reageren ook wanneer Programme Detail geopend is.
+
+Daarmee is **PR #13 fysiek geaccepteerd** voor de VoiceOver- en live-theme-doelstelling.
+
+### Nieuwe performancebevinding
+Dezelfde sessie levert nieuw regressiebewijs voor één eerder als snel ervaren flow: kort na horizontaal tijdscrollen opent Programme Detail merkbaar later dan wanneer de Guide even stilstaat. Frame-review van bemonsterde openingsmomenten laat grofweg **0,7–0,9 s** zien tussen duidelijke press-reactie en het zichtbaar starten van de modalpresentatie na recente horizontale beweging.
+
+Code-audit vond een plausibele JS-queuebron: horizontale `onScroll` bridge-te met `scrollEventThrottle={16}` ieder scrollframe via `scheduleOnRN(...)` naar JS. Programme selection/detail-state heeft diezelfde JS-thread nodig.
+
+### PR #14 — per-frame horizontal JS bridge verwijderd
+PR #14 houdt de bestaande native/UI-thread scrollarchitectuur intact maar verwijdert die per-frame JS-hop:
+- `scrollX` blijft ieder frame op de UI-thread updaten voor PR #9 edge-readability en PR #11 time-axis mask;
+- `Vandaag/Morgen` wordt met een UI-thread reaction afgeleid en bridge-t alleen bij een echte daggrenswijziging;
+- `onEndDrag`/`onMomentumEnd` bridge-en nog eenmaal voor settled readability/end-state;
+- expliciete `Vandaag`, `Morgen` en `Nu` acties blijven React state direct bijwerken;
+- inertia, bounce, directional lock, `decelerationRate`, programme geometry, PR #9/#11/#12, detailmodal/gesturecode en verticale sync zijn niet gewijzigd;
+- `guideDayOffsetForViewport` heeft unit coverage rond de daggrens.
+
+### CI en integratie
+PR-head **`33bcb83381f575a0f1a22cc4a571f4325a957582`** passeerde **PR CI #163 / `34757663408`** volledig: install, strict TypeScript, lint, tests en iOS/Android/web Expo exports.
+
+PR #14 is gesquasht naar main als **`e7f45a04544106803b2f49fe4e086d304bf061c8`**. Exact die gemergde code passeerde daarna ook **main CI #164 / `34757796962`** volledig.
+
+### Volgende stap
+Op dezelfde iPhone één korte A/B-opname maken: (A) duidelijke horizontale fling en vrijwel direct een programma aantikken; (B) Guide circa 2 seconden stil laten staan en een ander programma aantikken. De detailpresentatie in A mag geen duidelijke extra wachttijd meer hebben ten opzichte van B. Daarnaast één keer handmatig de Vandaag→Morgen-grens passeren en bevestigen dat selected day correct wisselt. Algemene scrollphysics alleen heropenen bij spontane regressie.
+
+---
+
 ## 13 september 2026, 14:16 CEST — PR #13 accessibility/theme technisch afgerond
 
 ### Product-/gebruikerseffect
@@ -206,7 +242,7 @@ Projectfoundation, deterministische EPG-fixture, Expo/React Native strict TypeSc
 ---
 
 ## Doorlopende open technische punten
-- PR #13 VoiceOver/live-theme is technisch groen; alleen de gerichte native iPhone-gate staat open.
+- PR #14 post-scroll Programme Detail latency is technisch groen; alleen de gerichte iPhone A/B-validatie staat open.
 - Android gesture/back en release-achtige performance zijn nog niet fysiek gevalideerd.
 - Expliciete current-time/progress-validatie staat open.
 - Finite fixture lifecycle rond resume na middernacht/expiry staat open.
