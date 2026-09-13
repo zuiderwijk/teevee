@@ -11,6 +11,32 @@ Doel: een begrijpelijk chronologisch overzicht van substantiële wijzigingen, to
 
 ---
 
+## 13 september 2026, 17:06 CEST — Startup hersteld; deferred Nu & Straks opent fysiek op iPhone
+
+De eerdere Phase 1B-startupregressie is nu voldoende geïsoleerd om de productgate terug te brengen naar interactieacceptatie.
+
+### Fysiek toestelbewijs
+Na PR #22 bevestigde de product owner op de beschikbare iPhone dat Teevee weer normaal start zonder de eerdere React Native-redbox. Daarmee is de fysiek bewezen Totaal + Per zender startup boundary hersteld.
+
+PR #23 introduceerde Nu & Straks vervolgens opnieuw via deferred module loading: `NowNextGuideView` wordt pas geëvalueerd wanneer de tijdelijke Phase 1B-control expliciet naar Nu & Straks schakelt. De owner bevestigde daarna op current `main` dat **Nu & Straks daadwerkelijk opent op de iPhone**.
+
+Daarmee is aangetoond dat de Nu & Straks-module niet algemeen onbruikbaar is: hij kan na startup succesvol evalueren en renderen. De eerdere fout blijft geïsoleerd tot de startup/module-evaluation route of een timing/cache-interactie daarin. Om die reden blijft deferred loading voorlopig de geaccepteerde Phase 1B-integratiegrens; de statische startup-import wordt niet hersteld zonder apart bewijs.
+
+### PR #22 en #23
+- PR #22: statische `NowNextGuideView`-import uit de startup-modulegraph gehaald; clean startup fysiek bevestigd.
+- PR #23: Nu & Straks deferred geladen en load failure diagnostisch inline gemaakt zonder Totaal/Per zender onbruikbaar te maken.
+- PR #23 quality was vóór merge volledig groen: `npm ci`, strict TypeScript, lint, tests en iOS/Android/web exports.
+- PR #23 is gemerged naar `main` als `c3ee101ea29e60d0b5b1ae88cde86191f5ba4bab`.
+- Exact-main CI #209 liep nog op het moment van deze entry; geen Android-deviceacceptatie wordt hieruit afgeleid.
+
+### Conclusie
+De **startup + deferred module-load gate is gesloten op iPhone**. Nu & Straks zelf is nog niet als interaction model geaccepteerd. De actieve gate bestaat uit live/browse tijdrail, stabiele verticale zenderpositie, `Nu`, `Primetime`, Programme Detail round-trip, mixed gestures, dark mode en representatieve grotere tekst. De resterende Per zender-controls/detail/theme checks kunnen in dezelfde sessie mee.
+
+### Volgende stap
+Eén gerichte iPhone-interactiesessie in Nu & Straks. Alleen op concrete toestelbevindingen itereren. Als Nu & Straks én de resterende Per zender-checks overtuigend zijn, kan Phase 1B worden afgesloten en volgt Phase 2 App Shell.
+
+---
+
 ## 13 september 2026, 16:34 CEST — Per zender kern fysiek bewezen; Nu & Straks gebouwd en gemerged
 
 De product owner leverde `ScreenRecording_09-13-2026 16-16-00_1.MP4` van de eerste **Per zender**-sessie op iPhone. De opname sluit de belangrijkste architectuur-/gesturevraag voldoende om Phase 1B door te zetten zonder eerst ieder secundair controlepunt af te wachten.
@@ -219,7 +245,7 @@ Projectfoundation, deterministische EPG-fixture, Expo/React Native strict TypeSc
 ---
 
 ## Doorlopende open technische punten
-- **Nu & Straks:** technisch gemerged; fysieke iPhone interaction acceptance is de actuele primaire gate.
+- **Nu & Straks:** startup en deferred module-load fysiek bevestigd op iPhone; interaction acceptance is nu de actuele primaire gate.
 - **Per zender:** kern gesture/time-anchor fysiek bewezen; directe zenderstrip, dag/Nu, Programme Detail round-trip en theme/text restchecks combineren met dezelfde sessie.
 - Android system/hardware Back, nested gestures en realistische performance fysiek valideren zodra een geschikt Android-toestel/interactive environment beschikbaar is; native compile-CI is geen toestelacceptatie.
 - Release-like performance buiten Expo Go valideren wanneer een geschikte build/device beschikbaar is.
