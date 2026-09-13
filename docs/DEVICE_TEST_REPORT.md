@@ -1,122 +1,93 @@
 # Teevee Phase 1 — Device Test Report
 
-Bijgewerkt op **13 september 2026, 09:34 CEST — Europe/Amsterdam**. Exacte committijd staat in GitHub. Een groene CI of een test met gemockte native hosts is geen geslaagde toesteltest.
+Bijgewerkt op **13 september 2026, 10:08 CEST — Europe/Amsterdam**. Exacte committijd staat in GitHub. Een groene CI of bundle-export is geen geslaagde toesteltest.
 
 ## Toestel en versies
 - Eigen iPhone van de product owner; wifi; testperiode 11–13 september 2026.
 - Model, iOS-versie, Expo Go-versie en exacte lokale SHA zijn nog niet genoteerd.
-- Scrollbaseline, detailrespons en gerichte swipe-dismiss-wijzigingenset zijn eerder kwalitatief geaccepteerd op dit toestel.
+- Scrollbaseline, detailrespons en swipe-down dismissal zijn eerder kwalitatief geaccepteerd op dit toestel.
 
 ## Reeds geaccepteerde interactiebaseline
 De product owner heeft eerder met **"perfect"** gereageerd op gerichte hertests van:
 - standaard platforminertie, doorlopende tijdlijn, dagovergang en geanimeerde `Nu`;
-- detailrespons na render-isolatie, inclusief sluiten met knop en buiten het paneel;
-- swipe-down dismissal als gerichte wijzigingenset, inclusief korte trek/terugveer en heropenen.
+- detailrespons, sluiten met knop en buiten het paneel;
+- swipe-down dismissal.
 
-Dit zijn kwalitatieve bevestigingen, geen timings, framerates of volledige randgevalmetingen. Heropen deze instellingen niet zonder concreet regressiesignaal.
+Heropen deze instellingen niet zonder concreet regressiesignaal.
 
-## Dark-modebeelden — eerder ontvangen en beoordeeld
-De gebruiker leverde de Guide met geopende details en de Guide zonder dimlaag aan. De beelden zijn beoordeeld; vraag ze niet opnieuw op.
+## Dark mode en grotere systeemtekst
+De eerder aangeleverde dark-mode Guide- en detailbeelden zijn beoordeeld; vraag ze niet opnieuw op. Dark mode is visueel bruikbaar, maar formele contrastmeting en screenreaderbewijs staan nog open.
 
-Vastgelegde bevindingen:
-- dark mode vormt een bruikbare visuele basis; hoofdtekst en programmavlakken zijn duidelijk van de achtergrond te onderscheiden;
-- titel, beschrijving en `Sluiten` waren in het getoonde detail zichtbaar; het handvat was subtiel;
-- lange synthetische zendernamen braken in de oude layout midden in woorden;
-- bij deels horizontaal uit beeld geschoven programmablokken konden beginletters en delen van tijden achter de vaste zenderkolom verdwijnen;
-- de linkerste tijdasmarkering kan gedeeltelijk worden afgesneden;
-- een screenshot in een toekomstig tijdvak is geen afzonderlijk bewijs voor current-time/progressnauwkeurigheid;
-- een blauw zwevend tandwiel in screenshots heeft onbekende herkomst en wordt niet als Teevee-UI geïnterpreteerd.
+Bij duidelijk vergrote systeemtekst vond de eerste test clipping in `Gids` en daglabels. PR #4 corrigeerde dit. De hertest om **08:59** bevestigde op dezelfde iPhone:
+- `Gids`, `Nu`, daglabels en tijdas volledig zichtbaar;
+- zenderrail en programmarijen uitgelijnd;
+- programmatitels zonder eerdere line-height clipping;
+- programmadetail plus `Sluiten` bereikbaar.
 
-Het afzonderlijke TVgids.nl-beeld van Nu & Straks is een interactiereferentie, geen Teevee-toesteltest.
-
-## Grotere systeemtekst — 08:44 en 08:59
-De eerste Dynamic Type-versie is op dezelfde iPhone getest met systeemtekst duidelijk groter dan normaal. De 08:44-test bevestigde zender/programmarij-uitlijning en bereikbaarheid van programmadetail inclusief `Sluiten`, maar vond drie concrete layoutproblemen: `Gids` werd verticaal afgesneden, daglabels ellipsten en Guide-chrome/tijdas hielden te weinig leesruimte over.
-
-PR #4 corrigeerde die layout zonder scrollinertie, bounce, directional lock, detailmodal of swipe-dismissal te wijzigen. De hertest om **08:59** bevestigde fysiek:
-- `Gids` volledig zichtbaar;
-- `Nu` volledig zichtbaar;
-- beide daglabels volledig leesbaar;
-- tijdaslabels zoals `08:30`, `09:00`, `09:30` volledig leesbaar;
-- zenderrail en programmarijen nog steeds uitgelijnd;
-- geen eerdere verticale line-height-clipping meer in programmatitels.
-
-Daarmee is de gerichte grote-tekst/chrome-correctie fysiek geaccepteerd op deze iPhone. Omdat de geteste detailinhoud bereikbaar bleef, is er op basis van dit bewijs geen reden om ProgrammeDetail nu al intern scrollbaar te maken.
+De gerichte large-text/chrome-correctie is daarmee fysiek geaccepteerd.
 
 ## Partial-left programme-readability — PR #5
-De 08:59-screenshot bevestigde ook het aparte probleem dat de begintekst van een programma kan verdwijnen wanneer de echte programmastart links achter de vaste zenderrail ligt.
+PR #5 houdt programmageometrie eerlijk terwijl titel/tijd na een horizontale beweging naar het resterende zichtbare deel kan worden verankerd. Startpositie en duur-gebaseerde blokbreedte veranderen niet; een starttijd wordt verborgen wanneer hij niet volledig past.
 
-PR #5 maakte dat geometry-safe:
-- het programmablok behoudt de echte startpositie en duur-gebaseerde breedte;
-- alleen innerlijke titel/tijd-inhoud kan naar het zichtbare restant worden verankerd;
-- de tekstcontainer gebruikt alleen de resterende zichtbare breedte, zodat ellipsis eerlijk blijft;
-- een starttijd wordt niet getoond wanneer hij niet volledig past;
-- accessibility-labels behouden volledige titel, begin- en eindtijd.
+De 09:20 iPhone-test bevestigde dat dit pas **na loslaten/settlen** gebeurt. De product owner wil uiteindelijk dat de titel al tijdens drag en momentum meebeweegt. Dat blijft een open requirement.
 
-Technisch was PR #5 groen: head `de308881e102b40d4f7739944b32c0c5e9e22888`, CI #86 / run `34744460640`; merge `1e8aa125819472eb6ac76b0a41c0243973c4a003`, main-CI #87 / run `34744549991`.
+Dezelfde 09:20-test legde twee extra eisen vast:
+- expliciete Vandaag/Morgen-selectie moet direct visueel actief worden;
+- **Vandaag · Morgen · Nu** hoort altijd op één regel te staan, met `Morgen` als compact zichtbaar label en slechts lokaal begrensde font scaling voor deze controls.
 
-## Gerichte iPhone-hertest — 09:20 screenshot
-De product owner testte PR #5 en leverde een screenshot met beeldtijd **09:20** plus drie concrete observaties.
+## PR #6 — technisch groen, fysiek afgewezen
+PR #6 probeerde alle drie de 09:20-eisen tegelijk te implementeren met per-programme Reanimated animated styles en een gedeelde viewportwaarde.
 
-1. **Titelverankering is te laat.** Wanneer een programmanaam achter de vaste zenderrail scrollt, komt de titel pas opnieuw in het zichtbare restant wanneer de vinger wordt losgelaten / de oude settled-update plaatsvindt. Producteis: de innerlijke programme-inhoud moet **tijdens de swipe en momentumbeweging continu** met de zichtbare viewport meebewegen. Het programmablok zelf mag nog steeds niet verschuiven of van breedte veranderen.
-2. **Actieve dagstatus reageert niet goed genoeg op expliciete selectie.** Bij het klikken van Vandaag naar de volgende dag bleef de zwarte actieve-buttonstatus niet betrouwbaar/immediately synchroon met de gekozen dag. Producteis: een expliciete dagtap moet meteen de geselecteerde visuele state tonen; handmatig horizontaal browsen mag de actieve dag daarna nog steeds uit de zichtbare tijd afleiden.
-3. **Primaire tijdnavigatie moet één regel blijven.** De eigenaar wil `Vandaag`, `Morgen` en `Nu` altijd op één horizontale regel. De compacte control-labels mogen daarom lokaal begrensd schalen zodat deze rij niet verticaal uiteenvalt. `Morgen` vervangt de weekday/date als visueel label; de werkelijke datum blijft via accessibility-context beschikbaar.
+Hoewel PR-CI #92 en main-CI #93 groen waren, gaf de eerste fysieke iPhone-start een **wit scherm gevolgd door een Expo Go-crash**. Daarmee is PR #6 fysiek afgewezen. De exacte native oorzaak is niet bewezen; de zware per-programme animation/worklet-opzet over de 48-zenderfixture is een belangrijke verdachte.
 
-De screenshot liet daarnaast zien dat de eerder gecorrigeerde grote-tekstbasis nog bruikbaar bleef. De blauwe zwevende tandwielknop is opnieuw zichtbaar maar blijft van onbekende herkomst en wordt niet als Teevee-productchrome beoordeeld.
+## Rollback — fysiek hersteld
+Main is met rollbackcommit **`f7c9f73568341d29e518be21e0de071e4ef7877d`** teruggebracht naar de PR #5-runtimebaseline.
 
-PR #5 is op basis van deze hertest dus **niet als finale partial-left-interactie geaccepteerd**; de geometry-safe basis blijft wel bruikbaar.
+De product owner heeft daarna expliciet bevestigd: **Teevee opent weer normaal**. Dit is het fysieke bewijs dat de rollback de startup-regressie heeft verwijderd.
 
-## PR #6 — live title movement + one-row controls
-PR #6 corrigeert de drie 09:20-bevindingen zonder de echte EPG-geometrie of geaccepteerde scrollinstellingen te veranderen:
-- de bestaande horizontale `onScroll`-eventstroom zet de actuele viewportpositie in een Reanimated shared value;
-- de innerlijke programme-title/tijdcontainer gebruikt animated styles en volgt die viewportpositie continu tijdens drag en momentum, zonder viewport-x op elk frame in React state te zetten;
-- de starttijd verdwijnt live zodra onvoldoende zichtbare breedte overblijft voor een complete tijd;
-- een expliciete Vandaag/Morgen-tap zet de actieve day-state onmiddellijk en beschermt die tijdens de eigen animated jump tegen een tijdelijke terug-flip;
-- `Vandaag`, `Morgen` en `Nu` staan op één rij;
-- uitsluitend de compacte labels van deze drie controls hebben `maxFontSizeMultiplier=1.2`; de Guide-content zelf blijft Dynamic Type volgen;
-- `Morgen` exposeert voor accessibility ook de echte datum.
+## PR #7 — veilige controlherimplementatie
+Na het herstelde startupbewijs zijn alleen de controlwijzigingen opnieuw gebouwd, zonder nieuwe Reanimated/workletlogica:
+- Vandaag, Morgen en Nu staan op één horizontale regel;
+- alleen deze compacte labels hebben `maxFontSizeMultiplier=1.2`;
+- Morgen is zichtbaar compact; de werkelijke datum zit in het accessibility-label;
+- Vandaag/Morgen worden direct geselecteerd na tap en blijven tijdens hun eigen animated jump beschermd tegen tijdelijke tussenliggende scroll-state;
+- Nu keert terug naar vandaag/current time;
+- PR #5 programme-readability blijft verder ongewijzigd en beweegt dus nog niet live tijdens de swipe.
 
-### Technische verificatie
-De eerste PR #6 CI-run **#91 / `34745304913`** vond een test-harnessprobleem: de eerste variant gebruikte `useAnimatedScrollHandler`, terwijl de bestaande Reanimated mock die export niet bevatte. Typecheck en lint waren al groen; twee integratietests faalden op de ontbrekende mock. Er zijn geen checks uitgezet. De implementatie is vervolgens vereenvoudigd naar de reeds bestaande RN-scroll-eventstroom plus Reanimated shared value.
-
-De finale head **`fd80c4d66cb6bab2b57f39f7ca12104fe9b419ce`** passeerde **CI #92 / run `34745389220`** volledig: installatie, strict TypeScript, lint, tests en iOS/Android/web Expo exports.
-
-PR #6 is gesquasht naar main als **`dd01a36055e4f2f7841d4a1b9ecf8461e3820002`**. De exacte merge passeerde **main-CI #93 / run `34745481415`** volledig met dezelfde gates.
-
-Dit is technisch bewijs, geen fysiek bewijs dat de beweging op de iPhone inderdaad continu aanvoelt.
+Technische verificatie:
+- PR #7 head **`67925d17913f5eac1aa00417f17bbf880e3724a9`**: CI #104 / run `34746652205` volledig geslaagd.
+- PR #7 merge **`c697c4e7b9bb026409962f319d26cebad75a3a56`**.
+- Main-CI #105 attempt 1 faalde vóór projectchecks door npm `ETARGET` op `@csstools/css-calc@^3.4.0`.
+- De rerun van exact dezelfde main SHA, attempt 2, slaagde volledig: installatie, strict TypeScript, lint, tests en iOS/Android/web Expo exports.
 
 ## Kernstatus Phase 1
 | Onderdeel | Status |
 |---|---|
-| App opent/rendert via Expo Go | Bevestigd in eerdere tests |
-| Horizontaal bereik / standaardinertie / bounce | Kwalitatief akkoord; instellingen ongewijzigd in PR #6 |
-| Verticale inertie/bounce | Kwalitatief akkoord; ongewijzigd |
-| Detail openen/respons | Kwalitatief akkoord |
-| Sluiten knop/achtergrond | Kwalitatief akkoord |
-| Swipe-down dismissal | Kwalitatief akkoord |
-| Gidspositie behouden | Eerder bevestigd |
-| Dark mode | Visueel bruikbare basis; geen formele contrastmeting |
-| Zender-/programmarijalignment bij grote tekst | **Fysiek bevestigd** |
+| App opent/rendert via Expo Go | **Bevestigd na rollback** |
+| Horizontale scroll/inertie/bounce | Kwalitatief akkoord op eerdere baseline |
+| Verticale scroll/inertie/bounce | Kwalitatief akkoord |
+| Detail openen/sluiten/swipe-down | Kwalitatief akkoord |
+| Grote systeemtekst chrome/alignment | **Fysiek bevestigd** |
 | Detailinhoud + Sluiten bij grote tekst | **Fysiek bevestigd voor geteste inhoud** |
-| Gidsheader/tijdas bij grote tekst | **Fysiek bevestigd na PR #4** |
-| Partial-left programme-content geometry | Geometry-safe code technisch groen |
-| Continue titelbeweging tijdens swipe | **PR #6 technisch groen; fysieke hertest nodig** |
-| Vandaag/Morgen/Nu op één regel | **PR #6 technisch groen; fysieke hertest nodig** |
-| Actieve dag direct na tap | **PR #6 technisch groen; fysieke hertest nodig** |
+| Partial-left geometry-safe readability | Technisch geïntegreerd; na settle fysiek waargenomen |
+| Continue titelbeweging tijdens swipe | **Open; PR #6-opzet teruggedraaid** |
+| Vandaag/Morgen/Nu op één regel | **PR #7 technisch groen; fysieke hertest nodig** |
+| Actieve dag direct na tap | **PR #7 technisch groen; fysieke hertest nodig** |
 | VoiceOver/screenreader | Open |
-| Themawisseling tijdens gebruik | Open |
+| Live theme switching | Open |
 | Progress/current-time nauwkeurigheid | Open |
 | Android/release-achtige performance | Open |
 
 ## Volgende gerichte iPhone-validatie
-Gebruik main **`dd01a36055e4f2f7841d4a1b9ecf8461e3820002`** of nieuwer. Laat dezelfde vergrote systeemtekststand actief.
+Gebruik main **`c697c4e7b9bb026409962f319d26cebad75a3a56`** of nieuwer en laat dezelfde vergrote systeemtekst actief.
 
 Controleer uitsluitend:
-1. Tijdens **de horizontale swipe zelf én tijdens momentum** beweegt de programmatitel mee naar het zichtbare restant wanneer zijn echte blokstart achter de zenderrail verdwijnt; er mag geen sprong pas na loslaten meer zijn. Het blok zelf blijft op zijn echte start/duur staan.
-2. `Vandaag`, `Morgen` en `Nu` staan op één horizontale regel.
-3. Een tap op `Morgen` maakt `Morgen` direct geselecteerd/zwart; een tap op `Vandaag` doet hetzelfde voor Vandaag. `Nu` keert terug naar vandaag/de actuele tijd.
-4. Meld alleen als de eerder geaccepteerde horizontale scroll nu merkbaar springerig of zwaarder aanvoelt.
+1. Teevee opent normaal en blijft stabiel.
+2. `Vandaag`, `Morgen` en `Nu` staan op één regel.
+3. Tik `Morgen`: Morgen wordt direct zwart/geselecteerd. Tik `Vandaag`: Vandaag wordt direct zwart/geselecteerd. Tik `Nu`: de Guide keert terug naar vandaag/de actuele tijd.
+4. Horizontale scroll voelt nog als de eerder geaccepteerde baseline.
 
-Een screenshot na de test plus een kort ja/nee voor **continue titelbeweging** en **directe active-day response** is voldoende. Een screenshot alleen kan de beweging tijdens de swipe niet bewijzen.
+**Niet opnieuw beoordelen:** live meebewegen van partial-left programmatitels. Dat is bewust nog niet herbouwd.
 
 ## Samenvatting
-**De 09:20-toesteltest vond drie concrete UX-gaten in PR #5. PR #6 corrigeert deze technisch: programme-inhoud volgt de swipe continu, expliciete dagselectie wordt direct actief en Vandaag/Morgen/Nu blijven op één rij met alleen voor deze compacte labels lokaal begrensde font scaling. PR- en main-CI zijn groen; één gerichte iPhone-hertest ontbreekt nog.**
+**De PR #6 native startregressie is door rollback fysiek hersteld. De controls zijn daarna als aparte, kleine niet-Reanimated increment opnieuw geïntegreerd en technisch groen op main. Alleen startup + Vandaag/Morgen/Nu + direct selected-state + scrollgevoel moeten nu nog één keer fysiek worden bevestigd.**
