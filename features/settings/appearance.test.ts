@@ -8,8 +8,9 @@ describe('appearance preference resolution', () => {
     expect(resolveAppearanceColorScheme('system', 'light')).toBe('light');
   });
 
-  it('falls back to light when the system scheme is unavailable', () => {
-    expect(resolveAppearanceColorScheme('system', null)).toBe('light');
+  it.each([null, undefined, 'unspecified'] as const)('falls back to light for %s', (scheme) => {
+    expect(resolveAppearanceColorScheme('system', scheme)).toBe('light');
+    expect(resolveAppearanceColorScheme('dark', scheme)).toBe('dark');
   });
 
   it('lets an explicit app preference override the device', () => {

@@ -11,6 +11,7 @@ function ThemedTabs() {
     <>
       <StatusBar style={theme.dark ? 'light' : 'dark'} />
       <Tabs
+        backBehavior="history"
         screenOptions={{
           headerShown: false,
           tabBarHideOnKeyboard: true,

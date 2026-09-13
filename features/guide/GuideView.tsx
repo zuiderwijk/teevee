@@ -1,4 +1,4 @@
-import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { type ReactNode, memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   Pressable,
   SafeAreaView,
@@ -44,6 +44,7 @@ import { useGuideClock } from './useGuideClock';
 const GUIDE_CONTROL_MAX_FONT_SIZE_MULTIPLIER = 1.2;
 
 type GuideViewProps = {
+  headerAction?: ReactNode;
   onSelectProgramme: (selection: ProgrammeSelection) => void;
 };
 
@@ -66,7 +67,7 @@ function formatDay(timeMs: number) {
 
 // Modal visibility lives outside this memo boundary. Keep the same mounted
 // ScrollViews and stable selection callback when opening or closing a detail.
-export const GuideView = memo(function GuideView({ onSelectProgramme }: GuideViewProps) {
+export const GuideView = memo(function GuideView({ onSelectProgramme, headerAction }: GuideViewProps) {
   const theme = useTeeveeTheme();
   const { fontScale, width: windowWidth } = useWindowDimensions();
   const layout = useMemo(() => guideLayoutForFontScale(fontScale), [fontScale]);
@@ -202,6 +203,7 @@ export const GuideView = memo(function GuideView({ onSelectProgramme }: GuideVie
           <Text accessible={false} style={[styles.eyebrow, { color: theme.colors.textMuted }]}>TEEVEE</Text>
           <Text accessibilityRole="header" style={[styles.title, { color: theme.colors.text }]}>Gids</Text>
         </View>
+        {headerAction}
       </View>
 
       <View style={styles.guideControls}>
@@ -491,6 +493,12 @@ export const GuideView = memo(function GuideView({ onSelectProgramme }: GuideVie
 const styles = StyleSheet.create({
   safeArea: { flex: 1 },
   header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    flexWrap: 'wrap',
+    columnGap: 12,
+    rowGap: 8,
     paddingHorizontal: 18,
     paddingTop: 12,
     paddingBottom: 8,

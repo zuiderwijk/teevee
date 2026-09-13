@@ -10,12 +10,12 @@ export default function SearchScreen() {
     <>
       <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.colors.background }]}>
         <View style={styles.content}>
+          <SettingsButton />
           <Text accessible={false} style={[styles.eyebrow, { color: theme.colors.textMuted }]}>TEEVEE</Text>
           <Text accessibilityRole="header" style={[styles.title, { color: theme.colors.text }]}>Zoeken</Text>
           <Text style={[styles.body, { color: theme.colors.textSecondary }]}>Zoeken naar programma’s en zenders wordt in een latere fase inhoudelijk gebouwd.</Text>
         </View>
       </SafeAreaView>
-      <SettingsButton />
     </>
   );
 }

@@ -1,6 +1,6 @@
 # Teevee Architecture
 
-Status: Phase 0 proposed baseline. Technology choices are frozen for the first vertical slice unless implementation evidence demonstrates a material problem.
+Status: Phase 2 App Shell. Implemented mobile foundations are listed below; backend, server-state, caching and operational services remain planned until their implementation phase. Current delivery status is governed by `PROJECT_STATE.md`.
 
 ## Architecture goals
 - one maintainable mobile codebase for iOS and Android;
@@ -11,14 +11,24 @@ Status: Phase 0 proposed baseline. Technology choices are frozen for the first v
 - minimal operational surface area;
 - straightforward migration to Bindinc/TVgids production data later.
 
-## Mobile stack
+## Implemented foundations
+- Expo SDK 57, React Native 0.86, React 19 and strict TypeScript.
+- Expo Router owns Gids / Vanavond / Zoeken; Settings is secondary.
+- Three Guide presentations consume the same fixture/domain model. Nu & Straks retains its deferred startup boundary.
+- Local presentation state and memoised Guide surfaces preserve detail round-trip context.
+- Versioned small JSON preferences use Expo FileSystem on native and localStorage on web (ADR 0006).
+- Settings appearance uses a small React Context for live cross-screen updates; no global state library is installed.
+- Semantic colour tokens are implemented. Production typography and broader shared chrome remain pending.
+- CI runs typecheck, lint, tests, all-platform exports and a clean native Android debug compile.
+
+## Target mobile stack
 - React Native with Expo
 - TypeScript, strict mode
 - Expo Router
-- TanStack Query for server state
+- TanStack Query for future server state (not installed yet)
 - local component state by default; Zustand only where cross-feature client state has a demonstrated need
 - SQLite or another Expo-supported persistent local store selected during the caching implementation based on measured needs
-- Zod at external/runtime boundaries
+- Zod at future external/feed boundaries (not installed yet)
 
 ## Backend baseline
 Use a thin backend/data service between providers and clients. Initial preference is PostgreSQL/Supabase for storage and operational simplicity, but the mobile domain contract must not depend on Supabase-specific APIs.

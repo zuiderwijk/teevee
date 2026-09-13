@@ -1,6 +1,6 @@
 # Teevee testen op een fysiek toestel
 
-Status: Phase 1 development testpad.
+Status: Phase 2 development testpad. Current feature/device gates are governed by `PROJECT_STATE.md`.
 
 Doel: de gidsinteractie zo vroeg mogelijk op echte iOS- en Android-hardware beoordelen zonder te wachten op TestFlight, Google Play of production-data.
 
@@ -65,12 +65,13 @@ Let op:
 Noteer toestelmodel + OS-versie bij performancefeedback. Gebruik `docs/DEVICE_TEST_REPORT.md` als compact rapportformat. Een korte screenrecording is bij scroll- of synchronisatieproblemen waardevoller dan alleen een omschrijving.
 
 ## Geautomatiseerde kwaliteitscontrole
-Iedere push naar `main` start GitHub Actions met:
+Iedere PR en iedere push naar `main` start GitHub Actions met:
 - dependency-installatie;
 - TypeScript typecheck;
 - lint;
 - tests;
-- een volledige Expo-webexport als bundler/route-check.
+- Expo exports voor iOS, Android en web;
+- een schone Android prebuild en Gradle debug-APK compile.
 
 Een groene CI zegt dat de code technisch door de afgesproken checks komt. Het zegt **niet** dat scrollgevoel en mobiele UX goed zijn; daarvoor blijft testen op echte hardware noodzakelijk.
 

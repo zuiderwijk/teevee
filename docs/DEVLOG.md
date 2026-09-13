@@ -11,6 +11,22 @@ Doel: een begrijpelijk chronologisch overzicht van substantiële wijzigingen, to
 
 ---
 
+## 13 september 2026, 19:57 CEST — Work-intake en herstel Settings PR #27
+
+De nieuwe development-thread heeft main, alle PR-records, remote branches, code en projectdocumentatie geïnspecteerd. Alleen PR #27 was open. PR #26 en zijn iPhone-herstartgate waren al gesloten; de update stond nog op de Settings-branch. Het intakeverslag staat in `INTAKE_2026-09-13.md`.
+
+PR #27 faalde in CI #229 op TypeScript: React Native 0.86 kan `unspecified` als systeemthema teruggeven. De resolver gebruikt nu het native type en valt veilig terug naar licht. Tests bewaken expliciete voorkeuren, live systeemwissels, herinitialisatie en behoud van een tussentijds gewijzigde Guide-voorkeur. De bestaande detailintegratietest miste daarnaast een router-mock sinds de Settings-knop was toegevoegd; ook dat is hersteld.
+
+De Settings-knop staat nu in de normale headerlayout via een stabiele action-slot, zodat hij bestaande labels niet overlapt en Programme Detail geen onnodige Guide-rerender veroorzaakt. Headers kunnen ombreken. Instellingen gebruikt cross-platform safe-area context; de sluitknop heeft een fallback naar Gids zonder history. Tab history bewaart de terugroute naar de oorspronkelijke primaire surface.
+
+Verificatie: lokale strict TypeScript en lint slagen zonder lintwaarschuwingen; 125 tests in 20 suites slagen. iOS-, Android- en webexports slagen. De browsercontrole is niet uitgevoerd: de lokale browserlauncher startte niet en de beschikbare cloudbrowser blokkeerde localhost met `ERR_BLOCKED_BY_CLIENT`. Er is geen emulator/adb beschikbaar. Dit is geen claim van visuele of fysieke acceptatie.
+
+Documentatie is gereconcilieerd: gesloten Phase 1B-/tijdrail-gates, huidige preference/default-selectie, CI-exports, werkelijk geïmplementeerde architectuur en nog ontbrekende Programme Detail-acties zijn expliciet gemaakt. Geen Guide-scroll- of momentumlogica aangepast.
+
+Volgende stap: beide vereiste CI-jobs op de nieuwe PR-head controleren, daarna mergen en alleen de bestaande kleine iPhone appearance-smoke uitvoeren.
+
+---
+
 ## 13 september 2026, 19:22 CEST — Guide-voorkeur fysiek geaccepteerd; Settings/appearance gestart
 
 PR #26 is na volledig groene PR-head-CI gemerged naar `main` als `03b31f1ed4dfa3508ea9e1aeacb85cc19520aa9c`. Exact-main CI #228 / `34770761263` is daarna eveneens volledig groen geëindigd: zowel `quality` als `android-native` zijn `completed/success`, inclusief de native Android debug-APK compile.

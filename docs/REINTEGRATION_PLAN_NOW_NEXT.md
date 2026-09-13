@@ -1,5 +1,7 @@
 # Nu & Straks controlled reintegration
 
+Status: reintegration accepted; PR #26 additionally permits persisted Nu & Straks restoration after the first shell frame. The current startup rules in `PROJECT_STATE.md` supersede the original user-request-only wording below.
+
 The static import of `NowNextGuideView` in `app/index.tsx` caused a physical iPhone startup regression after PR #21 even though CI was green. PR #22 restored startup by removing that static import.
 
 Reintegration rule for Phase 1B:

@@ -1,5 +1,6 @@
 import { useRouter } from 'expo-router';
-import { Pressable, SafeAreaView, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import {
   type AppearancePreference,
@@ -7,11 +8,11 @@ import {
 import { useAppearancePreferenceSettings } from '@/features/settings/AppearancePreferenceProvider';
 import { useTeeveeTheme } from '@/theme/useTeeveeTheme';
 
-const APPEARANCE_OPTIONS: ReadonlyArray<{
+const APPEARANCE_OPTIONS: readonly {
   id: AppearancePreference;
   label: string;
   description: string;
-}> = [
+}[] = [
   { id: 'system', label: 'Systeem', description: 'Volgt automatisch de weergave van je toestel.' },
   { id: 'light', label: 'Licht', description: 'Gebruik altijd de lichte weergave.' },
   { id: 'dark', label: 'Donker', description: 'Gebruik altijd de donkere weergave.' },
@@ -33,7 +34,7 @@ export default function SettingsScreen() {
           <Pressable
             accessibilityRole="button"
             accessibilityLabel="Sluit instellingen"
-            onPress={() => router.back()}
+            onPress={() => router.canGoBack() ? router.back() : router.replace('/')}
             style={({ pressed }) => [
               styles.doneButton,
               {
@@ -109,6 +110,7 @@ const styles = StyleSheet.create({
   topRow: {
     minHeight: 64,
     flexDirection: 'row',
+    flexWrap: 'wrap',
     justifyContent: 'space-between',
     alignItems: 'flex-start',
     gap: 16,

@@ -1,6 +1,6 @@
 # Teevee — Canonical Project State
 
-Last updated: 2026-09-13 19:22 CEST.
+Last updated: 2026-09-13 19:57 CEST.
 Status: ACTIVE — **Phase 2 App Shell**. Phase 1A/1B Guide interaction models are physically accepted on the available iPhone. PR #25 app shell and PR #26 local Guide-presentation persistence are both physically accepted on iPhone. Physical Android interaction validation remains explicitly deferred because the owner currently has no Android device; native Android compilation is a CI gate but is not device acceptance.
 Current phase: **Phase 2 — App Shell**
 Previous phase: **Phase 1B — Guide Presentation Prototypes: physically accepted on iPhone**
@@ -85,7 +85,7 @@ Accepted integration boundary:
 - Direct from every Guide presentation; no intermediate preview sheet.
 - Native React Native Modal presentation.
 - Close/backdrop, `onRequestClose`, accessibility escape and deliberate swipe-down dismissal.
-- Current-phase actions: `Herinner mij` + `Bewaar`; no share action in this phase.
+- Accepted target actions: `Herinner mij` + `Bewaar`; no share action. These actions and the contextual sticky action bar are **not implemented yet**; the current prototype exposes only `Sluiten`. Delivery remains in Phase 4/6.
 - Returning from detail preserves the originating Guide presentation and relevant context.
 - Under the Phase 2 shell, owner explicitly confirmed Programme Detail opens successfully from **Totaal, Per zender and Nu & Straks**.
 
@@ -162,11 +162,17 @@ Physical Android interaction acceptance remains **OPEN / DEFERRED** because no A
 Automated confidence covers Android JS/native bundle export, clean Expo Android prebuild and Gradle debug APK compilation. Still physically unproven: Android Back arbitration, nested-scroll/gesture feel, realistic device frame pacing and device-specific defects.
 
 ## Phase 2 increment 3 — Settings / appearance
-Branch: `feat/phase2-settings-appearance`.
+Branch: `feat/phase2-settings-appearance`. PR: #27.
 
-Target scope:
+Intake found CI #229 failed at TypeScript because React Native can report `unspecified`; `android-native` succeeded. Repair uses the installed native colour-scheme type, tests unspecified fallback and live provider integration, puts Settings controls into normal header flow, and enables tab history for return to the originating surface. The Settings screen uses cross-platform safe-area context and wraps its header for larger text. CI must be revalidated on the repaired head before merge.
+
+Local verification: strict TypeScript, warning-free lint and 125 tests across 20 suites pass; all-platform exports pass. Browser visual verification is unavailable because the browser blocks the local server. No new native/device acceptance is claimed.
+
+Intake and implementation gaps: `docs/INTAKE_2026-09-13.md`.
+
+Implemented scope pending final CI and iPhone smoke:
 - make Settings a secondary route without adding a fourth primary tab;
-- expose a safe-area-aware secondary Settings entry point from primary top-level surfaces;
+- expose a secondary Settings entry point in normal header flow rather than overlaying existing header labels;
 - let the user select `Systeem`, `Licht` or `Donker`;
 - persist appearance through the existing AppPreferences storage;
 - make the chosen appearance apply live across the app shell and Guide views;

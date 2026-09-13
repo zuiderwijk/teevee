@@ -10,12 +10,12 @@ export default function TonightScreen() {
     <>
       <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.colors.background }]}>
         <View style={styles.content}>
+          <SettingsButton />
           <Text accessible={false} style={[styles.eyebrow, { color: theme.colors.textMuted }]}>TEEVEE</Text>
           <Text accessibilityRole="header" style={[styles.title, { color: theme.colors.text }]}>Vanavond</Text>
           <Text style={[styles.body, { color: theme.colors.textSecondary }]}>Deze sectie krijgt later de keuzehulp voor wat er vanavond op televisie is.</Text>
         </View>
       </SafeAreaView>
-      <SettingsButton />
     </>
   );
 }
