@@ -1,8 +1,8 @@
 # Teevee testen op een fysiek toestel
 
-Status: Phase 3 development testpad. Current feature/device gates are governed by `PROJECT_STATE.md`.
+Status: Phase 3 development testpad. Phase 2 iPhone acceptance is closed. Current feature/device gates are governed by `PROJECT_STATE.md`.
 
-Doel: echte iOS- en Android-interactie vroeg bewijzen zonder te wachten op TestFlight, Google Play of production-data. CI blijft technisch bewijs, geen vervanging voor toestelacceptatie.
+Doel: echte iOS- en Android-interactie vroeg bewijzen zonder te wachten op TestFlight, Google Play of production-data. CI en server/integration tests blijven technisch bewijs, geen vervanging voor toestelacceptatie wanneer mobiele interaction boundaries worden geraakt.
 
 ## Snelste testpad: Expo Go
 
@@ -58,48 +58,111 @@ De beschikbare iPhone heeft Phase 2 fysiek geaccepteerd:
 
 Deze Phase 2-gates hoeven niet routinematig opnieuw te worden bewezen. Heropen een fysiek geaccepteerde interaction baseline alleen bij concrete regressie-evidence.
 
-## Phase 3 — teststrategie voor real data
+## Phase 3 — deterministic real-data contract tests
 
-Phase 3 vervangt de deterministische fixtures **niet**. Real data wordt als aparte provider-/API-route toegevoegd terwijl fixtures de betrouwbare test- en offline-developmentbasis blijven.
+Phase 3 vervangt de deterministische fixtures **niet**. Real data wordt via aparte provider/repository/API boundaries toegevoegd terwijl fixtures de betrouwbare test- en offline-developmentbasis blijven.
 
-Voor iedere Phase 3-slice moeten minimaal de relevante lagen afzonderlijk bewijs krijgen:
+De backend-onafhankelijke Phase 3-kern heeft nu expliciete tests voor de onderstaande lagen.
 
-### Provider / ingestion
-- geldige providerrecords worden correct geparsed;
-- malformed records geven diagnostics in plaats van onverklaarde crashes;
-- provider-specifieke IDs/velden lekken niet voorbij de adapter/normalisatielaag;
-- timestamps worden canoniek opgeslagen en Amsterdam-rendering blijft correct;
-- channel mappings zijn expliciet en onbekende mappings worden gedetecteerd;
-- overlaps, ontbrekende titels, ongeldige tijden en verdachte volumes leveren data-quality diagnostics.
+### Provider / normalisatie
+Bewijs minimaal:
+- provider-channel mappings zijn expliciet;
+- invalid/unknown/duplicate mappings worden conservatief gediagnosticeerd;
+- malformed raw records zijn representabel en worden bij de trust boundary afgewezen, niet in adapters verzonnen;
+- timestamps worden canoniek UTC;
+- provider-ID-hergebruik voor verschillende broadcasts blijft gescheiden;
+- timezone-equivalente duplicate broadcasts worden na timestampnormalisatie gededupliceerd;
+- overlaps blijven bruikbare data maar geven diagnostics;
+- provider-specifieke IDs/velden lekken niet in canonical/mobile output.
 
-### Canonical storage / API
-- dezelfde Teevee `Channel` / `Programme` semantiek blijft leidend;
-- schedule-upserts/correcties kunnen bestaande items vervangen zonder willekeurige duplicaten;
-- API-responses zijn getypeerd en provider-onafhankelijk;
-- lege, gedeeltelijke en foutresponsen zijn gedefinieerd;
-- secrets/providercredentials komen niet in de mobiele bundle of repository terecht.
+### Canonical repository — ADR 0007
+Repositorytests bewaken:
+- query-intersectie `programme.start < to && programme.end > from`;
+- expliciete channel/time replacement scope;
+- een partial-channel refresh raakt programmes én metadata van andere channels niet;
+- corrections verwijderen stale rows alleen binnen het refreshed window;
+- authoritative coverage wordt per channel/time segment bijgehouden;
+- **covered but empty** geeft een geldige lege schedule terug;
+- **uncovered/partly covered** geeft `null`/unavailable terug;
+- gecombineerde query freshness is conservatief: de oudste coverage die bijdraagt;
+- een oudere overlappende write wordt atomair `ignored-stale` en verandert canonical data niet;
+- invalid ranges, lege expliciete scopes en kapotte canonical relations falen hard.
 
-### Mobile client
-- real data komt binnen via een typed Teevee API/service boundary, nooit rechtstreeks vanaf de provider;
+De `InMemoryScheduleRepository` is alleen een executable reference/test implementation. Een latere PostgreSQL/Supabase repository moet dezelfde tests/semantiek reproduceren.
+
+### Ingestion orchestration
+Integratietests bewaken provider -> mapping -> normalisation -> repository:
+- `complete` provider coverage mag een safe canonical window vervangen;
+- `partial` coverage schrijft niet destructief;
+- een complete lege providerbatch mag stale canonical data verwijderen voor veilige channel scope;
+- malformed data die veilig aan één channel toe te wijzen is blokkeert alleen die channel terwijl andere veilige channels kunnen updaten;
+- een malformed record zonder channel attribution blokkeert de destructieve write;
+- repository `ignored-stale` wordt expliciet doorgegeven en niet als stored gerapporteerd.
+
+### Refresh concurrency
+Een dedicated concurrencytest start een ouder providerrequest, schrijft daarna een nieuwere refresh en laat vervolgens het oude request pas terugkomen.
+
+Acceptatie:
+- freshness wordt vastgelegd bij **request start**;
+- de nieuwere canonical schedule blijft bewaard;
+- de late oudere response eindigt als `ignored-stale`.
+
+Dit voorkomt dat netwerk/completion order de chronologische freshness omdraait.
+
+### Typed schedule API
+De repository-backed `GuideScheduleApi` en serialized requestparser bewaken:
+- public output bevat alleen canonical Teevee data;
+- fully covered scope geeft `ok`, ook wanneer programmes leeg zijn;
+- ontbrekende/incomplete canonical coverage geeft `unavailable`;
+- runtime input is een object met geldige `from`/`to` timestamps en `to > from`;
+- timestamps worden gecanoniseerd naar UTC ISO;
+- optionele `channelIds` moeten bij aanwezigheid een niet-lege string-array zijn, worden getrimd en gededupliceerd;
+- TypeScript-types worden niet als vervanging voor transport-runtimevalidatie gebruikt.
+
+## Live provider tests — pas na authorized providerkeuze
+Een concrete live adapter moet aanvullende provider-specifieke contracttests krijgen voor:
+- daadwerkelijke response parsing;
+- pagination/chunking/rate limits indien relevant;
+- requested-scope versus returned-scope behaviour;
+- correct bepalen van `complete` versus `partial`;
+- channel mapping coverage;
+- schedule horizon;
+- provider corrections;
+- freshness/volume diagnostics op realistische data.
+
+Normale PR-CI mag niet van een live externe provider, internetbeschikbaarheid of providercredential afhangen. Gebruik captured/licensed fixtures of adapter-level deterministic samples.
+
+## Hosted repository/API tests — pas na backendkeuze
+Wanneer PostgreSQL/Supabase of een andere backend wordt geïmplementeerd:
+- run dezelfde repository semantics tegen de echte implementation;
+- prove transactional stale-write protection under concurrent refreshes;
+- verify coverage/freshness persistence apart van programme rows;
+- verify provider/service secrets are server-only;
+- verify exposed API/RLS/permissions match the intended public read model;
+- verify typed transport preserves `ok` versus `unavailable` semantics.
+
+## Mobile client
+Wanneer Phase 3 de Guide daadwerkelijk op de Teevee API/cache aansluit, test:
 - loading/error/offline states laten de app gecontroleerd degraderen;
 - fixturemode blijft beschikbaar voor deterministic tests/development;
-- schedule refresh mag de fysiek geaccepteerde Guide-scroll-/channel-/time-context niet onnodig resetten;
-- Totaal, Per zender en Nu & Straks blijven hetzelfde canonical domain consumeren.
+- schedule refresh reset de fysiek geaccepteerde Guide-scroll-/channel-/time-context niet onnodig;
+- Totaal, Per zender en Nu & Straks blijven hetzelfde canonical domain consumeren;
+- provider/database details komen niet in mobile code terecht.
 
-### Cache / refresh
-Wanneer Phase 3 caching toevoegt, test expliciet:
+## Cache / refresh
+Wanneer mobiele schedule caching wordt toegevoegd, test expliciet:
 - cold load;
 - warm cache;
 - refresh met ongewijzigde data;
 - refresh met schedulecorrectie;
 - netwerkfout met bruikbare cache;
 - stale-data communicatie wanneer relevant;
-- app resume en Amsterdam-dagwissel.
+- app resume en Amsterdam-dagwissel;
+- incomplete API coverage wordt niet als authoritative empty cache opgeslagen.
 
 ## Fysieke device-checks tijdens Phase 3
-
 Een backend/data-only wijziging vereist niet automatisch een volledige Guide-acceptatiepass. Gebruik risicogestuurde devicechecks:
-- **geen UI/interaction boundary geraakt:** CI + integratietests kunnen voldoende zijn;
+- **geen UI/interaction boundary geraakt:** CI + unit/integratietests kunnen voldoende zijn;
 - **Guide krijgt een nieuwe data source/cache/refresh path:** korte iPhone smoke voor startup, actuele data, Nu, channel/time context en Programme Detail;
 - **scroll/gesture/layout code geraakt:** de relevante fysiek bevroren baseline gericht opnieuw samplen;
 - **native dependency/config gewijzigd:** iOS/Android buildpad en geschikt device opnieuw beoordelen.
