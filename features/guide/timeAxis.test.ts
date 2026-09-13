@@ -1,21 +1,42 @@
 import { describe, expect, it } from 'vitest';
 
-import { GUIDE_TIME_TICK_LABEL_OFFSET, timeAxisLabelOpacity } from './timeAxis';
+import { clippedTimeAxisLabelWidth } from './timeAxis';
 
-describe('timeAxisLabelOpacity', () => {
-  it('keeps a label visible while its text starts inside the viewport', () => {
-    expect(timeAxisLabelOpacity(100 + GUIDE_TIME_TICK_LABEL_OFFSET, 100)).toBe(1);
+describe('clippedTimeAxisLabelWidth', () => {
+  const firstTickX = 0;
+  const tickSpacing = 90;
+  const labelWidth = 72;
+
+  it('does not cover a label while its text starts inside the viewport', () => {
+    expect(clippedTimeAxisLabelWidth(5, firstTickX, tickSpacing, labelWidth)).toBe(0);
   });
 
-  it('hides a label immediately once its text start crosses the left viewport edge', () => {
-    expect(timeAxisLabelOpacity(100 + GUIDE_TIME_TICK_LABEL_OFFSET, 107)).toBe(0);
+  it('covers the complete visible remainder once the left label starts clipping', () => {
+    expect(clippedTimeAxisLabelWidth(7, firstTickX, tickSpacing, labelWidth)).toBe(71);
+    expect(clippedTimeAxisLabelWidth(30, firstTickX, tickSpacing, labelWidth)).toBe(48);
   });
 
-  it('keeps the label visible at the exact left-edge boundary', () => {
-    expect(timeAxisLabelOpacity(106, 106)).toBe(1);
+  it('stops covering after the clipped label has fully left the viewport', () => {
+    expect(clippedTimeAxisLabelWidth(78, firstTickX, tickSpacing, labelWidth)).toBe(0);
+    expect(clippedTimeAxisLabelWidth(85, firstTickX, tickSpacing, labelWidth)).toBe(0);
+  });
+
+  it('repeats the same masking geometry for following half-hour labels', () => {
+    expect(clippedTimeAxisLabelWidth(97, firstTickX, tickSpacing, labelWidth)).toBe(71);
+    expect(clippedTimeAxisLabelWidth(120, firstTickX, tickSpacing, labelWidth)).toBe(48);
+  });
+
+  it('keeps exact label-start boundaries fully visible', () => {
+    expect(clippedTimeAxisLabelWidth(6, firstTickX, tickSpacing, labelWidth)).toBe(0);
+    expect(clippedTimeAxisLabelWidth(96, firstTickX, tickSpacing, labelWidth)).toBe(0);
   });
 
   it('clamps negative bounce offsets to the real left edge', () => {
-    expect(timeAxisLabelOpacity(GUIDE_TIME_TICK_LABEL_OFFSET, -20)).toBe(1);
+    expect(clippedTimeAxisLabelWidth(-20, firstTickX, tickSpacing, labelWidth)).toBe(0);
+  });
+
+  it('supports larger text metrics without changing the invariant', () => {
+    expect(clippedTimeAxisLabelWidth(8, 0, 126, 108)).toBe(106);
+    expect(clippedTimeAxisLabelWidth(114, 0, 126, 108)).toBe(0);
   });
 });
