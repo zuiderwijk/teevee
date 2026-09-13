@@ -11,6 +11,22 @@ Doel: een begrijpelijk chronologisch overzicht van substantiële wijzigingen, to
 
 ---
 
+## 14 september 2026, 00:39 CEST — Phase 2 gesloten; Phase 3 normalisatiekern gemergd; canonical storage/query gestart
+
+De finale Per zender-recheck `ScreenRecording_09-13-2026 23-56-18_1.MP4` heeft de laatste Phase 2-devicegate gesloten. Onder de grotere-teksttestcontext blijven `Publiek 1/2/3` visueel onderscheidend, directe zenderselectie werkt, adjacent-channel paging werkt en zenderstrip/context/schedule blijven synchroon. Geen redbox, wit scherm, crash of nieuwe gesture-regressie. Het bewijs staat in `docs/PHYSICAL_EVIDENCE_2026-09-13_2356.md`.
+
+PR #36 heeft Phase 2 daarom formeel gesloten en Phase 3 Real Data Vertical Slice geactiveerd. De merge staat op `main` als `589ce9110419866439cd0e22e1c761687b48eb04`. De exacte PR-head `2377bfb9680f84e680cf1127d3a5e5243c00938c` passeerde CI #255 / `34785599349` volledig voor `quality` en `android-native`. Exact-main CI #264 was bij het schrijven van deze entry nog bezig; daaruit wordt nog geen completionclaim afgeleid.
+
+PR #37 heeft daarna de eerste echte Phase 3-code gemergd als `491bc728adfb4ec70d060833d49d17bca25bbdc9`. Deze increment introduceert een provider-onafhankelijk `GuideSchedule`-contract, een server-only `EpgProvider`-grens, expliciete provider→Teevee-zendermapping en canonical normalisatie met data-quality diagnostics. Malformed providerrecords blijven representabel tot de trust boundary, timezone-equivalente duplicate broadcasts worden na tijdnormalisatie herkend, en hergebruik van één providerprogramme-ID voor verschillende uitzendingen blijft correct gescheiden. Er is geen live provider, XML-parser, database, mobiele API/cache of Guide-runtimepad toegevoegd. De exacte PR-head `cf3b8c37b1199ee22035a863ab7b1a9f4faf8a8d` passeerde CI #263 / `34786166182` volledig voor `quality` en `android-native`; exact-main CI #265 liep nog bij deze entry.
+
+De Phase 3-intake bevestigde bovendien een concrete infrastructuur/credential-gate: er bestaat nog geen Teevee-backend of Teevee-Supabaseproject en de verbonden Supabase-omgeving bevat alleen het ongerelateerde ReelWorthy-project. Dat project wordt niet hergebruikt. Een nieuw hosted project vereist expliciete organisatie-/kostenbevestiging. Ook is nog geen live development-EPG bron met passende toegang/voorwaarden geaccepteerd. Scraperfeeds worden niet als shortcut gekozen en providercredentials mogen nooit in de mobiele bundle of repository terechtkomen.
+
+Omdat die gate de provider-onafhankelijke architectuur niet blokkeert, is `feat/phase3-schedule-repository` gestart. De slice voegt een serialiseerbare schedule-query, een backend-onafhankelijk `ScheduleRepository`-contract en een deterministische in-memory reference implementation toe. Het contract maakt het vervangingsbereik per kanaal expliciet zodat een partial refresh geen andere zenders kan wissen, gebruikt interval-intersection voor `[start,end)`-queries, vervangt stale rows alleen binnen het vernieuwde window en faalt hard op kapotte canonical relaties. De memory-implementatie is uitsluitend een test/reference implementation en **geen** production persistence-keuze.
+
+Volgende stap: deze canonical storage/query-slice door strict TypeScript, lint, tests, exports en native Android compile halen en pas bij volledig groene PR-head mergen. Daarna provider → normalisation → repository ingest-orchestration plus een typed API-boundary bouwen. Supabase/live-provider provisioning blijft geblokkeerd tot de expliciete organisatie/kosten/provider-gate is opgelost.
+
+---
+
 ## 13 september 2026, 23:37 CEST — Brede Phase 2 iPhone-pass geslaagd; één large-text defect gevonden en gefixt in PR #35
 
 De gefocuste Phase 2 iPhone-acceptatiepass is uitgevoerd met `ScreenRecording_09-13-2026 23-10-50_1.MP4`. De opname bewijst de belangrijkste App Shell-gates die na Phase 1/1B nog fysiek openstonden: Settings opent als secundaire route, Licht/Systeem/Donker werken live, een expliciete dark preference overleeft reload/restart, de gedeelde Settings/Vanavond-headers blijven binnen de safe area en de drie Guide-presentaties blijven op 135% iOS-tekstgrootte bruikbaar. De 44pt day/now/shortcut-controls blijven bereikbaar, de Nu & Straks referentiecontrols reflowen coherent en Programme Detail blijft bij grotere tekst leesbaar en sluitbaar. Er trad geen redbox, wit scherm, crash of brede interaction-regressie op.
@@ -376,10 +392,11 @@ Projectfoundation, deterministische EPG-fixture, Expo/React Native strict TypeSc
 ---
 
 ## Doorlopende open technische punten
-- **Phase 2 App Shell:** technisch geïmplementeerd t/m PR #35; brede iPhone acceptance is geslaagd. Alleen de vier-stappen 135% Per zender recheck van de PR #35 channel-identity fix blokkeert formele Phase 2-sluiting.
+- **Phase 3 Real Data Vertical Slice:** actief. Provider-onafhankelijke normalisatiekern is gemergd in PR #37; canonical storage/query is de huidige provider-/backend-onafhankelijke increment.
+- **Backend/provider gate:** er is nog geen Teevee-backend/Supabaseproject of geaccepteerde live development-EPG bron. ReelWorthy-project niet hergebruiken; hosted project/providertoegang vereist expliciete organisatie/kosten/credentialbeslissing.
 - **Guide presentation persistence:** fysiek geaccepteerd op iPhone na PR #26; Android-devicevalidatie blijft open.
-- **Theme/accessibility:** System/Light/Dark, restart persistence, shared headers/safe areas en representatieve 135% tekst zijn fysiek bewezen op iPhone. De large-text channel-strip defect is in PR #35 technisch gefixt en wacht alleen op mini-recheck.
-- **Nu & Straks compacte volgende-programma-rijen:** aparte, niet-blockerende accessibility/UX debt zolang geen concrete tap failure is bewezen; later density-aware hardenen en fysiek valideren.
+- **Theme/accessibility:** System/Light/Dark, restart persistence, shared headers/safe areas en representatieve 135% tekst zijn fysiek bewezen op iPhone; Phase 2 final recheck is groen.
+- **Nu & Straks compacte volgende-programma-rijen:** aparte, niet-blockerende accessibility/UX debt; later density-aware hardenen en fysiek valideren.
 - Android system/hardware Back, nested gestures en realistische performance fysiek valideren zodra een geschikt Android-toestel/interactive environment beschikbaar is; native compile-CI is geen toestelacceptatie.
 - Release-like performance buiten Expo Go valideren wanneer een geschikte build/device beschikbaar is.
 - De moderate dependency-advisories vereisen gerichte analyse. Nooit `npm audit fix --force`.
