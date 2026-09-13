@@ -1,4 +1,4 @@
-import { memo, useEffect, useState } from 'react';
+import { memo, useState } from 'react';
 import { Image, StyleSheet, Text, View } from 'react-native';
 
 import type { Channel } from '@/data/domain/epg';
@@ -14,13 +14,8 @@ export const ChannelIdentity = memo(function ChannelIdentity({
   textColor,
   mutedTextColor,
 }: ChannelIdentityProps) {
-  const [logoFailed, setLogoFailed] = useState(false);
-
-  useEffect(() => {
-    setLogoFailed(false);
-  }, [channel.logoUrl]);
-
-  const showLogo = Boolean(channel.logoUrl) && !logoFailed;
+  const [failedLogoUrl, setFailedLogoUrl] = useState<string | null>(null);
+  const showLogo = Boolean(channel.logoUrl) && failedLogoUrl !== channel.logoUrl;
 
   return (
     <View
@@ -33,7 +28,7 @@ export const ChannelIdentity = memo(function ChannelIdentity({
           accessible={false}
           source={{ uri: channel.logoUrl }}
           resizeMode="contain"
-          onError={() => setLogoFailed(true)}
+          onError={() => setFailedLogoUrl(channel.logoUrl ?? null)}
           style={styles.logo}
         />
       ) : null}
