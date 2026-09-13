@@ -1,6 +1,6 @@
 # Teevee — Canonical Project State
 
-Last updated: 2026-09-13 06:27 CEST
+Last updated: 2026-09-13 06:28 CEST
 Status: ACTIVE
 Current phase: **Phase 1 — Guide Interaction Prototype**
 Previous phase: **Phase 0 — Project Foundation: COMPLETE**
@@ -64,14 +64,13 @@ No external EPG provider has been integrated. No production channel logos or pro
 ## Verification status
 The iPhone scroll retest is accepted by the product owner: horizontal back-in-time behaviour, day-switch time-context preservation and native boundary bounce no longer block progression. General scrolling remains smooth enough to keep the standard React Native scroll architecture.
 
-One observation remains deliberately unclassified: a vertical downward swipe may feel slightly slow, but the prior 16-channel fixture was too short to judge inertial travel reliably. No vertical deceleration change should be made from that weak evidence alone. The test fixture is therefore expanded to 48 channels first; CI and a brief retest are required before deciding whether vertical scroll tuning is warranted.
+The 48-channel fixture increment is now also **GREEN in CI** across install, TypeScript, lint, tests and Expo web export. One observation remains deliberately unclassified: a vertical downward swipe may feel slightly slow, but the prior 16-channel fixture was too short to judge inertial travel reliably. No vertical deceleration change should be made until the longer 48-channel fixture has been tested on device.
 
 ## Phase 1 objective
 Validate the defining UX/technical risk: a high-performance touch-native two-dimensional TV Guide using realistic deterministic fixture data.
 
 ## Phase 1 remaining work
-- verify CI for the 48-channel fixture increment;
-- retest vertical swipe travel with the longer fixture before changing vertical deceleration;
+- retest vertical swipe travel with the 48-channel fixture before changing vertical deceleration;
 - test `Nu`, current-time/progress, narrow cells, programme detail and light/dark on device;
 - record device model/OS when available;
 - perform representative Android validation before Phase 1 exit;
@@ -94,7 +93,9 @@ Exact subscription price, trial and paywall timing are not decided and do not bl
 Visual Direction 01 is not a frozen UI design. Avoid expensive brand polishing before Guide interaction and performance are validated.
 
 ## EXACT NEXT STEP
-**Verify CI for the 48-channel fixture increment. Once green, retest one or more long vertical swipes on the same iPhone. Only if vertical travel still feels materially too short with realistic scroll distance should `decelerationRate` be adjusted. Record the result in `docs/DEVICE_TEST_REPORT.md`.**
+**Retest one or more long vertical swipes on the same iPhone using the 48-channel fixture. Only if vertical travel still feels materially too short with realistic scroll distance should `decelerationRate` be adjusted. Record the result in `docs/DEVICE_TEST_REPORT.md`.**
+
+After that retest, continue the remaining Phase 1 device checks: `Nu`, current-time/progress, narrow cells, programme detail and light/dark. Android validation remains required before Phase 1 exit.
 
 Do not introduce real EPG, subscriptions, accounts, Tonight, enrichment or specialised virtualisation before this evidence exists.
 
