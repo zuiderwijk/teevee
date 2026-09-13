@@ -18,7 +18,6 @@ import { ChannelIdentity } from './ChannelIdentity';
 import type { ProgrammeSelection } from './detailState';
 import {
   buildTimeTicks,
-  GUIDE_MINUTE_WIDTH,
   programmeContentMode,
   programmeFrame,
   timeToX,
@@ -69,21 +68,21 @@ export const GuideView = memo(function GuideView({ onSelectProgramme }: GuideVie
     () => Math.max(...runtimeFixture.programmes.map((programme) => Date.parse(programme.endAt))),
     [runtimeFixture],
   );
-  const width = timelineWidth(windowStart, windowEnd);
+  const width = timelineWidth(windowStart, windowEnd, layout.minuteWidth);
   const ticks = useMemo(() => buildTimeTicks(windowStart, windowEnd), [windowStart, windowEnd]);
-  const nowX = timeToX(nowMs, windowStart);
+  const nowX = timeToX(nowMs, windowStart, layout.minuteWidth);
   const nowInWindow = nowMs >= windowStart && nowMs < windowEnd;
   const tomorrowStart = useMemo(() => guideDayStart(initialNow, 1), [initialNow]);
   const guideHeight = runtimeFixture.channels.length * layout.rowHeight;
 
   useEffect(() => {
-    const initialX = Math.max(0, timeToX(initialNow, windowStart) - 120);
+    const initialX = Math.max(0, timeToX(initialNow, windowStart, layout.minuteWidth) - 120);
     const frame = requestAnimationFrame(() => horizontalRef.current?.scrollTo({ x: initialX, animated: false }));
     return () => cancelAnimationFrame(frame);
-  }, [initialNow, windowStart]);
+  }, [initialNow, layout.minuteWidth, windowStart]);
 
   const jumpToNow = () => {
-    const x = Math.max(0, timeToX(Date.now(), windowStart) - 120);
+    const x = Math.max(0, timeToX(Date.now(), windowStart, layout.minuteWidth) - 120);
     horizontalRef.current?.scrollTo({ x, animated: true });
   };
 
@@ -92,15 +91,15 @@ export const GuideView = memo(function GuideView({ onSelectProgramme }: GuideVie
   const changeDay = (nextOffset: number) => {
     const targetTime = nextOffset === 0 ? windowStart : tomorrowStart;
     horizontalRef.current?.scrollTo({
-      x: Math.max(0, timeToX(targetTime, windowStart)),
+      x: Math.max(0, timeToX(targetTime, windowStart, layout.minuteWidth)),
       animated: true,
     });
   };
 
   return (
     <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.colors.background }]}>
-      <View style={styles.header}>
-        <View style={styles.headerTitleGroup}>
+      <View style={[styles.header, layout.stackedControls ? styles.headerStacked : null]}>
+        <View style={[styles.headerTitleGroup, layout.stackedControls ? styles.headerTitleGroupStacked : null]}>
           <Text style={[styles.eyebrow, { color: theme.colors.textMuted }]}>TEEVEE</Text>
           <Text accessibilityRole="header" style={[styles.title, { color: theme.colors.text }]}>Gids</Text>
         </View>
@@ -108,13 +107,17 @@ export const GuideView = memo(function GuideView({ onSelectProgramme }: GuideVie
           accessibilityRole="button"
           accessibilityLabel="Ga naar nu"
           onPress={jumpToNow}
-          style={[styles.nowBadge, { backgroundColor: theme.colors.accent }]}
+          style={[
+            styles.nowBadge,
+            layout.stackedControls ? styles.nowBadgeStacked : null,
+            { backgroundColor: theme.colors.accent },
+          ]}
         >
           <Text style={[styles.nowText, { color: theme.colors.background }]}>Nu</Text>
         </Pressable>
       </View>
 
-      <View style={styles.daySwitcher}>
+      <View style={[styles.daySwitcher, layout.stackedControls ? styles.daySwitcherStacked : null]}>
         {[0, 1].map((offset) => {
           const active = dayOffset === offset;
           return (
@@ -125,6 +128,7 @@ export const GuideView = memo(function GuideView({ onSelectProgramme }: GuideVie
               onPress={() => changeDay(offset)}
               style={[
                 styles.dayButton,
+                layout.stackedControls ? styles.dayButtonStacked : null,
                 {
                   backgroundColor: active ? theme.colors.accent : theme.colors.surface,
                   borderColor: theme.colors.border,
@@ -193,7 +197,7 @@ export const GuideView = memo(function GuideView({ onSelectProgramme }: GuideVie
           showsHorizontalScrollIndicator={false}
           scrollEventThrottle={16}
           onScroll={(event) => {
-            const visibleTime = windowStart + (event.nativeEvent.contentOffset.x / GUIDE_MINUTE_WIDTH) * 60_000;
+            const visibleTime = windowStart + (event.nativeEvent.contentOffset.x / layout.minuteWidth) * 60_000;
             const visibleDay = visibleTime >= tomorrowStart ? 1 : 0;
             if (visibleDay !== dayOffset) setDayOffset(visibleDay);
           }}
@@ -210,10 +214,16 @@ export const GuideView = memo(function GuideView({ onSelectProgramme }: GuideVie
               ]}
             >
               {ticks.map((tick) => {
-                const left = timeToX(tick, windowStart);
+                const left = timeToX(tick, windowStart, layout.minuteWidth);
                 return (
                   <View key={tick} style={[styles.tick, { left, borderLeftColor: theme.colors.border }]}>
-                    <Text numberOfLines={1} style={[styles.tickLabel, { color: theme.colors.textMuted }]}>
+                    <Text
+                      numberOfLines={1}
+                      style={[
+                        styles.tickLabel,
+                        { width: layout.tickLabelWidth, color: theme.colors.textMuted },
+                      ]}
+                    >
                       {formatTime(tick)}
                     </Text>
                   </View>
@@ -246,7 +256,7 @@ export const GuideView = memo(function GuideView({ onSelectProgramme }: GuideVie
                     ]}
                   >
                     {programmesForRuntimeChannel(runtimeFixture, channel.id).map((programme) => {
-                      const frame = programmeFrame(programme, windowStart);
+                      const frame = programmeFrame(programme, windowStart, layout.minuteWidth);
                       const end = frame.left + frame.width;
                       if (end < 0 || frame.left > width) return null;
                       const startMs = Date.parse(programme.startAt);
@@ -339,9 +349,14 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 12,
   },
+  headerStacked: {
+    flexDirection: 'column',
+    alignItems: 'stretch',
+  },
   headerTitleGroup: { flexShrink: 1 },
+  headerTitleGroupStacked: { flexShrink: 0, width: '100%' },
   eyebrow: { fontSize: 10, fontWeight: '700', letterSpacing: 1.1 },
-  title: { fontSize: 32, lineHeight: 38, fontWeight: '700', letterSpacing: -1.2 },
+  title: { fontSize: 32, fontWeight: '700', letterSpacing: -1.2 },
   nowBadge: {
     minWidth: 52,
     minHeight: 44,
@@ -351,8 +366,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
+  nowBadgeStacked: { alignSelf: 'flex-end' },
   nowText: { fontSize: 14, fontWeight: '700' },
   daySwitcher: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, paddingHorizontal: 18, paddingBottom: 12 },
+  daySwitcherStacked: { flexDirection: 'column', alignItems: 'stretch' },
   dayButton: {
     minHeight: 44,
     justifyContent: 'center',
@@ -361,6 +378,7 @@ const styles = StyleSheet.create({
     borderRadius: 22,
     borderWidth: StyleSheet.hairlineWidth,
   },
+  dayButtonStacked: { alignSelf: 'stretch' },
   dayButtonText: { fontSize: 12, fontWeight: '700', textTransform: 'capitalize' },
   guideFrame: { flex: 1, flexDirection: 'row', borderTopWidth: StyleSheet.hairlineWidth },
   channelColumn: { zIndex: 2, borderRightWidth: StyleSheet.hairlineWidth },
@@ -377,7 +395,7 @@ const styles = StyleSheet.create({
     paddingLeft: 6,
     paddingTop: 11,
   },
-  tickLabel: { fontSize: 10, fontWeight: '600', width: 72 },
+  tickLabel: { fontSize: 10, fontWeight: '600' },
   programmeRow: { position: 'absolute', left: 0, borderBottomWidth: StyleSheet.hairlineWidth },
   programme: {
     position: 'absolute',
@@ -391,8 +409,8 @@ const styles = StyleSheet.create({
   },
   programmeCompact: { paddingHorizontal: 5, paddingVertical: 6, justifyContent: 'center' },
   programmeLargeText: { justifyContent: 'center' },
-  programmeTitle: { fontSize: 12, lineHeight: 15, fontWeight: '600' },
-  programmeTitleCompact: { fontSize: 10, lineHeight: 12 },
+  programmeTitle: { fontSize: 12, fontWeight: '600' },
+  programmeTitleCompact: { fontSize: 10 },
   programmeTime: { fontSize: 10, marginTop: 4 },
   progressTrack: { height: 2, borderRadius: 1, overflow: 'hidden', marginBottom: 4 },
   progressFill: { height: '100%' },
