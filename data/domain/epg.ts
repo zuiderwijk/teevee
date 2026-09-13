@@ -33,6 +33,16 @@ export type GuideSchedule = {
 };
 
 /**
+ * Serializable schedule query shared by repository/API/client boundaries.
+ * A programme belongs to a query when its [start,end) interval intersects [from,to).
+ */
+export type GuideScheduleQuery = {
+  from: string;
+  to: string;
+  channelIds?: Channel['id'][];
+};
+
+/**
  * Compatibility name for deterministic development/test schedules.
  * Keeping fixtures explicit prevents real-data work from replacing the stable CI baseline.
  */
