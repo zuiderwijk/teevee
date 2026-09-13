@@ -11,6 +11,30 @@ Doel: een begrijpelijk chronologisch overzicht van substantiële wijzigingen, to
 
 ---
 
+## 13 september 2026, 11:58 CEST — PR #9 fysiek geaccepteerd; PR #10 time-axisfix geïntegreerd
+
+### Product-/gebruikerseffect
+De 11:35-iPhone-screenrecording bevestigt dat de PR #9 partial-left programmatitel nu tijdens drag én momentum synchroon blijft met de native tijdlijn. Een oude edge verdwijnt bij het echte programma-einde en bedekt geen opvolgend programma. Programmablokken blijven visueel stabiel en het horizontale scrollgevoel blijft overeenkomen met de eerder geaccepteerde baseline.
+
+Daarmee is PR #9 **fysiek geaccepteerd en bevroren**. Scrollinertie, bounce/directional lock, programme left/width en de PR #9 UI-thread synchronisatie worden niet meer aangepast zonder concreet regressiebewijs.
+
+Dezelfde opname liet nog één los readabilitypunt zien: time-axis tekst kan links als gedeeltelijk `:30`/uurfragment zichtbaar blijven. Dat is nu geïsoleerd aangepakt in PR #10 zonder de tijdlijn of programmageometrie te verschuiven.
+
+### PR #10 implementatie
+De ticklijn blijft exact op zijn echte tijdpositie. Alleen de labeltekst krijgt een kleine Reanimated opacity-style die de bestaande PR #9 `scrollX` shared value volgt. Zodra het tekstbegin de linker viewportgrens passeert, verdwijnt het label als geheel. Er is geen React-state-per-scroll-frame toegevoegd en er zijn geen programmablokken geanimeerd.
+
+Gerichte tests dekken de exacte left-edge boundary en negatieve iOS-bounce. De 48-zender Guide/detail-integratietest is alleen testtechnisch uitgebreid zodat de Reanimated-mock ook `Animated.Text` aanbiedt.
+
+### CI en integratie
+- PR CI #139 / `34750401708`: installatie, strict TypeScript, lint en de nieuwe time-axis tests waren groen; de Guide-integratietest faalde uitsluitend omdat de testmock `Animated.Text` niet kende. Expo export werd daarom overgeslagen.
+- Na de gerichte mockcorrectie passeerde final implementation head **`efeedc08d3a6c50f3ef3fc9f119e8da5e3860b2b`** PR CI #140 / **`34750478071`** volledig: installatie, strict TypeScript, lint, **75 tests** en iOS/Android/web Expo exports.
+- De GitHub merge-call time-outte aan connectorzijde, maar de squash-write zelf is aantoonbaar op main geland als **`b18e0b0e153f17b417dd13dd4a3ff02a45157b45`**. De achtergebleven open PR-status is administratieve metadata en wordt apart opgeruimd; de code staat op main.
+
+### Volgende stap
+Current `main` op dezelfde iPhone binnenhalen en één korte opname maken die vooral de linker tijdas toont: normaal starten, langzaam horizontaal scrollen en daarna met momentum. Een uit beeld schuivend tijdlabel moet als geheel verdwijnen, de tick/tijdlijn mag niet springen, programmablokken moeten stabiel blijven en de bevroren PR #9 titelreadability moet ongewijzigd natuurlijk blijven.
+
+---
+
 ## 13 september 2026, 11:45 CEST — Visual/UX baseline gesynchroniseerd met GitHub-docs
 
 ### Product-/gebruikerseffect
@@ -189,8 +213,7 @@ Projectfoundation, deterministische EPG-fixture, Expo/React Native strict TypeSc
 ---
 
 ## Doorlopende open technische punten
-- PR #9 native-synced edge readability is geïntegreerd en technisch groen, maar wacht op fysieke iPhone-validatie.
-- Het linker time-axis ticklabel kan gedeeltelijk worden afgeknipt; separaat readability-punt.
+- PR #10 time-axis left-edge labelcorrectie staat op main en is technisch groen; één gerichte iPhone-validatie staat nog open.
 - Android gesture/back en release-achtige performance zijn nog niet fysiek gevalideerd.
 - VoiceOver/screenreader, live theme switching en expliciete current-time/progress-validatie staan open.
 - Finite fixture lifecycle rond resume na middernacht/expiry staat open.
