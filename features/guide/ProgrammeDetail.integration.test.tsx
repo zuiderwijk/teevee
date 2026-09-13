@@ -86,12 +86,12 @@ vi.mock('react-native-gesture-handler', async () => {
     failOffsetX(value: number[]) { this.config.failOffsetX = value; return this; }
     failOffsetY(value: number[]) { this.config.failOffsetY = value; return this; }
     shouldCancelWhenOutside(value: boolean) { this.config.shouldCancelWhenOutside = value; return this; }
-    onBegin(callback: GestureCallbacks['begin']) { this.handlers.begin = callback; return this; }
-    onStart(callback: GestureCallbacks['start']) { this.handlers.start = callback; return this; }
-    onUpdate(callback: GestureCallbacks['update']) { this.handlers.update = callback; return this; }
-    onEnd(callback: GestureCallbacks['end']) { this.handlers.end = callback; return this; }
-    onFinalize(callback: GestureCallbacks['finalize']) { this.handlers.finalize = callback; return this; }
-    onTouchesDown(callback: GestureCallbacks['touches']) { this.handlers.touches = callback; return this; }
+    onBegin(callback: NonNullable<GestureCallbacks['begin']>) { this.handlers.begin = callback; return this; }
+    onStart(callback: NonNullable<GestureCallbacks['start']>) { this.handlers.start = callback; return this; }
+    onUpdate(callback: NonNullable<GestureCallbacks['update']>) { this.handlers.update = callback; return this; }
+    onEnd(callback: NonNullable<GestureCallbacks['end']>) { this.handlers.end = callback; return this; }
+    onFinalize(callback: NonNullable<GestureCallbacks['finalize']>) { this.handlers.finalize = callback; return this; }
+    onTouchesDown(callback: NonNullable<GestureCallbacks['touches']>) { this.handlers.touches = callback; return this; }
   }
   return {
     Gesture: { Pan: () => new MockPan() },
@@ -201,7 +201,7 @@ describe('programme detail rendering boundary', () => {
       expect(channelScroll.scrollTop).toBe(900);
     }
     await click(`programme-${first.id}`);
-    expect(offsetY()).toBe(0); // Same title can open again after a dragged dismissal.
+    expect(offsetY()).toBe(0);
   });
 
   it('shows the correct next programme and does not dismiss when its text is tapped', async () => {
