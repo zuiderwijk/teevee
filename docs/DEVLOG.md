@@ -16,6 +16,28 @@ Dit document is bedoeld voor product- en engineeringstakeholders, niet alleen vo
 
 ---
 
+## 13 september 2026, 06:28 CEST — Gids verlengd voor realistische verticale scrolltest
+
+### Wat is veranderd
+De testgids bevat nu 48 synthetische zenders in plaats van 16. Daardoor is de verticale gids lang genoeg om de inertie van een flinke swipe op een echte telefoon betrouwbaar te beoordelen.
+
+### Waarom
+De eerste iPhone-retest was akkoord, maar een swipe omlaag voelde mogelijk wat traag. Met slechts 16 zenders was er te weinig scrollafstand om daar een betrouwbare conclusie aan te verbinden. In plaats van de scrollsnelheid op gevoel te wijzigen, is eerst de testconditie realistischer gemaakt.
+
+### Technische details
+- de deterministische kanaalfixture is uitgebreid naar 48 zenders;
+- de bestaande programma-generator en edge cases blijven intact;
+- er is geen nieuwe scrollbibliotheek of virtualisatie toegevoegd;
+- de huidige verticale `decelerationRate` blijft voorlopig ongewijzigd.
+
+### Verificatie
+De volledige CI is groen voor deze increment: dependency-installatie, TypeScript, lint, tests en Expo-webexport zijn allemaal geslaagd.
+
+### Volgende stap
+De langere gids op dezelfde iPhone testen met één of meer lange verticale swipes. Alleen wanneer de verticale travel dan nog duidelijk te kort voelt, wordt de verticale deceleration verder getuned.
+
+---
+
 ## 11 september 2026, 19:46 CEST — Scrollgedrag aangepast op basis van eerste iPhone-test
 
 ### Wat is veranderd
