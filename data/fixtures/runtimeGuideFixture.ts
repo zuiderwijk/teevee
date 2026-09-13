@@ -4,18 +4,19 @@ import { guideFixture } from './guideFixture';
 const FIXTURE_START_MS = Math.min(
   ...guideFixture.programmes.map((programme) => Date.parse(programme.startAt)),
 );
-const HOUR_MS = 60 * 60 * 1000;
 
 /**
- * Rebase the deterministic fixture onto the user's current clock for manual
- * device testing. Programme spacing, durations, ids and edge cases stay
- * deterministic; only timestamps shift.
+ * Rebase the deterministic fixture onto the user's current local day for
+ * manual device testing. Programme spacing, durations, ids and edge cases
+ * stay deterministic; only timestamps shift.
+ *
+ * Teevee is Netherlands-first. Device tests therefore align the 49-hour
+ * fixture to local midnight, yielding two complete guide days plus one hour.
  */
 export function buildRuntimeGuideFixture(nowMs = Date.now()): GuideFixture {
-  // Put "now" 19 hours into the fixture so there is useful history and more
-  // than a full day of schedule ahead for today/tomorrow testing.
-  const desiredNowOffsetMs = 19 * HOUR_MS;
-  const shiftMs = nowMs - (FIXTURE_START_MS + desiredNowOffsetMs);
+  const localMidnight = new Date(nowMs);
+  localMidnight.setHours(0, 0, 0, 0);
+  const shiftMs = localMidnight.getTime() - FIXTURE_START_MS;
 
   return {
     ...guideFixture,
