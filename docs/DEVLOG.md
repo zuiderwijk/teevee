@@ -11,6 +11,38 @@ Doel: een begrijpelijk chronologisch overzicht van substantiële wijzigingen, to
 
 ---
 
+## 13 september 2026, 17:57 CEST — Phase 1B fysiek geaccepteerd; Phase 2 App Shell gestart
+
+De residual iPhone-pass `ScreenRecording_09-13-2026 17-43-36_1.MP4` sluit de resterende interactiegates van Phase 1B voldoende om door te gaan naar de App Shell. Daarmee zijn Totaal, Per zender en Nu & Straks als interaction models bewezen op het beschikbare iPhone-toestel.
+
+### Phase 1B eindbewijs
+In de residual pass blijft Nu & Straks de verticale zendercontext behouden terwijl de referentietijd verandert, blijft Programme Detail round-trip coherent en keert `Nu` terug naar de actuele referentie. De eerdere rail-oscillatie uit de 17:07-opname keert niet terug. Per zender toont bruikbare directe selectie uit een verder gebrowsede zenderstrip, werkende `Morgen/Vandaag/Nu`-controls en Programme Detail-contextbehoud rond zenderwissels.
+
+De owner hoefde voor deze afsluitende opname dark mode en grotere systeemtekst niet apart opnieuw te samplen. Die checks blijven expliciet als quality/hardening-gates staan; de Phase 1B-interactierisico's zelf zijn gesloten.
+
+PR #24 exact-main CI #216 / `34765990513`, die bij de vorige status nog liep, is inmiddels ook volledig groen: zowel `quality` als `android-native` eindigden `completed/success`.
+
+### Phase 2 increment 1 — PR #25
+Branch `feat/phase2-guide-shell` start de overgang van prototypes naar één appstructuur zonder de bewezen Guide-internals te retunen.
+
+Gebouwd:
+- één typed contract voor `Totaal`, `Per zender` en `Nu & Straks`;
+- een directe drie-weg selector in plaats van de tijdelijke Phase 1B cycle-knop;
+- bescherming tegen een late Nu & Straks dynamic import die een nieuwere gebruikerskeuze zou overschrijven;
+- Expo Router tabs voor `Gids`, `Vanavond` en `Zoeken`;
+- minimale placeholders voor Vanavond en Zoeken, zonder later featurewerk naar voren te trekken;
+- unit tests voor het presentation contract.
+
+Nu & Straks blijft bewust deferred geladen. De startup-regressie uit PR #21 is daarmee niet stilzwijgend opnieuw geïntroduceerd.
+
+### Verificatie
+De eerste PR-run #219 liet strict TypeScript slagen, maar `lint` faalde op één onescaped apostrof in de Search-placeholder. Dat is een concrete codekwaliteitfout, geen runtimebevinding. De tekst is direct gecorrigeerd op de PR-branch; een nieuwe CI-run moet de volledige quality- en Android-native-gates opnieuw bewijzen voordat merge is toegestaan.
+
+### Volgende stap
+PR #25 volledig door de actuele PR-head-CI laten lopen. Alleen als alle vereiste jobs expliciet `completed/success` zijn en de PR mergeable is, mergen. Daarna één korte iPhone shell smoke-test: startup, directe Guide-selector, deferred Nu & Straks, bottom tabs, terugkeer naar Gids en Programme Detail.
+
+---
+
 ## 13 september 2026, 17:06 CEST — Startup hersteld; deferred Nu & Straks opent fysiek op iPhone
 
 De eerdere Phase 1B-startupregressie is nu voldoende geïsoleerd om de productgate terug te brengen naar interactieacceptatie.
@@ -245,8 +277,9 @@ Projectfoundation, deterministische EPG-fixture, Expo/React Native strict TypeSc
 ---
 
 ## Doorlopende open technische punten
-- **Nu & Straks:** startup en deferred module-load fysiek bevestigd op iPhone; interaction acceptance is nu de actuele primaire gate.
-- **Per zender:** kern gesture/time-anchor fysiek bewezen; directe zenderstrip, dag/Nu, Programme Detail round-trip en theme/text restchecks combineren met dezelfde sessie.
+- **Phase 2 App Shell:** PR #25 moet eerst volledig groen + gemerged worden; daarna korte iPhone shell-smoke voordat persistence/settings verder worden opgebouwd.
+- **Guide presentation persistence:** lokaal onthouden voorkeur is nog niet geïmplementeerd; keuze van storage wordt in Phase 2 evidence-based gemaakt zonder onnodige globale state.
+- **Theme/accessibility:** Per zender en Nu & Straks dark mode + representatieve grotere tekst fysiek samplen tijdens Phase 2/4 hardening.
 - Android system/hardware Back, nested gestures en realistische performance fysiek valideren zodra een geschikt Android-toestel/interactive environment beschikbaar is; native compile-CI is geen toestelacceptatie.
 - Release-like performance buiten Expo Go valideren wanneer een geschikte build/device beschikbaar is.
 - De 15 moderate dependency-advisories vereisen gerichte analyse. Nooit `npm audit fix --force`.
