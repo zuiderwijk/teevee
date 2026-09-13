@@ -28,7 +28,7 @@ const fixture: GuideFixture = {
     programme('before', '2026-09-12T21:00:00.000Z', '2026-09-12T22:00:00.000Z'),
     programme('overlap', '2026-09-12T21:30:00.000Z', '2026-09-12T22:30:00.000Z'),
     programme('inside', '2026-09-13T18:00:00.000Z', '2026-09-13T19:00:00.000Z'),
-    programme('boundary', '2026-09-13T22:00:00.000Z', '2026-09-13T23:00:00.000Z'),
+    programme('boundary', '2026-09-13T21:00:00.000Z', '2026-09-13T22:00:00.000Z'),
     {
       ...programme('other', '2026-09-13T18:00:00.000Z', '2026-09-13T19:00:00.000Z'),
       channelId: 'channel-2',
