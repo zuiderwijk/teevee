@@ -14,6 +14,30 @@ Doel: een begrijpelijk en leesbaar overzicht van wat de autonome development-age
 
 ---
 
+## 13 september 2026, 09:12 CEST — Begintekst van deels verborgen programmablokken leesbaar gemaakt
+
+### Wat is veranderd
+De aparte readability-increment voor programma's die links achter de vaste zenderrail beginnen is gebouwd in PR #5. De echte programmageometrie blijft onaangetast: startpositie en blokbreedte blijven rechtstreeks uit start- en eindtijd volgen.
+
+Alleen de inhoud binnen het bestaande blok reageert op de horizontale viewport. Na het einde van een drag of momentum wordt berekend hoeveel van het blok links niet meer zichtbaar is. Titel en eventuele starttijd schuiven vervolgens binnen hetzelfde blok naar het zichtbare restant. De tekstcontainer krijgt alleen de resterende zichtbare breedte, zodat een titel eerlijk ellipst in plaats van aan een willekeurige viewportgrens hard te worden afgesneden. Is er te weinig ruimte om een starttijd volledig te tonen, dan wordt die tijd niet getoond; de volledige titel en tijden blijven wel in het accessibility-label beschikbaar.
+
+De readability-offset wordt niet op ieder scrollframe in React-state gezet. Daarmee vermijden we een volledige render van de zware Guide op scrollfrequentie. Scrollinertie, bounce, directional lock, dag/Nu-semantiek en detail-dismissal zijn niet aangepast.
+
+### Verificatie
+De pure geometry-tests dekken volledig zichtbare blokken, gedeeltelijk links verborgen blokken en de drempel waaronder een volledige starttijd niet meer betrouwbaar past.
+
+PR #5 exact head **`de308881e102b40d4f7739944b32c0c5e9e22888`** passeerde **CI #86 / run `34744460640`** volledig: installatie, strict TypeScript, lint, tests en iOS/Android/web Expo exports.
+
+PR #5 is gesquasht naar main als **`1e8aa125819472eb6ac76b0a41c0243973c4a003`**. De daaropvolgende **main-CI #87 / run `34744549991` is eveneens geslaagd** met dezelfde gates.
+
+### Nog te valideren
+CI bewijst niet hoe het opnieuw verankeren van tekst na een horizontale swipe op het echte toestel aanvoelt. De increment is daarom technisch groen maar nog niet fysiek geaccepteerd.
+
+### Volgende stap
+Op de iPhone Totaal horizontaal verschuiven totdat een langer programmablok links gedeeltelijk achter de zenderrail ligt, de swipe volledig laten uitrollen en controleren dat titeltekst uit het zichtbare restant begint zonder de blokgeometrie te veranderen. Een starttijd moet volledig zichtbaar zijn of ontbreken, nooit als fragment. Meld ook alleen als de eerder geaccepteerde horizontale scroll ineens springerig aanvoelt.
+
+---
+
 ## 13 september 2026, 09:01 CEST — Grote-tekstcorrectie fysiek geaccepteerd
 
 ### Toestelbewijs
@@ -170,5 +194,5 @@ Eerdere configuratiefouten (Expo-dependencies, TypeScript `baseUrl`, React purit
 - Eerder zijn 15 moderate dependency-advisories gemeld. Niet automatisch/gefroceerd upgraden; nooit `npm audit fix --force` zonder impactanalyse.
 - Android gesture/back en release-achtige performance zijn nog niet fysiek gevalideerd.
 - De finite launch-anchored fixture heeft nog lifecyclewerk rond resume na middernacht/expiry.
-- Partieel verborgen programme-informatie achter de vaste zenderrail is nu de eerstvolgende gerichte readability-increment.
+- Partieel verborgen programme-informatie achter de vaste zenderrail is technisch aangepakt; de gerichte iPhone-hertest van de nieuwe tekstverankering staat nog open.
 - Production EPG/logo/artwork rights/reliability, abonnement/paywall en final visual design liggen buiten de huidige Phase 1-validatiestap.
