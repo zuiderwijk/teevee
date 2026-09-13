@@ -157,7 +157,7 @@ describe('normaliseProviderSchedule', () => {
     ]);
   });
 
-  it('suppresses duplicate provider records and reports schedule overlaps without dropping valid data', () => {
+  it('deduplicates equivalent broadcast starts after timestamp normalisation', () => {
     const first: ExternalProgramme = {
       id: 'same-record',
       channelId: 'provider-one',
@@ -167,7 +167,11 @@ describe('normaliseProviderSchedule', () => {
     };
     const result = normalise([
       first,
-      { ...first },
+      {
+        ...first,
+        startAt: '2026-09-14T20:00:00+02:00',
+        endAt: '2026-09-14T21:30:00+02:00',
+      },
       {
         id: 'overlap',
         channelId: 'provider-one',
