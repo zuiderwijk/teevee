@@ -72,7 +72,7 @@ describe('normaliseProviderSchedule', () => {
     expect(result.schedule.programmes[0]?.id).toMatch(/^programme-[a-z0-9]+$/);
   });
 
-  it('keeps canonical ids deterministic when provider ids are stable', () => {
+  it('keeps canonical ids deterministic when provider ids and broadcast starts are stable', () => {
     const programme: ExternalProgramme = {
       id: 'stable-provider-id',
       channelId: 'provider-one',
@@ -86,6 +86,29 @@ describe('normaliseProviderSchedule', () => {
 
     expect(first).toBeDefined();
     expect(corrected).toBe(first);
+  });
+
+  it('keeps separate broadcasts when a provider reuses one programme id', () => {
+    const result = normalise([
+      {
+        id: 'reused-id',
+        channelId: 'provider-one',
+        startAt: '2026-09-14T18:00:00Z',
+        endAt: '2026-09-14T19:00:00Z',
+        title: 'Eerste uitzending',
+      },
+      {
+        id: 'reused-id',
+        channelId: 'provider-one',
+        startAt: '2026-09-14T19:00:00Z',
+        endAt: '2026-09-14T20:00:00Z',
+        title: 'Tweede uitzending',
+      },
+    ]);
+
+    expect(result.diagnostics).toEqual([]);
+    expect(result.schedule.programmes).toHaveLength(2);
+    expect(result.schedule.programmes[0]?.id).not.toBe(result.schedule.programmes[1]?.id);
   });
 
   it('skips unusable provider records and returns explicit diagnostics', () => {
