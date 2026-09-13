@@ -1,6 +1,7 @@
-import { type ComponentType, useCallback, useEffect, useReducer, useRef, useState } from 'react';
+import { type ComponentType, type ReactNode, useCallback, useEffect, useReducer, useRef, useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 
+import { SettingsButton } from '@/components/SettingsButton';
 import { detailReducer, initialDetailState, type ProgrammeSelection } from '@/features/guide/detailState';
 import { GuidePresentationSelector } from '@/features/guide/GuidePresentationSelector';
 import {
@@ -17,7 +18,10 @@ import {
 } from '@/services/storage/appPreferencesStorage';
 import { useTeeveeTheme } from '@/theme/useTeeveeTheme';
 
+const settingsAction = <SettingsButton />;
+
 type NowNextGuideComponent = ComponentType<{
+  headerAction?: ReactNode;
   onSelectProgramme: (selection: ProgrammeSelection) => void;
 }>;
 
@@ -107,11 +111,11 @@ export default function GuideScreen() {
   return (
     <>
       {showNowNext && NowNextComponent ? (
-        <NowNextComponent onSelectProgramme={openDetail} />
+        <NowNextComponent onSelectProgramme={openDetail} headerAction={settingsAction} />
       ) : showPerChannel ? (
-        <PerChannelGuideView onSelectProgramme={openDetail} />
+        <PerChannelGuideView onSelectProgramme={openDetail} headerAction={settingsAction} />
       ) : (
-        <GuideView onSelectProgramme={openDetail} />
+        <GuideView onSelectProgramme={openDetail} headerAction={settingsAction} />
       )}
 
       {nowNextLoadError ? (

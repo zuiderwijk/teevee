@@ -27,7 +27,9 @@ The Nu & Straks module is not generally unable to evaluate or render: it does so
 
 Deferred loading remains the accepted Phase 1B integration boundary. Do not restore the static startup import without separate evidence.
 
-## Remaining acceptance gate
+## Historical remaining acceptance gate
+
+The interaction checks below were subsequently closed in the 17:36/17:43 iPhone evidence, with larger-text/theme sampling carried into Phase 2/4. See `PROJECT_STATE.md` for current open gates.
 The startup/module-load problem is no longer the active product gate. Remaining physical validation is interaction-level:
 1. live mode opens around actual current time;
 2. horizontal time-rail browse pins one shared reference instant for all channels;

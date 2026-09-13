@@ -64,3 +64,13 @@ export function withGuidePresentation(
     guidePresentation,
   };
 }
+
+export function withAppearancePreference(
+  preferences: AppPreferences,
+  appearance: AppearancePreference,
+): AppPreferences {
+  return {
+    ...preferences,
+    appearance,
+  };
+}

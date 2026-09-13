@@ -3,7 +3,7 @@
 Use this only for the Phase 1B Per zender prototype. Do not use observations here to retune the frozen Totaal inertia/geometry without separate evidence.
 
 ## Available-device gate — iPhone
-1. Open the app. It should land in Per zender around the current time on Vandaag.
+1. Open the app and select Per zender using the Guide selector. It should open around the current time on Vandaag; a cold start otherwise restores the saved presentation (Totaal by default).
 2. Scroll vertically both slowly and with a fling. Time labels and programme geometry should remain coherent and boundaries should retain native elasticity.
 3. Swipe horizontally on the schedule. One adjacent channel should settle per swipe; the viewed time position must not jump.
 4. Reverse direction repeatedly. There must be no stale channel label, blank schedule or accidental multi-channel jump.

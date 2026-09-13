@@ -3,10 +3,14 @@ import { act } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { AppearancePreferenceProvider, useAppearancePreferenceSettings } from '@/features/settings/AppearancePreferenceProvider';
+import { DEFAULT_APP_PREFERENCES, type AppearancePreference } from '@/features/settings/appPreferences';
+import { readAppPreferences, writeAppPreferences } from '@/services/storage/appPreferencesStorage';
+
 import { darkTheme, lightTheme } from './tokens';
 import { useTeeveeTheme } from './useTeeveeTheme';
 
-type Scheme = 'light' | 'dark' | null;
+type Scheme = 'light' | 'dark' | 'unspecified' | null;
 
 const schemeStore = vi.hoisted(() => ({
   value: 'light' as Scheme,
@@ -38,11 +42,29 @@ function ThemeProbe() {
   );
 }
 
+function PreferenceControls() {
+  const { setAppearance } = useAppearancePreferenceSettings();
+  return <>{(['system', 'light', 'dark'] as const).map((value) => (
+    <button key={value} data-appearance={value} onClick={() => setAppearance(value)}>{value}</button>
+  ))}</>;
+}
+
+function AppProbe() {
+  return <AppearancePreferenceProvider><ThemeProbe /><PreferenceControls /></AppearancePreferenceProvider>;
+}
+
+async function chooseAppearance(value: AppearancePreference) {
+  const button = container.querySelector<HTMLButtonElement>(`[data-appearance="${value}"]`);
+  if (!button) throw new Error('Preference button is not rendered');
+  await act(async () => button.click());
+}
+
 let container: HTMLDivElement;
 let root: Root;
 
 beforeEach(() => {
   vi.stubGlobal('IS_REACT_ACT_ENVIRONMENT', true);
+  writeAppPreferences(DEFAULT_APP_PREFERENCES);
   schemeStore.value = 'light';
   schemeStore.listeners.clear();
   container = document.createElement('div');
@@ -95,5 +117,40 @@ describe('useTeeveeTheme live system updates', () => {
 
     expect(probe().dataset.dark).toBe('false');
     expect(probe().dataset.background).toBe(lightTheme.colors.background);
+  });
+});
+
+
+describe('appearance provider integration', () => {
+  it('applies explicit choices live and resumes device following without remounting', async () => {
+    await act(async () => root.render(<AppProbe />));
+    const node = probe();
+    await chooseAppearance('dark');
+    expect(node.dataset.dark).toBe('true');
+    await switchScheme('dark');
+    await chooseAppearance('light');
+    expect(node.dataset.dark).toBe('false');
+    await switchScheme('light');
+    await switchScheme('dark');
+    expect(node.dataset.dark).toBe('false');
+    await chooseAppearance('system');
+    expect(node.dataset.dark).toBe('true');
+    await switchScheme('unspecified');
+    expect(node.dataset.dark).toBe('false');
+    expect(probe()).toBe(node);
+  });
+
+  it('restores an explicit choice on remount and preserves the latest Guide preference', async () => {
+    writeAppPreferences({ version: 1, appearance: 'dark', guidePresentation: 'per-channel' });
+    await act(async () => root.render(<AppProbe />));
+    expect(probe().dataset.dark).toBe('true');
+    // Simulate a Guide selection after the provider has mounted.
+    writeAppPreferences({ ...readAppPreferences(), guidePresentation: 'now-next' });
+    await chooseAppearance('light');
+    expect(readAppPreferences()).toEqual({ version: 1, appearance: 'light', guidePresentation: 'now-next' });
+    await act(async () => root.render(null));
+    await switchScheme('dark');
+    await act(async () => root.render(<AppProbe />));
+    expect(probe().dataset.dark).toBe('false');
   });
 });

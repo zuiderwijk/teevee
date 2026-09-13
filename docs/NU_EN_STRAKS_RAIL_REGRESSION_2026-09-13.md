@@ -1,13 +1,13 @@
 # Nu & Straks tijdrail-regressie — 13 september 2026
 
-Status: OPEN — physical blocker for Phase 1B acceptance.
+Status: CLOSED — fixed by PR #24; iPhone rail revalidation at 17:36 and final Phase 1B pass at 17:43 on 13 September 2026. The historical failure and fix rationale are retained below; see `PROJECT_STATE.md`.
 
 ## Device evidence
 In `ScreenRecording_09-13-2026 17-07-22_1.MP4` the time rail enters a visible tug-of-war around 00:08–00:09 and again around 00:18. The selected reference time oscillates between slots and the user temporarily loses effective control of the rail.
 
-This is a serious interaction defect, not cosmetic polish. Phase 1B cannot close while it is present.
+This is a serious interaction defect, not cosmetic polish. It blocked Phase 1B until the subsequent physical retest.
 
-## Root cause in current implementation
+## Root cause in the rejected implementation
 The rail commits selection from both `onScrollEndDrag` and `onMomentumScrollEnd`. `commitRailOffset()` calls `chooseSlot()`, which in turn calls `scrollTo()`. In addition, an effect re-centres whenever `selectedSlotIndex` changes.
 
 During a fling this allows React/state-driven programmatic scrolling to fight the native momentum + snap animation. The recording is consistent with that feedback loop.

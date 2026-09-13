@@ -1,6 +1,6 @@
 # Phase 1B — Guide Presentation Prototypes
 
-Status: active after owner approval on 13 September 2026.
+Status: interaction gates accepted on the available iPhone on 13 September 2026. Historical prototype criteria follow; current status and residual accessibility/Android gates are in `PROJECT_STATE.md`.
 
 ## Goal
 Validate the interaction models that were discovered during Phase 1 before App Shell and real-data architecture are hardened around Totaal alone.
@@ -19,7 +19,7 @@ Validate the interaction models that were discovered during Phase 1 before App S
 - horizontal channel changes preserve the viewed wall-clock anchor;
 - no white screen, crash or obvious gesture collapse is visible.
 
-This closes the main Per zender architecture/gesture risk. The recording did not deliberately exercise every acceptance item. Direct strip tap/browse, Vandaag/Morgen/Nu, Programme Detail return context, dark mode and representative larger text remain residual checks and should be combined with the next physical Phase 1B pass rather than blocking construction of Nu & Straks.
+This closes the main Per zender architecture/gesture risk. The recording did not deliberately exercise every acceptance item. Direct strip tap/browse, Vandaag/Morgen/Nu and Programme Detail return context were subsequently accepted in the final 17:43 iPhone pass. Representative larger text and broader theme validation remain explicit Phase 2/4 checks.
 
 ## Per zender prototype gate
 Use the deterministic runtime fixture and existing Programme Detail. Validate on the available physical iPhone:
@@ -57,7 +57,7 @@ Validate the accepted UX in `docs/UX.md`:
 ## Explicitly deferred
 - production EPG/provider integration;
 - persistent channel selection/reordering;
-- final shared Guide presentation switcher and remembered default;
+- final shared Guide presentation switcher and remembered default (subsequently implemented by Phase 2 PR #25/#26);
 - offline/stale-cache production behaviour;
 - production logo/artwork rights;
 - paywall/subscriptions;

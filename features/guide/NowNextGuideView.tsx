@@ -1,4 +1,4 @@
-import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { type ReactNode, memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   type NativeScrollEvent,
   type NativeSyntheticEvent,
@@ -35,6 +35,7 @@ const CHANNEL_WIDTH = 82;
 const PRIMETIME_LABEL = '20:30';
 
 type NowNextGuideViewProps = {
+  headerAction?: ReactNode;
   onSelectProgramme: (selection: ProgrammeSelection) => void;
 };
 
@@ -157,6 +158,7 @@ const ChannelRow = memo(function ChannelRow({
 
 export const NowNextGuideView = memo(function NowNextGuideView({
   onSelectProgramme,
+  headerAction,
 }: NowNextGuideViewProps) {
   const theme = useTeeveeTheme();
   const { width: windowWidth } = useWindowDimensions();
@@ -278,6 +280,7 @@ export const NowNextGuideView = memo(function NowNextGuideView({
           <View style={[styles.presentationDot, { backgroundColor: theme.colors.currentTime }]} />
           <Text style={[styles.presentationText, { color: theme.colors.textSecondary }]}>Nu & Straks</Text>
         </View>
+        {headerAction}
       </View>
 
       <View style={styles.referenceControls}>
@@ -408,6 +411,9 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   header: {
+    flexWrap: 'wrap',
+    columnGap: 12,
+    rowGap: 8,
     paddingHorizontal: 20,
     paddingTop: 18,
     paddingBottom: 14,

@@ -28,6 +28,8 @@ const motion = vi.hoisted(() => ({
   cancel: vi.fn(),
 }));
 
+vi.mock('expo-router', () => ({ useRouter: () => ({ push: vi.fn() }) }));
+
 vi.mock('@/features/guide/useGuideClock', () => ({
   useGuideClock: vi.fn(() => Date.parse('2026-09-13T08:00:00+02:00')),
 }));

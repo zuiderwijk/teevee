@@ -5,6 +5,7 @@ import {
   parseAppPreferences,
   parseSerializedAppPreferences,
   serializeAppPreferences,
+  withAppearancePreference,
   withGuidePresentation,
 } from './appPreferences';
 
@@ -34,5 +35,12 @@ describe('app preferences', () => {
 
     expect(next).toEqual({ version: 1, guidePresentation: 'now-next', appearance: 'dark' });
     expect(parseSerializedAppPreferences(serializeAppPreferences(next))).toEqual(next);
+  });
+
+  it('changes appearance without losing the Guide preference', () => {
+    const current = { version: 1 as const, guidePresentation: 'per-channel' as const, appearance: 'system' as const };
+    const next = withAppearancePreference(current, 'dark');
+
+    expect(next).toEqual({ version: 1, guidePresentation: 'per-channel', appearance: 'dark' });
   });
 });

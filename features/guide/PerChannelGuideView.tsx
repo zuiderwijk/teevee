@@ -1,4 +1,4 @@
-import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { type ReactNode, memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   type NativeScrollEvent,
   type NativeSyntheticEvent,
@@ -39,6 +39,7 @@ const NOW_TOP_INSET = 132;
 const HOUR_MS = 60 * 60 * 1000;
 
 type PerChannelGuideViewProps = {
+  headerAction?: ReactNode;
   onSelectProgramme: (selection: ProgrammeSelection) => void;
 };
 
@@ -199,6 +200,7 @@ function channelsForPager(channels: Channel[], selectedIndex: number): Channel[]
 
 export const PerChannelGuideView = memo(function PerChannelGuideView({
   onSelectProgramme,
+  headerAction,
 }: PerChannelGuideViewProps) {
   const theme = useTeeveeTheme();
   const { width: windowWidth } = useWindowDimensions();
@@ -310,6 +312,7 @@ export const PerChannelGuideView = memo(function PerChannelGuideView({
           <View style={[styles.presentationDot, { backgroundColor: theme.colors.currentTime }]} />
           <Text style={[styles.presentationText, { color: theme.colors.textSecondary }]}>Per zender</Text>
         </View>
+        {headerAction}
       </View>
 
       <ScrollView
@@ -458,6 +461,9 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   header: {
+    flexWrap: 'wrap',
+    columnGap: 12,
+    rowGap: 8,
     minHeight: 78,
     paddingHorizontal: 18,
     paddingTop: 10,
