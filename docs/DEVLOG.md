@@ -11,6 +11,35 @@ Doel: een begrijpelijk chronologisch overzicht van substantiële wijzigingen, to
 
 ---
 
+## 13 september 2026, 14:16 CEST — PR #13 accessibility/theme technisch afgerond
+
+### Product-/gebruikerseffect
+Na de fysieke acceptatie van PR #12 is de volgende Phase 1-gate uitgevoerd: VoiceOver/screenreader-semantiek en live system-theme switching.
+
+Voor screenreaders is de Guide nu minder redundant en ieder programma zelfstandig begrijpelijk:
+- de vaste visuele zenderrail is uit accessibility-traversal gehaald; de gebruiker hoeft niet eerst 48 losse zendernamen te doorlopen;
+- de visuele halfuur-tijdas is uit accessibility-traversal gehaald; programmebuttons bevatten hun eigen tijden;
+- het decoratieve `TEEVEE`-eyebrow wordt niet apart aangekondigd; `Gids` blijft een header;
+- programmebuttons spreken zender + titel + begin/eindtijd en voegen `nu bezig` toe wanneer relevant;
+- de hint `Opent programmadetails` maakt de actie expliciet.
+
+Programme Detail behoudt zijn bestaande modal-semantiek, accessibility escape/twee-vinger-scrub-route en expliciete close-label.
+
+### Live theme switching
+De productiehook hoefde niet aangepast te worden: `useTeeveeTheme()` gebruikt al React Native `useColorScheme()` en is daarmee op de live systeemscheme geabonneerd. Er is nu wel expliciete render-dekking toegevoegd die bewijst dat dezelfde gemounte component light → dark → light volgt zonder remount, plus een null→light fallback.
+
+### Tests en CI
+De bestaande Guide/detail-integratietest is uitgebreid om de verborgen visuele rails, self-contained programme-labels/hint en bestaande accessibility escape te bewaken. Een nieuwe `theme/useTeeveeTheme.test.tsx` test de live scheme-subscription.
+
+PR-head **`766be594f6e8af193e3f9b364c7c6378a7c210df`** passeerde **PR CI #158 / `34756492990`** volledig: install, strict TypeScript, lint, tests en iOS/Android/web Expo exports.
+
+PR #13 is gesquasht naar main als **`a8651b26c2521b53d0077bbd499862c3b1b71ed2`**.
+
+### Volgende stap
+Eén kleine fysieke iPhone-gate: met VoiceOver controleren dat de vaste zenderrail/tijdas geen lange dubbele focusreeksen vormen, enkele programmebuttons laten uitspreken en Programme Detail één keer via accessibility escape sluiten. Daarna iOS Appearance Light → Dark → Light wisselen terwijl Teevee open blijft, inclusief één wissel met Programme Detail geopend. Geen scrollretour nodig.
+
+---
+
 ## 13 september 2026, 14:07 CEST — PR #12 fysiek geaccepteerd; Guide-scroll/readabilitygate gesloten
 
 ### Toestelbewijs
@@ -177,7 +206,7 @@ Projectfoundation, deterministische EPG-fixture, Expo/React Native strict TypeSc
 ---
 
 ## Doorlopende open technische punten
-- VoiceOver/screenreader en live system-theme switching zijn de volgende Phase 1-gate.
+- PR #13 VoiceOver/live-theme is technisch groen; alleen de gerichte native iPhone-gate staat open.
 - Android gesture/back en release-achtige performance zijn nog niet fysiek gevalideerd.
 - Expliciete current-time/progress-validatie staat open.
 - Finite fixture lifecycle rond resume na middernacht/expiry staat open.
