@@ -1,6 +1,6 @@
 # Teevee Product
 
-Status: Phase 0 baseline, amended with owner guide-view requirements on 13 September 2026. These requirements are not a claim of implementation or device acceptance.
+Status: product baseline, amended with owner-approved Guide and Programme Detail UX direction on 13 September 2026. These decisions do not claim that the current runtime already implements them.
 
 ## Product vision
 Teevee is a new premium, ad-free television guide for iOS and Android, developed under supervision of Bindinc/TVgids.nl. It is a new product rather than a redesign of the existing TVgids.nl app.
@@ -26,10 +26,11 @@ Dutch television viewers who want a high-quality guide experience. The MVP targe
 ### Included
 - complete Dutch TV guide for supported channels;
 - Totaal: touch-native timeline with horizontal time navigation and vertical channel navigation;
-- owner-requested alternative presentations Per zender and Nu & Straks, specified below; not implemented yet;
+- Per zender: one-channel vertical day schedule with sticky channel-logo navigation and horizontal swipe to adjacent channels;
+- Nu & Straks: today-only shared time reference across channels, showing the programme at that reference instant plus the next three programmes;
 - Now indicator and jump-to-Now action;
-- day selection in Totaal and Per zender; a today-only time selector, without date selection, in Nu & Straks;
-- programme detail;
+- day selection in Totaal and Per zender; no date selector in Nu & Straks;
+- direct Programme Detail from Guide;
 - search for programmes and channels;
 - channel selection, ordering and persistence;
 - save/favourite functionality;
@@ -54,31 +55,76 @@ Dutch television viewers who want a high-quality guide experience. The MVP targe
 - engagement mechanics whose primary goal is session length.
 
 ## Primary product surfaces
-- **Guide** — default destination, with the requested presentations Totaal, Per zender and Nu & Straks.
-- **Tonight** — optional discovery presentation of the same programme domain, not an editorial news feed. Its exact role remains subject to validation.
+- **Guide** — default destination, with Totaal, Per zender and Nu & Straks.
+- **Tonight** — discovery presentation of the same programme domain. It may be more visual than Guide, but its final module composition remains provisional.
 - **Search** — direct programme/channel retrieval answering when something is on television.
 
-The working navigation baseline is three primary destinations: Guide, Tonight and Search. Saved programmes/reminders do not require a permanent primary tab unless testing demonstrates a clear need. The guide-view extension does not authorise changing those primary destinations.
+The working primary navigation baseline is Guide / Tonight / Search. Saved programmes/reminders do not require a permanent primary tab unless testing demonstrates a clear need.
 
-## Guide presentations — owner requirements, 13 September 2026
-**Totaal** is the existing multi-channel time grid. **Per zender** shows one channel's schedule as a vertical day list, opening around the current programme, with channel navigation and secondary date selection.
+## Guide presentations — accepted UX baseline, 13 September 2026
+### Totaal
+Multi-channel time grid. Horizontal movement navigates time; vertical movement navigates channels. Time and channel context remain understandable while moving through the grid. The visual direction prioritises open schedule geometry over card stacking.
 
-**Nu & Straks** shows the programme airing at one reference time and the following programme(s) for each selected channel. The owner's correction is explicit: **no date selector in this view**. A horizontal time selector lets the user move through **today**, including later today; all channel cards update for that same selected time. The screenshot supplied at 08:02 illustrates this interaction, not a requirement to copy the existing visual style, advertisements or other navigation.
+### Per zender
+One channel's scrollable day schedule, initially around the current programme. Channel navigation is primary and date navigation secondary.
 
-At the live reference time this answers "what is on now and next?"; at, for example, 20:30 today it answers "what is on then and what follows?" Future or past selections must not be described as currently live. The return-to-Nu action restores the actual current time.
+Accepted interaction direction:
+- horizontal channel-logo strip remains available while scrolling;
+- tap a logo to select that channel;
+- horizontal swipe across the schedule moves to previous/next channel;
+- changing channel preserves the viewed time anchor where practical;
+- channel name remains as context while the logo is the primary identifier;
+- programme list prioritises time + title and avoids low-value genre/artwork clutter.
 
-How popular each presentation is, whether users rarely switch, and how strongly Totaal/Per zender share a journey are **hypotheses**, not measured facts. Remembering the preferred view within Guide is the working UX proposal. Initial default, exact selector design and one versus two following programmes remain open; the current prototype being Totaal does not settle those choices. No new top-level tab or mandatory onboarding choice is frozen here.
+### Nu & Straks
+Today-only compact channel list around one common reference time.
 
-These requirements must be incorporated into subsequent build specifications without silently declaring the existing Phase 1 accessibility, lifecycle, Android or performance gates complete. Current shipped prototype code remains Totaal only.
+Accepted interaction direction:
+- no date selector;
+- horizontal time selector moves the shared reference time through today;
+- `Nu` restores the actual current time;
+- `Primetime` provides a direct television-specific jump from live mode to the key evening block;
+- each channel shows the programme airing at the reference instant plus **three following programmes**;
+- live/current mode uses concise end-time context; future/past reference mode must not look live;
+- no progress bars, genres, artwork, chevrons or repeated `Daarna` labels in this view;
+- channel order and vertical position stay stable while the reference time changes.
 
-## Programme detail
-At minimum: title, channel, date/time, duration and available description. Optional enrichment may include artwork, season/episode, genre, year and cast. Primary actions are Save and Remind me.
+These decisions supersede the earlier open question about one versus two following programmes.
+
+## Programme Detail — accepted UX baseline
+Tap a Guide programme to open Programme Detail directly; no intermediate preview sheet is required.
+
+Required hierarchy:
+1. title;
+2. channel and broadcast time;
+3. useful current/status context when relevant;
+4. `Herinner mij` and `Bewaar` actions;
+5. available description;
+6. optional secondary metadata/enrichment.
+
+Artwork is optional enrichment and must never be required for a premium-feeling layout.
+
+Current-phase action scope is deliberately limited to `Herinner mij` and `Bewaar`. Share, overflow actions, calendar actions and recommendation feedback are not required now.
+
+For one-handed usability, once the canonical actions scroll out of view a compact sticky bottom copy may appear; it disappears when the original actions return to view. Larger system text may stack those actions rather than shrinking them.
+
+## Visual product direction
+The accepted Guide/Detail direction is premium utility rather than decorative media UI:
+- restrained chrome;
+- channel logo primary;
+- open canvas rather than stacked programme cards;
+- near-white neutral light canvas and dark-anthracite dark canvas;
+- red used sparingly for meaningful selected/current/primary-action emphasis;
+- Söhne is the preferred typography direction, subject to production licensing/technical verification;
+- substantive content must scale for accessibility even if that reduces density.
+
+Exact production design tokens and platform font delivery remain implementation details, not product promises.
 
 ## Onboarding
 Maximum three functional steps: welcome, choose/reorder channels, done. No account wall.
 
 ## Monetisation
-Teevee is intended to become a paid, ad-free app. Exact pricing, trial model and paywall timing are not frozen in Phase 0.
+Teevee is intended to become a paid, ad-free app. Exact pricing, trial model and paywall timing are not frozen.
 
 ## Success hierarchy
 1. Guide usability and perceived speed.
@@ -89,22 +135,24 @@ Teevee is intended to become a paid, ad-free app. Exact pricing, trial model and
 The Phase 1 gate is qualitative and strict: **does the guide itself demonstrably feel better than the current conventional TV-guide experience?** If not, do not add scope; improve the guide.
 
 ## Frozen vs open
-### Frozen
+### Frozen / accepted direction
 - iOS and Android;
 - Netherlands first;
 - paid and ad-free positioning;
 - guide-first product;
 - no mandatory account for core use;
-- light and dark appearance;
+- light, dark and system appearance;
 - provider-independent programme-data architecture;
-- autonomous-agent development model.
+- autonomous-agent development model;
+- three Guide presentations and their interaction roles as described above;
+- Nu & Straks: reference programme + three following programmes;
+- Programme Detail direct-open hierarchy and current two-action scope.
 
 ### Open
 - final product/brand name;
-- exact visual design;
-- exact navigation interaction details and initial guide-view default;
-- one or two following programmes in Nu & Straks;
+- exact production design-token values and font licensing/delivery;
+- initial default Guide presentation and long-term preference/restoration details where not yet proven;
 - pricing and trial/paywall model;
 - final production backend/data supplier;
 - metadata enrichment source;
-- final role of Tonight.
+- final module composition/role of Tonight.
