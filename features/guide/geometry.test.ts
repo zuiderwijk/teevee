@@ -76,4 +76,20 @@ describe('Guide timeline geometry', () => {
       canShowStartTime: true,
     });
   });
+
+  it('does not collapse text when a stale settled viewport is already past the programme', () => {
+    expect(programmeVisibleContent({ left: 100, width: 178 }, 400)).toEqual({
+      contentTranslateX: 0,
+      visibleWidth: 178,
+      canShowStartTime: true,
+    });
+  });
+
+  it('restores full content at the exact programme end boundary', () => {
+    expect(programmeVisibleContent({ left: 100, width: 178 }, 278)).toEqual({
+      contentTranslateX: 0,
+      visibleWidth: 178,
+      canShowStartTime: true,
+    });
+  });
 });
