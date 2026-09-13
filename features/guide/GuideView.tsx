@@ -212,7 +212,7 @@ export const GuideView = memo(function GuideView({ onSelectProgramme }: GuideVie
               {ticks.map((tick) => {
                 const left = timeToX(tick, windowStart);
                 return (
-                  <View key={tick} style={[styles.tick, { left, borderLeftColor: theme.colors.border }]}> 
+                  <View key={tick} style={[styles.tick, { left, borderLeftColor: theme.colors.border }]}>
                     <Text numberOfLines={1} style={[styles.tickLabel, { color: theme.colors.textMuted }]}>
                       {formatTime(tick)}
                     </Text>
