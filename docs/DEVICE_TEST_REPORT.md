@@ -1,6 +1,6 @@
 # Teevee Phase 1 — Device Test Report
 
-Bijgewerkt: **13 september 2026, 06:58 CEST — Europe/Amsterdam**.
+Vastlegging gestart: **13 september 2026, 07:04 CEST — Europe/Amsterdam**. Exacte committijd staat in GitHub.
 Gebruik alleen concrete observaties. Een wijziging in code of een groene CI is geen geslaagde toesteltest.
 
 ## Toestel en versies
@@ -10,57 +10,65 @@ Gebruik alleen concrete observaties. Een wijziging in code of een groene CI is g
 - Netwerk: wifi.
 - Eerste scrollretest: na `df6873e24d24cf2747da6936fab1b0f60f0d1073`; wijzigingen akkoord.
 - Latere test: 48-zenderversie; exacte lokale SHA niet doorgegeven.
-- Nieuwe te testen code: **`b13a7c5263cd663ed1d7ea35e3cfb46d70a8988a`** of een opvolger met dezelfde code.
+- Laatste hertest gevraagd voor code **`b13a7c5263cd663ed1d7ea35e3cfb46d70a8988a`** of documentatie-opvolger `0e9be9103ec2ff96ec63e702476b56dfd8669603`. De werkelijk geïnstalleerde lokale SHA is niet afzonderlijk bevestigd.
 
-## Laatste ontvangen feedback
-De langere gids maakt het eerdere vermoeden concreter: een harde verticale swipe vanaf boven komt ongeveer tot Docu/Muziek, circa één scherm. De product owner meldt dat dezelfde soort swipe in TVgids.nl circa twee schermen aflegt. Dit is een bruikbare kwalitatieve vergelijking, geen gemeten gelijke beginsnelheid.
+## Laatste ontvangen feedback — akkoord
+Na de instructie om de standaardinertie, de doorlopende tijdlijn voorbij 16:00/over middernacht en de geanimeerde terugkeer met `Nu` te hertesten, antwoordde de product owner op 13 september 2026: **"perfect"**.
+
+Dit is vastgelegd als **kwalitatief akkoord op die gerichte wijzigingenset**. De scrolluitloop, doorlopende dagovergang en terugkeer met `Nu` vormen voortaan de werkbaseline op deze iPhone. Er zijn geen nieuwe afzonderlijke swipeafstanden, snelheden, framerates of animatieduren gemeld. Er is ook geen afzonderlijke beoordeling van detailweergave, grotere tekst, toegankelijkheid of dark mode gegeven.
+
+## Eerdere bevindingen — aanleiding voor de wijzigingen
+De langere gids maakte het eerdere vermoeden concreter: een harde verticale swipe vanaf boven kwam ongeveer tot Docu/Muziek, circa één scherm. De product owner meldde dat dezelfde soort swipe in TVgids.nl circa twee schermen aflegde. Dit was een kwalitatieve vergelijking, geen gemeten gelijke beginsnelheid.
 
 Daarnaast werd gemeld:
-- Vandaag en maandag stoppen horizontaal rond 16:00.
-- Vanaf maandag voelt `Nu` als een herladen/vervangen van het scherm, in plaats van terugschuiven over de daggrens.
+- Vandaag en maandag stopten horizontaal rond 16:00.
+- Vanaf maandag voelde `Nu` als een herladen/vervangen van het scherm, in plaats van terugschuiven over de daggrens.
 - Gewenst: één doorlopende tijdlijn en een geanimeerde terugkeer naar de huidige tijd.
 
+Deze punten zijn als gerichte wijzigingenset nu akkoord bevonden; de oorspronkelijke bevindingen blijven hier als geschiedenis staan.
+
 ## Kerncheck
-| Onderdeel | Laatste toestelobservatie | Status nieuwe code |
+| Onderdeel | Laatste toestelobservatie | Status |
 |---|---|---|
-| App opent direct in Gids | Opent en rendert via Expo Go. | Hercontrole mogelijk. |
-| Horizontaal scrollen | Eerdere niet-reagerende terugswipes na fix akkoord; later stop rond 16:00 gevonden. | Doorlopende tijdlijn geïmplementeerd; hertest nodig. |
-| Verticaal scrollen | Functioneel soepel, maar te korte uitloop met 48 kanalen. | Beide assen nu `normal`; hertest nodig. |
-| Zenderkolom synchroon | Geen probleem gemeld in eerdere test. | Tijdens langere fling en bounce opnieuw beoordelen. |
-| Boven-/onderrand | Eerdere bouncewijziging akkoord. | Bounce behouden; opnieuw beoordelen. |
-| `Nu` vanuit volgende dag | Reload-achtig gevoel gemeld. | Geanimeerde scroll in dezelfde tijdlijn; hertest nodig. |
-| Huidige-tijdlijn | Eerste screenshot rond 19:43 leek correct. | Nieuwe meerdaagse situatie nog niet beoordeeld. |
+| App opent direct in Gids | Opent en rendert via Expo Go. | Eerder bevestigd. |
+| Horizontaal scrollen / tijdsbereik | Doorlopende tijdlijn onderdeel van de hertest waarop "perfect" is geantwoord. | Kwalitatief akkoord; geen detailmeting. |
+| Verticaal scrollen | Standaardinertie onderdeel van dezelfde geaccepteerde hertest. | Kwalitatief akkoord; `normal` behouden. |
+| Zenderkolom synchroon | Geen probleem gemeld in eerdere test. Geen afzonderlijke nieuwe meting. | Meenemen bij latere performancemeting. |
+| Boven-/onderrand | Eerdere bouncewijziging akkoord; geen nieuwe klacht. | Baseline behouden. |
+| `Nu` vanuit volgende dag | Geanimeerde terugkeer onderdeel van de geaccepteerde hertest. | Kwalitatief akkoord. |
+| Huidige-tijdlijn | Eerste screenshot rond 19:43 leek correct. | Geen nieuwe nauwkeurigheidscontrole gemeld. |
 | Voortgang lopend programma | Nog niet afzonderlijk getest. | Open. |
-| Vandaag / volgende dag | Eerdere tijdpositie-aanpassing akkoord; nieuwe wens is een continue overgang. | Knoppen navigeren naar dagstart; hertest nodig. |
+| Vandaag / volgende dag | Continue overgang onderdeel van de geaccepteerde hertest. | Kwalitatief akkoord. |
 | Korte programmablokken | Nog niet afzonderlijk getest. | Open. |
 | Programmadetail openen/sluiten | Nog niet afzonderlijk getest. | Open. |
 | Light mode | Eerste screenshot zichtbaar, niet definitief beoordeeld. | Open. |
 | Dark mode | Nog niet afzonderlijk getest. | Open. |
+| Grotere systeemtekst / toegankelijkheid | Nog niet afzonderlijk getest. | Open. |
+| Android / release-achtige performance | Nog niet getest of gemeten. | Open. |
 
 ## Wijzigingen versus bewijs
-`0.995` was een onbewezen tussenstap. De owner vroeg waarom niet de standaard iOS-inertie werd gebruikt en gaf daarna opdracht verder te gaan met de standaard als uitgangspunt. De nieuwe code gebruikt `decelerationRate="normal"` op beide assen. De native bounce blijft aan.
+`0.995` was een onbewezen tussenstap. Na bespreking is `decelerationRate="normal"` op beide assen ingevoerd; native bounce blijft aan. Het oude 12-uursvenster is vervangen door één fixturetijdlijn van 49 uur vanaf de Amsterdamse dagstart bij openen. `Nu` en dagknoppen gebruiken dezelfde horizontale ScrollView. Kalendergrenzen gebruiken expliciet Europe/Amsterdam.
 
-Het oude 12-uursvenster is vervangen door één fixturetijdlijn van 49 uur vanaf de Amsterdamse dagstart bij openen. `Nu` en de dagknoppen gebruiken dezelfde horizontale ScrollView. Kalendergrenzen gebruiken expliciet Europe/Amsterdam, ook als het toestel in een andere tijdzone staat.
+CI run #49 is geslaagd voor de codecommit; documentatie-opvolger `0e9be91` had een geslaagde run #50. Het nieuwe kwalitatieve iPhone-akkoord is apart bewijs voor het scrollgevoel. Het is geen volledige Phase 1-acceptatie en geen productiebenchmark.
 
-CI run #49 is geslaagd voor de codecommit. Er is **nog geen iPhone-feedback over deze nieuwe combinatie**. Geen score, swipeafstand, framerate of verbeterpercentage invullen zonder test.
+## Volgende gerichte validatie — programmadetail en leesbaarheid
+Gebruik de huidige geïnstalleerde app; voor alleen deze documentatie-update hoeft niets opnieuw te worden geïnstalleerd of geladen.
 
-## Gerichte hertest
-1. Stop Metro op de Mac met Control+C. Voer in `~/projects/teevee` `git pull --ff-only` uit en start met `npm run start:clean`. Scan de QR-code opnieuw. Een GitHub-commit wordt niet automatisch lokaal geladen.
-2. Test meerdere stevige verticale swipes, ook halverwege de lijst zodat de boven-/onderrand de uitloop niet begrenst. Let op afstand na loslaten, controle en of aanraken de beweging goed stopt.
-3. Scroll op beide dagen voorbij 16:00 en naar de avond. Beweeg door middernacht en controleer de actieve dag.
-4. Ga naar de volgende dag en druk op `Nu`. Controleer of de inhoud terugschuift zonder schermvervanging en of de verticale zenderpositie behouden blijft.
-5. Controleer bij langere uitloop de synchronisatie van zendernamen en de bounce boven/onder.
+1. Open en sluit enkele programma's, waaronder een smal blok en een langere titel. Controleer of na sluiten dezelfde tijd- en zenderpositie terugkomt.
+2. Bekijk een programma zonder beschrijving. Er moet een begrijpelijke fallback staan, geen kapotte of onbedoeld lege weergave.
+3. Controleer light en dark mode en wissel tijdens gebruik. Let op leesbare titels, tijden, detailtekst en knoppen.
+4. Vergroot de systeemtekst. Controleer of inhoud bereikbaar blijft en detail nog gesloten kan worden.
 
-Noteer model/OS wanneer beschikbaar. Vergelijk gevoel, niet een verplicht aantal schermen: precies twee schermen is geen vastgelegde eis.
+Dit zijn geplande checks, geen vastgelegde testresultaten. Noteer model/OS wanneer beschikbaar. Registreer problemen per onderdeel; heropen het goedgekeurde scrollgevoel alleen bij een concrete regressie.
 
 ## Productgevoel
-- Eerdere plus: algemene scrollperformance voelde soepel genoeg om met standaard React Native-primitives verder te onderzoeken.
-- Actuele aandachtspunten: uitloop verticaal, bereik in de tijd en continuïteit bij `Nu`.
-- Informatiedichtheid, definitief visueel ontwerp en algemene productvoorkeur zijn nog niet beoordeeld.
+- Akkoord: de laatste gerichte combinatie van scrolluitloop, doorlopende tijdlijn en `Nu`-terugkeer.
+- Informatiedichtheid, definitief visueel ontwerp en algemene productvoorkeur zijn nog niet afzonderlijk beoordeeld.
+- Precies twee schermen per swipe is geen vastgelegde eis.
 
 ## Beeldmateriaal
 - Screenshot van de eerste succesvolle iPhone-run rond 19:43 CEST staat in de ontwikkelthread.
 - Geen nieuwe screenrecording of instrumentele framerate-/velocitymeting ontvangen.
 
 ## Samenvatting
-De eerdere hertest was akkoord, maar de 48-zendertest bracht concrete aanvullende problemen aan het licht. Een gerichte correctie is technisch geverifieerd en staat klaar voor de volgende toesteltest. **Phase 1 is niet afgerond**: nieuwe iPhone-acceptatie en representatieve Android-validatie ontbreken nog.
+**Gerichte iPhone-scrollhertest akkoord.** Behoud de standaardinertie en doorlopende tijdlijn. De volgende stap is programmadetail en leesbaarheid valideren, niet verder aan de goedgekeurde inertie sleutelen. **Phase 1 blijft open** voor de overige interactie-, toegankelijkheids-, lifecycle- en Android-/performancechecks.

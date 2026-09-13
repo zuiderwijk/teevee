@@ -16,6 +16,30 @@ Dit document is bedoeld voor product- en engineeringstakeholders, niet alleen vo
 
 ---
 
+## 13 september 2026, 07:04 CEST — iPhone-scrollhertest akkoord
+
+Vastlegging gestart om 07:04 CEST (Europe/Amsterdam). De exacte committijd staat in GitHub.
+
+### Wat is veranderd
+De product owner antwoordt **"perfect"** na het verzoek de nieuwe standaardinertie, doorlopende tijdlijn en geanimeerde terugkeer met `Nu` te testen. Dit is als kwalitatief akkoord op die gerichte wijzigingenset vastgelegd. Het scrollgedrag wordt de werkbaseline; we veranderen het niet opnieuw zonder een concreet probleem.
+
+### Waarom
+De eerdere blokkades bij uitrollen, het tijdsbereik en terugkeren over de daggrens hoeven niet steeds opnieuw ter discussie te staan. Tegelijk betekent akkoord op scrollen niet dat ook programmadetail, leesbaarheid, toegankelijkheid of Android zijn gevalideerd.
+
+### Technische details
+- Alleen `DEVICE_TEST_REPORT.md`, `PROJECT_STATE.md` en dit logboek aangepast.
+- Geen wijziging aan appcode, dependencies, inertie, bounce of scrollarchitectuur.
+- Standaard `normal` op beide assen en één doorlopende gids blijven behouden.
+- De volgende stap verschuift naar programmadetail en leesbaarheid, binnen Phase 1.
+
+### Verificatie
+De eerdere codecommit `b13a7c5` is technisch geverifieerd met CI #49; documentatie-opvolger `0e9be91` met CI #50. Daar komt nu het kwalitatieve iPhone-akkoord bij. Geen exacte swipeafstand, framerate, toestelmodel of afzonderlijke deelresultaten zijn aangeleverd; die worden niet ingevuld op basis van aannames. Een eventuele CI-run voor deze nieuwe documentatiecommit heeft een eigen resultaat.
+
+### Volgende stap
+Programmadetail en leesbaarheid gericht valideren: openen/sluiten zonder verlies van gidspositie, ontbrekende metadata, korte programmablokken, grotere tekst en light/dark. Android, lifecycle en release-achtige performance blijven open voordat Phase 1 kan worden afgesloten.
+
+---
+
 ## 13 september 2026, 06:58 CEST — Standaardinertie als uitgangspunt en controle van de doorlopende gids
 
 Code vastgelegd om **06:56:33 CEST**, commit `b13a7c5263cd663ed1d7ea35e3cfb46d70a8988a`. Deze vermelding is om 06:58 CEST opgesteld na controle van CI.
