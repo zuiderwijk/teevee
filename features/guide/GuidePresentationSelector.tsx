@@ -74,7 +74,7 @@ const styles = StyleSheet.create({
     borderRadius: 24,
   },
   item: {
-    minHeight: 40,
+    minHeight: 44,
     minWidth: 88,
     paddingHorizontal: 13,
     borderRadius: 20,
