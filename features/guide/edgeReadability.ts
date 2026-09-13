@@ -10,11 +10,6 @@ export type EdgeReadableProgramme = {
   endsInViewport: boolean;
 };
 
-export type VisibleRowRange = {
-  first: number;
-  last: number;
-};
-
 export function edgeReadableProgramme(
   programmes: Programme[],
   viewportX: number,
@@ -47,25 +42,35 @@ export function edgeReadableProgramme(
   return null;
 }
 
-export function visibleRowRange(
-  viewportY: number,
-  viewportHeight: number,
-  rowHeight: number,
-  rowCount: number,
-  overscanRows = 1,
-): VisibleRowRange | null {
-  if (rowCount <= 0 || rowHeight <= 0 || viewportHeight <= 0) return null;
+export function edgeBoundaryXs(
+  programmes: Programme[],
+  windowStartMs: number,
+  minuteWidth: number,
+): number[] {
+  const boundaries = new Set<number>();
 
-  const safeY = Number.isFinite(viewportY) ? Math.max(0, viewportY) : 0;
-  const safeOverscan = Math.max(0, Math.floor(overscanRows));
-  const first = Math.min(
-    rowCount - 1,
-    Math.max(0, Math.floor(safeY / rowHeight) - safeOverscan),
-  );
-  const last = Math.min(
-    rowCount - 1,
-    Math.ceil((safeY + viewportHeight) / rowHeight) + safeOverscan,
-  );
+  for (const programme of programmes) {
+    const frame = programmeFrame(programme, windowStartMs, minuteWidth);
+    boundaries.add(frame.left);
+    boundaries.add(frame.left + frame.width);
+  }
 
-  return { first, last: Math.max(first, last) };
+  return [...boundaries].sort((left, right) => left - right);
+}
+
+export function edgeBoundaryBucket(boundaries: number[], viewportX: number): number {
+  'worklet';
+
+  const x = Number.isFinite(viewportX) ? Math.max(0, viewportX) : 0;
+  let low = 0;
+  let high = boundaries.length;
+
+  while (low < high) {
+    const middle = Math.floor((low + high) / 2);
+    const boundary = boundaries[middle] ?? Number.POSITIVE_INFINITY;
+    if (boundary < x) low = middle + 1;
+    else high = middle;
+  }
+
+  return low - 1;
 }
