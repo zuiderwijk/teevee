@@ -78,18 +78,16 @@ function diagnostic(
   return { severity, code, message, ...context };
 }
 
-function providerProgrammeKey(programme: ExternalProgramme): string {
+function providerProgrammeKey(
+  programme: ExternalProgramme,
+  providerChannelId: string,
+  startMs: number,
+  endMs: number,
+  title: string,
+): string {
   const providerId = nonEmptyText(programme.id);
-  const providerChannelId = nonEmptyText(programme.channelId) ?? '';
-  if (providerId) {
-    return [providerChannelId, `id:${providerId}`, programme.startAt ?? ''].join('\u0000');
-  }
-  return [
-    providerChannelId,
-    programme.startAt ?? '',
-    programme.endAt ?? '',
-    programme.title ?? '',
-  ].join('\u0000');
+  if (providerId) return [providerChannelId, `id:${providerId}`, startMs].join('\u0000');
+  return [providerChannelId, startMs, endMs, title].join('\u0000');
 }
 
 function canonicalProgramme(
@@ -230,27 +228,10 @@ export function normaliseProviderSchedule(
   for (const external of input.programmes) {
     const providerChannelId = nonEmptyText(external.channelId) ?? '';
     const providerProgrammeId = nonEmptyText(external.id);
-    const duplicateKey = providerProgrammeKey(external);
-
-    if (seenProviderProgrammes.has(duplicateKey)) {
-      diagnostics.push(
-        diagnostic(
-          'warning',
-          'duplicate-provider-programme',
-          'Duplicate provider programme was ignored.',
-          {
-            ...(providerChannelId ? { providerChannelId } : {}),
-            ...(providerProgrammeId ? { providerProgrammeId } : {}),
-          },
-        ),
-      );
-      continue;
-    }
-    seenProviderProgrammes.add(duplicateKey);
-
     const channelId = ambiguousProviderIds.has(providerChannelId)
       ? undefined
       : mappingByProviderId.get(providerChannelId);
+
     if (!channelId) {
       diagnostics.push(
         diagnostic(
@@ -312,6 +293,24 @@ export function normaliseProviderSchedule(
       );
       continue;
     }
+
+    const duplicateKey = providerProgrammeKey(external, providerChannelId, startMs, endMs, title);
+    if (seenProviderProgrammes.has(duplicateKey)) {
+      diagnostics.push(
+        diagnostic(
+          'warning',
+          'duplicate-provider-programme',
+          'Duplicate provider programme was ignored.',
+          {
+            providerChannelId,
+            ...(providerProgrammeId ? { providerProgrammeId } : {}),
+            channelId,
+          },
+        ),
+      );
+      continue;
+    }
+    seenProviderProgrammes.add(duplicateKey);
 
     programmes.push(canonicalProgramme(providerKey, channelId, external, startMs, endMs, title));
   }
