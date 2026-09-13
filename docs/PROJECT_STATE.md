@@ -1,7 +1,7 @@
 # Teevee — Canonical Project State
 
-Last updated: 2026-09-13 11:19 CEST (Europe/Amsterdam). Exact commit time is in GitHub.
-Status: ACTIVE — Phase 1 Guide prototype; PR #8 is physically rejected from screen-recording evidence; PR #9 native-synchronised edge readability is integrated on main and technically green, pending focused iPhone validation
+Last updated: 2026-09-13 (visual/UX baseline synchronized; exact commit time is in GitHub).
+Status: ACTIVE — Phase 1 Guide prototype; PR #8 is physically rejected from screen-recording evidence; PR #9 native-synchronised edge readability is integrated on main and technically green, pending focused iPhone validation. Owner-approved Guide/Programme Detail visual-UX baselines are now documented for subsequent implementation.
 Current phase: **Phase 1 — Guide Interaction Prototype**
 Previous phase: **Phase 0 — Project Foundation: COMPLETE**
 
@@ -28,6 +28,31 @@ The implemented grid is **Totaal**. Two additional Guide presentations are speci
 - **Nu & Straks:** compact all-channel list around one common reference time today; no date selector. Entry starts in live/current mode, moving the selector pins a past/future time today, and `Nu` restores live mode.
 
 One Guide destination with a locally remembered presentation preference remains the working proposal. No new primary tabs are authorised.
+
+## Owner-approved visual/UX baseline — 13 September 2026
+The visual-design thread produced an accepted target for Guide and Programme Detail. This is a **target baseline, not a claim of current runtime implementation**. `docs/UX.md` and `docs/DESIGN_SYSTEM.md` contain the detailed rules; `docs/PRODUCT.md` and `docs/BUILD_SPEC.md` are aligned with them.
+
+Accepted direction:
+- premium utility, restrained chrome, open schedule canvas rather than stacked cards;
+- Söhne is the preferred typography direction, subject to production licensing/technical verification;
+- near-white neutral light canvas; dark-anthracite dark canvas; red used sparingly for meaningful selected/current/primary-action emphasis;
+- channel logo primary, channel name secondary/contextual;
+- the shared Guide shell may condense nonessential brand chrome during vertical scrolling while retaining view-specific context;
+- **Totaal:** horizontal time / vertical channels; restrained current-time marker; low-value cell metadata removed;
+- **Per zender:** sticky horizontal channel-logo strip, vertical day list, horizontal swipe across the schedule moves to adjacent channel, direct logo tap changes channel, viewed time anchor preserved where practical, `Primetime`/`Nu` as contextual shortcuts; no genre/artwork clutter;
+- **Nu & Straks:** today-only shared horizontal reference time, `Primetime` shortcut from live and `Nu` to restore live, programme at the reference instant plus **three following programmes** per channel, no progress bars/genres/artwork/chevrons/`Daarna` labels;
+- **Programme Detail:** tap Guide programme opens detail directly; current-phase actions limited to `Herinner mij` + `Bewaar`; no preview sheet/share/overflow/calendar/recommendation controls; artwork optional; once canonical actions scroll out of view a compact sticky bottom copy appears for one-handed reach, disappearing again when originals return;
+- larger system text may reduce density/reflow actions rather than clipping content.
+
+Tonight/Vanavond has a promising more visual discovery direction, but its exact module composition remains provisional and is not frozen with the Guide/Detail baseline.
+
+Documentation sync commits preceding this state update:
+- UX baseline: `c0f30a1354fe59a7ce783b1bb90e3600d41c04a1`;
+- Design System baseline: `5de5eee993fabf14e19a10f246622f4af0ea8514`;
+- Product alignment: `af6208e5be94f308a4905bcf111ec349845b3019`;
+- Build-spec alignment: `8cd40d59614b88853d24f7e850911e3bf4bebee4`.
+
+These documentation commits do not supersede the Phase 1 runtime validation below and do not authorise skipping the exact next step.
 
 ## Current accepted implementation baseline
 - Expo SDK 57 / Expo Router / strict TypeScript with semantic system-aware themes.
@@ -110,8 +135,8 @@ PR #9 is now integrated on main at **`8a37cef550e0558a03d0876a356e295ff4ac424b`*
 - Android gesture/back behaviour and release-like performance;
 - lifecycle behaviour for the launch-anchored finite fixture after midnight/expiry;
 - CI reproducibility cleanup; previously reported 15 moderate advisories require deliberate review, never `npm audit fix --force`;
-- later explicit builds for Per zender and Nu & Straks;
-- production EPG/logo/artwork rights/reliability, pricing/trial/paywall and final visual design are later gates.
+- later explicit builds for the accepted Per zender and Nu & Straks baselines;
+- production EPG/logo/artwork rights/reliability, pricing/trial/paywall, exact production design tokens/font licensing, and final Tonight composition remain later gates.
 
 ## EXACT NEXT STEP
 **On the same iPhone, pull current main and restart Metro cleanly. Confirm: (1) Teevee opens normally; (2) while horizontally dragging, the partial-left programme title follows the visible left edge without lagging behind the native timeline; (3) the same remains true through momentum after release; (4) an old edge disappears at its real programme end and never covers a successor programme; (5) programme blocks do not jump/change width and horizontal scrolling still feels like the accepted baseline. Prefer one short screen recording similar to the 10:49 recording because drag/momentum synchronisation cannot be proven by a screenshot. Do not re-test already accepted Vandaag/Morgen/Nu or detail behaviour unless a regression is noticed.**
