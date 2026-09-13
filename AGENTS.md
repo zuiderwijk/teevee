@@ -30,6 +30,19 @@ If documents conflict, resolve the conflict before proceeding and update the low
 - Update `docs/PROJECT_STATE.md` after every substantive milestone with completed work, known issues and exactly one next step.
 - Add a concise, understandable entry to `docs/DEVLOG.md` after every substantive development increment. Explain what changed, why, verification status and what comes next. Never claim a check passed unless it actually did.
 
+## PR and CI status protocol
+When the owner asks for a status update, or when an agent is deciding whether a PR may be merged, do **not** infer CI state from PR metadata alone.
+
+Always verify in this order:
+1. Read the PR metadata and confirm open/closed, draft state, mergeability and exact head SHA.
+2. Fetch the GitHub Actions workflow run for that exact PR head SHA.
+3. Fetch the jobs for that workflow run and inspect the actual job conclusions/steps.
+4. Treat CI as green only when every required job is explicitly `completed` with conclusion `success`.
+5. If all required checks are green, the PR is mergeable, and there is no explicit physical-device or human-product gate that must happen before merge, merge it immediately rather than reporting a stale "still running" status.
+6. After merge, distinguish clearly between PR-head CI and exact-`main` CI. Do not claim the merge commit is green until the exact-`main` workflow has actually completed successfully.
+
+A 404 or missing result from a job lookup is not evidence that CI is still running or failed. Recover by resolving the current workflow run and its job IDs, then inspect those jobs directly.
+
 ## Definition of Done
 A feature is DONE only when acceptance criteria are met; relevant loading, empty, error and offline states are handled; light and dark themes work; accessibility is acceptable; strict TypeScript, lint and tests pass; critical flows have automated coverage; performance is acceptable at realistic EPG volume; required observability exists; no secrets are committed; and documentation reflects reality.
 
