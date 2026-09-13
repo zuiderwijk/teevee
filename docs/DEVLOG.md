@@ -16,6 +16,35 @@ Dit document is bedoeld voor product- en engineeringstakeholders, niet alleen vo
 
 ---
 
+## 13 september 2026, 08:05 CEST — Nu & Straks: tijd kiezen binnen vandaag, geen datumkeuze
+
+Vastlegging gestart om 08:05 CEST (Europe/Amsterdam). De exacte committijd staat in GitHub.
+
+### Wat is veranderd
+De aanvulling van de product owner over drie gidsweergaven is nu opgenomen in PRODUCT, UX en PROJECT_STATE: de huidige Totaal-gids, Per zender en Nu & Straks. De laatste correctie is leidend: Nu & Straks krijgt geen datumselector, maar een tijdlijn waarmee je door vandaag beweegt. De programmering van alle zenders past zich aan hetzelfde gekozen tijdstip aan. Totaal en Per zender behouden datumkeuze.
+
+### Waarom
+Nu & Straks is niet alleen voor wat er precies nu op televisie is. Het moet ook snel laten vergelijken wat er later vandaag te zien is, zonder de volle meerdaagse Totaal-gids nodig te hebben. Het voorbeeld van 08:02 illustreert die interactie; de datumknop, advertenties en vormgeving uit de bestaande app worden niet als ontwerpvereisten overgenomen.
+
+### Uitwerking en grenzen
+- Bij starten staat de referentie op de actuele tijd; Nu keert daarnaar terug.
+- Tijdens vooruit- of terugkijken blijft het gekozen tijdstip vaststaan. Geen automatische sprong naar nu door een klokupdate.
+- Alle zenders tonen wat op dat tijdstip wordt uitgezonden en wat daarna volgt. Een programma mag dus al vóór het gekozen tijdstip begonnen zijn.
+- Tijdselector, kanaalvolgorde en verticale leespositie blijven stabiel terwijl programma's veranderen.
+- Een toekomstige of eerdere selectie heet niet nu live. Ontbrekende data of een uitzendgat wordt eerlijk getoond.
+- Kalenderdaggrenzen gebruiken Amsterdam. Het selecteren blijft binnen vandaag; een aansluitend programma na middernacht kan met expliciete dagvermelding worden getoond.
+- Populariteit en weinig wisselen blijven hypotheses. Eén gids met een onthouden voorkeursweergave is het werkvoorstel; eerste standaard en één of twee volgende programma's zijn niet definitief gekozen.
+
+### Verificatie
+Alleen product-/UX-documentatie, canonieke status en dit logboek gewijzigd. Geen appcode, dependencies, animaties of scrollinstellingen aangepast. Per zender en Nu & Straks zijn nog niet gebouwd. Er is geen nieuwe toesteltest of performanceclaim. De eerdere main-CI #62 is in de voorafgaande statuscontrole groen bevonden; deze documentatiewijziging krijgt een eigen CI-resultaat.
+
+De al ontvangen dark-modebeelden van Teevee worden als beschikbare input in de projectstatus vermeld. Het referentiebeeld van Nu & Straks is geen Teevee-testresultaat. De open Phase 1-controles worden door deze productaanvulling niet afgesloten.
+
+### Volgende stap
+De lopende leesbaarheids-/toegankelijkheidscontrole afronden met de reeds ontvangen screenshots en alleen nog ontbrekende toestelobservaties. Daarna de nieuwe weergaven expliciet opnemen in de volgende buildspec, met bovenstaande correctie als uitgangspunt. Voor deze vastlegging hoeft de gebruiker de app niet te herladen.
+
+---
+
 ## 13 september 2026, 07:46 CEST — Wegvegen van programmadetails akkoord
 
 Vastlegging gestart om 07:46 CEST (Europe/Amsterdam). De exacte committijd staat in GitHub.
