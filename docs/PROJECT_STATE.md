@@ -1,7 +1,7 @@
 # Teevee — Canonical Project State
 
-Last updated: 2026-09-13 23:59 CEST.
-Status: ACTIVE — **Phase 3 Real Data Vertical Slice**. Phase 1A/1B Guide interaction models and Phase 2 App Shell are closed and physically accepted on the available iPhone. Physical Android interaction validation remains explicitly deferred because the owner currently has no Android device; native Android compilation is a CI gate but is not device acceptance.
+Last updated: 2026-09-14 00:39 CEST.
+Status: ACTIVE — **Phase 3 Real Data Vertical Slice**. Phase 1A/1B Guide interaction models and Phase 2 App Shell are closed and physically accepted on the available iPhone. The provider-independent Phase 3 normalisation core is merged; canonical storage/query semantics are the active implementation target. Physical Android interaction validation remains explicitly deferred because the owner currently has no Android device; native Android compilation is a CI gate but is not device acceptance.
 Current phase: **Phase 3 — Real Data Vertical Slice**
 Previous phase: **Phase 2 — App Shell: complete and physically accepted on iPhone**
 Next phase after closure: **Phase 4 — Core Guide MVP hardening**
@@ -138,6 +138,36 @@ Constraints:
 - schedule refresh must preserve Guide context where practical;
 - production schedule/logo/artwork usage rights remain a separate release gate.
 
+## Phase 3 implementation ledger
+- **PR #36 — Phase 2 closure / Phase 3 activation** → `589ce9110419866439cd0e22e1c761687b48eb04`: final 23:56 iPhone evidence, Phase 2 closure, Phase 3 architecture/testing baseline. Exact PR-head CI #255 / `34785599349` was fully green for `quality` and `android-native`.
+- **PR #37 — provider-independent normalisation core** → `491bc728adfb4ec70d060833d49d17bca25bbdc9`: `GuideSchedule`, server-only `EpgProvider`, explicit channel mapping, canonical timestamp/ID normalisation and record-level data-quality diagnostics with deterministic tests. Exact PR-head CI #263 / `34786166182` was fully green for `quality` and `android-native`.
+- Exact-main CI #264 for PR #36 and #265 for PR #37 were still running when this state was written; do not infer completion until their actual job conclusions are green.
+
+Detailed technical intake: `docs/PHASE_3_INTAKE_2026-09-14.md`.
+
+## Phase 3 provider / backend gate
+Repository and connected-environment intake found:
+- no Teevee backend/API project or database schema exists yet;
+- no `services/api` or mobile schedule-cache implementation exists yet;
+- no accepted live development EPG credential/feed exists in the repository;
+- the connected Supabase account exposes an unrelated `ReelWorthy` project only; it must never be reused for Teevee;
+- creating a Teevee Supabase project is a real organization/cost decision and requires explicit organization/cost confirmation before provisioning;
+- provider credentials/rights remain a separate concrete gate and must never be committed or bundled into the mobile app.
+
+This gate does **not** block backend-independent contracts, repository semantics, ingestion orchestration or deterministic integration tests.
+
+## Active Phase 3 storage/query target
+The next provider-independent layer is deliberately small:
+- one serialisable `GuideScheduleQuery` contract;
+- a canonical `ScheduleRepository` boundary;
+- explicit refreshed-window replacement scope so partial-channel updates cannot erase unrelated channel data;
+- `[start,end)` interval-intersection query semantics;
+- deterministic in-memory reference storage for tests only, **not** as a production persistence decision;
+- correction-window replacement that removes stale rows inside the refreshed scope while preserving neighbouring/out-of-scope data;
+- fail-fast behaviour for broken canonical relations.
+
+No Supabase dependency, database migration, mobile Guide refactor or new state library belongs in this increment.
+
 ## Local preference architecture — ADR 0006
 - Small app preferences use a versioned JSON contract.
 - Storage failure is non-fatal and falls back to defaults.
@@ -146,12 +176,13 @@ Constraints:
 - Real schedule caching remains a Phase 3 measured decision and may use SQLite or another appropriate store.
 
 ## Data / time baseline
-- Teevee-owned `Channel`, `Programme` and `GuideFixture` types.
+- Teevee-owned `Channel`, `Programme` and provider-independent `GuideSchedule` types; `GuideFixture` remains the deterministic fixture alias.
 - 48 synthetic channels and deterministic runtime schedule fixture aligned to Amsterdam calendar days.
 - Calendar helpers cover normal days, 23-hour / 25-hour DST transitions and year rollover.
 - Shared `[start,end)` current-programme semantics.
 - Guide clock refreshes immediately on app resume.
 - Finite fixture rebuilds when the Amsterdam calendar day changes.
+- External provider records remain server-side and may represent malformed/missing raw fields so diagnostics happen at the trust boundary instead of being hidden by adapters.
 
 ## CI / reproducibility baseline
 - `package-lock.json` v3 is committed.
@@ -162,10 +193,9 @@ Constraints:
 - Workflow permissions are explicitly read-only (`contents: read`) for the build/test pipeline.
 - Never run `npm audit fix --force`; dependency advisories require targeted review.
 
-Recent proof:
-- PR #35 exact-head CI #252 / `34783450317`: fully green;
-- PR #35 exact-main CI #253 / `34784323448`: fully green;
-- pre-closure docs exact-main CI #254 / `34784497276`: fully green.
+Recent proven PR heads:
+- PR #36 exact-head CI #255 / `34785599349`: fully green;
+- PR #37 exact-head CI #263 / `34786166182`: fully green.
 
 ## Android validation status
 Physical Android interaction acceptance remains **OPEN / DEFERRED** because no Android device is available.
@@ -186,9 +216,9 @@ Automated confidence covers Android JS/native bundle export, clean Expo Android 
 - final Tonight composition.
 
 ## EXACT NEXT STEP
-**Perform a Phase 3 technical intake against current `main`: inspect existing domain/fixture/API/storage code and repository configuration, determine whether a usable development EPG/provider and backend project already exist, and define the smallest provider-independent external-EPG → normalisation/storage/API → mobile Guide slice. Do not add provider coupling to the client or retune frozen Guide interaction code. If required credentials/backend access are absent, stop at that concrete gate; otherwise implement the smallest complete slice with tests and CI.**
+**Finish the provider-independent canonical schedule storage/query increment: prove bounded `[start,end)` queries, explicit channel-scoped refresh-window replacement, correction/stale-row semantics and invalid-canonical-data failure behaviour with deterministic tests. Run the complete PR CI and merge only when both required jobs are green. Then add the small provider → normalisation → repository ingestion orchestration and typed API boundary. Do not provision Supabase or select/scrape a live provider until the explicit backend/provider gate is resolved.**
 
 Owner checkout: `~/projects/teevee`.
 
 ## Resume instruction
-> Read `AGENTS.md` and `PROJECT_STATE.md`. Phase 2 App Shell is closed and physically accepted on iPhone. Phase 3 Real Data Vertical Slice is active. Preserve frozen Guide mechanics and the deferred Nu & Straks startup boundary. Keep the mobile domain provider-independent and fixtures deterministic. First inspect existing provider/backend/API/storage state before adding infrastructure. Physical Android acceptance remains deferred. Record substantive Phase 3 work in PROJECT_STATE and the Dutch DEVLOG.
+> Read `AGENTS.md` and `PROJECT_STATE.md`. Phase 2 App Shell is closed and physically accepted on iPhone. Phase 3 Real Data Vertical Slice is active. PR #37 established the provider-independent normalisation boundary. Preserve frozen Guide mechanics and the deferred Nu & Straks startup boundary. Keep the mobile domain provider-independent and fixtures deterministic. Continue with canonical storage/query and ingestion/API contracts before any hosted-backend or live-provider coupling. Physical Android acceptance remains deferred. Record substantive Phase 3 work in PROJECT_STATE and the Dutch DEVLOG.
