@@ -5,10 +5,17 @@ export const GUIDE_CHANNEL_WIDTH = 84;
 export const GUIDE_ROW_HEIGHT = 76;
 export const GUIDE_TIME_AXIS_HEIGHT = 38;
 export const GUIDE_PROGRAMME_GAP = 2;
+export const GUIDE_PROGRAMME_TIME_MIN_VISIBLE_WIDTH = 52;
 
 export type ProgrammeFrame = {
   left: number;
   width: number;
+};
+
+export type ProgrammeVisibleContent = {
+  contentTranslateX: number;
+  visibleWidth: number;
+  canShowStartTime: boolean;
 };
 
 export type ProgrammeContentMode = 'compact' | 'standard' | 'comfortable';
@@ -32,6 +39,22 @@ export function programmeFrame(
   return {
     left: timeToX(start, windowStartMs, minuteWidth),
     width: Math.max(1, minutesBetween(start, end) * minuteWidth - GUIDE_PROGRAMME_GAP),
+  };
+}
+
+export function programmeVisibleContent(
+  frame: ProgrammeFrame,
+  viewportX: number,
+  minimumTimeWidth = GUIDE_PROGRAMME_TIME_MIN_VISIBLE_WIDTH,
+): ProgrammeVisibleContent {
+  const safeViewportX = Number.isFinite(viewportX) ? Math.max(0, viewportX) : 0;
+  const hiddenLeft = Math.min(frame.width, Math.max(0, safeViewportX - frame.left));
+  const visibleWidth = Math.max(0, frame.width - hiddenLeft);
+
+  return {
+    contentTranslateX: hiddenLeft,
+    visibleWidth,
+    canShowStartTime: visibleWidth >= minimumTimeWidth,
   };
 }
 
