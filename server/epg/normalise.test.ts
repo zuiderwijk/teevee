@@ -111,27 +111,24 @@ describe('normaliseProviderSchedule', () => {
     expect(result.schedule.programmes[0]?.id).not.toBe(result.schedule.programmes[1]?.id);
   });
 
-  it('skips unusable provider records and returns explicit diagnostics', () => {
+  it('skips missing or unusable provider fields and returns explicit diagnostics', () => {
     const result = normalise([
       {
         id: 'missing-title',
         channelId: 'provider-one',
         startAt: '2026-09-14T18:00:00Z',
         endAt: '2026-09-14T19:00:00Z',
-        title: '   ',
       },
       {
-        id: 'invalid-start',
+        id: 'missing-start',
         channelId: 'provider-one',
-        startAt: 'not-a-date',
         endAt: '2026-09-14T19:00:00Z',
         title: 'Test',
       },
       {
-        id: 'invalid-end',
+        id: 'missing-end',
         channelId: 'provider-one',
         startAt: '2026-09-14T18:00:00Z',
-        endAt: 'not-a-date',
         title: 'Test',
       },
       {
