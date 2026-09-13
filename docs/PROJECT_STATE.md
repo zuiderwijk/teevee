@@ -1,7 +1,7 @@
 # Teevee — Canonical Project State
 
-Last updated: 2026-09-13 16:34 CEST.
-Status: ACTIVE — **Phase 1B Guide Presentation Prototypes**. Phase 1A Totaal is physically accepted/frozen on iPhone. The core Per zender gesture/time-anchor architecture is now physically evidenced on iPhone; a small set of targeted controls/detail/theme checks remains open. Nu & Straks is technically implemented and merged as PR #21 and now awaits physical iPhone validation. Physical Android interaction validation remains explicitly deferred because the owner currently has no Android device; native Android compilation is covered in CI but is not device acceptance.
+Last updated: 2026-09-13 17:06 CEST.
+Status: ACTIVE — **Phase 1B Guide Presentation Prototypes**. Phase 1A Totaal is physically accepted/frozen on iPhone. The core Per zender gesture/time-anchor architecture is physically evidenced on iPhone; a small set of targeted controls/detail/theme checks remains open. Nu & Straks is technically implemented, its deferred module load now physically opens successfully on iPhone, and its remaining gate is interaction acceptance rather than startup. Physical Android interaction validation remains explicitly deferred because the owner currently has no Android device; native Android compilation is covered in CI but is not device acceptance.
 Current phase: **Phase 1B — Guide Presentation Prototypes**
 Previous phase: **Phase 1A — Totaal Interaction Prototype: physically accepted on iPhone**
 
@@ -71,7 +71,7 @@ Conclusion: the **main Per zender nested-gesture/time-anchor architecture risk i
 - Programme Detail round-trip/context preservation and immediate post-swipe response;
 - light/dark and representative larger system text.
 
-### Nu & Straks — Phase 1B prototype implemented; physical acceptance OPEN
+### Nu & Straks — prototype implemented; physical module-load/open confirmed; interaction acceptance OPEN
 Purpose: answer quickly what is on now/at one shared reference time and what follows on each channel.
 
 Implementation from PR #21:
@@ -92,7 +92,17 @@ Implementation from PR #21:
 - Programme Detail opens directly through the existing shared path;
 - Amsterdam day boundaries generate the available time slots, including non-24-hour DST days.
 
-Temporary Phase 1B test scaffolding in `app/index.tsx` now cycles:
+Startup isolation/reintegration:
+- PR #21 originally added a static `NowNextGuideView` import to the startup module graph; physical iPhone startup then produced duplicate secondary `RCTEventEmitter.receiveEvent()` redboxes even though CI was green;
+- PR #22 removed that static startup import and restored the previously proven Totaal + Per zender startup boundary; the owner physically confirmed clean startup on iPhone;
+- PR #23 reintroduced Nu & Straks through deferred module loading, evaluating `NowNextGuideView` only when the owner explicitly requests the presentation;
+- on current `main`, the owner physically confirmed that **Nu & Straks successfully loads and opens on the iPhone**;
+- therefore the module itself is not generally unable to evaluate/render; the earlier regression is isolated to the startup/module-evaluation path or a timing/cache interaction specific to it;
+- deferred loading remains the accepted Phase 1B integration boundary. Do not restore a static startup import without separate evidence.
+
+This physical confirmation closes only the startup + deferred-load gate. It does **not** yet accept live/browse interaction behaviour, time-rail semantics, context preservation, mixed gestures, theme or larger-text behaviour.
+
+Temporary Phase 1B test scaffolding in `app/index.tsx` cycles:
 **Totaal → Per zender → Nu & Straks → Totaal**.
 This is not the final presentation selector, default-view decision or persistence model.
 
@@ -135,7 +145,9 @@ Key evidence:
 - PR #18 reproducible install: head `142a92d9ffdc836afc91200a315832cff1071` passed CI #181 / `34760300933`; merge `8ee173794d60cebf171b307400e5dcd21d48e488` passed main CI #182 / `34760389374`.
 - PR #20 Per zender: head `67ad6133e84a632b0354721186f439858a49174f` passed CI #193 / `34761468823`; merge `5f71cf30175a4c5686a058d86eda7f0873e99238` passed main CI #194 / `34761570305`.
 - PR #19 Android native compile gate: head `60db410901e6a6607f6b049c8197c9593b36d251` passed CI #185 / `34760593076`, including Expo Android prebuild and Gradle debug APK compilation; merged as `eac7cae6df8083d4906a3ea1280c0add646dcc40`.
-- PR #21 Nu & Straks: final head `fb388f1fefbc9dd64891bd69e70e4b79d7bb574d`; CI #200 / `34762548963` has successful `npm ci`, typecheck, lint, tests, all-platform Expo exports and Android prebuild; its long-running Gradle compile was still in progress at merge time. PR #21 merged as `dccc02d635cb9b3189a4ea7a857b56100e2e3ab9`. Exact-main CI #201 / `34762970766` is running at this document timestamp; quality has reached tests successfully so far and the native job is still progressing. Do not infer Android physical acceptance from any of these checks.
+- PR #21 Nu & Straks: final head `fb388f1fefbc9dd64891bd69e70e4b79d7bb574d`; CI #200 / `34762548963` passed `npm ci`, typecheck, lint, tests and all-platform Expo exports. It merged as `dccc02d635cb9b3189a4ea7a857b56100e2e3ab9`.
+- PR #22 startup hotfix restored the physically proven startup boundary by removing the static Nu & Straks import; the owner physically confirmed clean startup on iPhone afterward.
+- PR #23 deferred reintegration merged as `c3ee101ea29e60d0b5b1ae88cde86191f5ba4bab`; its PR quality job passed install, typecheck, lint, tests and all-platform exports. The owner then physically confirmed that Nu & Straks loads and opens successfully when requested after startup. Exact-main CI #209 was still running at this document timestamp; do not infer Android physical acceptance from any automated result.
 
 ## Android validation status
 Physical Android interaction acceptance remains **OPEN/DEFERRED** because no Android device is currently available.
@@ -154,7 +166,7 @@ Still physically unproven:
 - device-specific visual/runtime defects.
 
 ## Remaining Phase 1B work
-1. **Physical iPhone pass for Nu & Straks plus the residual Per zender checks.**
+1. **Physical Nu & Straks interaction pass plus the residual Per zender checks.** Startup and deferred module loading are already physically confirmed.
 2. Iterate either presentation only on concrete device evidence.
 3. Once both Phase 1B interaction models are credible, enter **Phase 2 App Shell** and formalise one shared Guide presentation-state/navigation/persistence contract.
 
@@ -168,11 +180,11 @@ Deferred but tracked:
 - final Tonight composition.
 
 ## EXACT NEXT STEP
-**Run current `main` on the available iPhone and perform one combined Phase 1B validation pass.**
+**On the available iPhone, perform the Nu & Straks interaction-validation pass now that startup and deferred loading are physically proven.**
 
 Owner checkout: `~/projects/teevee`.
 
-Before testing:
+If current `main` is not already running:
 ```bash
 git pull --ff-only
 npm run start:clean
@@ -204,4 +216,4 @@ Validate:
 Do **not** retune the frozen Totaal interaction from Phase 1B impressions alone.
 
 ## Resume instruction
-> Read `AGENTS.md` and `PROJECT_STATE.md`. Execute EXACT NEXT STEP where possible. Phase 1B now has Per zender core physical architecture evidence and a merged Nu & Straks prototype; the next gate is the combined iPhone validation pass. Update PROJECT_STATE and the Dutch timestamped DEVLOG after every substantive increment. Ask only for product choices or genuinely necessary physical-device observations. Never substitute CI for physical acceptance.
+> Read `AGENTS.md` and `PROJECT_STATE.md`. Execute EXACT NEXT STEP where possible. Phase 1B now has frozen Totaal acceptance, Per zender core gesture/time-anchor evidence, clean startup after PR #22, and physical proof that deferred Nu & Straks loading opens successfully after PR #23. The active gate is Nu & Straks interaction acceptance plus the residual Per zender checks. Update PROJECT_STATE and the Dutch timestamped DEVLOG after every substantive increment. Ask only for product choices or genuinely necessary physical-device observations. Never substitute CI for physical acceptance.
