@@ -21,12 +21,22 @@ export type Programme = {
   isRepeat?: boolean;
 };
 
-export type GuideFixture = {
+/**
+ * Provider-independent schedule contract consumed by Teevee features.
+ * Fixtures and future API/cache implementations must all converge on this shape.
+ */
+export type GuideSchedule = {
   generatedAt: string;
   timezone: 'Europe/Amsterdam';
   channels: Channel[];
   programmes: Programme[];
 };
+
+/**
+ * Compatibility name for deterministic development/test schedules.
+ * Keeping fixtures explicit prevents real-data work from replacing the stable CI baseline.
+ */
+export type GuideFixture = GuideSchedule;
 
 export function programmeDurationMinutes(programme: Programme): number {
   return (Date.parse(programme.endAt) - Date.parse(programme.startAt)) / 60_000;
