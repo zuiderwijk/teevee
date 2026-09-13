@@ -1,6 +1,6 @@
 # Teevee Phase 1 — Device Test Report
 
-Bijgewerkt op **13 september 2026, 10:20 CEST — Europe/Amsterdam**. Exacte committijd staat in GitHub. Een groene CI of bundle-export is geen geslaagde toesteltest.
+Bijgewerkt op **13 september 2026, 10:35 CEST — Europe/Amsterdam**. Exacte committijd staat in GitHub. Een groene CI of bundle-export is geen geslaagde toesteltest.
 
 ## Toestel en versies
 - Eigen iPhone van de product owner; wifi; testperiode 11–13 september 2026.
@@ -8,78 +8,50 @@ Bijgewerkt op **13 september 2026, 10:20 CEST — Europe/Amsterdam**. Exacte com
 - Scrollbaseline, detailrespons en swipe-down dismissal zijn eerder kwalitatief geaccepteerd op dit toestel.
 
 ## Reeds geaccepteerde interactiebaseline
-De product owner heeft eerder met **"perfect"** gereageerd op gerichte hertests van:
-- standaard platforminertie, doorlopende tijdlijn, dagovergang en geanimeerde `Nu`;
-- detailrespons, sluiten met knop en buiten het paneel;
-- swipe-down dismissal.
+De product owner heeft eerder met **"perfect"** gereageerd op gerichte hertests van standaard platforminertie, doorlopende tijdlijn/dagovergang/`Nu`, detailrespons en swipe-down dismissal. Heropen deze instellingen niet zonder concreet regressiesignaal.
 
-Heropen deze instellingen niet zonder concreet regressiesignaal.
+PR #7 is eveneens fysiek geaccepteerd: normale startup, `Vandaag · Morgen · Nu` op één regel, directe juiste selected-state plus `Nu`-terugkeer en ongewijzigd/natuurlijk horizontaal scrollgevoel.
 
 ## Dark mode en grotere systeemtekst
 De eerder aangeleverde dark-mode Guide- en detailbeelden zijn beoordeeld; vraag ze niet opnieuw op. Dark mode is visueel bruikbaar, maar formele contrastmeting en screenreaderbewijs staan nog open.
 
-Bij duidelijk vergrote systeemtekst vond de eerste test clipping in `Gids` en daglabels. PR #4 corrigeerde dit. De hertest om **08:59** bevestigde op dezelfde iPhone:
-- `Gids`, `Nu`, daglabels en tijdas volledig zichtbaar;
-- zenderrail en programmarijen uitgelijnd;
-- programmatitels zonder eerdere line-height clipping;
-- programmadetail plus `Sluiten` bereikbaar.
+Bij duidelijk vergrote systeemtekst vond de eerste test clipping in `Gids` en daglabels. PR #4 corrigeerde dit. De hertest om **08:59** bevestigde `Gids`, `Nu`, daglabels en tijdas volledig zichtbaar, zenderrail/programmarijen uitgelijnd en programmadetail plus `Sluiten` bereikbaar. Deze gerichte large-text/chrome-correctie is fysiek geaccepteerd.
 
-De gerichte large-text/chrome-correctie is daarmee fysiek geaccepteerd.
+## Partial-left programme-readability
+PR #5 maakte settled readability geometry-safe: de echte programmastart en duur-gebaseerde blokbreedte veranderen niet; na settle kan titel/tijd naar het zichtbare restant worden verankerd. De 09:20 iPhone-test bevestigde dat dit inhoudelijk werkte maar te laat kwam: de product owner wil dat de titel al tijdens drag en momentum leesbaar blijft.
 
-## Partial-left programme-readability — PR #5
-PR #5 houdt programmageometrie eerlijk terwijl titel/tijd na een horizontale beweging naar het resterende zichtbare deel kan worden verankerd. Startpositie en duur-gebaseerde blokbreedte veranderen niet; een starttijd wordt verborgen wanneer hij niet volledig past.
+PR #6 probeerde dit met per-programme Reanimated animated styles. PR/main CI waren groen, maar de eerste fysieke iPhone-start gaf een wit scherm gevolgd door een Expo Go-crash. De rollback naar **`f7c9f73568341d29e518be21e0de071e4ef7877d`** werd fysiek bevestigd als weer normaal startend. Daarmee is de PR #6-architectuur afgewezen voor deze fixture.
 
-De 09:20 iPhone-test bevestigde dat dit pas **na loslaten/settlen** gebeurt. De product owner wil uiteindelijk dat de titel al tijdens drag en momentum meebeweegt. Dat blijft een open requirement.
+## PR #8 — nieuwe low-overhead live edge-oplossing
+PR #8 implementeert de open titelbeweging opnieuw, maar zonder een animated/worklet-instance per programma:
+- één geïsoleerde overlay boven de programmaweergave;
+- scroll-events worden maximaal één keer per animation frame tot overlay-state samengevoegd;
+- alleen zichtbare zenders plus kleine overscan leveren een edge-mask;
+- het echte programmablok blijft op zijn oorspronkelijke startpositie en duur-gebaseerde breedte;
+- PR #5-settled readability blijft als fallback actief;
+- de overlay ontvangt geen touches en is verborgen voor accessibility; de echte programmebutton blijft de toegankelijke bron;
+- de current-time line blijft boven de overlay zichtbaar.
 
-Dezelfde 09:20-test legde twee extra eisen vast:
-- expliciete Vandaag/Morgen-selectie moet direct visueel actief worden;
-- **Vandaag · Morgen · Nu** hoort altijd op één regel te staan, met `Morgen` als compact zichtbaar label en slechts lokaal begrensde font scaling voor deze controls.
+### Technische verificatie
+De eerste PR #8-run **CI #119 / `34747757890`** faalde bij strict TypeScript doordat `StyleSheet.absoluteFillObject` niet beschikbaar was in de gebruikte React Native-typing. De implementatie is gecorrigeerd naar expliciete absolute bounds; geen check is uitgezet.
 
-## PR #6 — technisch groen, fysiek afgewezen
-PR #6 probeerde alle drie de 09:20-eisen tegelijk te implementeren met per-programme Reanimated animated styles en een gedeelde viewportwaarde.
+Final PR-head **`35282fffc558115f60eded7534c4eb03266cf4f7`** passeerde **PR CI #120 / `34747825150`** volledig: installatie, strict TypeScript, lint, tests en iOS/Android/web Expo exports.
 
-Hoewel PR-CI #92 en main-CI #93 groen waren, gaf de eerste fysieke iPhone-start een **wit scherm gevolgd door een Expo Go-crash**. Daarmee is PR #6 fysiek afgewezen. De exacte native oorzaak is niet bewezen; de zware per-programme animation/worklet-opzet over de 48-zenderfixture is een belangrijke verdachte.
+PR #8 is gesquasht naar main als **`1fbc4095ea50959f80a87db5db1f91905f46c2e2`**. De exacte merge passeerde **main CI #121 / `34747935259`** eveneens volledig.
 
-## Rollback — fysiek hersteld
-Main is met rollbackcommit **`f7c9f73568341d29e518be21e0de071e4ef7877d`** teruggebracht naar de PR #5-runtimebaseline.
-
-De product owner heeft daarna expliciet bevestigd: **Teevee opent weer normaal**. Dit is het fysieke bewijs dat de rollback de startup-regressie heeft verwijderd.
-
-## PR #7 — veilige controlherimplementatie, fysiek geaccepteerd
-Na het herstelde startupbewijs zijn alleen de controlwijzigingen opnieuw gebouwd, zonder nieuwe Reanimated/workletlogica:
-- Vandaag, Morgen en Nu staan op één horizontale regel;
-- alleen deze compacte labels hebben `maxFontSizeMultiplier=1.2`;
-- Morgen is zichtbaar compact; de werkelijke datum zit in het accessibility-label;
-- Vandaag/Morgen worden direct geselecteerd na tap en blijven tijdens hun eigen animated jump beschermd tegen tijdelijke tussenliggende scroll-state;
-- Nu keert terug naar vandaag/current time;
-- PR #5 programme-readability blijft verder ongewijzigd en beweegt dus nog niet live tijdens de swipe.
-
-Technische verificatie:
-- PR #7 head **`67925d17913f5eac1aa00417f17bbf880e3724a9`**: CI #104 / run `34746652205` volledig geslaagd.
-- PR #7 merge **`c697c4e7b9bb026409962f319d26cebad75a3a56`**.
-- Main-CI #105 attempt 1 faalde vóór projectchecks door npm `ETARGET` op `@csstools/css-calc@^3.4.0`.
-- De rerun van exact dezelfde main SHA, attempt 2, slaagde volledig: installatie, strict TypeScript, lint, tests en iOS/Android/web Expo exports.
-
-### Fysieke hertest
-De product owner bevestigde op dezelfde iPhone en dezelfde vergrote systeemtekst alle vier gevraagde punten:
-1. Teevee opent normaal;
-2. `Vandaag`, `Morgen` en `Nu` staan op één regel;
-3. de geselecteerde dag reageert direct correct en `Nu` keert terug naar de actuele tijd;
-4. horizontaal scrollen voelt nog hetzelfde/natuurlijk als de eerder geaccepteerde baseline.
-
-PR #7 is daarmee **fysiek geaccepteerd** voor zijn volledige bedoelde scope.
+Deze groene CI is uitdrukkelijk nog **geen fysieke acceptatie**; PR #6 heeft aangetoond waarom de volgende toesteltest noodzakelijk is.
 
 ## Kernstatus Phase 1
 | Onderdeel | Status |
 |---|---|
-| App opent/rendert via Expo Go | **Bevestigd na rollback én PR #7** |
-| Horizontale scroll/inertie/bounce | **Kwalitatief opnieuw bevestigd op PR #7** |
+| App opent/rendert via Expo Go | **Bevestigd t/m PR #7; PR #8 hertest nodig** |
+| Horizontale scroll/inertie/bounce | **Kwalitatief bevestigd t/m PR #7; PR #8 regressiecheck nodig** |
 | Verticale scroll/inertie/bounce | Kwalitatief akkoord |
 | Detail openen/sluiten/swipe-down | Kwalitatief akkoord |
 | Grote systeemtekst chrome/alignment | **Fysiek bevestigd** |
 | Detailinhoud + Sluiten bij grote tekst | **Fysiek bevestigd voor geteste inhoud** |
-| Partial-left geometry-safe readability | Technisch geïntegreerd; na settle fysiek waargenomen |
-| Continue titelbeweging tijdens swipe | **Open; PR #6-opzet teruggedraaid** |
+| Partial-left geometry | **Waarheidsgetrouw in PR #5/PR #8 code** |
+| Continue titelbeweging tijdens swipe | **PR #8 technisch groen; fysieke validatie nodig** |
 | Vandaag/Morgen/Nu op één regel | **Fysiek bevestigd in PR #7** |
 | Actieve dag direct na tap | **Fysiek bevestigd in PR #7** |
 | VoiceOver/screenreader | Open |
@@ -88,10 +60,17 @@ PR #7 is daarmee **fysiek geaccepteerd** voor zijn volledige bedoelde scope.
 | Android/release-achtige performance | Open |
 
 ## Volgende gerichte iPhone-validatie
-De volgende toesteltest is pas nodig na de nieuwe, lager-overhead implementatie van continue partial-left titelbeweging. Dan hoeft alleen te worden gecontroleerd:
-- app-start blijft stabiel;
-- titel beweegt tijdens drag én momentum mee in het zichtbare restant;
-- programmablokpositie/duur en geaccepteerde scroll voelen ongewijzigd.
+Gebruik main **`1fbc4095ea50959f80a87db5db1f91905f46c2e2`** of nieuwer. De vergrote tekststand mag blijven staan.
+
+Controleer alleen:
+1. Teevee opent normaal, zonder wit scherm/crash.
+2. Scroll horizontaal zodat de start van een langer programmablok achter de vaste zenderrail verdwijnt. **Tijdens de vingerbeweging zelf** blijft de titel aan de zichtbare linker rand leesbaar/meebewegen.
+3. Laat los terwijl er momentum is. Ook **tijdens het uitrollen** blijft de titel meebewegen; hij wacht niet meer tot de scroll stopt.
+4. Het programmablok zelf springt niet en verandert niet zichtbaar van breedte; horizontale scroll voelt nog natuurlijk zoals vóór PR #8.
+
+Already accepted `Vandaag/Morgen/Nu` en detailgedrag hoeven niet opnieuw getest te worden, tenzij spontaan een regressie opvalt.
+
+Een korte terugkoppeling `1 ja/nee, 2 ja/nee, 3 ja/nee, 4 ja/nee` is voldoende; een screenshot helpt alleen bij een visueel defect, maar kan beweging tijdens drag/momentum niet bewijzen.
 
 ## Samenvatting
-**De PR #6 startcrash is fysiek hersteld. PR #7 is volledig fysiek geaccepteerd: startup, éénregelige Vandaag/Morgen/Nu-controls, directe selected-state/`Nu`-werking en het horizontale scrollgevoel zijn goed. Alleen de continue partial-left titelbeweging resteert uit de 09:20-feedback en wordt opnieuw ontworpen met een lager-overhead pad.**
+**PR #7 is volledig fysiek geaccepteerd. PR #8 herbouwt alleen de resterende continue partial-left titelbeweging met één lichte viewport-overlay in plaats van duizenden per-programme animations/worklets. PR- en main-CI zijn groen; één gerichte iPhone-test is nu de enige acceptatiegate.**
