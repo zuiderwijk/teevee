@@ -1,9 +1,11 @@
 # Teevee Phased Build Specification
 
-Status: Phase 0 baseline.
+Status: phased baseline, amended 13 September 2026 to incorporate the accepted Guide/Programme Detail UX direction. Implementation status remains governed by `docs/PROJECT_STATE.md`.
 
 ## Build philosophy
 Build risk-first, not screen-count-first. The Guide interaction is the defining product and largest technical/UX risk, so it is validated before broad feature development.
+
+Accepted visual/UX direction in `docs/UX.md` and `docs/DESIGN_SYSTEM.md` is the target for implementation; it must not be confused with already-shipped runtime behaviour.
 
 ## Phase 0 — Project Foundation
 Deliverables:
@@ -25,16 +27,17 @@ Build only what is needed to validate:
 - React Native/Expo app bootstrap;
 - light/dark semantic theme foundation;
 - realistic channel/schedule fixtures;
-- two-dimensional guide surface;
+- Totaal two-dimensional guide surface;
 - sticky/anchored channel and time context;
 - horizontal time navigation;
 - vertical channel navigation;
 - current-time marker;
-- current-programme progress;
+- current-programme progress where required by the current prototype;
 - Now action;
 - day navigation sufficient for prototype testing;
-- basic programme tap/detail sheet or screen;
-- performance instrumentation where useful.
+- direct programme tap/detail presentation;
+- performance instrumentation where useful;
+- larger-system-text validation for core Guide/detail behaviour.
 
 Acceptance gate:
 - smooth interaction at realistic channel/programme volume;
@@ -44,7 +47,7 @@ Acceptance gate:
 - light and dark both function;
 - core interaction is demonstrably preferable to a conventional mobile guide.
 
-Do not add Tonight, subscriptions or broad metadata before this gate passes.
+Do not pull broad later-phase scope into Phase 1 merely because the visual baseline is now known. The current exact next step and accepted runtime baseline remain in `PROJECT_STATE.md`.
 
 ## Phase 2 — App Shell
 Goal: turn the prototype into a maintainable product shell.
@@ -52,6 +55,7 @@ Goal: turn the prototype into a maintainable product shell.
 Deliver:
 - routing/navigation;
 - semantic design tokens/components;
+- canonical Guide shell/chrome behaviour from UX baseline;
 - settings foundation;
 - local preference persistence;
 - robust loading/error boundaries;
@@ -74,17 +78,23 @@ Deliver:
 The free provider is not declared production-safe by completing this phase.
 
 ## Phase 4 — Core Guide MVP
-Deliver:
-- robust multi-day schedule;
+Deliver the accepted Guide UX from `docs/UX.md` on production-quality schedule data:
+- robust multi-day Totaal schedule;
+- Per zender vertical day list with sticky/swipeable channel-logo navigation and horizontal adjacent-channel swipe;
+- Nu & Straks today-only shared time selector with live/browse states, `Primetime`/`Nu` shortcuts and reference programme + three following programmes per channel;
 - channel selection and ordering;
 - reliable Now behaviour;
-- programme detail;
+- Programme Detail direct-open flow;
+- `Herinner mij` + `Bewaar` primary actions and contextual sticky bottom copies after the canonical actions scroll away;
 - offline/stale-cache handling;
 - schedule refresh preserving context;
-- production-level guide performance.
+- production-level guide performance;
+- light/dark/system and representative larger-text validation.
+
+Do not reintroduce card-heavy programme presentation, redundant metadata or low-value controls merely to fill visual space. The accepted design target is premium utility with restrained chrome.
 
 ## Phase 5 — Search and Discovery
-Deliver Search first. Add Tonight only after its value and data requirements are clear. Tonight must work without becoming an editorial/news dependency.
+Deliver Search first. Add Tonight only after its value and data requirements are clear. Tonight may use more imagery than Guide but must not become an editorial/news dependency or infinite engagement feed.
 
 ## Phase 6 — Personal Features
 Deliver saved programmes/favourites, reminders and refined channel preferences. Keep identity optional unless cross-device requirements justify an account decision.
