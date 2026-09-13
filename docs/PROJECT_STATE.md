@@ -1,7 +1,7 @@
 # Teevee — Canonical Project State
 
-Last updated: 2026-09-13 19:57 CEST.
-Status: ACTIVE — **Phase 2 App Shell**. Phase 1A/1B Guide interaction models are physically accepted on the available iPhone. PR #25 app shell and PR #26 local Guide-presentation persistence are both physically accepted on iPhone. Physical Android interaction validation remains explicitly deferred because the owner currently has no Android device; native Android compilation is a CI gate but is not device acceptance.
+Last updated: 2026-09-13 20:49 CEST.
+Status: ACTIVE — **Phase 2 App Shell**. Phase 1A/1B Guide interaction models are physically accepted on the available iPhone. PR #25 app shell and PR #26 local Guide-presentation persistence are physically accepted on iPhone. PR #27 Settings/appearance and PR #29 shared secondary/placeholder header chrome are technically merged and CI-verified, but their combined small iPhone appearance/header smoke remains open. Physical Android interaction validation remains explicitly deferred because the owner currently has no Android device; native Android compilation is a CI gate but is not device acceptance.
 Current phase: **Phase 2 — App Shell**
 Previous phase: **Phase 1B — Guide Presentation Prototypes: physically accepted on iPhone**
 
@@ -161,30 +161,53 @@ Physical Android interaction acceptance remains **OPEN / DEFERRED** because no A
 
 Automated confidence covers Android JS/native bundle export, clean Expo Android prebuild and Gradle debug APK compilation. Still physically unproven: Android Back arbitration, nested-scroll/gesture feel, realistic device frame pacing and device-specific defects.
 
-## Phase 2 increment 3 — Settings / appearance
-Branch: `feat/phase2-settings-appearance`. PR: #27.
+## Phase 2 increment 3 — PR #27 Settings / appearance
+PR #27 merged to `main` as `61785994632ce397afbebf1f7c82f677719c1d23`.
 
-Intake found CI #229 failed at TypeScript because React Native can report `unspecified`; `android-native` succeeded. Repair uses the installed native colour-scheme type, tests unspecified fallback and live provider integration, puts Settings controls into normal header flow, and enables tab history for return to the originating surface. The Settings screen uses cross-platform safe-area context and wraps its header for larger text. CI must be revalidated on the repaired head before merge.
+Implemented:
+- Settings is a secondary route, not a fourth primary tab;
+- `Systeem`, `Licht` and `Donker` persist through the existing versioned AppPreferences storage;
+- appearance applies live across app shell and Guide views;
+- `Systeem` follows the native colour scheme, including safe fallback for React Native `unspecified`;
+- tab history returns Settings to the originating primary surface;
+- Settings uses cross-platform safe-area context and a wrapping header for larger text;
+- appearance resolution and provider integration are covered by tests;
+- no global state library and no Guide gesture retuning.
 
-Local verification: strict TypeScript, warning-free lint and 125 tests across 20 suites pass; all-platform exports pass. Browser visual verification is unavailable because the browser blocks the local server. No new native/device acceptance is claimed.
+Verification:
+- repaired branch passed strict TypeScript, warning-free lint, tests and all-platform exports;
+- exact-main CI #232 / `34774120843` on `61785994632ce397afbebf1f7c82f677719c1d23`: `quality` and `android-native` completed/success, including native Android debug APK compile.
 
-Intake and implementation gaps: `docs/INTAKE_2026-09-13.md`.
+Physical status: **OPEN**. The smallest iPhone appearance smoke still needs to confirm secondary Settings navigation, live Light/Dark/System behaviour, explicit appearance persistence after restart and continued Guide/Programme Detail usability.
 
-Implemented scope pending final CI and iPhone smoke:
-- make Settings a secondary route without adding a fourth primary tab;
-- expose a secondary Settings entry point in normal header flow rather than overlaying existing header labels;
-- let the user select `Systeem`, `Licht` or `Donker`;
-- persist appearance through the existing AppPreferences storage;
-- make the chosen appearance apply live across the app shell and Guide views;
-- retain system-following behaviour when `Systeem` is selected;
-- add pure unit coverage for appearance resolution;
-- do not retune Guide interaction mechanics.
+Intake record: `docs/INTAKE_2026-09-13.md`.
 
-## Remaining Phase 2 deliverables after increment 3
-- further canonical shared Guide shell/chrome extraction where it can be done without destabilising frozen view mechanics;
-- semantic design tokens/components where duplication now has proven value;
-- robust loading/error boundaries;
-- accessibility shell validation, including representative larger system text for Per zender/Nu & Straks;
+## Phase 2 increment 4 — PR #29 shared app-shell header
+PR #29 merged to `main` as `68f60bae8ac5888054bf92973ef92041694a19f8`.
+
+Implemented:
+- shared `AppScreenHeader` for Instellingen, Vanavond and Zoeken;
+- one semantic screen title plus optional action slot;
+- wrapping layout for larger text instead of overlay positioning;
+- Vanavond and Zoeken migrated from React Native's legacy SafeAreaView to `react-native-safe-area-context`;
+- Settings close/navigation and appearance semantics unchanged;
+- focused component coverage for semantic title and optional action;
+- no changes to Totaal, Per zender or Nu & Straks scroll/gesture/startup mechanics;
+- no dependencies or native configuration changed.
+
+Verification:
+- exact PR-head `752b6efc66915025aeeec6705d9abcdd3e6e6bbf`;
+- PR CI #233 / `34774978748`: `quality` and `android-native` completed/success;
+- quality includes strict TypeScript, lint, tests and iOS/Android/web Expo exports;
+- Android gate includes clean prebuild and Gradle debug-APK compile.
+
+Physical status: combine this with the still-open PR #27 iPhone appearance smoke. No physical acceptance is inferred from CI.
+
+## Remaining Phase 2 deliverables after increment 4
+- robust route/screen loading and error boundaries with retry behaviour;
+- further canonical Guide-specific shell/chrome extraction only where it can be done without destabilising frozen view mechanics;
+- additional semantic design tokens/components only where duplication proves value;
+- accessibility shell validation, including the new wrapping app header and representative larger system text for Per zender/Nu & Straks;
 - keep test harness / CI quality gates green.
 
 Deferred but tracked:
@@ -197,9 +220,9 @@ Deferred but tracked:
 - final Tonight composition.
 
 ## EXACT NEXT STEP
-**Finish the Settings/appearance increment on `feat/phase2-settings-appearance`, run the exact PR-head CI gates and merge only when `quality` and `android-native` are explicitly completed/success. Then perform the smallest iPhone appearance smoke pass: Settings opens as secondary navigation, `Donker` and `Licht` apply live, `Systeem` follows the device again, the chosen explicit appearance survives app restart, and Guide/Programme Detail remain usable.**
+**Implement a small Expo Router 57 screen/route error-boundary foundation with a themed fallback and retry action, using the framework's existing boundary API and no new dependency. Keep Guide interaction mechanics and the deferred Nu & Straks startup boundary untouched. The combined iPhone Settings appearance + shared-header/safe-area smoke remains an explicit physical acceptance gate before Phase 2 can close.**
 
 Owner checkout: `~/projects/teevee`.
 
 ## Resume instruction
-> Read `AGENTS.md` and `PROJECT_STATE.md`. Phase 2 App Shell is active. PR #25 shell/navigation and PR #26 Guide-presentation persistence are physically accepted on iPhone. Preserve frozen Guide mechanics and the deferred Nu & Straks startup boundary. Current work is Settings/appearance on `feat/phase2-settings-appearance`: secondary settings navigation, persisted System/Light/Dark preference and live theme application. Update PROJECT_STATE and the Dutch timestamped DEVLOG after substantive increments; never substitute CI for physical interaction acceptance.
+> Read `AGENTS.md` and `PROJECT_STATE.md`. Phase 2 App Shell is active. PR #25 shell/navigation and PR #26 Guide-presentation persistence are physically accepted on iPhone. PR #27 Settings/appearance and PR #29 shared secondary/placeholder header chrome are technically merged and CI-green, with one small combined iPhone appearance/header smoke still open. Preserve frozen Guide mechanics and the deferred Nu & Straks startup boundary. Next technical increment is robust Expo Router screen/route error-boundary handling with retry and existing theme tokens, without adding a dependency. Update PROJECT_STATE and the Dutch timestamped DEVLOG after substantive increments; never substitute CI for physical interaction acceptance.
