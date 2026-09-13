@@ -1,7 +1,7 @@
 # Teevee — Canonical Project State
 
-Last updated: 2026-09-13 08:55 CEST (Europe/Amsterdam). Exact commit time is in GitHub.
-Status: ACTIVE — iPhone interaction baselines accepted; large-text defect correction integrated and technically green; one focused iPhone retest remains before closing this accessibility increment
+Last updated: 2026-09-13 09:01 CEST (Europe/Amsterdam). Exact commit time is in GitHub.
+Status: ACTIVE — iPhone interaction baselines and the corrected large-text Guide increment are accepted; the next focused readability issue is programme content partially hidden behind the fixed channel rail
 Current phase: **Phase 1 — Guide Interaction Prototype**
 Previous phase: **Phase 0 — Project Foundation: COMPLETE**
 
@@ -42,6 +42,7 @@ One Guide destination with a locally remembered presentation preference remains 
 - Day buttons and `Nu` move within the same timeline; active day follows horizontal position.
 - Programme detail selection is isolated from the heavy Guide render. The existing native Modal slide, button close, outside-tap close and swipe-down dismissal remain the accepted baseline.
 - Optional `Channel.logoUrl` exists. Channel identity is logo-first when a suitable asset exists, while the channel name remains visible/accessible and is the fallback when the logo is absent or fails. Current fixtures deliberately contain no real logos.
+- Totaal adapts to Dynamic Type: row/channel/time-axis geometry expands with font scale and large-text chrome stacks so primary controls remain readable.
 - CI runs install, strict TypeScript, lint, tests and iOS/Android/web Expo bundle exports. Bundle export is not a signed device build.
 
 No real production EPG, production artwork, account system or subscription/paywall has been introduced.
@@ -57,35 +58,40 @@ Do not retune these without a concrete regression:
 
 The product owner previously described the targeted scroll, detail-response and swipe-dismiss retests as **"perfect"**. Those are qualitative iPhone confirmations, not performance measurements or blanket accessibility approval.
 
-## Latest larger-text device evidence — 13 September 2026, 08:44 screenshot
-The product owner tested the first Dynamic Type increment on the same iPhone with system text materially larger than normal. Exact local SHA, iPhone model, iOS version and Expo Go version are still not independently recorded.
+## Larger-text iPhone validation — accepted
+The first larger-text physical test at 08:44 confirmed row alignment and detail reachability, but exposed clipped Guide chrome: `Gids` was cut off and day labels were ellipsized. PR #4 corrected the scoped layout problem without changing accepted scroll or dismissal behaviour.
 
-Reported results:
-- **zenderkolom/programmarijen blijven uitgelijnd:** `Ja`;
-- **programmadetail blijft bereikbaar inclusief `Sluiten`:** `Ja`;
-- the supplied screenshot showed a concrete large-text defect in Guide chrome: the large `Gids` heading was visibly clipped and the day labels were ellipsized (`Van...`, `Ma 1...`). The time axis/chrome also remained too horizontally dense for that font scale.
+The product owner then supplied a corrected-build screenshot at **08:59** on the same materially enlarged system-text setting. Physical visual evidence now shows:
+- `Gids` fully visible;
+- `Nu` fully visible;
+- `Vandaag` and `Ma 14 Sep` fully readable;
+- time-axis labels (`08:30`, `09:00`, `09:30`) fully readable;
+- channel rail and programme rows still aligned;
+- programme-title typography no longer vertically clipped by the former fixed line-height boxes.
 
-Because detail content remained reachable, **do not add an internal ProgrammeDetail ScrollView solely on the basis of this test**. Revisit coordinated reading-scroll versus swipe-dismiss only when real long content proves it necessary.
+This closes the targeted large-text/chrome increment on the tested iPhone. The screenshot also re-confirms a **separate pre-existing readability issue**: when a programme block is only partially visible because its left side sits behind the fixed channel rail, leading title text can disappear. Narrow real-duration blocks may also legitimately ellipsize. Do not solve that by falsifying programme start, duration or block position.
 
-## Large-text correction integrated
-The screenshot defect was addressed in PR #4 without changing accepted scroll or dismissal behaviour:
+Because the tested detail content remained reachable at large text, **do not add an internal ProgrammeDetail ScrollView solely on this evidence**. Revisit coordinated reading-scroll versus swipe-dismiss only when real long content proves it necessary.
+
+A blue floating gear control overlaps the Guide in the screenshots, but its origin remains unverified and it is not treated as Teevee product chrome.
+
+## Large-text correction verification
+PR #4 changed only the scoped larger-text layout:
 - scalable heading/programme text no longer uses fixed line-height boxes that can clip enlarged glyphs;
 - from large-text mode onward, header/day controls receive their own width rather than competing horizontally;
 - horizontal minute density and time-label room increase gradually with system font scale;
 - programme geometry, current-time calculations, day jumps and visible-time calculations all use the same font-scale-dependent minute width;
 - the 100% font-scale geometry remains the accepted baseline.
 
-Verification:
+Technical verification:
 - PR #4 exact head **`536de5b778725d2f91dba3f734c4efecd8d78028`** passed **CI #74, run `34743728065`**, including install, typecheck, lint, tests and iOS/Android/web exports.
 - PR #4 merged to main as **`4f4fa94c6b1968ca03bb551fde9bb7ed376b2113`**.
 - Main **CI #75, run `34743812493`, completed successfully** for that exact merge SHA with the same gates.
-
-CI validates code/build integrity, not the resulting large-text layout on a physical iPhone.
+- The 08:59 iPhone screenshot provides the missing physical layout evidence; CI alone never did.
 
 ## Remaining Phase 1 work
 Still open after this increment:
-- one focused iPhone retest of the corrected large-text Guide chrome;
-- partially horizontally hidden programme content behind the fixed channel rail remains a separate readability issue and is not declared solved by this increment;
+- partially horizontally hidden programme content behind the fixed channel rail; this is now the next focused readability increment;
 - VoiceOver/screen-reader behaviour and live theme switching;
 - explicit progress/current-time accuracy checks;
 - Android gesture/back behaviour and release-like performance;
@@ -96,11 +102,11 @@ Still open after this increment:
 - production EPG/logo/artwork rights/reliability, price/trial/paywall and final visual design are later gates.
 
 ## EXACT NEXT STEP
-**Retest the merged large-text correction on the same iPhone at the same materially enlarged system-text setting: confirm that `Gids`, `Nu`, both day labels, the time axis and programme titles are fully readable while zender/programme alignment and detail reachability remain intact. Report only concrete regressions; do not reopen the accepted scroll or dismissal tuning without evidence.**
+**Implement and verify a geometry-safe readability treatment for programme blocks that are partially hidden behind the fixed channel rail during horizontal scrolling. Preserve each programme's real start position and duration/block width, avoid presenting a clipped partial time as if it were complete, keep narrow-duration ellipsis honest, and do not change the accepted scroll inertia, bounce, day/Nu semantics or programme-detail dismissal behaviour. Add focused tests, run the full CI gate, then request only a targeted iPhone retest of partial-left programme visibility.**
 
-Owner checkout: `~/projects/teevee`. To test this appcode increment: stop Metro with Control+C, run `git pull --ff-only`, then `npm run start:clean` and reopen Expo Go.
+Owner checkout: `~/projects/teevee`.
 
-Do not introduce real EPG, subscriptions, accounts, Tonight, enrichment or specialised Guide virtualisation in this validation step.
+Do not introduce real EPG, subscriptions, accounts, Tonight, enrichment or specialised Guide virtualisation in this readability increment.
 
 ## Resume instruction
 > Read AGENTS.md and PROJECT_STATE. Execute EXACT NEXT STEP where possible, follow the Definition of Done, and update this state plus Dutch timestamped DEVLOG with evidence. Ask only for product choices or genuinely necessary physical-device observations. Never substitute CI or a mock for device acceptance.
