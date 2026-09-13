@@ -43,6 +43,10 @@ type EdgeReadabilityOverlayProps = {
   nowInWindow: boolean;
 };
 
+function finiteOrZero(value: number) {
+  return Number.isFinite(value) ? value : 0;
+}
+
 function formatTime(timeMs: number) {
   return new Date(timeMs).toLocaleTimeString('nl-NL', {
     hour: '2-digit',
@@ -95,9 +99,10 @@ export const EdgeReadabilityOverlay = forwardRef<
   useImperativeHandle(
     ref,
     () => ({
-      updateHorizontal: (x) => scheduleViewport({ x: Math.max(0, x) }),
-      updateVertical: (y) => scheduleViewport({ y: Math.max(0, y) }),
-      setViewport: (x, y) => scheduleViewport({ x: Math.max(0, x), y: Math.max(0, y) }),
+      updateHorizontal: (x) => scheduleViewport({ x: Math.max(0, finiteOrZero(x)) }),
+      updateVertical: (y) => scheduleViewport({ y: finiteOrZero(y) }),
+      setViewport: (x, y) =>
+        scheduleViewport({ x: Math.max(0, finiteOrZero(x)), y: finiteOrZero(y) }),
     }),
     [scheduleViewport],
   );
