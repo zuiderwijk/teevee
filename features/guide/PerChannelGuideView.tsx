@@ -532,9 +532,9 @@ const styles = StyleSheet.create({
     gap: 7,
   },
   dayButton: {
-    minHeight: 36,
+    minHeight: 44,
     paddingHorizontal: 13,
-    borderRadius: 18,
+    borderRadius: 22,
     borderWidth: StyleSheet.hairlineWidth,
     alignItems: 'center',
     justifyContent: 'center',
@@ -544,9 +544,9 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
   nowButton: {
-    minHeight: 36,
+    minHeight: 44,
     paddingHorizontal: 13,
-    borderRadius: 18,
+    borderRadius: 22,
     borderWidth: StyleSheet.hairlineWidth,
     alignItems: 'center',
     justifyContent: 'center',

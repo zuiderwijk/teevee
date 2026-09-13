@@ -1,7 +1,7 @@
 # Teevee — Canonical Project State
 
-Last updated: 2026-09-13 20:49 CEST.
-Status: ACTIVE — **Phase 2 App Shell**. Phase 1A/1B Guide interaction models are physically accepted on the available iPhone. PR #25 app shell and PR #26 local Guide-presentation persistence are physically accepted on iPhone. PR #27 Settings/appearance and PR #29 shared secondary/placeholder header chrome are technically merged and CI-verified, but their combined small iPhone appearance/header smoke remains open. Physical Android interaction validation remains explicitly deferred because the owner currently has no Android device; native Android compilation is a CI gate but is not device acceptance.
+Last updated: 2026-09-13 22:12 CEST.
+Status: ACTIVE — **Phase 2 App Shell**. Phase 1A/1B Guide interaction models are physically accepted on the available iPhone. PR #25 app shell and PR #26 local Guide-presentation persistence are physically accepted on iPhone. PR #27 Settings/appearance, PR #29 shared secondary/placeholder header chrome, PR #30 screen error recovery, PR #31 deferred Nu & Straks recovery and PR #33 shell accessibility hardening are technically merged. The combined small iPhone appearance/header/larger-text smoke remains open. Physical Android interaction validation remains explicitly deferred because the owner currently has no Android device; native Android compilation is a CI gate but is not device acceptance.
 Current phase: **Phase 2 — App Shell**
 Previous phase: **Phase 1B — Guide Presentation Prototypes: physically accepted on iPhone**
 
@@ -79,7 +79,7 @@ Accepted integration boundary:
 - Totaal and Per zender may be in the startup module graph;
 - Nu & Straks loads through `import()` only when requested or when restoring a persisted Nu & Straks preference after the shell has started;
 - a late dynamic import may never override a newer user selection;
-- load failure must leave the rest of Guide usable and surface a diagnostic state.
+- load failure must leave the rest of Guide usable and surface a recoverable user-facing state.
 
 ## Programme Detail
 - Direct from every Guide presentation; no intermediate preview sheet.
@@ -154,6 +154,8 @@ Conclusion: **Guide-presentation persistence is physically accepted on the avail
 - CI installs with `npm ci` and uses npm cache.
 - `quality` runs strict TypeScript, lint, tests and iOS / Android / web Expo exports.
 - `android-native` performs a clean Expo Android prebuild and Gradle `:app:assembleDebug`.
+- GitHub Actions checkout/setup-node use the supported v7 action runtimes while Teevee project commands remain on Node 22.
+- Workflow permissions are explicitly read-only (`contents: read`) for the build/test pipeline.
 - Never run `npm audit fix --force`; dependency advisories require targeted review.
 
 ## Android validation status
@@ -203,11 +205,71 @@ Verification:
 
 Physical status: combine this with the still-open PR #27 iPhone appearance smoke. No physical acceptance is inferred from CI.
 
-## Remaining Phase 2 deliverables after increment 4
-- robust route/screen loading and error boundaries with retry behaviour;
-- further canonical Guide-specific shell/chrome extraction only where it can be done without destabilising frozen view mechanics;
-- additional semantic design tokens/components only where duplication proves value;
-- accessibility shell validation, including the new wrapping app header and representative larger system text for Per zender/Nu & Straks;
+## Phase 2 increment 5 — PR #30 route/screen error recovery
+PR #30 merged to `main` as `9e2fe2035626c28ccb36f228cc907848034d5581`.
+
+Implemented:
+- Expo Router navigator-level screen error boundary using the framework-provided retry contract;
+- themed, generic user-facing fallback without leaking internal exception text;
+- accessible `Opnieuw proberen` action;
+- tab navigation stays mounted so the user can leave a failed screen;
+- no extra dependency and no Guide-mechanics changes.
+
+Verification: exact PR-head CI #238 / `34775847949` completed/success for `quality` and `android-native`.
+
+## Phase 2 increment 6 — PR #31 deferred Nu & Straks recovery
+PR #31 merged to `main` as `93f06c154087a14971f0ab1fcedfafeb82f40bdf`.
+
+Implemented:
+- deferred Nu & Straks load failure no longer exposes raw technical exception text;
+- generic recovery copy plus accessible retry;
+- Totaal, Per zender and the presentation selector remain usable during a Nu & Straks import failure;
+- proven deferred import/stale-selection boundary remains intact;
+- no Nu & Straks rail/scroll/gesture changes.
+
+Exact-main CI #242 / `34777604615` completed/success for `quality` and `android-native`.
+
+## CI hardening — PR #32
+PR #32 merged to `main` as `3650f15fd70d37088940d292ae3422aca7b450a9`.
+
+- checkout/setup-node moved to supported v7 action majors;
+- project runtime remains Node 22;
+- CI token permissions explicitly restricted to `contents: read`;
+- no app/runtime dependencies changed.
+
+PR CI and exact-main CI #244 / `34778491517` completed/success, including Android debug APK compile.
+
+## Phase 2 increment 7 — PR #33 shell accessibility recovery
+PR #33 merged to `main` as `4516ce280ff2e274fb4f7df42570cc7ff5d2801e`.
+
+Implemented:
+- route error fallback is scrollable while retaining its centred normal-size presentation, so retry remains reachable under very large system text;
+- global Guide presentation selector now has a 44pt minimum target;
+- no changes to programme geometry, Guide gestures or deferred Nu & Straks loading.
+
+Verification:
+- parent exact-main CI #244 green;
+- exact PR-head CI #245 / `34778627437` green for both `quality` and `android-native`;
+- exact-main CI #246 / `34779883734` is still running at this document update; `quality` is already completed/success and Android-native is in the Gradle compile step.
+
+## Active Phase 2 increment — compact Guide controls
+Branch: `fix/phase2-guide-compact-controls`.
+
+Current scoped changes:
+- Per zender `Vandaag`, `Morgen` and `Nu` controls: minimum target 36 → 44pt;
+- Nu & Straks `Primetime` and `Nu` controls: minimum target 40 → 44pt;
+- Nu & Straks reference/control row can wrap under larger system text instead of forcing a single horizontal row;
+- existing 48pt time-rail targets and 62pt Per zender channel-strip targets are already sufficient and remain unchanged;
+- 24pt interactive following-programme rows in Nu & Straks are **not silently redesigned in this slice** because increasing them materially changes information density; they remain a tracked accessibility/UX question.
+
+No schedule geometry, programme block dimensions, momentum, nested gestures, persistence or deferred import behaviour is modified.
+
+## Remaining Phase 2 deliverables
+- finish exact CI gates and merge the active compact-control slice only when green;
+- physical iPhone appearance/header smoke for PR #27/#29;
+- representative larger-system-text iPhone pass for shell, Per zender and Nu & Straks, including the newly hardened controls;
+- decide separately how to make compact interactive programme rows meet accessibility expectations without destroying the accepted information-density/temporal presentation;
+- further shared Guide chrome extraction only if concrete duplication justifies the risk;
 - keep test harness / CI quality gates green.
 
 Deferred but tracked:
@@ -220,9 +282,9 @@ Deferred but tracked:
 - final Tonight composition.
 
 ## EXACT NEXT STEP
-**Implement a small Expo Router 57 screen/route error-boundary foundation with a themed fallback and retry action, using the framework's existing boundary API and no new dependency. Keep Guide interaction mechanics and the deferred Nu & Straks startup boundary untouched. The combined iPhone Settings appearance + shared-header/safe-area smoke remains an explicit physical acceptance gate before Phase 2 can close.**
+**Wait for exact-main CI #246 on PR #33 to complete successfully, then open the compact-control PR from `fix/phase2-guide-compact-controls`. Require exact PR-head `quality` and `android-native` success before merge. After the accessibility-control slices are technically green, the next high-value gate is one focused iPhone session combining Settings Light/Dark/System + restart persistence, shared header/safe-area presentation and representative larger system text in Per zender/Nu & Straks.**
 
 Owner checkout: `~/projects/teevee`.
 
 ## Resume instruction
-> Read `AGENTS.md` and `PROJECT_STATE.md`. Phase 2 App Shell is active. PR #25 shell/navigation and PR #26 Guide-presentation persistence are physically accepted on iPhone. PR #27 Settings/appearance and PR #29 shared secondary/placeholder header chrome are technically merged and CI-green, with one small combined iPhone appearance/header smoke still open. Preserve frozen Guide mechanics and the deferred Nu & Straks startup boundary. Next technical increment is robust Expo Router screen/route error-boundary handling with retry and existing theme tokens, without adding a dependency. Update PROJECT_STATE and the Dutch timestamped DEVLOG after substantive increments; never substitute CI for physical interaction acceptance.
+> Read `AGENTS.md` and `PROJECT_STATE.md`. Phase 2 App Shell is active. Preserve frozen Guide mechanics and the deferred Nu & Straks startup boundary. PR #30/#31 error recovery, PR #32 CI hardening and PR #33 shell accessibility are merged; compact Guide-control accessibility hardening is active on `fix/phase2-guide-compact-controls`. Do not infer physical acceptance from CI. Update PROJECT_STATE and the Dutch timestamped DEVLOG after substantive increments.
