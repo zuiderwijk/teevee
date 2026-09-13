@@ -37,12 +37,22 @@ export type ProviderScheduleQuery = {
 };
 
 /**
+ * `complete` means the adapter considers the requested channel/time scope authoritative,
+ * including legitimate empty windows. `partial` data may be observed/diagnosed but must
+ * never replace an already stored canonical window wholesale.
+ */
+export type ProviderScheduleBatch = {
+  coverage: 'complete' | 'partial';
+  programmes: ExternalProgramme[];
+};
+
+/**
  * Server-side ingestion contract. Mobile code must never implement or consume this directly.
  */
 export interface EpgProvider {
   readonly key: string;
   getChannels(): Promise<ExternalChannel[]>;
-  getSchedule(input: ProviderScheduleQuery): Promise<ExternalProgramme[]>;
+  getSchedule(input: ProviderScheduleQuery): Promise<ProviderScheduleBatch>;
 }
 
 /** Explicit provider -> Teevee channel identity mapping. */
