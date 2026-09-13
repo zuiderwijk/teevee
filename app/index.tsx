@@ -1,6 +1,7 @@
 import { type ComponentType, useCallback, useEffect, useReducer, useRef, useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 
+import { SettingsButton } from '@/components/SettingsButton';
 import { detailReducer, initialDetailState, type ProgrammeSelection } from '@/features/guide/detailState';
 import { GuidePresentationSelector } from '@/features/guide/GuidePresentationSelector';
 import {
@@ -131,6 +132,8 @@ export default function GuideScreen() {
           </Text>
         </View>
       ) : null}
+
+      <SettingsButton />
 
       <View pointerEvents="box-none" style={styles.presentationSelectorDock}>
         <GuidePresentationSelector

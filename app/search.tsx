@@ -1,18 +1,22 @@
 import { SafeAreaView, StyleSheet, Text, View } from 'react-native';
 
+import { SettingsButton } from '@/components/SettingsButton';
 import { useTeeveeTheme } from '@/theme/useTeeveeTheme';
 
 export default function SearchScreen() {
   const theme = useTeeveeTheme();
 
   return (
-    <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.colors.background }]}>
-      <View style={styles.content}>
-        <Text accessible={false} style={[styles.eyebrow, { color: theme.colors.textMuted }]}>TEEVEE</Text>
-        <Text accessibilityRole="header" style={[styles.title, { color: theme.colors.text }]}>Zoeken</Text>
-        <Text style={[styles.body, { color: theme.colors.textSecondary }]}>Zoeken naar programma’s en zenders wordt in een latere fase inhoudelijk gebouwd.</Text>
-      </View>
-    </SafeAreaView>
+    <>
+      <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.colors.background }]}>
+        <View style={styles.content}>
+          <Text accessible={false} style={[styles.eyebrow, { color: theme.colors.textMuted }]}>TEEVEE</Text>
+          <Text accessibilityRole="header" style={[styles.title, { color: theme.colors.text }]}>Zoeken</Text>
+          <Text style={[styles.body, { color: theme.colors.textSecondary }]}>Zoeken naar programma’s en zenders wordt in een latere fase inhoudelijk gebouwd.</Text>
+        </View>
+      </SafeAreaView>
+      <SettingsButton />
+    </>
   );
 }
 

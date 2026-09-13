@@ -1,7 +1,7 @@
 # Teevee — Canonical Project State
 
-Last updated: 2026-09-13 18:42 CEST.
-Status: ACTIVE — **Phase 2 App Shell**. Phase 1A Totaal and Phase 1B Per zender / Nu & Straks interaction models are physically accepted on the available iPhone. PR #25 introduced the first real app shell and is now physically smoke-accepted on iPhone, including Programme Detail from all three Guide presentations. Phase 2 is continuing with local preference persistence in PR #26. Physical Android interaction validation remains explicitly deferred because the owner currently has no Android device; native Android compilation is a CI gate but is not device acceptance.
+Last updated: 2026-09-13 19:22 CEST.
+Status: ACTIVE — **Phase 2 App Shell**. Phase 1A/1B Guide interaction models are physically accepted on the available iPhone. PR #25 app shell and PR #26 local Guide-presentation persistence are both physically accepted on iPhone. Physical Android interaction validation remains explicitly deferred because the owner currently has no Android device; native Android compilation is a CI gate but is not device acceptance.
 Current phase: **Phase 2 — App Shell**
 Previous phase: **Phase 1B — Guide Presentation Prototypes: physically accepted on iPhone**
 
@@ -18,7 +18,7 @@ Teevee is a premium, paid, ad-free television-guide app for iOS and Android unde
 - Deterministic fixtures keep core development and tests independent of external services.
 - Core Guide cannot depend on artwork/enrichment.
 - Accessibility and system text scaling are product-quality requirements.
-- `PROJECT_STATE.md` is canonical cross-session memory; detailed historical development evidence lives in `docs/DEVLOG.md` and timestamped physical-evidence docs.
+- `PROJECT_STATE.md` is canonical cross-session memory; detailed history lives in `docs/DEVLOG.md` and timestamped evidence docs.
 
 Relevant ADRs: `0001` through `0006` in `docs/decisions/`.
 
@@ -46,9 +46,7 @@ Do not retune accepted Guide mechanics during App Shell work without concrete re
 - direct Programme Detail path.
 
 ### Per zender
-Physical evidence includes `ScreenRecording_09-13-2026 16-16-00_1.MP4` and final Phase 1B pass `ScreenRecording_09-13-2026 17-43-36_1.MP4`.
-
-Accepted behaviour on the available iPhone:
+Accepted on the available iPhone:
 - vertical position represents wall-clock time;
 - horizontal schedule swipes change adjacent channel while preserving the viewed time anchor;
 - top channel strip can be browsed and distant channels selected directly;
@@ -56,8 +54,10 @@ Accepted behaviour on the available iPhone:
 - Programme Detail round-trip preserves relevant channel/day/time context;
 - no crash, white screen or nested-gesture collapse in acceptance evidence.
 
+Physical evidence includes `ScreenRecording_09-13-2026 16-16-00_1.MP4` and `ScreenRecording_09-13-2026 17-43-36_1.MP4`.
+
 ### Nu & Straks
-Accepted behaviour on the available iPhone:
+Accepted on the available iPhone:
 - one reference instant applies across all channel rows;
 - live and browse modes are coherent;
 - horizontal rail flings settle without the former ping-pong/tug-of-war;
@@ -75,7 +75,7 @@ Key evidence:
 ## Nu & Straks startup rule
 Do **not** restore a static `NowNextGuideView` startup import without separate physical evidence.
 
-Current accepted integration boundary:
+Accepted integration boundary:
 - Totaal and Per zender may be in the startup module graph;
 - Nu & Straks loads through `import()` only when requested or when restoring a persisted Nu & Straks preference after the shell has started;
 - a late dynamic import may never override a newer user selection;
@@ -87,53 +87,58 @@ Current accepted integration boundary:
 - Close/backdrop, `onRequestClose`, accessibility escape and deliberate swipe-down dismissal.
 - Current-phase actions: `Herinner mij` + `Bewaar`; no share action in this phase.
 - Returning from detail preserves the originating Guide presentation and relevant context.
-- After PR #25, the owner explicitly confirmed Programme Detail opens successfully from **Totaal, Per zender and Nu & Straks** under the new shell.
+- Under the Phase 2 shell, owner explicitly confirmed Programme Detail opens successfully from **Totaal, Per zender and Nu & Straks**.
 
 ## Phase 2 increment 1 — PR #25 app shell
 PR #25 merged to `main` as `2a5686c6d170ac0eb3b7206d152f3e2f358da204`.
 
 Implemented:
 - one typed contract for `Totaal`, `Per zender` and `Nu & Straks`;
-- direct three-way Guide selector replacing temporary Phase 1B cycle scaffolding;
+- direct three-way Guide selector;
 - stale deferred-import protection;
 - Expo Router bottom tabs for `Gids`, `Vanavond` and `Zoeken`;
-- intentionally minimal Vanavond/Zoeken placeholders; their real feature work remains later-phase scope;
+- intentionally minimal Vanavond/Zoeken placeholders;
 - unit tests for the Guide presentation contract.
 
-CI:
-- PR-head required jobs completed successfully before merge;
-- exact-main CI #223 / `34768125136` subsequently completed successfully for both `quality` and `android-native`.
+CI: PR-head green; exact-main CI #223 / `34768125136` green for `quality` and `android-native`.
 
-Physical shell evidence:
-- `ScreenRecording_09-13-2026 18-27-14_1.MP4` shows clean startup, direct Guide switching, deferred Nu & Straks, bottom navigation and safe return to Gids;
-- owner then confirmed Programme Detail opens from all three Guide presentations;
-- full record: `docs/PHYSICAL_EVIDENCE_2026-09-13_1827.md`.
+Physical evidence: `ScreenRecording_09-13-2026 18-27-14_1.MP4` plus owner confirmation that Programme Detail works in all three Guide presentations. See `docs/PHYSICAL_EVIDENCE_2026-09-13_1827.md`.
 
 Conclusion: **PR #25 shell smoke gate is physically closed on the available iPhone.**
 
 ## Phase 2 increment 2 — PR #26 local preferences
-Branch: `feat/phase2-guide-preference-persistence`.
-PR: #26 — `Persist the selected Guide presentation`.
+PR #26 merged to `main` as `03b31f1ed4dfa3508ea9e1aeacb85cc19520aa9c`.
 
-Implemented on the branch:
+Implemented:
 - versioned `AppPreferences` contract with `guidePresentation` and foundational `appearance` fields;
-- defensive parsing: missing/corrupt/unsupported fields repair to safe defaults rather than blocking startup;
-- native iOS/Android preference storage as a tiny JSON file in the app document directory via Expo FileSystem;
-- web development/export equivalent via `localStorage`;
-- storage hidden behind `services/storage` rather than leaking into Guide components;
+- defensive parsing and safe default repair;
+- native iOS/Android JSON preference file via Expo FileSystem;
+- web equivalent via `localStorage`;
+- storage hidden behind `services/storage`;
 - Totaal and Per zender restore directly at startup;
-- persisted Nu & Straks restores through the existing deferred-import boundary, never through a static startup import;
-- user selection writes the presentation preference without introducing global state or Zustand;
-- unit tests for preference parsing/repair/serialization and storage-contract round-trip;
-- ADR 0006 records that this storage is for small app preferences only, **not** the future production EPG cache.
+- persisted Nu & Straks restores after first frame through the accepted deferred-import boundary;
+- no global state library or Guide gesture retuning;
+- tests for parsing, repair, serialisation and storage round-trip;
+- ADR 0006 defines this as small-preference storage, not the future EPG cache.
 
-No frozen Guide scrolling/gesture implementation is changed by this increment.
+CI:
+- PR-head CI #227 / `34769387789`: `quality` and `android-native` completed/success;
+- exact-main CI #228 / `34770761263`: `quality` and `android-native` completed/success, including native Android debug APK compile.
+
+Physical restart evidence on iPhone, owner-confirmed 2026-09-13:
+- select Per zender → close/restart app → Per zender is restored;
+- select Nu & Straks → close/restart app → Nu & Straks is restored;
+- restored Nu & Straks does not trigger the former startup redbox.
+
+Full record: `docs/PHYSICAL_EVIDENCE_2026-09-13_1919.md`.
+
+Conclusion: **Guide-presentation persistence is physically accepted on the available iPhone.**
 
 ## Local preference architecture — ADR 0006
 - Small app preferences use a versioned JSON contract.
 - Storage failure is non-fatal and falls back to defaults.
 - No global state library is added merely for preferences.
-- The preference layer is intentionally separate from future server state and EPG/offline cache.
+- The preference layer is separate from future server state and EPG/offline cache.
 - Real schedule caching remains a Phase 3/4 measured decision and may use SQLite or another appropriate store.
 
 ## Data / time baseline
@@ -154,26 +159,26 @@ No frozen Guide scrolling/gesture implementation is changed by this increment.
 ## Android validation status
 Physical Android interaction acceptance remains **OPEN / DEFERRED** because no Android device is available.
 
-Automated confidence covers:
-- Android JS/native bundle export;
-- clean Expo Android prebuild;
-- Gradle debug APK compilation;
-- Programme Detail Android-request-close wiring and equivalent integration logic.
+Automated confidence covers Android JS/native bundle export, clean Expo Android prebuild and Gradle debug APK compilation. Still physically unproven: Android Back arbitration, nested-scroll/gesture feel, realistic device frame pacing and device-specific defects.
 
-Still physically unproven:
-- Android system / hardware Back arbitration;
-- nested-scroll / gesture feel;
-- realistic Android frame pacing and performance;
-- device-specific visual/runtime defects.
+## Phase 2 increment 3 — Settings / appearance
+Branch: `feat/phase2-settings-appearance`.
 
-## Remaining Phase 2 deliverables
-- finish locally remembered Guide presentation preference through CI + physical restart validation;
-- settings foundation/UI for secondary app preferences;
-- wire appearance preference to light/dark/system without breaking live system behaviour;
+Target scope:
+- make Settings a secondary route without adding a fourth primary tab;
+- expose a safe-area-aware secondary Settings entry point from primary top-level surfaces;
+- let the user select `Systeem`, `Licht` or `Donker`;
+- persist appearance through the existing AppPreferences storage;
+- make the chosen appearance apply live across the app shell and Guide views;
+- retain system-following behaviour when `Systeem` is selected;
+- add pure unit coverage for appearance resolution;
+- do not retune Guide interaction mechanics.
+
+## Remaining Phase 2 deliverables after increment 3
 - further canonical shared Guide shell/chrome extraction where it can be done without destabilising frozen view mechanics;
 - semantic design tokens/components where duplication now has proven value;
 - robust loading/error boundaries;
-- accessibility shell validation, including dark mode and representative larger system text for Per zender/Nu & Straks;
+- accessibility shell validation, including representative larger system text for Per zender/Nu & Straks;
 - keep test harness / CI quality gates green.
 
 Deferred but tracked:
@@ -186,11 +191,9 @@ Deferred but tracked:
 - final Tonight composition.
 
 ## EXACT NEXT STEP
-**Finish PR #26 on its exact current head through both required CI jobs. If `quality` and `android-native` are explicitly `completed/success` and the PR remains mergeable, merge it. Then perform the smallest physical iPhone restart test: persist Per zender across a real app restart, then persist Nu & Straks across a real app restart and confirm deferred restore does not reintroduce a startup redbox.**
-
-If that physical restart test is clean, continue autonomously with the Settings/appearance foundation; do not ask for broader Guide retesting unless concrete regression evidence appears.
+**Finish the Settings/appearance increment on `feat/phase2-settings-appearance`, run the exact PR-head CI gates and merge only when `quality` and `android-native` are explicitly completed/success. Then perform the smallest iPhone appearance smoke pass: Settings opens as secondary navigation, `Donker` and `Licht` apply live, `Systeem` follows the device again, the chosen explicit appearance survives app restart, and Guide/Programme Detail remain usable.**
 
 Owner checkout: `~/projects/teevee`.
 
 ## Resume instruction
-> Read `AGENTS.md` and `PROJECT_STATE.md`. Phase 2 App Shell is active. PR #25 shell/navigation is physically accepted on iPhone, including Programme Detail from all three Guide presentations. Preserve frozen Guide mechanics and the deferred Nu & Straks startup boundary. Complete PR #26 preference persistence via exact-head CI, merge when the required jobs are truly green, then request only the two short restart persistence observations described in EXACT NEXT STEP. Update PROJECT_STATE and the Dutch timestamped DEVLOG after substantive increments; never substitute CI for physical interaction acceptance.
+> Read `AGENTS.md` and `PROJECT_STATE.md`. Phase 2 App Shell is active. PR #25 shell/navigation and PR #26 Guide-presentation persistence are physically accepted on iPhone. Preserve frozen Guide mechanics and the deferred Nu & Straks startup boundary. Current work is Settings/appearance on `feat/phase2-settings-appearance`: secondary settings navigation, persisted System/Light/Dark preference and live theme application. Update PROJECT_STATE and the Dutch timestamped DEVLOG after substantive increments; never substitute CI for physical interaction acceptance.
