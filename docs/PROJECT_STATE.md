@@ -1,7 +1,7 @@
 # Teevee — Canonical Project State
 
-Last updated: 2026-09-13 09:01 CEST (Europe/Amsterdam). Exact commit time is in GitHub.
-Status: ACTIVE — iPhone interaction baselines and the corrected large-text Guide increment are accepted; the next focused readability issue is programme content partially hidden behind the fixed channel rail
+Last updated: 2026-09-13 09:12 CEST (Europe/Amsterdam). Exact commit time is in GitHub.
+Status: ACTIVE — iPhone interaction and large-text baselines accepted; geometry-safe partial-left programme readability is integrated and technically green; one focused iPhone retest remains
 Current phase: **Phase 1 — Guide Interaction Prototype**
 Previous phase: **Phase 0 — Project Foundation: COMPLETE**
 
@@ -43,6 +43,7 @@ One Guide destination with a locally remembered presentation preference remains 
 - Programme detail selection is isolated from the heavy Guide render. The existing native Modal slide, button close, outside-tap close and swipe-down dismissal remain the accepted baseline.
 - Optional `Channel.logoUrl` exists. Channel identity is logo-first when a suitable asset exists, while the channel name remains visible/accessible and is the fallback when the logo is absent or fails. Current fixtures deliberately contain no real logos.
 - Totaal adapts to Dynamic Type: row/channel/time-axis geometry expands with font scale and large-text chrome stacks so primary controls remain readable.
+- Programme text now has a separate viewport-aware readability treatment: after horizontal drag/momentum settles, title/start-time content can shift inside the unchanged programme block to the visible remainder when the programme's real start lies left of the viewport. The programme frame itself never moves or changes duration; start time is suppressed if the remaining visible width is too small to show it completely.
 - CI runs install, strict TypeScript, lint, tests and iOS/Android/web Expo bundle exports. Bundle export is not a signed device build.
 
 No real production EPG, production artwork, account system or subscription/paywall has been introduced.
@@ -69,29 +70,34 @@ The product owner then supplied a corrected-build screenshot at **08:59** on the
 - channel rail and programme rows still aligned;
 - programme-title typography no longer vertically clipped by the former fixed line-height boxes.
 
-This closes the targeted large-text/chrome increment on the tested iPhone. The screenshot also re-confirms a **separate pre-existing readability issue**: when a programme block is only partially visible because its left side sits behind the fixed channel rail, leading title text can disappear. Narrow real-duration blocks may also legitimately ellipsize. Do not solve that by falsifying programme start, duration or block position.
+This closes the targeted large-text/chrome increment on the tested iPhone.
 
 Because the tested detail content remained reachable at large text, **do not add an internal ProgrammeDetail ScrollView solely on this evidence**. Revisit coordinated reading-scroll versus swipe-dismiss only when real long content proves it necessary.
 
 A blue floating gear control overlaps the Guide in the screenshots, but its origin remains unverified and it is not treated as Teevee product chrome.
 
-## Large-text correction verification
-PR #4 changed only the scoped larger-text layout:
-- scalable heading/programme text no longer uses fixed line-height boxes that can clip enlarged glyphs;
-- from large-text mode onward, header/day controls receive their own width rather than competing horizontally;
-- horizontal minute density and time-label room increase gradually with system font scale;
-- programme geometry, current-time calculations, day jumps and visible-time calculations all use the same font-scale-dependent minute width;
-- the 100% font-scale geometry remains the accepted baseline.
+## Partial-left programme readability — integrated, device retest pending
+The 08:59 screenshot also re-confirmed the separate pre-existing issue where the beginning of a programme title disappears when the programme starts left of the currently visible horizontal viewport.
+
+PR #5 implements a constrained treatment without falsifying EPG geometry:
+- `programmeFrame` remains the source of the real programme left position and duration-based width;
+- a pure `programmeVisibleContent` helper calculates only the hidden-left amount and remaining readable width for inner content;
+- after user drag/momentum ends, text is translated within the same clipped programme block so the title can start inside the visible remainder;
+- text width is constrained to that visible remainder so ellipsis is honest rather than hard-clipped by the programme edge;
+- a start-time label is hidden when the remaining visible width is below the threshold required to show it completely;
+- the programme accessibility label still contains full title, start time and end time;
+- readability position is not stored on every scroll frame, avoiding a full heavy-Guide re-render at scroll frequency.
 
 Technical verification:
-- PR #4 exact head **`536de5b778725d2f91dba3f734c4efecd8d78028`** passed **CI #74, run `34743728065`**, including install, typecheck, lint, tests and iOS/Android/web exports.
-- PR #4 merged to main as **`4f4fa94c6b1968ca03bb551fde9bb7ed376b2113`**.
-- Main **CI #75, run `34743812493`, completed successfully** for that exact merge SHA with the same gates.
-- The 08:59 iPhone screenshot provides the missing physical layout evidence; CI alone never did.
+- PR #5 exact head **`de308881e102b40d4f7739944b32c0c5e9e22888`** passed **CI #86, run `34744460640`**, including install, typecheck, lint, tests and iOS/Android/web exports.
+- PR #5 merged to main as **`1e8aa125819472eb6ac76b0a41c0243973c4a003`**.
+- Main **CI #87, run `34744549991`, completed successfully** for that exact merge SHA with the same gates.
+
+This is technically green but **not yet physically accepted**. The device check must confirm the settled visual behaviour and that no perceived scroll regression was introduced.
 
 ## Remaining Phase 1 work
 Still open after this increment:
-- partially horizontally hidden programme content behind the fixed channel rail; this is now the next focused readability increment;
+- one focused iPhone retest of a programme whose real left edge sits behind the fixed channel rail;
 - VoiceOver/screen-reader behaviour and live theme switching;
 - explicit progress/current-time accuracy checks;
 - Android gesture/back behaviour and release-like performance;
@@ -102,11 +108,11 @@ Still open after this increment:
 - production EPG/logo/artwork rights/reliability, price/trial/paywall and final visual design are later gates.
 
 ## EXACT NEXT STEP
-**Implement and verify a geometry-safe readability treatment for programme blocks that are partially hidden behind the fixed channel rail during horizontal scrolling. Preserve each programme's real start position and duration/block width, avoid presenting a clipped partial time as if it were complete, keep narrow-duration ellipsis honest, and do not change the accepted scroll inertia, bounce, day/Nu semantics or programme-detail dismissal behaviour. Add focused tests, run the full CI gate, then request only a targeted iPhone retest of partial-left programme visibility.**
+**Retest main `1e8aa125819472eb6ac76b0a41c0243973c4a003` or newer on the iPhone. Horizontally scroll Totaal until at least one longer programme starts partly behind the fixed zenderrail, release the gesture and let momentum stop. Confirm that the programme block keeps its real geometry while its title becomes readable from the visible remainder; a start time must either be fully readable or absent, never shown as a clipped fragment. Also report any new jumpiness or regression in the already accepted horizontal scroll feel. One screenshot after scrolling has settled is sufficient.**
 
-Owner checkout: `~/projects/teevee`.
+Owner checkout: `~/projects/teevee`. To test: stop Metro with Control+C, run `git pull --ff-only`, then `npm run start:clean` and reopen Expo Go.
 
-Do not introduce real EPG, subscriptions, accounts, Tonight, enrichment or specialised Guide virtualisation in this readability increment.
+Do not introduce real EPG, subscriptions, accounts, Tonight, enrichment or specialised Guide virtualisation in this validation step.
 
 ## Resume instruction
 > Read AGENTS.md and PROJECT_STATE. Execute EXACT NEXT STEP where possible, follow the Definition of Done, and update this state plus Dutch timestamped DEVLOG with evidence. Ask only for product choices or genuinely necessary physical-device observations. Never substitute CI or a mock for device acceptance.
