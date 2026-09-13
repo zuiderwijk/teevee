@@ -17,6 +17,10 @@ import { useTeeveeTheme } from '@/theme/useTeeveeTheme';
 import { ChannelIdentity } from './ChannelIdentity';
 import type { ProgrammeSelection } from './detailState';
 import {
+  EdgeReadabilityOverlay,
+  type EdgeReadabilityOverlayHandle,
+} from './EdgeReadabilityOverlay';
+import {
   buildTimeTicks,
   programmeContentMode,
   programmeFrame,
@@ -54,10 +58,11 @@ function formatDay(timeMs: number) {
 // ScrollViews and stable selection callback when opening or closing a detail.
 export const GuideView = memo(function GuideView({ onSelectProgramme }: GuideViewProps) {
   const theme = useTeeveeTheme();
-  const { fontScale } = useWindowDimensions();
+  const { fontScale, width: windowWidth, height: windowHeight } = useWindowDimensions();
   const layout = useMemo(() => guideLayoutForFontScale(fontScale), [fontScale]);
   const horizontalRef = useRef<ScrollView>(null);
   const channelRef = useRef<ScrollView>(null);
+  const edgeOverlayRef = useRef<EdgeReadabilityOverlayHandle>(null);
   const visibleDayOffsetRef = useRef(0);
   const dayJumpTargetXRef = useRef<number | null>(null);
   const [initialNow] = useState(() => Date.now());
@@ -80,6 +85,8 @@ export const GuideView = memo(function GuideView({ onSelectProgramme }: GuideVie
   const nowInWindow = nowMs >= windowStart && nowMs < windowEnd;
   const tomorrowStart = useMemo(() => guideDayStart(initialNow, 1), [initialNow]);
   const guideHeight = runtimeFixture.channels.length * layout.rowHeight;
+  const programmeViewportWidth = Math.max(0, windowWidth - layout.channelWidth);
+  const programmeViewportHeight = Math.max(0, windowHeight - layout.timeAxisHeight);
 
   const syncDayFromViewport = (viewportX: number) => {
     const visibleTime = windowStart + (viewportX / layout.minuteWidth) * 60_000;
@@ -95,7 +102,10 @@ export const GuideView = memo(function GuideView({ onSelectProgramme }: GuideVie
     setReadabilityViewportX(initialX);
     visibleDayOffsetRef.current = 0;
     dayJumpTargetXRef.current = null;
-    const frame = requestAnimationFrame(() => horizontalRef.current?.scrollTo({ x: initialX, animated: false }));
+    const frame = requestAnimationFrame(() => {
+      edgeOverlayRef.current?.setViewport(initialX, 0);
+      horizontalRef.current?.scrollTo({ x: initialX, animated: false });
+    });
     return () => cancelAnimationFrame(frame);
   }, [initialNow, layout.minuteWidth, windowStart]);
 
@@ -105,10 +115,14 @@ export const GuideView = memo(function GuideView({ onSelectProgramme }: GuideVie
     visibleDayOffsetRef.current = 0;
     dayJumpTargetXRef.current = x;
     setReadabilityViewportX(x);
+    edgeOverlayRef.current?.updateHorizontal(x);
     horizontalRef.current?.scrollTo({ x, animated: true });
   };
 
-  const syncVerticalScroll = (y: number) => channelRef.current?.scrollTo({ y, animated: false });
+  const syncVerticalScroll = (y: number) => {
+    channelRef.current?.scrollTo({ y, animated: false });
+    edgeOverlayRef.current?.updateVertical(y);
+  };
 
   const changeDay = (nextOffset: number) => {
     const targetTime = nextOffset === 0 ? windowStart : tomorrowStart;
@@ -117,6 +131,7 @@ export const GuideView = memo(function GuideView({ onSelectProgramme }: GuideVie
     visibleDayOffsetRef.current = nextOffset;
     dayJumpTargetXRef.current = x;
     setReadabilityViewportX(x);
+    edgeOverlayRef.current?.updateHorizontal(x);
     horizontalRef.current?.scrollTo({ x, animated: true });
   };
 
@@ -229,6 +244,7 @@ export const GuideView = memo(function GuideView({ onSelectProgramme }: GuideVie
           }}
           onScroll={(event) => {
             const viewportX = Math.max(0, event.nativeEvent.contentOffset.x);
+            edgeOverlayRef.current?.updateHorizontal(viewportX);
             const jumpTarget = dayJumpTargetXRef.current;
             if (jumpTarget !== null) {
               if (Math.abs(viewportX - jumpTarget) <= 1) dayJumpTargetXRef.current = null;
@@ -240,6 +256,7 @@ export const GuideView = memo(function GuideView({ onSelectProgramme }: GuideVie
           onMomentumScrollEnd={(event) => {
             const viewportX = Math.max(0, event.nativeEvent.contentOffset.x);
             setReadabilityViewportX(viewportX);
+            edgeOverlayRef.current?.updateHorizontal(viewportX);
             dayJumpTargetXRef.current = null;
             syncDayFromViewport(viewportX);
           }}
@@ -366,7 +383,8 @@ export const GuideView = memo(function GuideView({ onSelectProgramme }: GuideVie
                               {programme.title}
                             </Text>
                             {showProgrammeTime ? (
-                              <Text numberOfLines={1} style={[styles.programmeTime, { color: theme.colors.textMuted }]}>
+                              <Text numberOfLines={1} style={[styles.programmeTime, { color: theme.colors.textMuted }]}
+                              >
                                 {formatTime(startMs)}
                               </Text>
                             ) : null}
@@ -389,6 +407,29 @@ export const GuideView = memo(function GuideView({ onSelectProgramme }: GuideVie
             </ScrollView>
           </View>
         </ScrollView>
+
+        <View
+          pointerEvents="none"
+          style={[
+            styles.edgeOverlayFrame,
+            {
+              left: layout.channelWidth,
+              top: layout.timeAxisHeight,
+            },
+          ]}
+        >
+          <EdgeReadabilityOverlay
+            ref={edgeOverlayRef}
+            fixture={runtimeFixture}
+            layout={layout}
+            windowStart={windowStart}
+            viewportWidth={programmeViewportWidth}
+            viewportHeight={programmeViewportHeight}
+            nowMs={nowMs}
+            nowX={nowX}
+            nowInWindow={nowInWindow}
+          />
+        </View>
       </View>
     </SafeAreaView>
   );
@@ -468,4 +509,11 @@ const styles = StyleSheet.create({
   progressTrack: { height: 2, borderRadius: 1, overflow: 'hidden', marginBottom: 4 },
   progressFill: { height: '100%' },
   currentTimeLine: { position: 'absolute', top: 0, width: 2, zIndex: 4 },
+  edgeOverlayFrame: {
+    position: 'absolute',
+    right: 0,
+    bottom: 0,
+    zIndex: 3,
+    overflow: 'hidden',
+  },
 });
