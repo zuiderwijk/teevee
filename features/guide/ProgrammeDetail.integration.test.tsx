@@ -46,20 +46,42 @@ vi.mock('react-native', async () => {
     onLayout?: (event: { nativeEvent: { layout: { height: number } } }) => void;
     visible?: boolean;
     animationType?: string;
+    accessible?: boolean;
     accessibilityLabel?: string;
+    accessibilityHint?: string;
+    accessibilityElementsHidden?: boolean;
+    importantForAccessibility?: string;
     onAccessibilityEscape?: () => void;
     source?: { uri?: string };
     onError?: () => void;
   };
-  function View({ children, testID, onLayout, onAccessibilityEscape }: HostProps) {
+  function View({
+    children,
+    testID,
+    onLayout,
+    onAccessibilityEscape,
+    accessibilityElementsHidden,
+    importantForAccessibility,
+  }: HostProps) {
     useLayoutEffect(() => { onLayout?.({ nativeEvent: { layout: { height: 320 } } }); }, [onLayout]);
-    return createElement('div', { 'data-testid': testID, onKeyDown: (event: { key: string }) => {
-      if (event.key === 'Escape') onAccessibilityEscape?.();
-    } }, children);
+    const hidden = accessibilityElementsHidden || importantForAccessibility === 'no-hide-descendants';
+    return createElement('div', {
+      'data-testid': testID,
+      'aria-hidden': hidden ? true : undefined,
+      'data-important-for-accessibility': importantForAccessibility,
+      onKeyDown: (event: { key: string }) => {
+        if (event.key === 'Escape') onAccessibilityEscape?.();
+      },
+    }, children);
   }
-  const Text = ({ children }: HostProps) => createElement('span', null, children);
-  const Pressable = ({ children, testID, onPress, accessibilityLabel }: HostProps) => createElement('button', {
-    'data-testid': testID, 'aria-label': accessibilityLabel, onClick: onPress,
+  const Text = ({ children, accessible }: HostProps) => createElement('span', {
+    'aria-hidden': accessible === false ? true : undefined,
+  }, children);
+  const Pressable = ({ children, testID, onPress, accessibilityLabel, accessibilityHint }: HostProps) => createElement('button', {
+    'data-testid': testID,
+    'aria-label': accessibilityLabel,
+    'data-accessibility-hint': accessibilityHint,
+    onClick: onPress,
   }, children);
   const Image = ({ testID, source, onError }: HostProps) => createElement('img', {
     'data-testid': testID,
@@ -215,6 +237,25 @@ describe('programme detail rendering boundary', () => {
     }
     await click(`programme-${first.id}`);
     expect(offsetY()).toBe(0);
+  });
+
+  it('exposes self-contained programme labels while hiding duplicated visual rails', async () => {
+    await act(async () => root.render(<GuideScreen />));
+
+    const hiddenContainers = Array.from(
+      container.querySelectorAll<HTMLElement>('[data-important-for-accessibility="no-hide-descendants"]'),
+    );
+    expect(hiddenContainers.some((node) => node.textContent?.includes('ZENDER'))).toBe(true);
+    expect(hiddenContainers.some((node) => /\d{2}:\d{2}/.test(node.textContent ?? ''))).toBe(true);
+
+    const first = guideFixture.programmes[0]!;
+    const channel = guideFixture.channels.find((candidate) => candidate.id === first.channelId)!;
+    const button = getByTestId(`programme-${first.id}`);
+    const label = button.getAttribute('aria-label') ?? '';
+    expect(label).toContain(channel.displayName);
+    expect(label).toContain(first.title);
+    expect(label).toContain(' tot ');
+    expect(button.getAttribute('data-accessibility-hint')).toBe('Opent programmadetails');
   });
 
   it('shows the correct next programme and does not dismiss when its text is tapped', async () => {
