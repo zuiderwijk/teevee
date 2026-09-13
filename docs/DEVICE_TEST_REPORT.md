@@ -1,67 +1,66 @@
 # Teevee Phase 1 — Device Test Report
 
-Gebruik dit document voor de eerste fysieke toesteltest van de gids. Vul alleen concrete observaties in; geen aannames.
+Bijgewerkt: **13 september 2026, 06:58 CEST — Europe/Amsterdam**.
+Gebruik alleen concrete observaties. Een wijziging in code of een groene CI is geen geslaagde toesteltest.
 
-## Toestel
-- Datum/tijd test: 11–13 september 2026
-- Platform: iOS
-- Toestelmodel: nog niet genoteerd
-- OS-versie: nog niet genoteerd
-- Expo Go-versie (indien zichtbaar): nog niet genoteerd
-- Netwerk: wifi
-- App-commit (optioneel): retest na `df6873e24d24cf2747da6936fab1b0f60f0d1073`
+## Toestel en versies
+- Testperiode: 11–13 september 2026.
+- Platform: iOS, eigen iPhone van de product owner.
+- Toestelmodel, iOS-versie en Expo Go-versie: nog niet genoteerd.
+- Netwerk: wifi.
+- Eerste scrollretest: na `df6873e24d24cf2747da6936fab1b0f60f0d1073`; wijzigingen akkoord.
+- Latere test: 48-zenderversie; exacte lokale SHA niet doorgegeven.
+- Nieuwe te testen code: **`b13a7c5263cd663ed1d7ea35e3cfb46d70a8988a`** of een opvolger met dezelfde code.
+
+## Laatste ontvangen feedback
+De langere gids maakt het eerdere vermoeden concreter: een harde verticale swipe vanaf boven komt ongeveer tot Docu/Muziek, circa één scherm. De product owner meldt dat dezelfde soort swipe in TVgids.nl circa twee schermen aflegt. Dit is een bruikbare kwalitatieve vergelijking, geen gemeten gelijke beginsnelheid.
+
+Daarnaast werd gemeld:
+- Vandaag en maandag stoppen horizontaal rond 16:00.
+- Vanaf maandag voelt `Nu` als een herladen/vervangen van het scherm, in plaats van terugschuiven over de daggrens.
+- Gewenst: één doorlopende tijdlijn en een geanimeerde terugkeer naar de huidige tijd.
 
 ## Kerncheck
-Markeer per onderdeel: **goed / twijfel / probleem** en voeg alleen toelichting toe wanneer nodig.
-
-| Onderdeel | Status | Observatie |
+| Onderdeel | Laatste toestelobservatie | Status nieuwe code |
 |---|---|---|
-| App opent direct in Gids | goed | App opent via Expo Go en de gids rendert direct. |
-| Horizontaal scrollen door tijd | goed | Na de scrollfix akkoord bevonden; eerdere terug-scrollproblemen zijn niet opnieuw gemeld. |
-| Verticaal scrollen door zenders | goed / nader meten | Werkt functioneel goed. Gevoelsmatig mogelijk wat traag bij een swipe omlaag, maar de huidige gids is te kort om dit betrouwbaar te beoordelen. |
-| Zenderkolom blijft synchroon | goed | Geen probleem gemeld tijdens de test. |
-| `Nu` brengt je logisch terug | nog te testen |  |
-| Huidige-tijdlijn staat correct | goed | Screenshot rond 19:43 toont de huidige-tijdlijn op de verwachte positie. |
-| Voortgang lopend programma klopt | nog te testen |  |
-| Vandaag → morgen → vandaag | goed | Wijziging voor behoud van horizontale tijdcontext is akkoord bevonden. |
-| Korte programmablokken blijven bruikbaar | nog te testen |  |
-| Programma aantikken opent detail | nog te testen |  |
-| Detail sluiten voelt logisch | nog te testen |  |
-| Light mode leesbaar/rustig | zichtbaar, nog niet beoordeeld | Eerste screenshot is light mode; visuele richting is nog prototype. |
-| Dark mode leesbaar/rustig | nog te testen |  |
+| App opent direct in Gids | Opent en rendert via Expo Go. | Hercontrole mogelijk. |
+| Horizontaal scrollen | Eerdere niet-reagerende terugswipes na fix akkoord; later stop rond 16:00 gevonden. | Doorlopende tijdlijn geïmplementeerd; hertest nodig. |
+| Verticaal scrollen | Functioneel soepel, maar te korte uitloop met 48 kanalen. | Beide assen nu `normal`; hertest nodig. |
+| Zenderkolom synchroon | Geen probleem gemeld in eerdere test. | Tijdens langere fling en bounce opnieuw beoordelen. |
+| Boven-/onderrand | Eerdere bouncewijziging akkoord. | Bounce behouden; opnieuw beoordelen. |
+| `Nu` vanuit volgende dag | Reload-achtig gevoel gemeld. | Geanimeerde scroll in dezelfde tijdlijn; hertest nodig. |
+| Huidige-tijdlijn | Eerste screenshot rond 19:43 leek correct. | Nieuwe meerdaagse situatie nog niet beoordeeld. |
+| Voortgang lopend programma | Nog niet afzonderlijk getest. | Open. |
+| Vandaag / volgende dag | Eerdere tijdpositie-aanpassing akkoord; nieuwe wens is een continue overgang. | Knoppen navigeren naar dagstart; hertest nodig. |
+| Korte programmablokken | Nog niet afzonderlijk getest. | Open. |
+| Programmadetail openen/sluiten | Nog niet afzonderlijk getest. | Open. |
+| Light mode | Eerste screenshot zichtbaar, niet definitief beoordeeld. | Open. |
+| Dark mode | Nog niet afzonderlijk getest. | Open. |
 
-## Performance
-### Horizontaal scrollen
-- Status: akkoord na retest.
-- Eerdere bevinding: incidenteel niet reageren bij terugscrollen.
-- Na fix: geen nieuw probleem gemeld.
+## Wijzigingen versus bewijs
+`0.995` was een onbewezen tussenstap. De owner vroeg waarom niet de standaard iOS-inertie werd gebruikt en gaf daarna opdracht verder te gaan met de standaard als uitgangspunt. De nieuwe code gebruikt `decelerationRate="normal"` op beide assen. De native bounce blijft aan.
 
-### Verticaal scrollen
-- Status: functioneel goed, inertie nog niet definitief beoordeeld.
-- Observatie: een swipe naar beneden voelt mogelijk wat traag.
-- Betrouwbaarheid observatie: laag; met 16 testzenders was de verticale scrollafstand te kort om de inertie goed te beoordelen.
-- Vervolg: fixture verlengen naar een realistischer aantal zenders en daarna dezelfde swipe opnieuw beoordelen voordat de snelheid wordt aangepast.
+Het oude 12-uursvenster is vervangen door één fixturetijdlijn van 49 uur vanaf de Amsterdamse dagstart bij openen. `Nu` en de dagknoppen gebruiken dezelfde horizontale ScrollView. Kalendergrenzen gebruiken expliciet Europe/Amsterdam, ook als het toestel in een andere tijdzone staat.
 
-### Synchronisatie zenderkolom
-- Loopt gelijk / incidenteel achter / structureel achter: loopt gelijk volgens eerste indruk.
-- Wanneer precies: geen probleem gemeld.
+CI run #49 is geslaagd voor de codecommit. Er is **nog geen iPhone-feedback over deze nieuwe combinatie**. Geen score, swipeafstand, framerate of verbeterpercentage invullen zonder test.
 
-### Interactie
-- Programmadetail opent direct / merkbare vertraging: nog te testen.
-- Andere vertragingen: geen nieuwe melding na scrollfix.
+## Gerichte hertest
+1. Stop Metro op de Mac met Control+C. Voer in `~/projects/teevee` `git pull --ff-only` uit en start met `npm run start:clean`. Scan de QR-code opnieuw. Een GitHub-commit wordt niet automatisch lokaal geladen.
+2. Test meerdere stevige verticale swipes, ook halverwege de lijst zodat de boven-/onderrand de uitloop niet begrenst. Let op afstand na loslaten, controle en of aanraken de beweging goed stopt.
+3. Scroll op beide dagen voorbij 16:00 en naar de avond. Beweeg door middernacht en controleer de actieve dag.
+4. Ga naar de volgende dag en druk op `Nu`. Controleer of de inhoud terugschuift zonder schermvervanging en of de verticale zenderpositie behouden blijft.
+5. Controleer bij langere uitloop de synchronisatie van zendernamen en de bounce boven/onder.
+
+Noteer model/OS wanneer beschikbaar. Vergelijk gevoel, niet een verplicht aantal schermen: precies twee schermen is geen vastgelegde eis.
 
 ## Productgevoel
-- Voelt dit al als een mobiele tv-gids in plaats van een verkleinde desktopgids? nog niet beoordeeld
-- Is de informatiedichtheid prettig? nog niet beoordeeld
-- Is direct duidelijk waar je in tijd en zenders bent? dagwissel/tijdcontext is na fix akkoord
-- Wat stoort het meest tijdens normaal gebruik? nog geen bevestigd blokkerend probleem; verticale inertie moet bij langere gids opnieuw worden beoordeeld
-- Wat voelt verrassend goed? algemene scrollperformance voelt op iPhone goed genoeg om met standaard React Native-primitives door te gaan
+- Eerdere plus: algemene scrollperformance voelde soepel genoeg om met standaard React Native-primitives verder te onderzoeken.
+- Actuele aandachtspunten: uitloop verticaal, bereik in de tijd en continuïteit bij `Nu`.
+- Informatiedichtheid, definitief visueel ontwerp en algemene productvoorkeur zijn nog niet beoordeeld.
 
-## Screenshots / screenrecording
-- Screenshot eerste succesvolle iPhone-run rond 19:43 CEST aanwezig in de ontwikkelthread.
+## Beeldmateriaal
+- Screenshot van de eerste succesvolle iPhone-run rond 19:43 CEST staat in de ontwikkelthread.
+- Geen nieuwe screenrecording of instrumentele framerate-/velocitymeting ontvangen.
 
 ## Samenvatting
-- Grootste probleem: geen bevestigd blokkerend scrollprobleem meer na retest.
-- Grootste pluspunt: scrollfixes zijn akkoord en de standaard React Native-scrollarchitectuur blijft voorlopig valide.
-- Blokkeert dit verdere ontwikkeling? nee.
-- Aanbevolen eerstvolgende verbetering: testfixture verlengen naar een realistischer verticale gidslengte en daarna verticale inertie opnieuw beoordelen voordat `decelerationRate` wordt aangepast.
+De eerdere hertest was akkoord, maar de 48-zendertest bracht concrete aanvullende problemen aan het licht. Een gerichte correctie is technisch geverifieerd en staat klaar voor de volgende toesteltest. **Phase 1 is niet afgerond**: nieuwe iPhone-acceptatie en representatieve Android-validatie ontbreken nog.

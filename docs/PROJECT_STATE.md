@@ -1,7 +1,7 @@
 # Teevee — Canonical Project State
 
-Last updated: 2026-09-13 06:28 CEST
-Status: ACTIVE
+Last updated: 2026-09-13 06:58 CEST (Europe/Amsterdam)
+Status: ACTIVE — implementation verified; targeted iPhone retest pending
 Current phase: **Phase 1 — Guide Interaction Prototype**
 Previous phase: **Phase 0 — Project Foundation: COMPLETE**
 
@@ -33,71 +33,63 @@ Existing light/dark concepts are **Visual Direction 01 — reference, not specif
 
 ## Implementation reality
 The current Phase 1 prototype on `main` includes:
-- Expo SDK 57 / React Native / Expo Router project foundation;
-- strict TypeScript;
+- Expo SDK 57 / React Native / Expo Router foundation and strict TypeScript;
 - semantic light/dark theme tokens and system theme resolver;
 - Teevee-owned `Channel`, `Programme` and `GuideFixture` domain types;
-- deterministic source fixture with 49 hours of programme data;
-- runtime fixture rebasing around app-start time so manual tests remain useful on any date while CI fixtures stay deterministic;
-- edge cases for varied duration/title length, missing metadata, live/repeat flags and a deliberate schedule gap;
-- pure Guide time-to-pixel geometry with automated tests;
-- a real two-dimensional Guide viewport;
-- fixed/anchored channel column and horizontally scrollable timeline;
-- synchronised vertical channel movement;
-- programme widths based on real duration;
-- compact rendering mode for very narrow programme cells;
-- live current-time marker and current-programme progress refreshed every 30 seconds;
-- `Nu` action;
-- minimal today/tomorrow switching;
+- 48 synthetic channels and 49 elapsed hours of deterministic programme data;
+- a runtime fixture aligned to the start of the Amsterdam calendar day at app launch;
+- pure `guideDayStart` calendar logic shared by the fixture and the Guide's next-day navigation;
+- tests for Amsterdam midnight, winter/summer time, 23/25-hour transition days, and year rollover;
+- fixture checks for programme availability after 16:00 on both guide days, determinism, preserved ids/durations/metadata and no source mutation;
+- a continuous timeline spanning the fixture, rather than separate 12-hour windows per day;
+- programme widths based on actual duration, half-hour ticks and compact narrow cells;
+- fixed channel column, synchronised vertical movement, and native boundary bounce;
+- `decelerationRate="normal"` on both horizontal and vertical interactive ScrollViews;
+- live current-time marker and programme progress refreshed every 30 seconds;
+- `Nu` requests animated scrolling to the current time within the same mounted timeline;
+- day buttons request animated scrolling to their calendar-day start; active-day highlighting follows horizontal scroll position;
 - programme selection with a simple bottom-sheet-style detail modal;
 - physical-device testing via Expo Go;
-- first iPhone validation and targeted scroll retest completed;
-- horizontal offset preservation across day switching;
-- differentiated native scroll inertia;
-- native bounce at guide boundaries;
-- test fixture expanded from 16 to 48 synthetic channels for realistic vertical-scroll validation;
-- `docs/TESTING.md` plus `docs/DEVICE_TEST_REPORT.md` for repeatable physical-device validation;
-- GitHub Actions CI for install, typecheck, lint, tests and Expo web export.
+- GitHub Actions CI for install, typecheck, lint, Vitest and Expo web export.
 
-No external EPG provider has been integrated. No production channel logos or programme artwork are used.
+No external EPG provider has been integrated. No production channel logos or programme artwork are used. No new package or native module was added in the latest increment.
+
+## Latest device evidence
+The product owner accepted the earlier back-scroll/day-position/bounce changes on the first iPhone. A subsequent test with 48 channels confirmed that vertical scrolling still decelerated too quickly: a strong swipe travelled approximately one screen, compared with approximately two screens in the owner's TVgids.nl comparison. These are subjective observations, not instrumented velocity/frame measurements.
+
+The same test exposed an artificial end around 16:00 on both days and a reload-like return from the next day to `Nu`. The continuous timeline was introduced in response. The intermediate vertical value `0.995` was not established as superior to platform defaults; after discussion the owner authorised proceeding with the platform-standard baseline instead.
+
+Do not mark these latest fixes as device-accepted until a new retest is reported. Device model, iOS version and Expo Go version are still unknown. See `docs/DEVICE_TEST_REPORT.md`.
 
 ## Verification status
-The iPhone scroll retest is accepted by the product owner: horizontal back-in-time behaviour, day-switch time-context preservation and native boundary bounce no longer block progression. General scrolling remains smooth enough to keep the standard React Native scroll architecture.
+- Previous CI run **#48 failed**: the runtime-fixture test still asserted the old now-minus-19-hours start while the implementation had moved to midnight.
+- Code commit **`b13a7c5263cd663ed1d7ea35e3cfb46d70a8988a`** is verified by **CI run #49**, job `103675561490`: dependency installation, TypeScript, lint, tests and Expo web export all succeeded.
+- The calendar helper was additionally executed in the agent container against explicit expected timestamps under UTC, Europe/Amsterdam, America/Los_Angeles and Asia/Tokyo process timezones. This is domain verification, not an iPhone gesture test.
+- The full mobile runtime was not run in the agent container. CI web export is not a native build, device-performance benchmark or visual acceptance test.
+- This documentation snapshot follows the verified code commit. A later documentation-only CI run is separate evidence, not presumed to have passed.
 
-The 48-channel fixture increment is now also **GREEN in CI** across install, TypeScript, lint, tests and Expo web export. One observation remains deliberately unclassified: a vertical downward swipe may feel slightly slow, but the prior 16-channel fixture was too short to judge inertial travel reliably. No vertical deceleration change should be made until the longer 48-channel fixture has been tested on device.
+## Scroll baseline
+Use platform defaults first. Keep both interactive axes at `normal` and retain the existing bounce/directional lock for the next test. Do not tune to a target of exactly two screens or multiply finger movement. Deviations require a specific problem demonstrated on a known device. The earlier assumption that vertical navigation inherently needs faster braking is not a product requirement.
 
-## Phase 1 objective
-Validate the defining UX/technical risk: a high-performance touch-native two-dimensional TV Guide using realistic deterministic fixture data.
+## Phase 1 objective and exit gate
+Validate the defining UX/technical risk: a high-performance touch-native two-dimensional TV Guide using realistic deterministic fixtures. Do not leave Phase 1 until movement preserves context, Now is predictable, current/progress state is understandable, cells remain useful at practical density, light/dark both work, selection works, domain/layout logic is tested and representative iOS/Android interaction is validated.
 
-## Phase 1 remaining work
-- retest vertical swipe travel with the 48-channel fixture before changing vertical deceleration;
-- test `Nu`, current-time/progress, narrow cells, programme detail and light/dark on device;
-- record device model/OS when available;
-- perform representative Android validation before Phase 1 exit;
-- decide only from device evidence whether specialised virtualisation is necessary.
-
-## Phase 1 exit gate
-Do not leave Phase 1 until the Guide is smooth at realistic volume, movement preserves time/channel context, Now is predictable, current/progress state is understandable, programme cells remain useful at practical density, light/dark both work, programme selection works, geometry/domain logic is tested, and the Guide interaction is strong enough to justify proceeding.
-
-## Known risks
-### Primary technical risk
-Standard React Native scroll primitives perform well in the first iPhone validation and remain the preferred simple architecture. Vertical inertial travel still needs one realistic-length check before its tuning is frozen.
-
-### Production data gate — later
-The external development EPG source is not approved for commercial production. Production schedule, metadata, channel-logo and artwork rights remain later gates.
-
-### Commercial gate — later
-Exact subscription price, trial and paywall timing are not decided and do not block Phase 1.
-
-### Design gate — later
-Visual Direction 01 is not a frozen UI design. Avoid expensive brand polishing before Guide interaction and performance are validated.
+## Remaining checks and known risks
+- Retest standard vertical inertia, continuous browsing past 16:00, and animated return to `Nu` across midnight on the iPhone.
+- Recheck label synchronisation during the longer fling and top/bottom bounce; no new synchronisation result has been reported.
+- Test `Nu`, progress, narrow cells, programme detail, text scaling and light/dark on device; record model/OS and findings.
+- Android validation and native release-like performance measurement remain outstanding.
+- The 49-hour fixture is finite and anchored at launch, not an infinite guide. Long-running sessions, resume after midnight and behaviour after the fixture expires need a later lifecycle pass. The final partial day also needs explicit date-label treatment before Phase 1 exit.
+- Standard ScrollViews currently render the fixture without specialised virtualisation. The full 48-channel/multi-day rendering load still needs device measurement; prior small-fixture acceptance is not proof of production performance.
+- CI still generates its lockfile before `npm ci`; dependency reproducibility needs cleanup. Run #48 reported 15 moderate dependency advisories, not yet triaged. Do not use a forced dependency upgrade as an automatic fix.
+- Production schedule/metadata/logo/artwork rights, supplier reliability, exact subscription price/trial/paywall and final visual design remain later gates.
 
 ## EXACT NEXT STEP
-**Retest one or more long vertical swipes on the same iPhone using the 48-channel fixture. Only if vertical travel still feels materially too short with realistic scroll distance should `decelerationRate` be adjusted. Record the result in `docs/DEVICE_TEST_REPORT.md`.**
+**Retest code commit `b13a7c5` or a descendant with the same code on the same iPhone: compare several vertical flings away from the list edges, browse beyond 16:00 on both days and across midnight, then press `Nu` from the next day and observe the animated return without a screen replacement. Record actual observations in `docs/DEVICE_TEST_REPORT.md`; only change inertia again if this standard baseline has a concrete device problem.**
 
-After that retest, continue the remaining Phase 1 device checks: `Nu`, current-time/progress, narrow cells, programme detail and light/dark. Android validation remains required before Phase 1 exit.
+The owner's Mac is at `~/projects/teevee`. GitHub changes do not update that checkout automatically. Stop Metro with Control+C, use `git pull --ff-only`, then `npm run start:clean` and reopen via Expo Go. Dependencies did not change in this increment. Do not require `npm ci` merely to receive these source changes.
 
-Do not introduce real EPG, subscriptions, accounts, Tonight, enrichment or specialised virtualisation before this evidence exists.
+Do not introduce real EPG, subscriptions, accounts, Tonight, enrichment or specialised virtualisation as part of this retest.
 
 ## Resume instruction
-> Read `AGENTS.md` and `docs/PROJECT_STATE.md` from `zuiderwijk/teevee`. Treat PROJECT_STATE as canonical. Execute the EXACT NEXT STEP autonomously, follow the Definition of Done, and update PROJECT_STATE and the Dutch `docs/DEVLOG.md` when finished. Ask only when a decision crosses the human-approval boundaries in AGENTS.md.
+> Read `AGENTS.md` and `docs/PROJECT_STATE.md` from `zuiderwijk/teevee`. Execute the EXACT NEXT STEP autonomously where possible, follow the Definition of Done, and update PROJECT_STATE and the Dutch timestamped DEVLOG with evidence. Ask only when a choice crosses the approval boundaries or when physical-device input is genuinely required. Never substitute CI success for device acceptance.

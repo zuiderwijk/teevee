@@ -16,6 +16,42 @@ Dit document is bedoeld voor product- en engineeringstakeholders, niet alleen vo
 
 ---
 
+## 13 september 2026, 06:58 CEST — Standaardinertie als uitgangspunt en controle van de doorlopende gids
+
+Code vastgelegd om **06:56:33 CEST**, commit `b13a7c5263cd663ed1d7ea35e3cfb46d70a8988a`. Deze vermelding is om 06:58 CEST opgesteld na controle van CI.
+
+### Wat is veranderd
+Ook verticaal gebruikt Teevee nu de normale platforminertie: geen extra snelle afremming en geen zelfgekozen tussenwaarde. Horizontaal stond die instelling al op normaal. De eerder gewenste bounce blijft behouden.
+
+De doorlopende tijdlijn uit de vorige stap is gecontroleerd. De app gebruikt niet meer twee afzonderlijke vensters van twaalf uur. Dagknoppen en `Nu` bewegen binnen dezelfde tijdlijn; de actieve dag volgt de scrollpositie in plaats van vooraf naar een ander scherm te wisselen.
+
+### Waarom
+Met 48 zenders meldt de product owner een duidelijke te korte uitloop: ongeveer één scherm na een harde swipe, tegenover circa twee in zijn vergelijking met TVgids.nl. Dat is geen instrumentele meting, maar wel reden om de standaard als referentie te testen. De eerdere keuze om verticaal sneller af te remmen was een hypothese, geen bewezen verbetering. De tussenwaarde `0.995` was evenmin onderbouwd als beter dan de standaard.
+
+Ook werden een stop rond 16:00 en een reload-achtige terugkeer vanaf maandag gemeld. Die punten moeten in dezelfde hertest worden meegenomen.
+
+### Technische details
+- Beide interactieve ScrollViews gebruiken `decelerationRate="normal"`; geen nieuwe dependency of scrollbibliotheek.
+- `Nu` vraagt een geanimeerde scroll naar de actuele kloktijd binnen dezelfde gemounte tijdlijn.
+- De 48-zenderfixture blijft 49 uur lang en begint op de Amsterdamse kalenderdag van het openingsmoment.
+- Een gedeelde kalenderhelper zorgt dat dagstart en volgende dag dezelfde tijdzone gebruiken als de tijdlabels. Zomer-/wintertijd worden niet als vaste dagen van 24 uur behandeld.
+- Tests toegevoegd voor expliciete verwachte daggrenzen, jaarwisseling, de overgangsdagen van 23 en 25 uur, data na 16:00 op beide dagen en behoud van alle programma-identiteiten, metadata en duur.
+- De codewijzigingen zijn samen in één commit vastgelegd.
+
+Bron voor de standaardparameter: [React Native ScrollView — decelerationRate](https://reactnative.dev/docs/scrollview#decelerationrate). Het uiteindelijke scrollgevoel blijft een toesteltest, geen gevolgtrekking uit alleen de documentatie.
+
+### Verificatie
+De vorige CI-run **#48 faalde** omdat een test nog het oude startpunt van negentien uur vóór nu verwachtte. Die test is niet uitgezet: hij is vervangen door controles op de nieuwe kalenderdagafspraak en uitgebreid met randgevallen. Ook het verschil tussen toestel-tijdzone en Amsterdam is gecorrigeerd.
+
+**CI-run #49 is geslaagd** voor commit `b13a7c5`: installatie, TypeScript, lint, tests en Expo-webexport. De kalenderhelper is daarnaast lokaal uitgevoerd met expliciete verwachte tijdstippen onder vier proces-tijdzones. Dit bewijst geen iPhone-performance: de nieuwe inertie en de animatie over de daggrens zijn nog niet opnieuw op een toestel beoordeeld.
+
+Het apparaatrapport en de canonieke projectstatus zijn bijgewerkt zonder de nieuwe wijzigingen al als geaccepteerde toesteltest te markeren. Een documentatiecommit na de geverifieerde code heeft zijn eigen CI-run.
+
+### Volgende stap
+Dezelfde iPhone hertesten met de bijgewerkte lokale checkout: langere verticale swipes, voorbij 16:00 op beide dagen, door middernacht en vanaf de volgende dag via `Nu` terug. Alleen op basis van die observaties opnieuw aan de inertie sleutelen. De app blijft in Phase 1.
+
+---
+
 ## 13 september 2026, 06:28 CEST — Gids verlengd voor realistische verticale scrolltest
 
 ### Wat is veranderd
