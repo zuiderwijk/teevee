@@ -79,7 +79,9 @@ function diagnostic(
 
 function providerProgrammeKey(programme: ExternalProgramme): string {
   const providerId = nonEmptyText(programme.id);
-  if (providerId) return `${programme.channelId.trim()}\u0000id:${providerId}`;
+  if (providerId) {
+    return [programme.channelId.trim(), `id:${providerId}`, programme.startAt].join('\u0000');
+  }
   return [programme.channelId.trim(), programme.startAt, programme.endAt, programme.title].join('\u0000');
 }
 
@@ -93,7 +95,7 @@ function canonicalProgramme(
 ): Programme {
   const providerId = nonEmptyText(programme.id);
   const identity = providerId
-    ? `${providerKey}\u0000${channelId}\u0000${providerId}`
+    ? `${providerKey}\u0000${channelId}\u0000${providerId}\u0000${startMs}`
     : `${providerKey}\u0000${channelId}\u0000${startMs}\u0000${endMs}\u0000${title}`;
   const subtitle = nonEmptyText(programme.subtitle);
   const description = nonEmptyText(programme.description);
