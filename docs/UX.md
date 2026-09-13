@@ -1,6 +1,6 @@
 # Teevee UX and Information Architecture
 
-Status: Phase 0 baseline, amended with owner guide-view requirements on 13 September 2026. Interaction principles are stronger constraints than the current visual references. Only Totaal is implemented so far.
+Status: Phase 0 baseline, amended with owner guide-view and accessibility requirements on 13 September 2026. Interaction principles are stronger constraints than the current visual references. Only Totaal is implemented so far.
 
 ## Experience objective
 Teevee should feel like a purpose-built mobile instrument for television schedules, not a desktop EPG compressed onto a phone and not a content portal with a guide attached.
@@ -21,6 +21,11 @@ Keep the presentations within Guide rather than creating three primary tabs. Rem
 
 Remembering a view preference must not make an old selected time look live on a later visit. Exact cross-view/session restoration, the initial default, selector placement and one versus two following programmes need the subsequent build specification. Do not treat preference stability or popularity as established user research.
 
+### Shared channel identity
+Across Guide presentations, the target treatment is **logo first, channel name second** when a licensed, readable logo is available. The name remains visible in a smaller/subtler form or otherwise directly available because not every channel mark can be assumed recognisable.
+
+The full channel name must always be available to screen readers. If logo artwork is unavailable, delayed, illegible or not licensed, fall back cleanly to the channel name. Schedule use may never depend on artwork availability. The current text-only synthetic channel column is prototype scaffolding rather than the final visual treatment.
+
 ### Totaal — existing interaction model
 - vertical gesture: move through channels;
 - horizontal gesture: move through time;
@@ -36,6 +41,8 @@ The accepted platform-standard inertia, bounce, day transitions and detail inter
 
 ### Totaal layout principle
 This presentation should behave as a two-dimensional schedule surface with a sticky/fixed channel identity region and time axis where appropriate. It must not be implemented as a naive nested collection that becomes unstable under realistic schedule volume. These grid-specific rules are not layout requirements for every other Guide view.
+
+At larger platform text sizes, Totaal may increase row height, reflow labels and reduce secondary metadata density. It must not preserve default density by clipping essential channel/programme identity or disabling text scaling. Programme detail remains the reliable place for the full readable title and metadata when a compact cell cannot contain everything.
 
 ### Per zender — requested, not yet implemented
 A vertical list shows one channel's schedule for the selected day, initially positioned at the current programme. Earlier and later programmes remain reachable by scrolling. Channel navigation is primary; date selection is secondary. A channel picker must make distant channels directly reachable, not require repeated swiping through the entire lineup.
@@ -88,7 +95,7 @@ Required hierarchy:
 5. Save and Remind actions;
 6. optional metadata/enrichment.
 
-A missing image must never make the page feel broken.
+A missing image must never make the page feel broken. Programme detail must remain fully reachable at larger system text sizes; if content exceeds the viewport, the content must scroll independently without breaking swipe-to-dismiss semantics.
 
 ## Search
 One prominent search field. Search targets programmes and channels in the MVP. The core programme answer is when/where the programme airs. Results should prioritise upcoming broadcasts.
@@ -105,13 +112,19 @@ At most three functional steps:
 Subscription onboarding/paywall behaviour is intentionally not frozen yet.
 
 ## Accessibility
-- respect platform text scaling within practical schedule constraints;
-- accessible programme and channel labels;
-- adequate touch targets;
+Accessibility is a core quality requirement, not a later specialist mode. The product owner specifically calls out users who increase system font size above 100%; Teevee must remain usable under that real-world setting. A possible older linear-TV audience is motivation to test this well, not an assumed demographic fact.
+
+- respect platform text scaling rather than forcing fixed visual sizes;
+- test representative larger Dynamic Type / font-scale settings on physical devices;
+- adapt row heights, wrapping and information density where necessary instead of clipping essential content;
+- accessible programme and channel labels, including the full textual channel name when a logo is shown;
+- adequate touch targets that remain usable when text grows;
 - do not encode programme state using colour alone;
-- support screen-reader navigation with meaningful programme summaries;
+- support screen-reader navigation with meaningful programme summaries and time context;
 - maintain contrast in light and dark themes;
-- respect reduced-motion preferences where animation is non-essential.
+- respect reduced-motion preferences where animation is non-essential;
+- ensure programme detail and long descriptions remain reachable and scrollable at larger text sizes;
+- treat default-density screenshots as one layout mode, not as a layout that must be preserved at all accessibility sizes.
 
 ## Visual direction
 Existing light and dark concept visuals are registered as **Visual Direction 01 — reference, not specification**.
@@ -127,4 +140,4 @@ Useful qualities to preserve during exploration:
 No exact colour, typography, spacing, component or navigation treatment from those concepts is frozen.
 
 ## UX validation gate
-Phase 1 exists to validate the Guide interaction before building broad product scope. Evaluation should use realistic channel counts, programme durations and schedule density, not a hand-picked presentation dataset. Recording the new views is not acceptance of their implementation and does not close outstanding Phase 1 checks.
+Phase 1 exists to validate the Guide interaction before building broad product scope. Evaluation should use realistic channel counts, programme durations and schedule density, not a hand-picked presentation dataset. Recording the new views is not acceptance of their implementation and does not close outstanding Phase 1 checks. Before the Guide layout is frozen, representative larger system text must be included in device validation.
