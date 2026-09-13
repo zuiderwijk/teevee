@@ -13,10 +13,12 @@ vi.mock('react-native', () => {
     onPress?: () => void;
   };
   const View = ({ children }: Props) => createElement('div', null, children);
+  const ScrollView = ({ children }: Props) => createElement('div', { 'data-scroll-view': 'true' }, children);
   const Text = ({ children, accessibilityRole }: Props) =>
     createElement(accessibilityRole === 'header' ? 'h1' : 'span', null, children);
   return {
     View,
+    ScrollView,
     Text,
     Pressable: ({ children, accessibilityLabel, onPress }: Props) =>
       createElement('button', { 'aria-label': accessibilityLabel, onClick: onPress }, children),
@@ -54,13 +56,14 @@ afterEach(async () => {
 });
 
 describe('AppScreenErrorBoundary', () => {
-  it('shows a generic recovery state and calls Expo Router retry', async () => {
+  it('keeps recovery content scrollable and calls Expo Router retry', async () => {
     const retry = vi.fn(async () => undefined);
 
     await act(async () => {
       root.render(<AppScreenErrorBoundary error={new Error('sensitive implementation detail')} retry={retry} />);
     });
 
+    expect(container.querySelector('[data-scroll-view="true"]')).not.toBeNull();
     expect(container.querySelector('h1')?.textContent).toBe('Er ging iets mis');
     expect(container.textContent).not.toContain('sensitive implementation detail');
 
