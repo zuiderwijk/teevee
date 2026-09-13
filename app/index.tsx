@@ -1,4 +1,4 @@
-import { type ComponentType, useCallback, useReducer, useRef, useState } from 'react';
+import { type ComponentType, useCallback, useEffect, useReducer, useRef, useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 
 import { detailReducer, initialDetailState, type ProgrammeSelection } from '@/features/guide/detailState';
@@ -10,6 +10,11 @@ import {
 import { GuideView } from '@/features/guide/GuideView';
 import { PerChannelGuideView } from '@/features/guide/PerChannelGuideView';
 import { ProgrammeDetail } from '@/features/guide/ProgrammeDetail';
+import { withGuidePresentation } from '@/features/settings/appPreferences';
+import {
+  readAppPreferences,
+  writeAppPreferences,
+} from '@/services/storage/appPreferencesStorage';
 import { useTeeveeTheme } from '@/theme/useTeeveeTheme';
 
 type NowNextGuideComponent = ComponentType<{
@@ -18,8 +23,15 @@ type NowNextGuideComponent = ComponentType<{
 
 export default function GuideScreen() {
   const theme = useTeeveeTheme();
-  const [presentation, setPresentation] = useState<GuidePresentation>(DEFAULT_GUIDE_PRESENTATION);
-  const requestedPresentationRef = useRef<GuidePresentation>(DEFAULT_GUIDE_PRESENTATION);
+  const [initialPreferredPresentation] = useState<GuidePresentation>(
+    () => readAppPreferences().guidePresentation,
+  );
+  const [presentation, setPresentation] = useState<GuidePresentation>(() =>
+    initialPreferredPresentation === 'now-next'
+      ? DEFAULT_GUIDE_PRESENTATION
+      : initialPreferredPresentation,
+  );
+  const requestedPresentationRef = useRef<GuidePresentation>(initialPreferredPresentation);
   const [nowNextComponent, setNowNextComponent] = useState<NowNextGuideComponent | null>(null);
   const [nowNextLoading, setNowNextLoading] = useState(false);
   const [nowNextLoadError, setNowNextLoadError] = useState<string | null>(null);
@@ -60,10 +72,27 @@ export default function GuideScreen() {
     }
   }, [nowNextComponent]);
 
+  useEffect(() => {
+    if (initialPreferredPresentation !== 'now-next') return;
+
+    // A persisted Nu & Straks preference still respects the proven deferred-load
+    // boundary: let the shell complete its first frame before evaluating the module.
+    const frame = requestAnimationFrame(() => {
+      void loadAndShowNowNext();
+    });
+    return () => cancelAnimationFrame(frame);
+  }, [initialPreferredPresentation, loadAndShowNowNext]);
+
+  const persistPresentationPreference = useCallback((nextPresentation: GuidePresentation) => {
+    const currentPreferences = readAppPreferences();
+    writeAppPreferences(withGuidePresentation(currentPreferences, nextPresentation));
+  }, []);
+
   const selectPresentation = useCallback(
     (nextPresentation: GuidePresentation) => {
       requestedPresentationRef.current = nextPresentation;
       setNowNextLoadError(null);
+      persistPresentationPreference(nextPresentation);
 
       if (nextPresentation === 'now-next') {
         void loadAndShowNowNext();
@@ -72,7 +101,7 @@ export default function GuideScreen() {
 
       setPresentation(nextPresentation);
     },
-    [loadAndShowNowNext],
+    [loadAndShowNowNext, persistPresentationPreference],
   );
 
   return (
