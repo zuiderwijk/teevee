@@ -1,7 +1,7 @@
 # Teevee — Canonical Project State
 
-Last updated: 2026-09-13 07:36 CEST (Europe/Amsterdam; swipe-dismiss increment). Exact commit times are in GitHub.
-Status: ACTIVE — iPhone detail responsiveness accepted; swipe dismissal implemented, native retest open
+Last updated: 2026-09-13 07:46 CEST (Europe/Amsterdam; swipe-acceptance recording started). Exact commit time is in GitHub.
+Status: ACTIVE — iPhone scroll, detail response and targeted swipe-dismiss interaction accepted; readability checks open
 Current phase: **Phase 1 — Guide Interaction Prototype**
 Previous phase: **Phase 0 — Project Foundation: COMPLETE**
 
@@ -35,55 +35,55 @@ Later primary navigation Guide / Tonight / Search; RevenueCat, Supabase/PostgreS
 - A small route owns detail selection; stable callbacks and memoized GuideView prevent selection-only Guide rerenders. Guide time/day/theme updates remain independent.
 - Separate ProgrammeDetail retains selected text during native Modal dismissal. Backdrop and sheet remain siblings; text taps do not dismiss.
 - Programme cells and close button retain pressed feedback; opening still uses onPress, never onPressIn.
-- New swipe-down on the detail sheet: downward pan follows the finger using existing Gesture Handler 2 + Reanimated 4/Worklets. No new package/native dependency.
-- Small/cancelled gestures spring back. A deliberate downward drag or flick invokes the existing close action. Clear upward reversal and multiple-finger input do not dismiss.
-- Native `animationType="slide"` remains the sole exit animation. A committed swipe retains its translated position while native dismissal continues; no spring-to-top or extra exit animation first.
+- Swipe-down on the detail sheet uses existing Gesture Handler 2 + Reanimated 4/Worklets. No new package/native dependency.
+- Small/cancelled gestures spring back. A deliberate downward drag or flick invokes the close action. Clear upward reversal and multiple-finger input do not dismiss by implementation; individual edge cases are not all device-verified.
+- Native `animationType="slide"` remains the exit animation. A committed swipe retains its translated position while native dismissal continues; no spring-to-top or extra exit animation first.
 - Motion state resets before a new visible presentation. Gesture is gated until native onShow. Button, backdrop, accessibility escape and Android back remain alternatives.
-- The modal contains its own GestureHandlerRootView, as required for Android modal gestures. This does NOT change the Guide's scroll implementation.
-- CI now exports iOS/Android/web bundles after typecheck, lint and Vitest. Bundles are not signed native builds or device tests.
+- The modal contains its own GestureHandlerRootView for Android modal gestures. This does NOT change the Guide's scroll implementation.
+- CI exports iOS/Android/web bundles after typecheck, lint and Vitest. Bundles are not signed native builds or device tests.
 
-No real EPG, production artwork, accounts or subscriptions introduced. No dependency versions changed in this increment.
+No real EPG, production artwork, accounts or subscriptions introduced. The current acceptance record changes documentation only; no appcode, dependency or gesture-setting changes.
 
 ## Latest device evidence
-The owner accepted the scroll baseline with "perfect" after testing normal inertia, browsing beyond 16:00/across midnight and animated Nu.
+On 13 September the owner replied **"perfect"** to the requested iPhone retest of swipe-down dismissal, short-drag return, reopening and existing close paths. Record this as **qualitative acceptance of the targeted swipe-dismiss change set**, not as individual measured passes for every gesture edge case. No new timings, device model, OS, Expo Go version or exact installed SHA were supplied. The requested test build was main code `1242f7d64f8abc594f11f043459e07893a25e5b6` (PR #2); the actual local SHA was not independently confirmed.
 
-The earlier detail test confirmed opening/closing and preserved Guide position, but both actions felt slow. After the render-isolation update the owner now says **"perfect"**, confirms closing both with the button and by tapping outside the details, and requests swipe-down as an extra close option.
+Earlier evidence remains:
+- Scroll baseline accepted after testing normal inertia, browsing beyond 16:00/across midnight and animated Nu.
+- Original detail test confirmed opening/closing and retained Guide position but reported subjective delay.
+- After render isolation (PR #1), the owner said "perfect" and explicitly confirmed both button and outside-tap closing.
 
-Record this as qualitative acceptance of the improved detail response and the two reported close paths, not measured latency or acceptance of the newly implemented swipe. No device model, OS, Expo Go version, exact installed SHA, timings or new framerate results supplied. Prior position-retention evidence remains valid history; verify after the swipe change without inventing a new result.
+These confirmations do not approve dark mode, larger text, screen-reader behaviour, Android, production performance or the final design. See DEVICE_TEST_REPORT for exact scope. Do not repeat the same accepted swipe test unless a concrete regression appears.
 
 ## Verification evidence
 - Historical scroll/calendar code passed CI #49/#50; acceptance docs #51.
-- Detail render-isolation PR #1 passed #53/#55, merged as `1211630a424f61b83079d695df0cefa24c80c5d6`, and main CI #56 succeeded. The current user reply adds qualitative device acceptance for that change.
-- Swipe work is developed in **PR #2**, branch `feat/detail-swipe-dismiss`, starting at `4e450141`. Mock callback types were tightened in `26a733d591b0e8f9e4222391e5769f1b35557900` under exact optional typing; first run #57 failed typecheck.
-- **CI #58** passed for `26a733d5`: install, TypeScript, lint, tests and web export. No weakened checks or forced dependency changes.
-- CI extension `762f0f46148dbdbc5319cf80f04c0ab643a805ea` adds iOS and Android bundle exports. Its run and the documentation/merge runs need their own results; inspect PR #2/latest CI before reporting current-main status.
-- Pure tests cover drag bounds, distance/flick thresholds, invalid inputs and upward reversal. React tests use actual components/48-channel fixture plus mocked native hosts, gesture callbacks and shared values. They check cancellation, repeated/reopened detail, all close routes, content, unchanged Guide render count and retained mock scroll hosts/offsets.
-- Mocked gesture tests do NOT validate actual native recognition, the gesture-to-native-dismissal transition, spring feel, accessibility or device performance.
-- Container clone failed on DNS; no local native runtime executed. Full toolchain verification runs in GitHub Actions.
+- Detail render-isolation PR #1 passed #53/#55, merged as `1211630a424f61b83079d695df0cefa24c80c5d6`; main CI #56 succeeded, followed by qualitative iPhone acceptance.
+- Swipe PR #2 started at `4e450141`. Run #57 failed typecheck in the new testmock; callbacks were tightened in `26a733d5` without weakening checks. CI #58 then passed.
+- `762f0f46` extended bundle verification to iOS/Android/web. PR CI #60 passed on exact head `6e87b769` before integration.
+- Swipe PR #2 merged as **`1242f7d64f8abc594f11f043459e07893a25e5b6`**. **Main CI #61, run `34740881328`, completed successfully**, verified in the preceding implementation session. This acceptance-recording commit has its own CI result; do not presume a later run has passed.
+- Pure tests cover drag bounds, distance/flick thresholds, invalid inputs and upward reversal. React tests use actual components/48-channel fixture plus mocked native hosts, gesture callbacks and shared values. They check cancellation, repeated/reopened detail, close routes, content, unchanged Guide render count and retained mock scroll hosts/offsets.
+- Mocked gesture tests are not native recognition, accessibility, timing or performance measurements. The new owner acceptance is separate qualitative iPhone evidence.
+- Earlier container clone failed on DNS; no local native runtime was executed. Full toolchain verification ran in GitHub Actions.
 
 ## Accepted baselines and boundaries
-Keep normal platform inertia, native bounce/directional lock, geometry, continuous day navigation and Nu unchanged. Preserve render isolation and the accepted native Modal slide for button/backdrop closing.
+Keep normal platform inertia, native bounce/directional lock, geometry, continuous day navigation and Nu unchanged. Preserve render isolation and native Modal slide. Detail response, button/outside-tap dismissal and the targeted swipe-dismiss interaction are now accepted working iPhone baselines.
 
-The new swipe is a requested interaction, not a new global scroll architecture. Its distance/flick thresholds are initial implementation choices for device validation, not proven universal optima. No fixed two-screens-per-swipe requirement.
-
-The current detail body is not an internal ScrollView, so dragging can begin across the sheet. When long scrollable descriptions are added, scope the pan to a header or coordinate it with the content's top boundary. Do not let reading-scroll unintentionally dismiss details.
+Do not retune gesture thresholds or animation without a concrete problem. No fixed two-screens-per-swipe requirement. The current detail body is not an internal ScrollView, so dragging can begin across the sheet. If long scrollable descriptions are added, scope the pan to a header or coordinate it with the content's top boundary. Reading-scroll must not unintentionally dismiss details.
 
 ## Phase 1 exit gate and outstanding work
 Phase 1 remains open until the Guide preserves context, Now/progress are understandable, cells/detail are usable, light/dark and accessibility work, logic is tested and representative iOS/Android interaction is validated.
 
 Still outstanding:
-- Native swipe retest: track finger, cancel, dismiss, reopen, button/backdrop and retained Guide position. Verify no empty panel or duplicate exit animation.
-- Short cells, metadata fallbacks, larger text/detail reachability, light/dark, screen-reader behaviour and progress correctness.
+- Light/dark readability and theme switching, short cells, metadata fallbacks, larger text/detail reachability, screen-reader behaviour and progress correctness.
 - Android gesture/back-button tests and signed/release-like device performance. JS bundle export cannot close those gates.
-- Full rendering load and label synchronisation during long flings/bounce; Guide clock updates may still cause work independently of detail selection.
+- Full rendering load and label synchronisation during long flings/bounce; Guide clock updates may still cause work independently of detail selection. Qualitative acceptance is not an instrumented measurement.
 - Finite launch-anchored fixture: resume after midnight, expiry and final partial-day labels need a lifecycle pass.
 - CI still generates a lockfile before npm ci. Reproducibility and previously reported 15 moderate advisories need deliberate cleanup; do not force-upgrade.
 - Production data/logo/artwork rights and reliability, exact price/trial/paywall, and final visual design are later gates.
 
 ## EXACT NEXT STEP
-**After verifying PR #2 integration CI, obtain a focused iPhone retest of swipe-down detail dismissal: drag partway and release to return, drag/flick down to close, reopen the same and another programme, recheck button/backdrop, and confirm time/channel position remains unchanged. Record actual observations in DEVICE_TEST_REPORT. Keep accepted scroll and detail-response baselines unchanged; then continue the open readability/accessibility checks.**
+**Complete the focused Phase 1 readability/accessibility pass, starting with dark-mode Guide and programme-detail inspection on the same iPhone, then larger system text and content reachability. Use the current app; collect only the outstanding observations and add appropriate regressions when code changes are warranted. Record actual results in DEVICE_TEST_REPORT; keep accepted scrolling and dismissal unchanged.**
 
-Owner checkout: `~/projects/teevee`. GitHub changes are not automatically local. Stop Metro with Control+C, `git pull --ff-only`, then `npm run start:clean` and reopen Expo Go. No npm install is required solely for this increment because package.json is unchanged and the gesture libraries were already installed. No Expo Go reinstall required.
+Owner checkout: `~/projects/teevee`. No reload, pull or install is needed for this documentation-only acceptance record. For subsequent appcode changes, stop Metro with Control+C, `git pull --ff-only`, then `npm run start:clean` and reopen Expo Go. GitHub commits do not automatically update the local checkout.
 
 Do not introduce real EPG, subscriptions, accounts, Tonight, enrichment or specialised Guide virtualisation here.
 

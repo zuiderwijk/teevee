@@ -16,6 +16,27 @@ Dit document is bedoeld voor product- en engineeringstakeholders, niet alleen vo
 
 ---
 
+## 13 september 2026, 07:46 CEST — Wegvegen van programmadetails akkoord
+
+Vastlegging gestart om 07:46 CEST (Europe/Amsterdam). De exacte committijd staat in GitHub.
+
+### Wat is veranderd
+De product owner antwoordt **"perfect"** na het verzoek het neerwaarts wegvegen, kort trekken/terugveren, heropenen en de bestaande sluitroutes te hertesten. Dit is vastgelegd als kwalitatief akkoord op die gerichte wijzigingenset, naast het eerdere akkoord op scrollen en detailrespons. De volgende controle verschuift naar leesbaarheid.
+
+### Waarom en afbakening
+Het goedgekeurde gedrag hoeft niet opnieuw te worden afgesteld of identiek hertest zonder concreet probleem. Eén gezamenlijk akkoord is geen meting van ieder randgeval en geen goedkeuring van dark mode, grotere tekst, screenreader of Android.
+
+### Technische details en verificatie
+- Alleen dit logboek, PROJECT_STATE en DEVICE_TEST_REPORT bijgewerkt; geen appcode, dependencies, animatie of gesture-instellingen gewijzigd.
+- Swipe PR #2 is geïntegreerd als `1242f7d64f8abc594f11f043459e07893a25e5b6`. Main-CI #61, run `34740881328`, is in de voorafgaande sessie als geslaagd gecontroleerd, inclusief iOS/Android/web-bundels.
+- Het gebruikersakkoord is aanvullend kwalitatief iPhone-bewijs. Geen nieuwe meetwaarden, toestelgegevens of afzonderlijke lokale SHA aangeleverd; niet ingevuld op basis van aannames.
+- De documentatiecommit krijgt een eigen CI-resultaat. Phase 1 blijft open voor de overige controles.
+
+### Volgende stap
+Leesbaarheid van gids en details in donkere modus controleren, daarna grotere systeemtekst en bereikbaarheid van inhoud. De huidige geïnstalleerde app volstaat; voor deze vastlegging is geen herlaad- of installatiestap nodig.
+
+---
+
 ## 13 september 2026, 07:36 CEST — Programmadetails naar beneden wegvegen
 
 Vastlegging gestart om 07:36 CEST (Europe/Amsterdam). Eerste codecommit `4e450141`, testcorrectie `26a733d5`; uitbreiding van de bundelcontrole `762f0f46` vastgelegd om 07:35:24 CEST. Exacte documentatie- en integratietijden staan in GitHub, PR #2.
@@ -274,7 +295,7 @@ Na de eerste 2D-viewport moesten we valideren of de gids niet alleen technisch a
 De eerdere repositorystand had een volledig groene CI. Latere CI-runs voor de daaropvolgende Phase 1-increments zijn eveneens groen geworden.
 
 ### Volgende stap
-De Guide technisch aanscherpen voor realistische mobiele performance en de eerste testbare device-build voorbereiden, zonder scope uit latere fases naar voren te halen.
+De Guide technisch aanscherpen voor realistische mobiele performance en de eerste testbare device-build voorbereiden, zonder scope uit latere fases wordt toegevoegd.
 
 ---
 
