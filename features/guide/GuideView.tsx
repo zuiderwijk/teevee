@@ -212,7 +212,7 @@ export const GuideView = memo(function GuideView({ onSelectProgramme }: GuideVie
     <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.colors.background }]}>
       <View style={styles.header}>
         <View style={styles.headerTitleGroup}>
-          <Text style={[styles.eyebrow, { color: theme.colors.textMuted }]}>TEEVEE</Text>
+          <Text accessible={false} style={[styles.eyebrow, { color: theme.colors.textMuted }]}>TEEVEE</Text>
           <Text accessibilityRole="header" style={[styles.title, { color: theme.colors.text }]}>Gids</Text>
         </View>
       </View>
@@ -267,6 +267,9 @@ export const GuideView = memo(function GuideView({ onSelectProgramme }: GuideVie
 
       <View style={[styles.guideFrame, { borderColor: theme.colors.border }]}>
         <View
+          accessible={false}
+          accessibilityElementsHidden
+          importantForAccessibility="no-hide-descendants"
           style={[
             styles.channelColumn,
             {
@@ -316,6 +319,9 @@ export const GuideView = memo(function GuideView({ onSelectProgramme }: GuideVie
         >
           <View style={{ width }}>
             <View
+              accessible={false}
+              accessibilityElementsHidden
+              importantForAccessibility="no-hide-descendants"
               style={[
                 styles.timeAxis,
                 {
@@ -379,13 +385,15 @@ export const GuideView = memo(function GuideView({ onSelectProgramme }: GuideVie
                       const titleLines = layout.largeText ? 1 : contentMode === 'comfortable' ? 2 : 1;
                       const showProgrammeTime =
                         !layout.largeText && contentMode !== 'compact' && visibleContent.canShowStartTime;
+                      const accessibilityStatus = isCurrent ? ', nu bezig' : '';
 
                       return (
                         <Pressable
                           key={programme.id}
                           testID={`programme-${programme.id}`}
                           accessibilityRole="button"
-                          accessibilityLabel={`${programme.title}, ${formatTime(startMs)} tot ${formatTime(endMs)}`}
+                          accessibilityLabel={`${channel.displayName}, ${programme.title}, ${formatTime(startMs)} tot ${formatTime(endMs)}${accessibilityStatus}`}
+                          accessibilityHint="Opent programmadetails"
                           onPress={() => onSelectProgramme({ programme, channelName: channel.displayName })}
                           style={({ pressed }) => [
                             styles.programme,
