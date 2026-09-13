@@ -28,6 +28,7 @@ import {
   timelineWidth,
 } from './geometry';
 import { guideLayoutForFontScale } from './layout';
+import { TimeAxisTick } from './TimeAxisTick';
 import { useGuideClock } from './useGuideClock';
 
 const GUIDE_CONTROL_MAX_FONT_SIZE_MULTIPLIER = 1.2;
@@ -323,17 +324,15 @@ export const GuideView = memo(function GuideView({ onSelectProgramme }: GuideVie
               {ticks.map((tick) => {
                 const left = timeToX(tick, windowStart, layout.minuteWidth);
                 return (
-                  <View key={tick} style={[styles.tick, { left, borderLeftColor: theme.colors.border }]}>
-                    <Text
-                      numberOfLines={1}
-                      style={[
-                        styles.tickLabel,
-                        { width: layout.tickLabelWidth, color: theme.colors.textMuted },
-                      ]}
-                    >
-                      {formatTime(tick)}
-                    </Text>
-                  </View>
+                  <TimeAxisTick
+                    key={tick}
+                    left={left}
+                    label={formatTime(tick)}
+                    labelWidth={layout.tickLabelWidth}
+                    labelColor={theme.colors.textMuted}
+                    borderColor={theme.colors.border}
+                    scrollX={scrollX}
+                  />
                 );
               })}
             </View>
@@ -527,16 +526,6 @@ const styles = StyleSheet.create({
   axisCornerText: { fontSize: 9, fontWeight: '700', letterSpacing: 0.8 },
   channelCell: { justifyContent: 'center', borderBottomWidth: StyleSheet.hairlineWidth },
   timeAxis: { position: 'relative', borderBottomWidth: StyleSheet.hairlineWidth },
-  tick: {
-    position: 'absolute',
-    top: 0,
-    bottom: 0,
-    width: 1,
-    borderLeftWidth: StyleSheet.hairlineWidth,
-    paddingLeft: 6,
-    paddingTop: 11,
-  },
-  tickLabel: { fontSize: 10, fontWeight: '600' },
   programmeRow: { position: 'absolute', left: 0, borderBottomWidth: StyleSheet.hairlineWidth },
   programme: {
     position: 'absolute',

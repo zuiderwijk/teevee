@@ -112,9 +112,9 @@ vi.mock('react-native-gesture-handler', async () => {
 });
 vi.mock('react-native-reanimated', async () => {
   const { useState } = await import('react');
-  const { ScrollView, View } = await import('react-native');
+  const { ScrollView, Text, View } = await import('react-native');
   return {
-    default: { View, ScrollView },
+    default: { View, ScrollView, Text },
     useSharedValue: function useSharedValue<T>(initial: T) {
       const [value] = useState(() => ({ value: initial }));
       return value;
