@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import { guideFixture } from './guideFixture';
-import { buildRuntimeGuideFixture } from './runtimeGuideFixture';
+import { buildRuntimeGuideFixture, runtimeGuideFixtureNeedsRefresh } from './runtimeGuideFixture';
 
 const HOUR_MS = 3_600_000;
 
@@ -61,5 +61,24 @@ describe('runtime Guide fixture', () => {
   it('is deterministic for a supplied instant', () => {
     const nowMs = Date.parse('2030-05-10T18:12:00Z');
     expect(buildRuntimeGuideFixture(nowMs)).toEqual(buildRuntimeGuideFixture(nowMs));
+  });
+
+  it('keeps the fixture while the Amsterdam calendar day is unchanged', () => {
+    const runtime = buildRuntimeGuideFixture(Date.parse('2026-09-13T08:00:00+02:00'));
+    expect(runtimeGuideFixtureNeedsRefresh(runtime, Date.parse('2026-09-13T23:59:59+02:00'))).toBe(false);
+  });
+
+  it.each([
+    ['normal midnight', '2026-09-13T23:30:00+02:00', '2026-09-14T00:00:00+02:00'],
+    ['spring DST day', '2026-03-28T23:30:00+01:00', '2026-03-29T00:00:00+01:00'],
+    ['autumn DST day', '2026-10-24T23:30:00+02:00', '2026-10-25T00:00:00+02:00'],
+  ] as const)('requests a rebuild at the next Amsterdam day: %s', (_label, builtAt, nextDay) => {
+    const runtime = buildRuntimeGuideFixture(Date.parse(builtAt));
+    expect(runtimeGuideFixtureNeedsRefresh(runtime, Date.parse(nextDay))).toBe(true);
+  });
+
+  it('requests a rebuild when a device clock moves to another calendar day', () => {
+    const runtime = buildRuntimeGuideFixture(Date.parse('2026-09-13T12:00:00+02:00'));
+    expect(runtimeGuideFixtureNeedsRefresh(runtime, Date.parse('2026-09-12T23:59:00+02:00'))).toBe(true);
   });
 });

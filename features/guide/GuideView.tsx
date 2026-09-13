@@ -17,7 +17,11 @@ import { scheduleOnRN } from 'react-native-worklets';
 
 import { isProgrammeCurrent, programmeProgress } from '@/data/domain/epg';
 import { guideDayStart, GUIDE_TIME_ZONE } from '@/data/domain/guideTime';
-import { buildRuntimeGuideFixture, programmesForRuntimeChannel } from '@/data/fixtures/runtimeGuideFixture';
+import {
+  buildRuntimeGuideFixture,
+  programmesForRuntimeChannel,
+  runtimeGuideFixtureNeedsRefresh,
+} from '@/data/fixtures/runtimeGuideFixture';
 import { useTeeveeTheme } from '@/theme/useTeeveeTheme';
 
 import { ChannelIdentity } from './ChannelIdentity';
@@ -71,8 +75,11 @@ export const GuideView = memo(function GuideView({ onSelectProgramme }: GuideVie
   const visibleDayOffsetRef = useRef<GuideDayOffset>(0);
   const scrollX = useSharedValue(0);
   const scrollY = useSharedValue(0);
-  const [initialNow] = useState(() => Date.now());
-  const runtimeFixture = useMemo(() => buildRuntimeGuideFixture(initialNow), [initialNow]);
+  const [fixtureAnchorMs, setFixtureAnchorMs] = useState(() => Date.now());
+  const runtimeFixture = useMemo(
+    () => buildRuntimeGuideFixture(fixtureAnchorMs),
+    [fixtureAnchorMs],
+  );
   const [dayOffset, setDayOffset] = useState<GuideDayOffset>(0);
   const nowMs = useGuideClock();
 
@@ -90,7 +97,7 @@ export const GuideView = memo(function GuideView({ onSelectProgramme }: GuideVie
   const tickSpacing = GUIDE_TIME_TICK_INTERVAL_MINUTES * layout.minuteWidth;
   const nowX = timeToX(nowMs, windowStart, layout.minuteWidth);
   const nowInWindow = nowMs >= windowStart && nowMs < windowEnd;
-  const tomorrowStart = useMemo(() => guideDayStart(initialNow, 1), [initialNow]);
+  const tomorrowStart = useMemo(() => guideDayStart(fixtureAnchorMs, 1), [fixtureAnchorMs]);
   const tomorrowStartX = timeToX(tomorrowStart, windowStart, layout.minuteWidth);
   const guideHeight = runtimeFixture.channels.length * layout.rowHeight;
   const programmeViewportWidth = Math.max(0, windowWidth - layout.channelWidth);
@@ -149,7 +156,14 @@ export const GuideView = memo(function GuideView({ onSelectProgramme }: GuideVie
   );
 
   useEffect(() => {
-    const initialX = Math.max(0, timeToX(initialNow, windowStart, layout.minuteWidth) - 120);
+    if (!runtimeGuideFixtureNeedsRefresh(runtimeFixture, nowMs)) return;
+    setDayOffset(0);
+    visibleDayOffsetRef.current = 0;
+    setFixtureAnchorMs(nowMs);
+  }, [nowMs, runtimeFixture]);
+
+  useEffect(() => {
+    const initialX = Math.max(0, timeToX(fixtureAnchorMs, windowStart, layout.minuteWidth) - 120);
     visibleDayOffsetRef.current = 0;
     scrollX.value = initialX;
     scrollY.value = 0;
@@ -157,12 +171,19 @@ export const GuideView = memo(function GuideView({ onSelectProgramme }: GuideVie
       horizontalRef.current?.scrollTo({ x: initialX, animated: false });
     });
     return () => cancelAnimationFrame(frame);
-  }, [initialNow, layout.minuteWidth, scrollX, scrollY, windowStart]);
+  }, [fixtureAnchorMs, layout.minuteWidth, scrollX, scrollY, windowStart]);
 
   const jumpToNow = () => {
-    const x = Math.max(0, timeToX(Date.now(), windowStart, layout.minuteWidth) - 120);
+    const currentNow = Date.now();
     setDayOffset(0);
     visibleDayOffsetRef.current = 0;
+
+    if (runtimeGuideFixtureNeedsRefresh(runtimeFixture, currentNow)) {
+      setFixtureAnchorMs(currentNow);
+      return;
+    }
+
+    const x = Math.max(0, timeToX(currentNow, windowStart, layout.minuteWidth) - 120);
     horizontalRef.current?.scrollTo({ x, animated: true });
   };
 
