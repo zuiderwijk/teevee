@@ -1,8 +1,7 @@
 import { memo } from 'react';
-import { StyleSheet, View } from 'react-native';
-import Animated, { type SharedValue, useAnimatedStyle } from 'react-native-reanimated';
+import { StyleSheet, Text, View } from 'react-native';
 
-import { GUIDE_TIME_TICK_LABEL_OFFSET, timeAxisLabelOpacity } from './timeAxis';
+import { GUIDE_TIME_TICK_LABEL_OFFSET } from './timeAxis';
 
 type TimeAxisTickProps = {
   left: number;
@@ -10,7 +9,6 @@ type TimeAxisTickProps = {
   labelWidth: number;
   labelColor: string;
   borderColor: string;
-  scrollX: SharedValue<number>;
 };
 
 export const TimeAxisTick = memo(function TimeAxisTick({
@@ -19,21 +17,12 @@ export const TimeAxisTick = memo(function TimeAxisTick({
   labelWidth,
   labelColor,
   borderColor,
-  scrollX,
 }: TimeAxisTickProps) {
-  const labelStartX = left + GUIDE_TIME_TICK_LABEL_OFFSET;
-  const labelAnimatedStyle = useAnimatedStyle(() => ({
-    opacity: timeAxisLabelOpacity(labelStartX, scrollX.value),
-  }));
-
   return (
     <View style={[styles.tick, { left, borderLeftColor: borderColor }]}>
-      <Animated.Text
-        numberOfLines={1}
-        style={[styles.tickLabel, { width: labelWidth, color: labelColor }, labelAnimatedStyle]}
-      >
+      <Text numberOfLines={1} style={[styles.tickLabel, { width: labelWidth, color: labelColor }]}>
         {label}
-      </Animated.Text>
+      </Text>
     </View>
   );
 });
