@@ -1,21 +1,26 @@
-import { type ComponentType, useCallback, useReducer, useState } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { type ComponentType, useCallback, useReducer, useRef, useState } from 'react';
+import { StyleSheet, Text, View } from 'react-native';
 
 import { detailReducer, initialDetailState, type ProgrammeSelection } from '@/features/guide/detailState';
+import { GuidePresentationSelector } from '@/features/guide/GuidePresentationSelector';
+import {
+  DEFAULT_GUIDE_PRESENTATION,
+  type GuidePresentation,
+} from '@/features/guide/guidePresentation';
 import { GuideView } from '@/features/guide/GuideView';
 import { PerChannelGuideView } from '@/features/guide/PerChannelGuideView';
 import { ProgrammeDetail } from '@/features/guide/ProgrammeDetail';
 import { useTeeveeTheme } from '@/theme/useTeeveeTheme';
 
-type PrototypePresentation = 'total' | 'per-channel' | 'now-next';
-type NowNextPrototypeComponent = ComponentType<{
+type NowNextGuideComponent = ComponentType<{
   onSelectProgramme: (selection: ProgrammeSelection) => void;
 }>;
 
 export default function GuideScreen() {
   const theme = useTeeveeTheme();
-  const [presentation, setPresentation] = useState<PrototypePresentation>('total');
-  const [nowNextComponent, setNowNextComponent] = useState<NowNextPrototypeComponent | null>(null);
+  const [presentation, setPresentation] = useState<GuidePresentation>(DEFAULT_GUIDE_PRESENTATION);
+  const requestedPresentationRef = useRef<GuidePresentation>(DEFAULT_GUIDE_PRESENTATION);
+  const [nowNextComponent, setNowNextComponent] = useState<NowNextGuideComponent | null>(null);
   const [nowNextLoading, setNowNextLoading] = useState(false);
   const [nowNextLoadError, setNowNextLoadError] = useState<string | null>(null);
   const [detail, dispatch] = useReducer(detailReducer, initialDetailState);
@@ -32,7 +37,9 @@ export default function GuideScreen() {
 
   const loadAndShowNowNext = useCallback(async () => {
     if (nowNextComponent) {
-      setPresentation('now-next');
+      if (requestedPresentationRef.current === 'now-next') {
+        setPresentation('now-next');
+      }
       return;
     }
 
@@ -42,7 +49,9 @@ export default function GuideScreen() {
     try {
       const module = await import('@/features/guide/NowNextGuideView');
       setNowNextComponent(() => module.NowNextGuideView);
-      setPresentation('now-next');
+      if (requestedPresentationRef.current === 'now-next') {
+        setPresentation('now-next');
+      }
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
       setNowNextLoadError(message);
@@ -51,30 +60,20 @@ export default function GuideScreen() {
     }
   }, [nowNextComponent]);
 
-  const showNextPrototype = useCallback(() => {
-    if (presentation === 'total') {
+  const selectPresentation = useCallback(
+    (nextPresentation: GuidePresentation) => {
+      requestedPresentationRef.current = nextPresentation;
       setNowNextLoadError(null);
-      setPresentation('per-channel');
-      return;
-    }
 
-    if (presentation === 'per-channel') {
-      void loadAndShowNowNext();
-      return;
-    }
+      if (nextPresentation === 'now-next') {
+        void loadAndShowNowNext();
+        return;
+      }
 
-    setNowNextLoadError(null);
-    setPresentation('total');
-  }, [loadAndShowNowNext, presentation]);
-
-  const nextLabel =
-    presentation === 'total'
-      ? 'Per zender'
-      : presentation === 'per-channel'
-        ? nowNextLoading
-          ? 'Laden…'
-          : 'Nu & Straks'
-        : 'Totaal';
+      setPresentation(nextPresentation);
+    },
+    [loadAndShowNowNext],
+  );
 
   return (
     <>
@@ -90,37 +89,27 @@ export default function GuideScreen() {
         <View
           accessibilityRole="alert"
           style={[
-            styles.prototypeError,
+            styles.loadError,
             {
               backgroundColor: theme.colors.surfaceElevated,
               borderColor: theme.colors.border,
             },
           ]}
         >
-          <Text style={[styles.prototypeErrorTitle, { color: theme.colors.text }]}>Nu & Straks kon niet laden</Text>
-          <Text selectable style={[styles.prototypeErrorText, { color: theme.colors.textSecondary }]}>
+          <Text style={[styles.loadErrorTitle, { color: theme.colors.text }]}>Nu & Straks kon niet laden</Text>
+          <Text selectable style={[styles.loadErrorText, { color: theme.colors.textSecondary }]}>
             {nowNextLoadError}
           </Text>
         </View>
       ) : null}
 
-      {/* Temporary Phase 1B test control. This is not the final Guide presentation UI. */}
-      <Pressable
-        accessibilityRole="button"
-        accessibilityLabel={`Toon ${nextLabel}-weergave`}
-        disabled={nowNextLoading}
-        onPress={showNextPrototype}
-        style={({ pressed }) => [
-          styles.prototypeSwitch,
-          {
-            backgroundColor: theme.colors.surfaceElevated,
-            borderColor: theme.colors.border,
-            opacity: nowNextLoading ? 0.55 : pressed ? 0.7 : 1,
-          },
-        ]}
-      >
-        <Text style={[styles.prototypeSwitchText, { color: theme.colors.text }]}>{nextLabel}</Text>
-      </Pressable>
+      <View pointerEvents="box-none" style={styles.presentationSelectorDock}>
+        <GuidePresentationSelector
+          selected={presentation}
+          loadingPresentation={nowNextLoading ? 'now-next' : null}
+          onSelect={selectPresentation}
+        />
+      </View>
 
       <ProgrammeDetail state={detail} onClose={closeDetail} />
     </>
@@ -128,41 +117,31 @@ export default function GuideScreen() {
 }
 
 const styles = StyleSheet.create({
-  prototypeSwitch: {
+  presentationSelectorDock: {
     position: 'absolute',
-    right: 16,
-    bottom: 18,
+    left: 12,
+    right: 12,
+    bottom: 16,
     zIndex: 20,
-    minHeight: 44,
-    minWidth: 92,
-    paddingHorizontal: 14,
-    borderRadius: 22,
-    borderWidth: StyleSheet.hairlineWidth,
     alignItems: 'center',
-    justifyContent: 'center',
   },
-  prototypeSwitchText: {
-    fontSize: 13,
-    lineHeight: 17,
-    fontWeight: '700',
-  },
-  prototypeError: {
+  loadError: {
     position: 'absolute',
     left: 16,
     right: 16,
-    bottom: 76,
+    bottom: 72,
     zIndex: 21,
     paddingHorizontal: 14,
     paddingVertical: 12,
     borderRadius: 14,
     borderWidth: StyleSheet.hairlineWidth,
   },
-  prototypeErrorTitle: {
+  loadErrorTitle: {
     fontSize: 13,
     lineHeight: 18,
     fontWeight: '800',
   },
-  prototypeErrorText: {
+  loadErrorText: {
     marginTop: 4,
     fontSize: 12,
     lineHeight: 17,
