@@ -1,7 +1,7 @@
 # Teevee — Canonical Project State
 
-Last updated: 2026-09-13 17:06 CEST.
-Status: ACTIVE — **Phase 1B Guide Presentation Prototypes**. Phase 1A Totaal is physically accepted/frozen on iPhone. The core Per zender gesture/time-anchor architecture is physically evidenced on iPhone; a small set of targeted controls/detail/theme checks remains open. Nu & Straks is technically implemented, its deferred module load now physically opens successfully on iPhone, and its remaining gate is interaction acceptance rather than startup. Physical Android interaction validation remains explicitly deferred because the owner currently has no Android device; native Android compilation is covered in CI but is not device acceptance.
+Last updated: 2026-09-13 17:40 CEST.
+Status: ACTIVE — **Phase 1B Guide Presentation Prototypes**. Phase 1A Totaal is physically accepted/frozen on iPhone. The core Per zender gesture/time-anchor architecture is physically evidenced on iPhone; a small set of targeted controls/detail/theme checks remains open. Nu & Straks is technically implemented, deferred loading is physically proven, and the serious time-rail momentum feedback-loop found in the first interaction recording has been fixed by PR #24 and physically revalidated on iPhone. Remaining Phase 1B work is now limited to residual context/detail/theme checks before entering Phase 2. Physical Android interaction validation remains explicitly deferred because the owner currently has no Android device; native Android compilation is covered in CI but is not device acceptance.
 Current phase: **Phase 1B — Guide Presentation Prototypes**
 Previous phase: **Phase 1A — Totaal Interaction Prototype: physically accepted on iPhone**
 
@@ -65,13 +65,13 @@ Physical evidence — `ScreenRecording_09-13-2026 16-16-00_1.MP4`:
 - viewed wall-clock position stays materially unchanged across channel changes;
 - no white screen, crash or obvious gesture collapse is visible.
 
-Conclusion: the **main Per zender nested-gesture/time-anchor architecture risk is closed on the available iPhone**. This recording did not deliberately exercise every acceptance item, so the following remain targeted residual checks rather than blockers to building Nu & Straks:
+Conclusion: the **main Per zender nested-gesture/time-anchor architecture risk is closed on the available iPhone**. This recording did not deliberately exercise every acceptance item, so the following remain targeted residual checks:
 - horizontal browsing and direct tap of a distant channel in the top strip;
 - `Vandaag`/`Morgen`/`Nu` behaviour;
 - Programme Detail round-trip/context preservation and immediate post-swipe response;
 - light/dark and representative larger system text.
 
-### Nu & Straks — prototype implemented; physical module-load/open confirmed; interaction acceptance OPEN
+### Nu & Straks — core interaction architecture physically evidenced; residual checks OPEN
 Purpose: answer quickly what is on now/at one shared reference time and what follows on each channel.
 
 Implementation from PR #21:
@@ -97,10 +97,21 @@ Startup isolation/reintegration:
 - PR #22 removed that static startup import and restored the previously proven Totaal + Per zender startup boundary; the owner physically confirmed clean startup on iPhone;
 - PR #23 reintroduced Nu & Straks through deferred module loading, evaluating `NowNextGuideView` only when the owner explicitly requests the presentation;
 - on current `main`, the owner physically confirmed that **Nu & Straks successfully loads and opens on the iPhone**;
-- therefore the module itself is not generally unable to evaluate/render; the earlier regression is isolated to the startup/module-evaluation path or a timing/cache interaction specific to it;
 - deferred loading remains the accepted Phase 1B integration boundary. Do not restore a static startup import without separate evidence.
 
-This physical confirmation closes only the startup + deferred-load gate. It does **not** yet accept live/browse interaction behaviour, time-rail semantics, context preservation, mixed gestures, theme or larger-text behaviour.
+Time-rail defect and fix:
+- first interaction recording `ScreenRecording_09-13-2026 17-07-22_1.MP4` exposed a serious rail oscillation/tug-of-war around 00:08–00:09 and again around 00:18;
+- root cause: rail selection was committed from both `onScrollEndDrag` and `onMomentumScrollEnd`; those commits called `scrollTo()`, while a separate selected-slot effect also recentred, allowing React/state-driven scrolling to fight native momentum + snapping;
+- PR #24 removed that feedback loop: rail-originated commits update reference state without programmatic recentering, momentum end is authoritative for flings, zero-velocity drags may commit on drag-end, and broad selected-slot recentering is removed;
+- PR #24 head passed both required CI jobs completely, including quality and native Android debug APK compilation, and merged as `1ce614a097ee15c20e4805424302fe711c58d339`;
+- physical retest `ScreenRecording_09-13-2026 17-36-54_1.MP4` deliberately exercises repeated fast flings/reversals; the previous oscillation is no longer visible, the rail stays controllable, settles to a single slot, `Nu` returns to the current reference, and `Primetime`/20:30 movement remains coherent;
+- therefore the **Nu & Straks momentum/rail-control blocker is physically closed on the available iPhone**.
+
+The physical evidence now supports the core live/browse time-rail architecture. Remaining Nu & Straks checks before Phase 1B closure:
+- Programme Detail round-trip must preserve reference time and vertical channel context;
+- mixed vertical list movement plus rail changes should preserve channel position/order in a targeted pass;
+- dark mode and a representative larger system-text size remain to be sampled;
+- final visual hierarchy is explicitly not a Phase 1B acceptance requirement unless it blocks usability.
 
 Temporary Phase 1B test scaffolding in `app/index.tsx` cycles:
 **Totaal → Per zender → Nu & Straks → Totaal**.
@@ -147,7 +158,8 @@ Key evidence:
 - PR #19 Android native compile gate: head `60db410901e6a6607f6b049c8197c9593b36d251` passed CI #185 / `34760593076`, including Expo Android prebuild and Gradle debug APK compilation; merged as `eac7cae6df8083d4906a3ea1280c0add646dcc40`.
 - PR #21 Nu & Straks: final head `fb388f1fefbc9dd64891bd69e70e4b79d7bb574d`; CI #200 / `34762548963` passed `npm ci`, typecheck, lint, tests and all-platform Expo exports. It merged as `dccc02d635cb9b3189a4ea7a857b56100e2e3ab9`.
 - PR #22 startup hotfix restored the physically proven startup boundary by removing the static Nu & Straks import; the owner physically confirmed clean startup on iPhone afterward.
-- PR #23 deferred reintegration merged as `c3ee101ea29e60d0b5b1ae88cde86191f5ba4bab`; its PR quality job passed install, typecheck, lint, tests and all-platform exports. The owner then physically confirmed that Nu & Straks loads and opens successfully when requested after startup. Exact-main CI #209 was still running at this document timestamp; do not infer Android physical acceptance from any automated result.
+- PR #23 deferred reintegration merged as `c3ee101ea29e60d0b5b1ae88cde86191f5ba4bab`; its PR quality job passed install, typecheck, lint, tests and all-platform exports. The owner then physically confirmed that Nu & Straks loads and opens successfully when requested after startup.
+- PR #24 rail momentum fix: head `9e6ce84751be4a71c1c2eb283a86b4c4cd2d301a` passed CI #215 / `34765048160` completely: both `quality` and `android-native` completed successfully. It merged as `1ce614a097ee15c20e4805424302fe711c58d339`. Physical iPhone retest subsequently closed the original oscillation defect. Exact-main CI #216 / `34765990513` was still in progress when last observed; do not claim that merge run green until its jobs are explicitly rechecked.
 
 ## Android validation status
 Physical Android interaction acceptance remains **OPEN/DEFERRED** because no Android device is currently available.
@@ -155,7 +167,7 @@ Physical Android interaction acceptance remains **OPEN/DEFERRED** because no And
 Automated confidence covers:
 - Android JS/native bundle export;
 - clean Expo Android prebuild;
-- Gradle debug APK compilation on established PR #19 evidence;
+- Gradle debug APK compilation on established PR/CI evidence;
 - Programme Detail `onRequestClose` wiring and integration equivalent;
 - `GestureHandlerRootView` inside the native Modal path.
 
@@ -166,9 +178,9 @@ Still physically unproven:
 - device-specific visual/runtime defects.
 
 ## Remaining Phase 1B work
-1. **Physical Nu & Straks interaction pass plus the residual Per zender checks.** Startup and deferred module loading are already physically confirmed.
-2. Iterate either presentation only on concrete device evidence.
-3. Once both Phase 1B interaction models are credible, enter **Phase 2 App Shell** and formalise one shared Guide presentation-state/navigation/persistence contract.
+1. **One short residual iPhone pass:** Nu & Straks Programme Detail/context + mixed vertical/time movement + dark/large-text sample; Per zender distant-channel selection + day/Nu + Programme Detail/context + dark-mode sample.
+2. Iterate only on concrete device evidence from that residual pass.
+3. If no blocking defect remains, close Phase 1B and enter **Phase 2 App Shell**, formalising one shared Guide presentation-state/navigation/persistence contract.
 
 Deferred but tracked:
 - physical Android validation when a suitable Android device/interactive environment becomes available;
@@ -180,7 +192,7 @@ Deferred but tracked:
 - final Tonight composition.
 
 ## EXACT NEXT STEP
-**On the available iPhone, perform the Nu & Straks interaction-validation pass now that startup and deferred loading are physically proven.**
+**Perform one short residual Phase 1B iPhone pass; do not start Phase 2 until this pass is clean or any found blockers are fixed.**
 
 Owner checkout: `~/projects/teevee`.
 
@@ -190,30 +202,20 @@ git pull --ff-only
 npm run start:clean
 ```
 
-The app starts in frozen **Totaal**. The temporary bottom-right control cycles:
-1. `Per zender`
-2. `Nu & Straks`
-3. `Totaal`
+### Nu & Straks — residual checks
+1. Scroll vertically several channels away from the starting position, then change the time rail twice; the vertical channel context must not jump.
+2. Open a programme, close Programme Detail, and verify the same reference time + vertical channel position remain.
+3. Repeat once immediately after a fast rail fling.
+4. Toggle dark mode while Nu & Straks is visible; layout/contrast must remain usable.
+5. If convenient, sample one larger system-text size; no critical control/content may become unusable.
 
-### Nu & Straks — primary gate
-Validate:
-1. It opens in live mode around the actual current time and the visible reference programme matches that shared instant.
-2. Horizontally drag/fling the time rail. It should leave live mode, settle cleanly on a browse time and update all channel rows to the same reference instant.
-3. Scroll vertically to another set of channels, then change reference time again. The vertical channel position/order should not jump.
-4. Tap `Nu`: live mode/current time should return and the rail should recentre.
-5. Tap `Primetime`: the prototype should move to 20:30.
-6. Scan several rows: one dominant reference programme plus three quieter following programmes where data exists; following items show start time only.
-7. Open a programme and close Programme Detail. The same Nu & Straks reference time and vertical channel context should remain.
-8. Mix vertical channel flings with horizontal time-rail movement; no crash, white screen, blank list or obvious performance collapse.
-9. Check dark mode; sample a larger system-text size if convenient.
+### Per zender — residual checks
+1. Browse the top channel strip horizontally and directly tap a distant channel.
+2. Test `Morgen`, `Vandaag` and `Nu`.
+3. Open/close Programme Detail and verify channel/day/time context is preserved, including immediately after a horizontal channel swipe.
+4. Toggle dark mode; layout and interaction remain usable.
 
-### Per zender — residual checks in the same pass
-- browse the top channel strip horizontally and tap a distant channel;
-- test `Morgen`, `Vandaag` and `Nu`;
-- open/close Programme Detail and verify channel/day/time context is preserved, including immediately after a horizontal channel swipe;
-- confirm dark mode remains usable.
-
-Do **not** retune the frozen Totaal interaction from Phase 1B impressions alone.
+Do **not** retune frozen Totaal from Phase 1B impressions alone.
 
 ## Resume instruction
-> Read `AGENTS.md` and `PROJECT_STATE.md`. Execute EXACT NEXT STEP where possible. Phase 1B now has frozen Totaal acceptance, Per zender core gesture/time-anchor evidence, clean startup after PR #22, and physical proof that deferred Nu & Straks loading opens successfully after PR #23. The active gate is Nu & Straks interaction acceptance plus the residual Per zender checks. Update PROJECT_STATE and the Dutch timestamped DEVLOG after every substantive increment. Ask only for product choices or genuinely necessary physical-device observations. Never substitute CI for physical acceptance.
+> Read `AGENTS.md` and `PROJECT_STATE.md`. Execute EXACT NEXT STEP where possible. Phase 1B now has frozen Totaal acceptance, Per zender core gesture/time-anchor evidence, clean startup with deferred Nu & Straks loading, and physical proof that PR #24 removed the serious time-rail momentum feedback loop. The only active gate before Phase 2 is the short residual iPhone pass for context/detail/theme behaviour in Per zender and Nu & Straks. Update PROJECT_STATE and the Dutch timestamped DEVLOG after every substantive increment. Ask only for genuinely necessary physical-device observations. Never substitute CI for physical acceptance.
