@@ -43,7 +43,7 @@ export default function GuideScreen() {
           },
         ]}
       >
-        <Text style={[styles.prototypeSwitchText, { color: theme.colors.text }]}> 
+        <Text style={[styles.prototypeSwitchText, { color: theme.colors.text }]}>
           {showPerChannel ? 'Totaal' : 'Per zender'}
         </Text>
       </Pressable>
