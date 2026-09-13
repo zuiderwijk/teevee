@@ -1,7 +1,7 @@
 # Teevee — Canonical Project State
 
-Last updated: 2026-09-13 14:16 CEST.
-Status: ACTIVE — Phase 1 Guide prototype. The Guide scroll/readability baseline (PR #9 + PR #11 + PR #12) is physically accepted and frozen. PR #13 hardens screen-reader semantics and proves live system-theme subscription in automated tests; it is merged on `main` as `a8651b26c2521b53d0077bbd499862c3b1b71ed2` after fully green PR CI #158 / run `34756492990`. One focused iPhone VoiceOver + live-theme gate remains.
+Last updated: 2026-09-13 14:42 CEST.
+Status: ACTIVE — Phase 1 Guide prototype. The Guide scroll/readability baseline (PR #9 + PR #11 + PR #12) and PR #13 VoiceOver/live-theme behaviour are physically accepted. PR #14 removes the per-frame horizontal UI→JS bridge implicated in post-scroll Programme Detail latency; it is merged on `main` as `e7f45a04544106803b2f49fe4e086d304bf061c8`, technically green on PR CI #163 and exact-main CI #164, pending one focused iPhone latency validation.
 Current phase: **Phase 1 — Guide Interaction Prototype**
 Previous phase: **Phase 0 — Project Foundation: COMPLETE**
 
@@ -49,17 +49,16 @@ Detailed rules live in `docs/UX.md`, `docs/DESIGN_SYSTEM.md`, `docs/PRODUCT.md` 
 - Amsterdam calendar helpers with DST/23-hour/25-hour/year-rollover tests.
 - Totaal uses one continuous horizontal timeline with half-hour ticks, duration-based programme blocks, current-time line and programme progress.
 - Fixed channel rail plus synchronised vertical movement; native bounce/directional lock and `normal` deceleration.
-- Programme detail selection is isolated from the heavy Guide render. Native Modal slide, button close, outside-tap close and deliberate swipe-down dismissal remain accepted.
+- Programme Detail selection is isolated from the heavy Guide render. Native Modal slide, button close, outside-tap close and deliberate swipe-down dismissal remain accepted.
 - Optional `Channel.logoUrl`; target treatment is logo first, channel name second, with textual fallback.
 - Totaal adapts content geometry to larger system text; tested iPhone large-text corrections are accepted.
-- **Vandaag · Morgen · Nu** remain on one row; only these compact labels cap scaling at 1.2x. Explicit day state updates immediately; `Nu` restores today/current time.
-- PR #5 settled readability is the geometry-safe fallback after horizontal movement settles, with PR #12 preventing a stale settled viewport from collapsing text during reverse scrolling.
+- **Vandaag · Morgen · Nu** remain on one row; compact labels cap scaling at 1.2x. Explicit day state updates immediately; `Nu` restores today/current time.
 - PR #9 live partial-left programme readability is physically accepted through drag, momentum and programme boundaries.
 - PR #11 single left-edge mask is physically accepted for time-axis clipping; departing labels disappear whole while tick coordinates stay truthful.
 - PR #12 is physically accepted for strong forward/reverse movement; titles remain rendered and PR #9/PR #11 remain intact.
-- PR #13 hides duplicated visual rails from the accessibility tree and makes every programme button self-contained with channel + title + begin/end time + optional `nu bezig`, plus the hint `Opent programmadetails`.
-- Programme Detail retains `accessibilityViewIsModal`, accessibility escape and an explicitly labelled close button.
-- `useTeeveeTheme()` uses React Native `useColorScheme()`. Automated render coverage now proves one mounted component follows light → dark → light live and treats a null system scheme as light.
+- PR #13 screen-reader semantics are physically accepted: duplicated channel/time rails are excluded, programme buttons announce channel + title + begin/end time, current programmes add `nu bezig`, and Programme Detail closes with VoiceOver accessibility escape/two-finger scrub.
+- PR #13 live system-theme behaviour is physically accepted on iPhone: Guide, Programme Detail and status-bar treatment follow system light/dark changes without app restart.
+- PR #14 keeps horizontal per-frame `scrollX` work on the UI thread. JS is contacted only for real day-boundary changes and drag/momentum settle events; this is technically accepted but still needs the targeted latency device check.
 - CI runs install, strict TypeScript, lint, tests and iOS/Android/web Expo bundle exports. Bundle export is not a signed/native device test.
 
 No real production EPG, production artwork, account system or subscription/paywall has been introduced.
@@ -69,63 +68,57 @@ Do not retune without concrete regression evidence:
 - standard platform scroll inertia;
 - native bounce and directional lock;
 - continuous timeline/day navigation and animated `Nu`;
-- programme-detail response and retained Guide position;
+- programme `left` and duration-derived `width`;
 - close by button/backdrop and deliberate swipe-down dismissal;
 - PR #7 one-row controls and immediate selected-day state;
 - PR #9 UI-thread edge-readability synchronisation and programme-boundary semantics;
-- programme `left` and duration-derived `width`;
 - PR #11 single-mask time-axis treatment and truthful tick coordinates;
-- PR #12 settled-readability stale-state correction for reverse scrolling.
+- PR #12 settled-readability stale-state correction for reverse scrolling;
+- PR #13 VoiceOver traversal/labels and live system-theme response.
 
-The product owner previously described targeted scroll/detail/swipe-dismiss retests as **"perfect"**. PR #7, PR #9, PR #11 and PR #12 are physically accepted for their scoped behaviours. This is not blanket accessibility/performance approval.
+The product owner previously described targeted scroll/detail/swipe-dismiss retests as **"perfect"**. New evidence in the 14:28 recording qualifies only the **post-horizontal-scroll Programme Detail response latency**; it does not reopen the accepted native scroll physics or detail gesture behaviour.
 
 ## Recovery history that constrains implementation
-- **PR #6 — physically rejected:** >1000 per-programme Reanimated styles produced a white screen/iPhone crash despite green CI. Exact native cause is unproven; do not reintroduce that high-volume worklet architecture unchanged.
-- **PR #8 — physically rejected:** a React-state overlay lagged behind native ScrollView during drag/momentum and could cover successor content. Green CI did not catch it.
-- **PR #9 — physically accepted/frozen:** only 48 small edge rows use live UI-thread geometry; old edge rows stop drawing at their real programme end even if React identity changes lag.
-- **PR #10 — physically rejected:** per-tick Reanimated opacity still left a `30` fragment and was abandoned. Do not restore this architecture.
-- **PR #11 — physically accepted/frozen:** one fixed UI-thread left-edge mask replaces per-tick animation; time labels disappear whole.
-- **PR #12 — physically accepted/frozen:** settled-readability re-anchoring only applies while the remembered viewport actually cuts through the programme frame; stale positions beyond a programme no longer blank text during reverse scroll.
+- **PR #6 — physically rejected:** >1000 per-programme Reanimated styles produced a white screen/iPhone crash despite green CI. Do not reintroduce that high-volume worklet architecture unchanged.
+- **PR #8 — physically rejected:** React-state overlay lagged behind native ScrollView during drag/momentum and could cover successor content.
+- **PR #9 — physically accepted/frozen:** only 48 small edge rows use live UI-thread geometry; old edge rows stop drawing at their real programme end.
+- **PR #10 — physically rejected:** per-tick Reanimated opacity still left a `30` time-label fragment. Do not restore it.
+- **PR #11 — physically accepted/frozen:** one fixed UI-thread left-edge mask makes departing time labels disappear whole.
+- **PR #12 — physically accepted/frozen:** stale settled viewport positions no longer blank programme text during reverse scrolling.
 
-## Physical evidence — latest Guide baseline
-### PR #11 recording — 13:48
-`ScreenRecording_09-13-2026 13-48-10_1.MP4` physically accepted the single-mask time-axis behaviour. The 13:30 → 14:00 transition and other sampled transitions showed whole-label disappearance without `:30`/`30` remnants; tick and programme geometry remained stable. The same recording exposed the separate reverse-scroll stale-state bug fixed by PR #12.
+## Physical evidence — 14:28 accessibility/theme recording
+`ScreenRecording_09-13-2026 14-28-46_1.MP4` (43.75 s, 1170×2532) plus the owner's written VoiceOver observation closes PR #13 physically:
+- traversal order is reported as correct;
+- a programme is spoken as channel + title + begin/end time (owner example: `NPO 1, titel, 14:00 tot 15:00`);
+- VoiceOver two-finger scrub closes Programme Detail;
+- frame review shows live light → dark → light changes while Teevee remains open;
+- an Appearance change while Programme Detail is open updates the presented interface and status-bar treatment without reload.
 
-### PR #12 recording — 14:04
-`ScreenRecording_09-13-2026 14-04-35_1.MP4` (10.93 s, 1170×2532) physically accepted PR #12:
-- strong movement toward later times and a strong reverse fling are visible;
-- programme titles remain rendered through reverse drag/momentum;
-- the broad blank-title state from the 13:48 recording does not recur;
-- PR #9 partial-left edge readability remains coherent;
-- PR #11 still shows no chopped `:30`/`30` time-label fragments;
-- tick positions and programme block position/width remain visually stable.
+The same session exposes a performance regression/latent bottleneck: after horizontal time scrolling, tapping a programme feels materially slower than the same action after the Guide has been still. In sampled openings in the recording, press feedback precedes visible modal presentation by roughly 0.7–0.9 seconds after recent horizontal movement.
 
-Technical evidence for PR #12: PR CI #150 / `34755583818` passed completely; merge `b76edfab972b1d6194b2cbf1460515256de0e5c4`; documented post-merge main CI #154 / `34755760369` passed completely.
+## PR #14 — remove per-frame horizontal JS bridge
+Root-cause hypothesis supported by code architecture:
+- horizontal `scrollEventThrottle={16}` previously updated the UI-thread `scrollX` **and** called `scheduleOnRN(handleHorizontalScroll, viewportX)` every scroll frame;
+- Programme Detail selection/React state also runs on JS;
+- a fling could therefore leave frequent scroll-to-JS work competing with a programme tap even after native movement visually settled.
 
-## PR #13 — screen-reader semantics + live system-theme subscription
-PR #13 changes accessibility semantics only; it does not alter Guide layout, scroll, gesture or programme geometry.
-
-Implementation:
-- the visual fixed channel rail is removed from accessibility traversal to avoid 48 duplicated standalone channel announcements before programme content;
-- the visual half-hour time axis is removed from accessibility traversal because programme buttons carry their own times;
-- decorative `TEEVEE` eyebrow is not separately announced; `Gids` remains a header;
-- every programme button announces `channel, title, start tot end`, adds `nu bezig` when applicable, and exposes `Opent programmadetails` as its hint;
-- the pointer-transparent PR #9 edge overlay remains excluded from accessibility;
-- Programme Detail modal/escape/close semantics are unchanged and remain covered by the existing integration test.
-
-Theme verification:
-- production `useTeeveeTheme()` required no code change because it already subscribes through React Native `useColorScheme()`;
-- new render tests prove a mounted consumer updates live light → dark → light without remounting;
-- a null system scheme deterministically falls back to light.
+PR #14 changes only that bridge pattern:
+- horizontal `onScroll` updates `scrollX` on the UI thread and does not schedule JS work per frame;
+- a lightweight `useAnimatedReaction` derives `Vandaag/Morgen` on the UI thread and bridges only when the actual day boundary changes;
+- `onEndDrag` and `onMomentumEnd` still bridge once for settled readability/end-state synchronisation;
+- explicit `Vandaag`, `Morgen` and `Nu` actions still update React state immediately;
+- native inertia, bounce, directional lock, `decelerationRate`, programme geometry, PR #9, PR #11, PR #12, Programme Detail animation/gesture code and vertical synchronisation are unchanged;
+- `guideDayOffsetForViewport` has threshold regression tests.
 
 Technical evidence:
-- PR head `766be594f6e8af193e3f9b364c7c6378a7c210df` passed PR CI #158 / run `34756492990` completely: install, strict TypeScript, lint, tests and iOS/Android/web Expo exports;
-- PR #13 merged to main as `a8651b26c2521b53d0077bbd499862c3b1b71ed2`.
+- PR head `33bcb83381f575a0f1a22cc4a571f4325a957582` passed PR CI #163 / run `34757663408` completely;
+- PR #14 merged to main as `e7f45a04544106803b2f49fe4e086d304bf061c8`;
+- exact merged code passed main CI #164 / run `34757796962` completely.
 
-Native VoiceOver focus order/spoken output and an actual iOS Appearance switch remain physical-device observations and are not claimed from CI.
+**PR #14 is technically accepted but not yet physically accepted for the latency objective.**
 
 ## Remaining Phase 1 work
-- focused physical iPhone validation of PR #13 VoiceOver traversal/labels and live system-theme switching;
+- focused physical iPhone validation of PR #14 post-scroll Programme Detail latency;
 - explicit progress/current-time accuracy checks;
 - Android gesture/back behaviour and release-like performance;
 - lifecycle behaviour for the launch-anchored finite fixture after midnight/expiry;
@@ -134,7 +127,7 @@ Native VoiceOver focus order/spoken output and an actual iOS Appearance switch r
 - production EPG/logo/artwork rights/reliability, pricing/trial/paywall, production tokens/font licensing and final Tonight composition remain later gates.
 
 ## EXACT NEXT STEP
-**On the same iPhone, pull current `main` and restart Metro cleanly. Perform one focused native accessibility/theme gate only: (1) enable VoiceOver and traverse the Guide from the top — `Gids` and the day/`Nu` controls must be reachable, but the fixed channel rail and visual half-hour time axis must not produce long duplicate focus sequences; (2) focus several programme cells and confirm each speaks the channel, title and begin/end time, with `nu bezig` for a current programme where applicable and an action hint for opening details; (3) open one Programme Detail, confirm its content and `Programmadetails sluiten` are reachable, then close once with the VoiceOver two-finger scrub/accessibility escape; (4) with Teevee still open, switch iOS Appearance Light → Dark → Light and confirm the Guide updates immediately without restart; repeat one switch while Programme Detail is open and confirm the sheet plus status bar update as well. Do not re-test scroll mechanics. Prefer one short screen recording for the visual theme change plus a brief written note of the VoiceOver wording/order if the recording does not capture spoken audio.**
+**On the same iPhone, pull current `main` and restart Metro cleanly. Make one short screen recording that compares the two cases directly: (A) give the time axis a clear horizontal fling and, as soon as a programme is tappable after the movement, tap it; close Detail; (B) leave the Guide completely still for about 2 seconds and tap another programme. Confirm that Programme Detail now starts opening with no obvious extra delay in case A versus B. Also cross the Vandaag→Morgen boundary once by manual horizontal scrolling and confirm the selected day still changes correctly. Do not retune/retest general scroll feel unless a spontaneous regression appears.**
 
 Owner checkout: `~/projects/teevee`. Test with: stop Metro using Control+C, run `git pull --ff-only`, then `npm run start:clean`, and reopen Expo Go.
 
