@@ -14,6 +14,34 @@ Doel: een begrijpelijk en leesbaar overzicht van wat de autonome development-age
 
 ---
 
+## 13 september 2026, 09:01 CEST — Grote-tekstcorrectie fysiek geaccepteerd
+
+### Toestelbewijs
+De product owner leverde na de PR #4-correctie een nieuwe iPhone-screenshot aan met beeldtijd 08:59, op dezelfde duidelijk vergrote systeemtekststand.
+
+De eerdere concrete chrome-defecten zijn opgelost:
+- `Gids` is volledig zichtbaar en niet meer verticaal afgesneden;
+- `Nu` is volledig zichtbaar;
+- `Vandaag` en `Ma 14 Sep` zijn volledig leesbaar zonder ellipsis;
+- tijdaslabels zoals `08:30`, `09:00` en `09:30` zijn volledig leesbaar;
+- zenderrail en programmarijen blijven visueel uitgelijnd;
+- programme-title tekst vertoont niet meer de eerdere line-height clipping.
+
+Daarmee is de gerichte Dynamic Type/chrome-increment op deze iPhone **fysiek geaccepteerd**. De eerder geaccepteerde scroll- en dismissal-baselines zijn niet heropend.
+
+### Afzonderlijk open readability-punt
+De screenshot laat opnieuw zien dat programma-inhoud bij horizontale offset gedeeltelijk achter de vaste zenderrail kan verdwijnen. Dit bestond al vóór PR #4 en is geen regressie van de grote-tekstcorrectie. Een smal programmablok kan bovendien terecht ellipsen wanneer de echte duur weinig horizontale ruimte geeft; de oplossing mag de tijdgeometrie niet vervalsen.
+
+De blauwe zwevende tandwielknop overlapt opnieuw de UI, maar de herkomst is nog steeds onbekend en hij wordt niet als Teevee-productchrome behandeld.
+
+### Verificatie
+De relevante appcode blijft de op main geïntegreerde PR #4: merge `4f4fa94c6b1968ca03bb551fde9bb7ed376b2113`, waarvoor main-CI #75 / run `34743812493` succesvol was. De nieuwe 08:59-screenshot levert het ontbrekende fysieke layoutbewijs.
+
+### Volgende stap
+Pak nu uitsluitend het afzonderlijke readability-probleem aan waarbij gedeeltelijk zichtbare programmablokken achter de vaste zenderrail hun begintekst verliezen. Behoud echte programma-start, duur en blokpositie; verander de geaccepteerde scrollinertie, bounce en detailinteracties niet.
+
+---
+
 ## 13 september 2026, 08:55 CEST — Grote-tekstdefect op iPhone gevonden en gericht gecorrigeerd
 
 ### Toestelbewijs
@@ -142,5 +170,5 @@ Eerdere configuratiefouten (Expo-dependencies, TypeScript `baseUrl`, React purit
 - Eerder zijn 15 moderate dependency-advisories gemeld. Niet automatisch/gefroceerd upgraden; nooit `npm audit fix --force` zonder impactanalyse.
 - Android gesture/back en release-achtige performance zijn nog niet fysiek gevalideerd.
 - De finite launch-anchored fixture heeft nog lifecyclewerk rond resume na middernacht/expiry.
-- Partieel verborgen programme-informatie achter de vaste zenderrail blijft een afzonderlijk leesbaarheidspunt.
+- Partieel verborgen programme-informatie achter de vaste zenderrail is nu de eerstvolgende gerichte readability-increment.
 - Production EPG/logo/artwork rights/reliability, abonnement/paywall en final visual design liggen buiten de huidige Phase 1-validatiestap.
