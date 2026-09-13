@@ -107,10 +107,7 @@ const ChannelRow = memo(function ChannelRow({
             onPress={() => openProgramme(referenceProgramme)}
             style={({ pressed }) => [styles.referenceProgramme, { opacity: pressed ? 0.58 : 1 }]}
           >
-            <Text
-              numberOfLines={2}
-              style={[styles.referenceTitle, { color: theme.colors.text }]}
-            >
+            <Text numberOfLines={2} style={[styles.referenceTitle, { color: theme.colors.text }]}>
               {referenceProgramme.title}
             </Text>
             <Text
@@ -185,15 +182,22 @@ export const NowNextGuideView = memo(function NowNextGuideView({
     [],
   );
 
-  const chooseSlot = useCallback(
-    (index: number, animated = true) => {
+  const setReferenceSlot = useCallback(
+    (index: number) => {
       const slot = slots[index];
       if (slot === undefined) return;
       setPinnedReferenceMs(slot);
       setLive(false);
+    },
+    [slots],
+  );
+
+  const chooseSlot = useCallback(
+    (index: number, animated = true) => {
+      setReferenceSlot(index);
       centreTime(index, animated);
     },
-    [centreTime, slots],
+    [centreTime, setReferenceSlot],
   );
 
   const commitRailOffset = useCallback(
@@ -203,9 +207,21 @@ export const NowNextGuideView = memo(function NowNextGuideView({
         0,
         Math.min(slots.length - 1, Math.round(event.nativeEvent.contentOffset.x / TIME_SLOT_WIDTH)),
       );
-      chooseSlot(index, false);
+      // The native rail has already snapped here. Update semantic state only;
+      // never issue another scrollTo from a rail-originated commit.
+      setReferenceSlot(index);
     },
-    [chooseSlot, slots.length],
+    [setReferenceSlot, slots.length],
+  );
+
+  const commitDragWithoutMomentum = useCallback(
+    (event: NativeSyntheticEvent<NativeScrollEvent>) => {
+      const velocityX = event.nativeEvent.velocity?.x ?? 0;
+      if (Math.abs(velocityX) < 0.01) {
+        commitRailOffset(event);
+      }
+    },
+    [commitRailOffset],
   );
 
   const browseFromLive = useCallback(() => {
@@ -236,10 +252,13 @@ export const NowNextGuideView = memo(function NowNextGuideView({
     chooseSlot(index);
   }, [chooseSlot, dayStartMs, slots]);
 
+  // Centre once when the day/slot set changes. Normal rail interaction must remain
+  // fully native until momentum and snap have settled.
   useEffect(() => {
-    const frame = requestAnimationFrame(() => centreTime(selectedSlotIndex, false));
+    const index = nearestSlotIndex(slots, Date.now());
+    const frame = requestAnimationFrame(() => centreTime(index, false));
     return () => cancelAnimationFrame(frame);
-  }, [centreTime, selectedSlotIndex]);
+  }, [centreTime, slots]);
 
   useEffect(() => {
     if (!runtimeGuideFixtureNeedsRefresh(fixture, nowMs)) return;
@@ -327,7 +346,7 @@ export const NowNextGuideView = memo(function NowNextGuideView({
           showsHorizontalScrollIndicator={false}
           contentContainerStyle={{ paddingHorizontal: railInset }}
           onScrollBeginDrag={browseFromLive}
-          onScrollEndDrag={commitRailOffset}
+          onScrollEndDrag={commitDragWithoutMomentum}
           onMomentumScrollEnd={commitRailOffset}
         >
           {slots.map((slot, index) => {
