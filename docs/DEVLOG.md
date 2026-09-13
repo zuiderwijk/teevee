@@ -14,6 +14,38 @@ Doel: een begrijpelijk en leesbaar overzicht van wat de autonome development-age
 
 ---
 
+## 13 september 2026, 09:34 CEST — Titels bewegen nu tijdens de swipe; Vandaag/Morgen/Nu op één regel
+
+### Toestelbewijs 09:20
+De product owner hertestte de partial-left readability-oplossing van PR #5 op de iPhone met vergrote systeemtekst en leverde een screenshot met beeldtijd 09:20 plus drie concrete bevindingen:
+- programmanaam kwam pas opnieuw in beeld nadat de swipe werd losgelaten; gewenst is dat de titel tijdens drag en momentum continu met het zichtbare restant meebeweegt;
+- na een expliciete Today/next-day tap liep de zwarte actieve dagstatus niet betrouwbaar/direct mee;
+- de primaire tijdnavigatie hoort altijd één regel te blijven: **Vandaag · Morgen · Nu**. `Morgen` vervangt de weekday/date als compact zichtbaar label. Alleen deze compacte labels mogen lokaal in font scaling worden begrensd om de rij intact te houden.
+
+PR #5 is daarmee niet als finale fysieke interactie geaccepteerd, hoewel de geometry-safe basis behouden blijft.
+
+### Wat is veranderd in PR #6
+- de bestaande horizontale `onScroll` schrijft viewport-x direct naar een Reanimated shared value;
+- per programme verschuift en verkleint alleen de innerlijke title/time-container via animated styles, zodat de titel tijdens de swipe en momentumbeweging blijft aansluiten op het zichtbare restant;
+- de echte block-left en duration-width blijven onaangetast;
+- starttijd wordt live verborgen zodra hij niet meer compleet past;
+- een expliciete Vandaag/Morgen-tap zet de active state meteen en beschermt die tijdens de eigen geanimeerde jump tegen een tijdelijke scroll-driven terug-flip;
+- `Vandaag`, `Morgen` en `Nu` renderen op één horizontale regel;
+- alleen deze drie compacte control-labels gebruiken `maxFontSizeMultiplier=1.2`; Guide-content en programmageometrie blijven grotere systeemtekst ondersteunen;
+- het accessibility-label van `Morgen` bevat de echte datum.
+
+### CI-verloop
+De eerste PR #6-run **CI #91 / `34745304913`** vond een test-harnessprobleem: de eerste variant gebruikte `useAnimatedScrollHandler`, maar de bestaande Reanimated testmock bood die export niet. Typecheck en lint waren al geslaagd; twee integratietests faalden puur op de mock. Er is geen check uitgezet.
+
+De implementatie is daarna vereenvoudigd naar de bestaande RN-scroll-eventstroom plus een Reanimated shared value. De finale PR-head **`fd80c4d66cb6bab2b57f39f7ca12104fe9b419ce`** passeerde **CI #92 / run `34745389220`** volledig: installatie, strict TypeScript, lint, alle tests en iOS/Android/web Expo exports.
+
+PR #6 is gesquasht naar main als **`dd01a36055e4f2f7841d4a1b9ecf8461e3820002`**. De exacte merge passeerde ook **main-CI #93 / run `34745481415`** volledig met dezelfde gates.
+
+### Volgende stap
+Op dezelfde iPhone en dezelfde grote tekststand controleren dat (1) partial-left programmatitels al tijdens drag én momentum continu meebewegen, (2) Vandaag/Morgen/Nu op één regel blijven, en (3) een tap op Morgen/Vandaag onmiddellijk de juiste zwarte geselecteerde state toont. `Nu` moet terugkeren naar vandaag/de actuele tijd. Alleen een concrete scrollregressie melden.
+
+---
+
 ## 13 september 2026, 09:12 CEST — Begintekst van deels verborgen programmablokken leesbaar gemaakt
 
 ### Wat is veranderd
@@ -74,24 +106,12 @@ De product owner testte Totaal op dezelfde iPhone met systeemtekst duidelijk gro
 De aangeleverde screenshot van 08:44 liet tegelijk een concreet probleem zien: `Gids` werd afgesneden en de dagknoppen toonden geellipste labels zoals `Van...` en `Ma 1...`. De Guide-chrome en tijdgeometrie waren bij deze fontscale nog te krap.
 
 ### Wat is veranderd
-PR #4 maakt de large-text variant responsiever zonder de eerder geaccepteerde interacties opnieuw af te stellen:
-- vaste line-heights verwijderd van schaalbare Guide- en programmatitels;
-- vanaf large-text mode krijgen header en dagbediening hun eigen breedte door een gestapelde layout;
-- de horizontale minuten-schaal en ruimte voor tijdlabels groeien mee met systeemtekst;
-- timeline width, programme frames, current-time positie, day jumps en visible-time conversie gebruiken consequent dezelfde schaal;
-- de geometrie op 100% systeemtekst blijft gelijk aan de geaccepteerde basis.
+PR #4 maakte de large-text variant responsiever zonder de eerder geaccepteerde interacties opnieuw af te stellen: vaste line-heights zijn verwijderd en de horizontale minuten-schaal/labelruimte groeide mee met systeemtekst. De toenmalige stacked-controloplossing is later door PR #6 vervangen door de expliciet gewenste éénregelige Vandaag/Morgen/Nu-navigatie.
 
 Omdat de detailinhoud op het toestel bereikbaar bleef, is **geen interne ProgrammeDetail-ScrollView toegevoegd**. Dat voorkomt onnodige complexiteit rond reading-scroll versus swipe-to-dismiss zolang er geen concreet bereikbaarheidstekort is.
 
 ### Verificatie
-PR #4 exact head `536de5b778725d2f91dba3f734c4efecd8d78028` heeft **CI #74 / run `34743728065` succesvol afgerond**: installatie, strict TypeScript, lint, tests en iOS/Android/web exports.
-
-PR #4 is gesquasht naar main als **`4f4fa94c6b1968ca03bb551fde9bb7ed376b2113`**. De daaropvolgende **main-CI #75 / run `34743812493` is eveneens geslaagd** met dezelfde gates.
-
-Geen verandering aan scrollinertie, bounce, directional lock, detailmodal, close-routes of swipe-dismiss-drempels.
-
-### Volgende stap
-De gecorrigeerde main één keer op dezelfde iPhone en dezelfde grote tekststand hertesten. Alleen controleren of `Gids`, `Nu`, beide daglabels, tijdas en programmatitels nu volledig leesbaar zijn, terwijl alignment en detailbereikbaarheid intact blijven.
+PR #4 exact head `536de5b778725d2f91dba3f734c4efecd8d78028` passeerde CI #74 / run `34743728065`; merge `4f4fa94c6b1968ca03bb551fde9bb7ed376b2113` passeerde main-CI #75.
 
 ---
 
@@ -102,8 +122,6 @@ De eerste Dynamic Type/layout-increment is gebouwd via PR #3. Totaal leest `font
 Kanaalidentiteit is voorbereid op **logo primair, naam secundair** met een volledige accessibility-naam en tekstfallback wanneer logo-artwork ontbreekt/faalt. De synthetische fixture bevat bewust geen echte logo's.
 
 PR-head `4c67e6cfc369e0b0f54c93ecd26bfc457336f631` passeerde CI #69. De merge `da61b3cf10f8bf79e552f2b3eacdb289439810ce` passeerde main-CI #70. De documentatiestatus `a858525ac40c4c4807a6e1a9e0afa6fc77eadf9f` passeerde CI #71.
-
-Volgende stap was fysieke grotere-tekstvalidatie; die leverde de 08:44-bevinding hierboven op.
 
 ---
 
@@ -183,16 +201,14 @@ Belangrijkste milestones van de eerste implementatiedag:
 | 19:00 Detail/progress/dagwissel | Programme selecteren, detailmodal, current progress, today/tomorrow en `Nu`. |
 | 19:05 Live klok | Guide current-time/progress gevoed door toestelklok, refresh elke 30 seconden. |
 | 19:16 Runtime fixture | Deterministische brondata worden bij appstart relatief naar actuele Amsterdamse datum/tijd verschoven; `start:device`/`start:clean` en DEVICE_TEST_REPORT toegevoegd. |
-| 19:46 Eerste iPhone-feedback | Dagpositie/scrollgedrag/bounce aangepast; latere 13-septemberincrement verving de tijdelijke verschillende deceleration-instellingen door de geaccepteerde standaardinertie op beide assen. |
-
-Eerdere configuratiefouten (Expo-dependencies, TypeScript `baseUrl`, React purity/refs) zijn opgelost in plaats van genegeerd. De volledige toolchain is uiteindelijk via GitHub Actions groen gemaakt; apparaatervaring blijft altijd apart toestelbewijs.
+| 19:46 Eerste iPhone-feedback | Dagpositie/scrollgedrag/bounce aangepast; latere 13-septemberincrement verving tijdelijke verschillende deceleration-instellingen door de geaccepteerde standaardinertie op beide assen. |
 
 ---
 
 ## Doorlopende open technische punten
 - CI maakt nog een lockfile vóór `npm ci`; reproduceerbaarheid verdient een aparte cleanup.
-- Eerder zijn 15 moderate dependency-advisories gemeld. Niet automatisch/gefroceerd upgraden; nooit `npm audit fix --force` zonder impactanalyse.
+- Er worden nog 15 moderate dependency-advisories gerapporteerd. Niet automatisch/gefroceerd upgraden; nooit `npm audit fix --force` zonder impactanalyse.
 - Android gesture/back en release-achtige performance zijn nog niet fysiek gevalideerd.
 - De finite launch-anchored fixture heeft nog lifecyclewerk rond resume na middernacht/expiry.
-- Partieel verborgen programme-informatie achter de vaste zenderrail is technisch aangepakt; de gerichte iPhone-hertest van de nieuwe tekstverankering staat nog open.
+- PR #6 live partial-left readability en primary-controlgedrag zijn technisch groen; de gerichte iPhone-hertest staat nog open.
 - Production EPG/logo/artwork rights/reliability, abonnement/paywall en final visual design liggen buiten de huidige Phase 1-validatiestap.

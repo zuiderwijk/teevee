@@ -1,6 +1,6 @@
 # Teevee UX and Information Architecture
 
-Status: Phase 0 baseline, amended with owner guide-view and accessibility requirements on 13 September 2026. Interaction principles are stronger constraints than the current visual references. Only Totaal is implemented so far.
+Status: Phase 0 baseline, amended with owner guide-view, accessibility and Totaal time-navigation requirements on 13 September 2026. Interaction principles are stronger constraints than the current visual references. Only Totaal is implemented so far.
 
 ## Experience objective
 Teevee should feel like a purpose-built mobile instrument for television schedules, not a desktop EPG compressed onto a phone and not a content portal with a guide attached.
@@ -37,12 +37,30 @@ The full channel name must always be available to screen readers. If logo artwor
 - channel identity remains understandable while moving through time;
 - time context remains understandable while moving through channels.
 
-The accepted platform-standard inertia, bounce, day transitions and detail interactions remain unchanged by this documentation amendment.
+The accepted platform-standard inertia, bounce, day transitions and detail interactions remain unchanged unless concrete device evidence demonstrates a regression.
+
+### Totaal primary time navigation
+The current Phase 1 owner requirement is a **single horizontal row** containing:
+
+**Vandaag · Morgen · Nu**
+
+Rules:
+- these three primary time-navigation actions stay on one row, including at the larger system-text setting currently used for physical validation;
+- `Morgen` is deliberately the compact visible label rather than a weekday/date string; the actual date remains available to accessibility APIs and elsewhere when context requires it;
+- tapping `Vandaag` or `Morgen` must update the selected/active visual state immediately, before the animated timeline jump finishes;
+- manual horizontal timeline browsing may subsequently update the selected day according to the visible time context;
+- `Nu` returns to today and the actual current time;
+- the compact control labels may use a **local maximum font multiplier** where necessary to preserve this three-action row. The current prototype uses `maxFontSizeMultiplier=1.2` only for these labels. This is a targeted control-layout exception, not permission to disable Dynamic Type globally or for Guide content;
+- touch targets remain at least platform-appropriate even when label scaling is bounded.
+
+The exact final visual styling is still part of the visual-design work; the one-row information architecture and behaviour above are the current functional baseline.
 
 ### Totaal layout principle
 This presentation should behave as a two-dimensional schedule surface with a sticky/fixed channel identity region and time axis where appropriate. It must not be implemented as a naive nested collection that becomes unstable under realistic schedule volume. These grid-specific rules are not layout requirements for every other Guide view.
 
-At larger platform text sizes, Totaal may increase row height, reflow labels and reduce secondary metadata density. It must not preserve default density by clipping essential channel/programme identity or disabling text scaling. Programme detail remains the reliable place for the full readable title and metadata when a compact cell cannot contain everything.
+At larger platform text sizes, Totaal may increase row height, widen channel/time geometry, reflow non-primary chrome and reduce secondary metadata density. It must not preserve default density by clipping essential channel/programme identity or globally disabling text scaling. Programme detail remains the reliable place for the full readable title and metadata when a compact cell cannot contain everything.
+
+When a programme's real left edge moves behind the fixed channel rail during horizontal browsing, Teevee may reposition **only the inner readable programme content** into the visible remainder. The programme block itself must keep the exact start position and duration-derived width. The title should follow the visible viewport continuously during drag and momentum rather than jumping only after release. A start time must either be fully readable or hidden; never display a clipped fragment that could be mistaken for a complete time. Narrow real-duration cells may still honestly ellipsize.
 
 ### Per zender — requested, not yet implemented
 A vertical list shows one channel's schedule for the selected day, initially positioned at the current programme. Earlier and later programmes remain reachable by scrolling. Channel navigation is primary; date selection is secondary. A channel picker must make distant channels directly reachable, not require repeated swiping through the entire lineup.
@@ -75,6 +93,7 @@ This means Nu & Straks supports both choosing something immediately and comparin
 - gestures remain responsive while programme cells render;
 - jumping to Now is immediate;
 - programme widths accurately represent duration in Totaal within practical display constraints;
+- viewport-aware programme text must not require heavy React rerendering on every scroll frame;
 - no unexpected scroll jumps after data refresh;
 - schedule updates preserve user context where possible.
 
@@ -114,7 +133,8 @@ Subscription onboarding/paywall behaviour is intentionally not frozen yet.
 ## Accessibility
 Accessibility is a core quality requirement, not a later specialist mode. The product owner specifically calls out users who increase system font size above 100%; Teevee must remain usable under that real-world setting. A possible older linear-TV audience is motivation to test this well, not an assumed demographic fact.
 
-- respect platform text scaling rather than forcing fixed visual sizes;
+- respect platform text scaling rather than forcing fixed visual sizes as a global shortcut;
+- targeted compact-navigation labels may cap their multiplier only when necessary to preserve a critical one-row control grouping, while keeping touch targets, accessible labels and all substantive Guide content readable;
 - test representative larger Dynamic Type / font-scale settings on physical devices;
 - adapt row heights, wrapping and information density where necessary instead of clipping essential content;
 - accessible programme and channel labels, including the full textual channel name when a logo is shown;
@@ -133,6 +153,7 @@ Useful qualities to preserve during exploration:
 - clean and modern;
 - strong hierarchy;
 - restrained chrome;
+- clear time/channel structure;
 - premium typography;
 - functional guide density;
 - richer imagery away from the core timeline.

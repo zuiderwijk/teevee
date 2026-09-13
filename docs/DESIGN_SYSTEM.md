@@ -1,6 +1,6 @@
 # Teevee Design System Direction
 
-Status: Phase 0 direction, not a frozen visual specification. Amended 13 September 2026 with channel-identity and text-scaling requirements.
+Status: Phase 0 direction, not a frozen visual specification. Amended 13 September 2026 with channel-identity, text-scaling and compact Guide-control requirements.
 
 ## Objective
 The interface should communicate premium utility: calm, precise, contemporary and highly legible. The Guide may be information-dense, but must not feel busy.
@@ -51,11 +51,23 @@ Teevee must respect platform text-size preferences. Dynamic Type / font scaling 
 
 At larger accessibility sizes, preserving comprehension takes precedence over preserving the default-density screenshot. Compact Totaal cells may show less secondary metadata, while programme detail and list-oriented Guide views must remain fully readable and reachable.
 
+### Compact primary Guide controls
+The Phase 1 Totaal prototype treats **Vandaag · Morgen · Nu** as one primary time-navigation group that must remain on a single row. This is a specific information-architecture constraint, not a general fixed-font rule.
+
+For these short control labels only, a local maximum font multiplier is allowed when needed to keep all three actions present and tappable on one line. The current implementation uses `maxFontSizeMultiplier=1.2`. Requirements for this exception:
+- never apply the cap globally or to programme/channel/content text;
+- keep platform-appropriate touch targets;
+- expose complete semantics to assistive technology, including the real date behind the compact `Morgen` label;
+- do not use truncation to create ambiguous actions;
+- if future device evidence shows the row cannot remain usable, revisit the control design rather than shrinking all Guide typography.
+
 ## Spacing and shape
 Use a small consistent spacing scale and restrained corner radii. Avoid excessive card nesting. The timeline itself should read as one coherent surface rather than a dashboard of unrelated cards.
 
 ## Motion
 Motion should clarify spatial/time relationships, selection and navigation. Avoid decorative animation. Respect reduced-motion settings.
+
+For Totaal, viewport-aware programme text may move inside its fixed schedule block while browsing horizontally so that the title remains legible as the block passes behind the fixed channel rail. The underlying programme block itself must never visually drift away from its real start/duration geometry.
 
 ## Programme imagery
 Core Guide functionality must never depend on artwork. Programme Detail and Tonight can progressively enrich with imagery. Missing images should result in an intentional layout, not placeholders that look broken.
@@ -66,7 +78,8 @@ Accessibility is a core quality gate for the paid Guide experience, regardless o
 - semantic tokens must meet contrast requirements;
 - do not communicate live/current/saved state using colour alone;
 - touch targets should follow platform guidance;
-- support platform font scaling beyond 100%;
+- support platform font scaling beyond 100% for substantive content;
+- use only narrow, documented font-scaling caps for compact controls where a critical grouping must remain intact;
 - test representative larger text sizes on-device rather than only at the default system size;
 - prevent essential channel/programme identity, times and actions from becoming unreachable at larger sizes;
 - allow layout reflow or reduced information density where necessary;

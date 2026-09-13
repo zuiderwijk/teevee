@@ -1,7 +1,7 @@
 # Teevee — Canonical Project State
 
-Last updated: 2026-09-13 09:12 CEST (Europe/Amsterdam). Exact commit time is in GitHub.
-Status: ACTIVE — iPhone interaction and large-text baselines accepted; geometry-safe partial-left programme readability is integrated and technically green; one focused iPhone retest remains
+Last updated: 2026-09-13 09:34 CEST (Europe/Amsterdam). Exact commit time is in GitHub.
+Status: ACTIVE — accepted iPhone scroll/detail and large-text baselines remain intact; live partial-left programme readability plus one-row Guide controls are integrated and technically green; one focused iPhone retest remains
 Current phase: **Phase 1 — Guide Interaction Prototype**
 Previous phase: **Phase 0 — Project Foundation: COMPLETE**
 
@@ -39,11 +39,14 @@ One Guide destination with a locally remembered presentation preference remains 
 - Shared Amsterdam calendar helpers with DST/23-hour/25-hour/year-rollover tests.
 - Totaal uses one continuous horizontal timeline with half-hour ticks, duration-based programme blocks, current-time line and programme progress.
 - Fixed channel rail plus synchronised vertical movement; native bounce/directional lock and `normal` deceleration on both axes.
-- Day buttons and `Nu` move within the same timeline; active day follows horizontal position.
+- Totaal primary time navigation is one fixed row: **Vandaag · Morgen · Nu**. `Morgen` is the compact visual label; its accessibility label includes the actual next-day date.
+- Explicitly tapping Vandaag or Morgen updates the selected/active state immediately before the animated time jump. Manual horizontal browsing still lets the active day follow the visible timeline.
+- Only the compact `Vandaag`, `Morgen` and `Nu` labels cap Dynamic Type at `maxFontSizeMultiplier=1.2` to preserve all three controls on one row. Guide content, channel/programme identity and time geometry continue to adapt to larger system text.
 - Programme detail selection is isolated from the heavy Guide render. The existing native Modal slide, button close, outside-tap close and swipe-down dismissal remain the accepted baseline.
 - Optional `Channel.logoUrl` exists. Channel identity is logo-first when a suitable asset exists, while the channel name remains visible/accessible and is the fallback when the logo is absent or fails. Current fixtures deliberately contain no real logos.
-- Totaal adapts to Dynamic Type: row/channel/time-axis geometry expands with font scale and large-text chrome stacks so primary controls remain readable.
-- Programme text now has a separate viewport-aware readability treatment: after horizontal drag/momentum settles, title/start-time content can shift inside the unchanged programme block to the visible remainder when the programme's real start lies left of the viewport. The programme frame itself never moves or changes duration; start time is suppressed if the remaining visible width is too small to show it completely.
+- Totaal adapts its content geometry to Dynamic Type: row/channel/time-axis geometry expands with font scale and compact cells reduce secondary metadata at larger sizes.
+- Programme text has a viewport-aware readability treatment. The actual programme frame remains fixed to real start and duration, while the inner title/time content repositions and constrains itself to the visible remainder when its left side moves behind the fixed channel rail.
+- As of PR #6, that inner programme content follows the horizontal viewport **continuously during drag and momentum**, rather than jumping only after release. A start time is hidden once there is no room to show it completely.
 - CI runs install, strict TypeScript, lint, tests and iOS/Android/web Expo bundle exports. Bundle export is not a signed device build.
 
 No real production EPG, production artwork, account system or subscription/paywall has been introduced.
@@ -60,55 +63,50 @@ Do not retune these without a concrete regression:
 The product owner previously described the targeted scroll, detail-response and swipe-dismiss retests as **"perfect"**. Those are qualitative iPhone confirmations, not performance measurements or blanket accessibility approval.
 
 ## Larger-text iPhone validation — accepted
-The first larger-text physical test at 08:44 confirmed row alignment and detail reachability, but exposed clipped Guide chrome: `Gids` was cut off and day labels were ellipsized. PR #4 corrected the scoped layout problem without changing accepted scroll or dismissal behaviour.
+The first larger-text physical test at 08:44 confirmed row alignment and detail reachability, but exposed clipped Guide chrome. PR #4 corrected it without changing accepted scroll/dismissal behaviour.
 
-The product owner then supplied a corrected-build screenshot at **08:59** on the same materially enlarged system-text setting. Physical visual evidence now shows:
-- `Gids` fully visible;
-- `Nu` fully visible;
-- `Vandaag` and `Ma 14 Sep` fully readable;
-- time-axis labels (`08:30`, `09:00`, `09:30`) fully readable;
-- channel rail and programme rows still aligned;
-- programme-title typography no longer vertically clipped by the former fixed line-height boxes.
-
-This closes the targeted large-text/chrome increment on the tested iPhone.
+The corrected-build screenshot at **08:59** on the same materially enlarged system-text setting showed `Gids`, `Nu`, both day labels and the time axis fully readable, with channel/programme rows still aligned. This closed the targeted large-text/chrome increment on the tested iPhone.
 
 Because the tested detail content remained reachable at large text, **do not add an internal ProgrammeDetail ScrollView solely on this evidence**. Revisit coordinated reading-scroll versus swipe-dismiss only when real long content proves it necessary.
 
-A blue floating gear control overlaps the Guide in the screenshots, but its origin remains unverified and it is not treated as Teevee product chrome.
+A blue floating gear control overlaps the Guide in screenshots, but its origin remains unverified and it is not treated as Teevee product chrome.
 
-## Partial-left programme readability — integrated, device retest pending
-The 08:59 screenshot also re-confirmed the separate pre-existing issue where the beginning of a programme title disappears when the programme starts left of the currently visible horizontal viewport.
+## 09:20 iPhone evidence and PR #6 correction
+The iPhone retest of PR #5 produced three concrete findings:
+- the geometry-safe programme-content treatment only re-anchored after the swipe was released; the product owner requires the visible title to follow continuously while swiping;
+- after an explicit Today/next-day tap, the black selected-day styling did not update reliably/immediately;
+- the product owner requires the three primary time-navigation controls to remain on **one row**, with **Morgen** instead of the weekday/date as the compact visual label. Their label font may be locally bounded rather than forcing this small control row to reflow vertically.
 
-PR #5 implements a constrained treatment without falsifying EPG geometry:
-- `programmeFrame` remains the source of the real programme left position and duration-based width;
-- a pure `programmeVisibleContent` helper calculates only the hidden-left amount and remaining readable width for inner content;
-- after user drag/momentum ends, text is translated within the same clipped programme block so the title can start inside the visible remainder;
-- text width is constrained to that visible remainder so ellipsis is honest rather than hard-clipped by the programme edge;
-- a start-time label is hidden when the remaining visible width is below the threshold required to show it completely;
-- the programme accessibility label still contains full title, start time and end time;
-- readability position is not stored on every scroll frame, avoiding a full heavy-Guide re-render at scroll frequency.
+PR #6 implements those corrections while preserving programme geometry and the accepted scroll settings:
+- the existing scroll-event stream writes viewport x directly to a Reanimated shared value; animated inner programme content follows that value during drag and momentum without putting viewport x into React state on every frame;
+- actual programme `left` and duration-based `width` never move;
+- the start-time sublabel is live-suppressed when the remaining visible width cannot show it completely;
+- explicit day taps set the active state immediately and guard against temporary scroll-driven flips during the animated jump;
+- `Vandaag`, `Morgen`, `Nu` render in one horizontal row; only these compact labels use a 1.2x max font multiplier.
 
 Technical verification:
-- PR #5 exact head **`de308881e102b40d4f7739944b32c0c5e9e22888`** passed **CI #86, run `34744460640`**, including install, typecheck, lint, tests and iOS/Android/web exports.
-- PR #5 merged to main as **`1e8aa125819472eb6ac76b0a41c0243973c4a003`**.
-- Main **CI #87, run `34744549991`, completed successfully** for that exact merge SHA with the same gates.
+- the first PR #6 run, **CI #91 / run `34745304913`**, reached successful typecheck/lint but failed two integration tests because the first implementation added `useAnimatedScrollHandler` without extending the existing Reanimated test mock. No quality gate was disabled.
+- the implementation was simplified to the existing RN scroll event path plus a Reanimated shared value.
+- final PR #6 head **`fd80c4d66cb6bab2b57f39f7ca12104fe9b419ce`** passed **CI #92 / run `34745389220`**, including install, typecheck, lint, tests and iOS/Android/web exports.
+- PR #6 merged to main as **`dd01a36055e4f2f7841d4a1b9ecf8461e3820002`**.
+- exact main merge **CI #93 / run `34745481415` completed successfully**, including install, typecheck, lint, tests and iOS/Android/web exports.
 
-This is technically green but **not yet physically accepted**. The device check must confirm the settled visual behaviour and that no perceived scroll regression was introduced.
+CI proves code/build integrity only. The continuous-motion behaviour, one-row controls and immediate selected-day response still require the focused iPhone retest below.
 
 ## Remaining Phase 1 work
 Still open after this increment:
-- one focused iPhone retest of a programme whose real left edge sits behind the fixed channel rail;
+- one focused iPhone retest of PR #6 live title movement + one-row controls + selected-day response;
 - VoiceOver/screen-reader behaviour and live theme switching;
 - explicit progress/current-time accuracy checks;
 - Android gesture/back behaviour and release-like performance;
 - long-fling/render-load instrumentation if performance becomes suspect;
 - lifecycle behaviour for the launch-anchored finite fixture after midnight/expiry;
-- CI reproducibility cleanup: workflow still generates a lockfile before `npm ci`; previously reported moderate advisories need deliberate review, never `npm audit fix --force`;
+- CI reproducibility cleanup: workflow still generates a lockfile before `npm ci`; previously reported 15 moderate advisories need deliberate review, never `npm audit fix --force`;
 - subsequent explicit build increments for Per zender and today-only Nu & Straks;
 - production EPG/logo/artwork rights/reliability, price/trial/paywall and final visual design are later gates.
 
 ## EXACT NEXT STEP
-**Retest main `1e8aa125819472eb6ac76b0a41c0243973c4a003` or newer on the iPhone. Horizontally scroll Totaal until at least one longer programme starts partly behind the fixed zenderrail, release the gesture and let momentum stop. Confirm that the programme block keeps its real geometry while its title becomes readable from the visible remainder; a start time must either be fully readable or absent, never shown as a clipped fragment. Also report any new jumpiness or regression in the already accepted horizontal scroll feel. One screenshot after scrolling has settled is sufficient.**
+**Retest main `dd01a36055e4f2f7841d4a1b9ecf8461e3820002` or newer on the same iPhone and enlarged-system-text setting. During horizontal drag and momentum, confirm that a programme whose real left edge disappears behind the fixed channel rail has its title move continuously into the visible remainder without the programme block itself moving or changing width. Confirm that `Vandaag`, `Morgen` and `Nu` remain on one row; tapping `Morgen` must make it selected/black immediately, tapping `Vandaag` must do the same, and `Nu` must return to today/current time. Report any new horizontal-scroll jumpiness. One settled screenshot plus yes/no on continuous title movement and selected-day response is sufficient.**
 
 Owner checkout: `~/projects/teevee`. To test: stop Metro with Control+C, run `git pull --ff-only`, then `npm run start:clean` and reopen Expo Go.
 
