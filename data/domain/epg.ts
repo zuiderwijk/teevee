@@ -5,6 +5,7 @@ export type Channel = {
   sortOrder: number;
   isActive: boolean;
   shortName?: string;
+  logoUrl?: string;
 };
 
 export type Programme = {

@@ -48,6 +48,8 @@ vi.mock('react-native', async () => {
     animationType?: string;
     accessibilityLabel?: string;
     onAccessibilityEscape?: () => void;
+    source?: { uri?: string };
+    onError?: () => void;
   };
   function View({ children, testID, onLayout, onAccessibilityEscape }: HostProps) {
     useLayoutEffect(() => { onLayout?.({ nativeEvent: { layout: { height: 320 } } }); }, [onLayout]);
@@ -59,6 +61,11 @@ vi.mock('react-native', async () => {
   const Pressable = ({ children, testID, onPress, accessibilityLabel }: HostProps) => createElement('button', {
     'data-testid': testID, 'aria-label': accessibilityLabel, onClick: onPress,
   }, children);
+  const Image = ({ testID, source, onError }: HostProps) => createElement('img', {
+    'data-testid': testID,
+    src: source?.uri,
+    onError,
+  });
   const ScrollView = forwardRef<HTMLDivElement, HostProps>(function MockScrollView({ children, testID }, ref) {
     return createElement('div', { ref, 'data-testid': testID }, children);
   });
@@ -71,7 +78,8 @@ vi.mock('react-native', async () => {
     ) : null;
   }
   return {
-    View, Text, Pressable, ScrollView, Modal, SafeAreaView: View,
+    View, Text, Image, Pressable, ScrollView, Modal, SafeAreaView: View,
+    useWindowDimensions: () => ({ width: 390, height: 844, scale: 3, fontScale: 1 }),
     StyleSheet: { create: <T,>(value: T) => value, hairlineWidth: 1, absoluteFill: {} },
   };
 });
