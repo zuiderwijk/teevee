@@ -21,3 +21,26 @@ jobs:
       # Bundle checks exercise native imports/worklets too; not a signed native build.
       - name: Export iOS, Android and web bundles
         run: npx expo export --platform all
+
+  android-native:
+    runs-on: ubuntu-latest
+    env:
+      CI: 1
+      EXPO_NO_TELEMETRY: 1
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+      - uses: gradle/actions/setup-gradle@v4
+      - run: npm ci
+      - name: Generate Android native project
+        run: npx expo prebuild --platform android --clean
+      - name: Compile Android debug APK
+        working-directory: android
+        run: ./gradlew :app:assembleDebug --no-daemon
