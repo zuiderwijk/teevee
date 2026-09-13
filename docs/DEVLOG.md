@@ -11,6 +11,51 @@ Doel: een begrijpelijk chronologisch overzicht van substantiële wijzigingen, to
 
 ---
 
+## 13 september 2026, 16:07 CEST — Phase 1B gestart; Per zender geïntegreerd en Android-native CI toegevoegd
+
+De product owner heeft geen Android-toestel beschikbaar. De fysieke Android-gate wordt daarom expliciet uitgesteld in plaats van vervangen door schijnzekerheid. Tijdens de herbeoordeling van de fasering bleek bovendien dat **Per zender** en **Nu & Straks** tijdens Phase 1 zijn gedefinieerd, nadat de oorspronkelijke fasering deze Guide-varianten nog pas in Phase 4 had geplaatst. De owner heeft de technisch logischere volgorde goedgekeurd: **Phase 1A Totaal → Phase 1B Per zender en Nu & Straks → Phase 2 App Shell**. ADR 0005 en `BUILD_SPEC.md` leggen dit vast; productiehardening blijft Phase 4.
+
+### PR #20 — Per zender Phase 1B prototype
+De eerste Per zender interaction slice is gebouwd zonder de fysiek geaccepteerde Totaal-implementatie te retunen.
+
+Technisch:
+- verticale positie vertegenwoordigt echte tijd en geen programme-row index;
+- programmeblokken behouden echte start-/duur-geometrie en worden aan de Amsterdamse daggrenzen geclipped;
+- één native verticale schedule-ScrollView bewaart de tijdpositie;
+- een horizontale pager mount alleen vorige/huidige/volgende zender, zodat een zenderwissel dezelfde verticale tijd-anchor behoudt zonder 48 volledige pagina's tegelijk te mounten;
+- de horizontale zenderstrip blijft beschikbaar, kan zelf worden gebrowsed en ondersteunt directe selectie van een zender;
+- `Vandaag`, `Morgen` en `Nu` zijn aanwezig;
+- Programme Detail wordt hergebruikt;
+- er is geen per-frame verticale scrollbridge naar React/JS;
+- fixturezenders hebben nog geen gelicenseerde logo-URL's, dus de bedoelde tekstfallback wordt getoond.
+
+De eerste CI-run `34761329960` werd rood doordat `app/index.tsx` aanvankelijk Totaal volledig verving. De bestaande Programme Detail-integratietest is bewust rondom de bevroren Totaal-renderboundary gebouwd; de testmock voor ScrollView heeft geen native `scrollTo`. Dit is **niet** opgelost door de oude test af te zwakken. Totaal blijft de initiële testweergave en er is een tijdelijke bottom-right `Per zender`/`Totaal` prototypeswitch toegevoegd. Daarmee blijven beide interactiemodellen direct vergelijkbaar en blijft de oude regressiegrens intact.
+
+Verificatie:
+- PR-head `67ad6133e84a632b0354721186f439858a49174f` passeerde PR CI #193 / `34761468823` volledig: `npm ci`, strict TypeScript, lint, **100/100 tests** en iOS/Android/web Expo exports;
+- PR #20 is gesquasht naar `main` als `5f71cf30175a4c5686a058d86eda7f0873e99238`;
+- exact die merge passeerde main CI #194 / `34761570305` volledig.
+
+### PR #19 — native Android compile gate
+Omdat fysieke Android-validatie niet beschikbaar is, is de technische Android-gate versterkt zonder hem als toestelacceptatie te presenteren:
+- CI draait een schone Expo Android prebuild;
+- Java 17 + Gradle worden geconfigureerd;
+- `./gradlew :app:assembleDebug --no-daemon` compileert een echte debug-APK;
+- gegenereerde `/android/` en `/ios/` directories zijn uitgesloten zodat Continuous Native Generation leidend blijft.
+
+Verificatie:
+- oorspronkelijke PR-head `60db410901e6a6607f6b049c8197c9593b36d251` passeerde PR CI #185 / `34760593076` volledig, inclusief native Android prebuild en Gradle debug-build;
+- na PR #20 is de branch met current main verzoend als `3b72fafac09fafdc1e3a9c10134c08972301c83e`;
+- PR #19 is gesquasht naar `main` als `eac7cae6df8083d4906a3ea1280c0add646dcc40`;
+- op gecombineerde exact-main CI #196 / `34761643473` is de normale quality-job volledig groen; Android prebuild is groen en de Gradle debug-build liep nog op het moment van deze logentry.
+
+Dit bewijst **niet** Android system/hardware Back, nested-gesturegedrag of realistische Android-performance. Die blijven fysiek onbewezen totdat een Android-toestel of geschikte interactieve Android-omgeving beschikbaar is.
+
+### Volgende stap
+Fysieke iPhone-acceptatie van **Per zender** op current `main`: via de tijdelijke bottom-right switch naar Per zender gaan en specifiek verticale scroll, één-zender-per-horizontale-swipe, behoud van tijd-anchor, browsable/direct-select zenderstrip, Vandaag/Morgen/Nu, Programme Detail round-trip en mixed-scroll stability beoordelen. Na acceptatie wordt **Nu & Straks** de volgende Phase 1B build.
+
+---
+
 ## 13 september 2026, 15:38 CEST — PR #18 maakt CI-installaties reproduceerbaar
 
 Teevee gebruikt in CI voortaan exact dezelfde vastgelegde npm-dependencygraph zolang `package-lock.json` niet bewust wordt gewijzigd. Daarmee kan een ongewijzigde `package.json` niet meer stilzwijgend tot een andere dependency-resolutie leiden tussen CI-runs.
@@ -26,10 +71,7 @@ Verificatie:
 - de eenmalige GitHub-run `34760223440` genereerde het lockbestand succesvol;
 - PR #18 head `142a92d9ffdc836af063c91200a315832cff1071` passeerde PR CI #181 / `34760300933` volledig: `npm ci`, strict TypeScript, lint, tests en iOS/Android/web Expo exports;
 - PR #18 is gesquasht naar `main` als `8ee173794d60cebf171b307400e5dcd21d48e488`;
-- op exact-main CI #182 / `34760389374` zijn `npm ci`, typecheck, lint en tests al geslaagd; de bundle-export liep nog op het moment van deze logentry en wordt daarom hier nog niet als geslaagd geclaimd.
-
-### Volgende stap
-De canonieke productgate blijft fysiek Android-testen op current `main`: startup, horizontale/verticale Guide-beweging, programme tap, system/hardware Back vanuit Programme Detail, swipe-down dismissal en een korte gemengde stability/performance-run. Security advisories worden later gericht beoordeeld; geen geforceerde audit-upgrades.
+- exact-main CI #182 / `34760389374` passeerde uiteindelijk volledig.
 
 ---
 
@@ -68,9 +110,6 @@ PR-head `5ee42f8089cd2d4428c3f46e1da6cb609f78429c` passeerde PR CI #175 / `34759
 
 ### Android-audit
 Programme Detail heeft al native React Native Modal `onRequestClose={requestClose}`, een Android `GestureHandlerRootView` en integratiedekking voor de native-request-close route. Dat is goede technische dekking, maar geen vervanging voor Android-devicebewijs.
-
-### Volgende stap
-Fysieke Android-gate op current `main`: startup, horizontale/verticale Guide-beweging, programme tap, system/hardware Back vanuit Programme Detail, swipe-down dismissal en een korte gemengde stability/performance-run. De geaccepteerde iPhone-scrollbaseline niet retunen zonder apart regressiebewijs.
 
 ---
 
@@ -169,8 +208,9 @@ Projectfoundation, deterministische EPG-fixture, Expo/React Native strict TypeSc
 ---
 
 ## Doorlopende open technische punten
-- Android system/hardware Back, gestures en realistische performance fysiek valideren.
+- **Per zender:** technisch geïntegreerd; fysieke iPhone interaction acceptance is de actuele gate.
+- **Nu & Straks:** volgende Phase 1B build na Per zender-acceptatie.
+- Android system/hardware Back, nested gestures en realistische performance fysiek valideren zodra een geschikt Android-toestel/interactive environment beschikbaar is; native compile-CI is geen toestelacceptatie.
 - Release-like performance buiten Expo Go valideren wanneer een geschikte build/device beschikbaar is.
 - De eerder gerapporteerde 15 moderate dependency-advisories vereisen gerichte analyse. Nooit `npm audit fix --force`.
-- Per zender en Nu & Straks zijn gespecificeerd maar nog niet gebouwd.
-- Productie-EPG/logo/artworkrechten, abonnement/paywall, productietokens/fontlicentie en definitieve Vanavond/Tonight-modules liggen buiten deze directe Phase 1-stabiliteitsstap.
+- Productie-EPG/logo/artworkrechten, abonnement/paywall, productietokens/fontlicentie en definitieve Vanavond/Tonight-modules blijven latere gates.
