@@ -3,11 +3,24 @@ import { Pressable, StyleSheet, Text } from 'react-native';
 
 import { detailReducer, initialDetailState, type ProgrammeSelection } from '@/features/guide/detailState';
 import { GuideView } from '@/features/guide/GuideView';
+import { NowNextGuideView } from '@/features/guide/NowNextGuideView';
 import { PerChannelGuideView } from '@/features/guide/PerChannelGuideView';
 import { ProgrammeDetail } from '@/features/guide/ProgrammeDetail';
 import { useTeeveeTheme } from '@/theme/useTeeveeTheme';
 
-type PrototypePresentation = 'total' | 'per-channel';
+type PrototypePresentation = 'total' | 'per-channel' | 'now-next';
+
+const NEXT_PRESENTATION: Record<PrototypePresentation, PrototypePresentation> = {
+  total: 'per-channel',
+  'per-channel': 'now-next',
+  'now-next': 'total',
+};
+
+const PRESENTATION_LABEL: Record<PrototypePresentation, string> = {
+  total: 'Totaal',
+  'per-channel': 'Per zender',
+  'now-next': 'Nu & Straks',
+};
 
 export default function GuideScreen() {
   const theme = useTeeveeTheme();
@@ -19,12 +32,14 @@ export default function GuideScreen() {
   }, []);
   const closeDetail = useCallback(() => dispatch({ type: 'close' }), []);
 
-  const showPerChannel = presentation === 'per-channel';
+  const nextPresentation = NEXT_PRESENTATION[presentation];
 
   return (
     <>
-      {showPerChannel ? (
+      {presentation === 'per-channel' ? (
         <PerChannelGuideView onSelectProgramme={openDetail} />
+      ) : presentation === 'now-next' ? (
+        <NowNextGuideView onSelectProgramme={openDetail} />
       ) : (
         <GuideView onSelectProgramme={openDetail} />
       )}
@@ -32,8 +47,8 @@ export default function GuideScreen() {
       {/* Temporary Phase 1B test control. This is not the final Guide presentation UI. */}
       <Pressable
         accessibilityRole="button"
-        accessibilityLabel={showPerChannel ? 'Toon Totaalweergave' : 'Toon Per zender-weergave'}
-        onPress={() => setPresentation(showPerChannel ? 'total' : 'per-channel')}
+        accessibilityLabel={`Toon ${PRESENTATION_LABEL[nextPresentation]}-weergave`}
+        onPress={() => setPresentation(nextPresentation)}
         style={({ pressed }) => [
           styles.prototypeSwitch,
           {
@@ -44,7 +59,7 @@ export default function GuideScreen() {
         ]}
       >
         <Text style={[styles.prototypeSwitchText, { color: theme.colors.text }]}>
-          {showPerChannel ? 'Totaal' : 'Per zender'}
+          {PRESENTATION_LABEL[nextPresentation]}
         </Text>
       </Pressable>
 
