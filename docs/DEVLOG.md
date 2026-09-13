@@ -11,6 +11,28 @@ Doel: een begrijpelijk chronologisch overzicht van substantiële wijzigingen, to
 
 ---
 
+## 13 september 2026, 15:38 CEST — PR #18 maakt CI-installaties reproduceerbaar
+
+Teevee gebruikt in CI voortaan exact dezelfde vastgelegde npm-dependencygraph zolang `package-lock.json` niet bewust wordt gewijzigd. Daarmee kan een ongewijzigde `package.json` niet meer stilzwijgend tot een andere dependency-resolutie leiden tussen CI-runs.
+
+Technisch:
+- `package-lock.json` (lockfile v3) is nu committed;
+- de CI-stap `npm install --package-lock-only` is verwijderd;
+- CI installeert rechtstreeks met `npm ci` en gebruikt de npm-cache van `actions/setup-node`;
+- er zijn geen applicatiebestanden of dependency-ranges in `package.json` gewijzigd;
+- er is bewust geen `npm audit fix --force` uitgevoerd.
+
+Verificatie:
+- de eenmalige GitHub-run `34760223440` genereerde het lockbestand succesvol;
+- PR #18 head `142a92d9ffdc836af063c91200a315832cff1071` passeerde PR CI #181 / `34760300933` volledig: `npm ci`, strict TypeScript, lint, tests en iOS/Android/web Expo exports;
+- PR #18 is gesquasht naar `main` als `8ee173794d60cebf171b307400e5dcd21d48e488`;
+- op exact-main CI #182 / `34760389374` zijn `npm ci`, typecheck, lint en tests al geslaagd; de bundle-export liep nog op het moment van deze logentry en wordt daarom hier nog niet als geslaagd geclaimd.
+
+### Volgende stap
+De canonieke productgate blijft fysiek Android-testen op current `main`: startup, horizontale/verticale Guide-beweging, programme tap, system/hardware Back vanuit Programme Detail, swipe-down dismissal en een korte gemengde stability/performance-run. Security advisories worden later gericht beoordeeld; geen geforceerde audit-upgrades.
+
+---
+
 ## 13 september 2026, 15:31 CEST — PR #15 fysiek geaccepteerd; PR #16 timing en PR #17 lifecycle afgerond
 
 ### PR #15 fysieke performanceacceptatie
@@ -149,6 +171,6 @@ Projectfoundation, deterministische EPG-fixture, Expo/React Native strict TypeSc
 ## Doorlopende open technische punten
 - Android system/hardware Back, gestures en realistische performance fysiek valideren.
 - Release-like performance buiten Expo Go valideren wanneer een geschikte build/device beschikbaar is.
-- CI genereert nog een lockfile vóór `npm ci`; 15 moderate advisories vereisen gerichte analyse. Nooit `npm audit fix --force`.
+- De eerder gerapporteerde 15 moderate dependency-advisories vereisen gerichte analyse. Nooit `npm audit fix --force`.
 - Per zender en Nu & Straks zijn gespecificeerd maar nog niet gebouwd.
 - Productie-EPG/logo/artworkrechten, abonnement/paywall, productietokens/fontlicentie en definitieve Vanavond/Tonight-modules liggen buiten deze directe Phase 1-stabiliteitsstap.
