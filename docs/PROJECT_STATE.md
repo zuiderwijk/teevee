@@ -1,7 +1,7 @@
 # Teevee — Canonical Project State
 
-Last updated: 2026-09-13 22:12 CEST.
-Status: ACTIVE — **Phase 2 App Shell**. Phase 1A/1B Guide interaction models are physically accepted on the available iPhone. PR #25 app shell and PR #26 local Guide-presentation persistence are physically accepted on iPhone. PR #27 Settings/appearance, PR #29 shared secondary/placeholder header chrome, PR #30 screen error recovery, PR #31 deferred Nu & Straks recovery and PR #33 shell accessibility hardening are technically merged. The combined small iPhone appearance/header/larger-text smoke remains open. Physical Android interaction validation remains explicitly deferred because the owner currently has no Android device; native Android compilation is a CI gate but is not device acceptance.
+Last updated: 2026-09-13 22:41 CEST.
+Status: ACTIVE — **Phase 2 App Shell**. Phase 1A/1B Guide interaction models are physically accepted on the available iPhone. PR #25 app shell and PR #26 local Guide-presentation persistence are physically accepted on iPhone. PR #27 Settings/appearance, PR #29 shared secondary/placeholder header chrome, PR #30 screen error recovery, PR #31 deferred Nu & Straks recovery, PR #33 shell accessibility hardening and PR #34 compact Guide-control hardening are technically merged. The focused iPhone appearance/header/larger-text acceptance pass remains open. Physical Android interaction validation remains explicitly deferred because the owner currently has no Android device; native Android compilation is a CI gate but is not device acceptance.
 Current phase: **Phase 2 — App Shell**
 Previous phase: **Phase 1B — Guide Presentation Prototypes: physically accepted on iPhone**
 
@@ -250,27 +250,33 @@ Implemented:
 Verification:
 - parent exact-main CI #244 green;
 - exact PR-head CI #245 / `34778627437` green for both `quality` and `android-native`;
-- exact-main CI #246 / `34779883734` is still running at this document update; `quality` is already completed/success and Android-native is in the Gradle compile step.
+- exact-main CI #246 / `34779883734` completed/success for both jobs, including Android debug APK compile.
 
-## Active Phase 2 increment — compact Guide controls
-Branch: `fix/phase2-guide-compact-controls`.
+## Phase 2 increment 8 — PR #34 compact Guide controls
+PR #34 merged to `main` as `62a50754ce71fc19606770a002152ee2e62c8b7f`.
 
-Current scoped changes:
+Implemented:
 - Per zender `Vandaag`, `Morgen` and `Nu` controls: minimum target 36 → 44pt;
 - Nu & Straks `Primetime` and `Nu` controls: minimum target 40 → 44pt;
 - Nu & Straks reference/control row can wrap under larger system text instead of forcing a single horizontal row;
-- existing 48pt time-rail targets and 62pt Per zender channel-strip targets are already sufficient and remain unchanged;
-- 24pt interactive following-programme rows in Nu & Straks are **not silently redesigned in this slice** because increasing them materially changes information density; they remain a tracked accessibility/UX question.
+- existing 48pt time-rail targets and 62pt Per zender channel-strip targets remain unchanged;
+- no schedule geometry, programme block dimensions, momentum, nested gestures, persistence or deferred-import behaviour changed.
 
-No schedule geometry, programme block dimensions, momentum, nested gestures, persistence or deferred import behaviour is modified.
+Accessibility boundary deliberately left open:
+- the 24pt interactive following-programme rows in Nu & Straks are **not** papered over with overlapping `hitSlop` or silently enlarged, because either approach can alter tap arbitration or the accepted information density;
+- their final accessible layout remains a separate UX/accessibility decision informed by physical larger-text evidence.
+
+Verification:
+- exact PR-head `315d49a36b904221255f6ea8ef8c0da312766ec2`;
+- PR CI #247 / `34780762055` completed/success for `quality` and `android-native`, including clean prebuild and Gradle debug-APK compile;
+- exact-main CI #248 / `34781494594` started on merge commit `62a50754ce71fc19606770a002152ee2e62c8b7f`; at this document update typecheck/lint/tests were green, while exports and Android compile were still running. No completion is claimed here.
 
 ## Remaining Phase 2 deliverables
-- finish exact CI gates and merge the active compact-control slice only when green;
-- physical iPhone appearance/header smoke for PR #27/#29;
-- representative larger-system-text iPhone pass for shell, Per zender and Nu & Straks, including the newly hardened controls;
-- decide separately how to make compact interactive programme rows meet accessibility expectations without destroying the accepted information-density/temporal presentation;
-- further shared Guide chrome extraction only if concrete duplication justifies the risk;
-- keep test harness / CI quality gates green.
+- one focused physical iPhone pass combining Settings appearance/persistence, shared header/safe-area presentation and representative larger system text in Per zender/Nu & Straks;
+- use that pass to observe the compact following-programme rows before making a separate accessibility/UX decision about their final layout;
+- further shared Guide chrome extraction only if concrete duplication justifies the regression risk;
+- keep test harness / CI quality gates green;
+- close Phase 2 only after the physical iPhone acceptance gate is recorded or a concrete defect is fixed and revalidated.
 
 Deferred but tracked:
 - physical Android validation when a suitable device becomes available;
@@ -282,9 +288,11 @@ Deferred but tracked:
 - final Tonight composition.
 
 ## EXACT NEXT STEP
-**Wait for exact-main CI #246 on PR #33 to complete successfully, then open the compact-control PR from `fix/phase2-guide-compact-controls`. Require exact PR-head `quality` and `android-native` success before merge. After the accessibility-control slices are technically green, the next high-value gate is one focused iPhone session combining Settings Light/Dark/System + restart persistence, shared header/safe-area presentation and representative larger system text in Per zender/Nu & Straks.**
+**Run one focused iPhone acceptance session on current `main`: Settings as secondary navigation; Light/Dark/System live behaviour; explicit appearance persistence after restart; shared headers/safe areas; representative larger system text in Per zender and Nu & Straks; all three Guide presentations and Programme Detail still usable. Record the larger-text setting and any concrete regression. Do not retune frozen Guide mechanics or redesign the compact Nu & Straks following-programme rows without device evidence.**
+
+The reproducible checklist is in `docs/TESTING.md`.
 
 Owner checkout: `~/projects/teevee`.
 
 ## Resume instruction
-> Read `AGENTS.md` and `PROJECT_STATE.md`. Phase 2 App Shell is active. Preserve frozen Guide mechanics and the deferred Nu & Straks startup boundary. PR #30/#31 error recovery, PR #32 CI hardening and PR #33 shell accessibility are merged; compact Guide-control accessibility hardening is active on `fix/phase2-guide-compact-controls`. Do not infer physical acceptance from CI. Update PROJECT_STATE and the Dutch timestamped DEVLOG after substantive increments.
+> Read `AGENTS.md` and `PROJECT_STATE.md`. Phase 2 App Shell is active and technically implemented through PR #34. Preserve frozen Guide mechanics and the deferred Nu & Straks startup boundary. The next gate is a focused physical iPhone appearance/header/larger-text acceptance pass defined in `docs/TESTING.md`; CI is not device acceptance. Only change code in response to concrete findings or a separately justified architectural need. Update PROJECT_STATE, TESTING/architecture where relevant, and the Dutch timestamped DEVLOG after substantive increments.

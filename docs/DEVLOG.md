@@ -11,6 +11,29 @@ Doel: een begrijpelijk chronologisch overzicht van substantiële wijzigingen, to
 
 ---
 
+## 13 september 2026, 22:41 CEST — Phase 2 technisch gehard t/m PR #34; fysieke iPhone-gate is nu leidend
+
+Sinds de vorige logentry zijn de resterende kleine App Shell-hardeningstappen technisch afgerond zonder de fysiek geaccepteerde Guide-mechanica te retunen.
+
+PR #30 voegde navigator-level Expo Router error recovery toe: een thematische, generieke foutstate met retry, zonder interne exceptiontekst te tonen en terwijl de tabnavigatie bruikbaar blijft. PR #31 maakte ook de aparte deferred Nu & Straks-importfout gebruikersherstelbaar; Totaal, Per zender en de presentatieselector blijven daarbij beschikbaar. PR #32 hardende de CI-runtime en beperkte workflowrechten tot read-only repositorycontent. PR #33 maakte de screen-error fallback scrollbaar voor zeer grote systeemtekst en verhoogde de globale Guide-presentatieselector naar een minimumtarget van 44pt.
+
+De exacte main-run na PR #33, CI #246 / `34779883734`, is volledig `completed/success` voor `quality` en `android-native`, inclusief Gradle debug-APK compile.
+
+PR #34 heeft de resterende veilige compacte Guide-controls aangepakt:
+- Per zender `Vandaag`, `Morgen` en `Nu`: minimumtarget 36 → 44pt;
+- Nu & Straks `Primetime` en `Nu`: minimumtarget 40 → 44pt;
+- de Nu & Straks referentie/control-row kan bij grotere tekst wrappen in plaats van horizontaal klem te lopen.
+
+De 48pt tijdrail en 62pt zenderstrip waren al voldoende en zijn niet gewijzigd. Schedule-/programmegeometrie, momentum, nested gestures, Guide-persistence en de deferred Nu & Straks startup-boundary zijn eveneens onaangeraakt gebleven. De compacte 24pt following-programme rows in Nu & Straks zijn bewust niet met overlappende `hitSlop` gemaskeerd en ook niet stilzwijgend groter gemaakt: dat kan respectievelijk verkeerde tap-arbitrage of een materiële wijziging van informatiedichtheid veroorzaken. Dit blijft een apart accessibility/UX-vraagstuk dat eerst op toestel bekeken moet worden.
+
+Verificatie PR #34: exacte head `315d49a36b904221255f6ea8ef8c0da312766ec2`; CI #247 / `34780762055` eindigde volledig groen voor `quality` en `android-native`. PR #34 is daarna gesquasht naar `main` als `62a50754ce71fc19606770a002152ee2e62c8b7f`. Exact-main CI #248 / `34781494594` is gestart; op het moment van deze entry waren typecheck, lint en tests groen terwijl exports en Android compile nog liepen. Daaruit wordt geen completion- of toestelacceptatieclaim afgeleid.
+
+`PROJECT_STATE.md`, `ARCHITECTURE.md` en `TESTING.md` zijn met deze mijlpaal gereconcilieerd. `TESTING.md` bevat nu één reproduceerbare, beperkte Phase 2 iPhone-pass voor Settings Light/Dark/System, restart-persistence, shared headers/safe areas en representatieve grotere systeemtekst in Per zender en Nu & Straks.
+
+Volgende stap: geen nieuwe feature- of refactorslice starten om voortgang te simuleren. Eerst de gefocuste iPhone-pass op current `main` uitvoeren. Alleen op concrete toestelbevindingen code aanpassen; als de pass groen is kan Phase 2 worden afgesloten en kan Phase 3 Real Data Vertical Slice worden voorbereid.
+
+---
+
 ## 13 september 2026, 20:47 CEST — Gedeelde app-shell header gemerged; status opnieuw gereconcilieerd
 
 De actuele repository, documentatie, branches, Pull Requests en CI zijn opnieuw volledig geïnspecteerd voordat nieuw developmentwerk begon. Daarbij bleek dat PR #27 Settings/appearance al naar `main` was gemerged als `61785994632ce397afbebf1f7c82f677719c1d23`, terwijl `PROJECT_STATE.md` dat nog als pending beschreef. Exact-main CI #232 / `34774120843` is inmiddels volledig groen: zowel `quality` als `android-native` zijn `completed/success`, inclusief de native Android debug-APK compile. De kleine iPhone appearance-smoke blijft wel expliciet open; CI is geen toestelacceptatie.
@@ -115,7 +138,7 @@ Daarmee is aangetoond dat de Nu & Straks-module niet algemeen onbruikbaar is: hi
 ### PR #22 en #23
 - PR #22: statische `NowNextGuideView`-import uit de startup-modulegraph gehaald; clean startup fysiek bevestigd.
 - PR #23: Nu & Straks deferred geladen en load failure diagnostisch inline gemaakt zonder Totaal/Per zender onbruikbaar te maken.
-- PR #23 quality was vóór merge volledig groen: `npm ci`, strict TypeScript, lint, tests en iOS/Android/web exports.
+- PR #23 quality was vóór merge volledig groen: `npm ci`, strict TypeScript, lint, tests en iOS/Android/web Expo exports.
 - PR #23 is gemerged naar `main` als `c3ee101ea29e60d0b5b1ae88cde86191f5ba4bab`.
 - Exact-main CI #209 liep nog op het moment van deze entry; geen Android-deviceacceptatie wordt hieruit afgeleid.
 
@@ -335,9 +358,10 @@ Projectfoundation, deterministische EPG-fixture, Expo/React Native strict TypeSc
 ---
 
 ## Doorlopende open technische punten
-- **Phase 2 App Shell:** Settings/appearance en de gedeelde secondary/placeholder header zijn technisch gemerged; route/screen error boundaries en accessibility shell-hardening zijn de volgende technische hardeningstappen.
+- **Phase 2 App Shell:** technisch geïmplementeerd en CI-gegate t/m PR #34; de leidende resterende gate is de gefocuste fysieke iPhone appearance/header/larger-text pass uit `docs/TESTING.md`.
 - **Guide presentation persistence:** fysiek geaccepteerd op iPhone na PR #26; Android-devicevalidatie blijft open.
-- **Theme/accessibility:** System/Light/Dark preference is technisch geïmplementeerd en exact-main CI-groen; de kleine iPhone appearance/header-smoke en representatieve grotere tekst voor Per zender/Nu & Straks blijven fysieke checks.
+- **Theme/accessibility:** System/Light/Dark en de shell-/Guide-controlhardening zijn technisch geïmplementeerd; fysieke appearance-persistence, shared-header/safe-area en representatieve grotere tekst blijven te accepteren op iPhone.
+- **Nu & Straks compacte volgende-programma-rijen:** aparte accessibility/UX-vraag; niet oplossen met overlappende hit targets of stilzwijgende density-wijziging zonder toestelbewijs.
 - Android system/hardware Back, nested gestures en realistische performance fysiek valideren zodra een geschikt Android-toestel/interactive environment beschikbaar is; native compile-CI is geen toestelacceptatie.
 - Release-like performance buiten Expo Go valideren wanneer een geschikte build/device beschikbaar is.
 - De 15 moderate dependency-advisories vereisen gerichte analyse. Nooit `npm audit fix --force`.

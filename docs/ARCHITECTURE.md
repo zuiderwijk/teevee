@@ -14,6 +14,8 @@ Status: Phase 2 App Shell. Implemented mobile foundations are listed below; back
 ## Implemented foundations
 - Expo SDK 57, React Native 0.86, React 19 and strict TypeScript.
 - Expo Router owns Gids / Vanavond / Zoeken; Settings is secondary.
+- Navigator-level screen failures use an Expo Router error boundary with themed retry while the tab navigator remains mounted.
+- Nu & Straks keeps its deferred startup boundary; deferred-import failures recover inline so Totaal, Per zender and the presentation selector remain usable.
 - Three Guide presentations consume the same fixture/domain model. Nu & Straks retains its deferred startup boundary.
 - Local presentation state and memoised Guide surfaces preserve detail round-trip context.
 - Versioned small JSON preferences use Expo FileSystem on native and localStorage on web (ADR 0006).
@@ -21,7 +23,7 @@ Status: Phase 2 App Shell. Implemented mobile foundations are listed below; back
 - Semantic colour tokens are implemented.
 - `AppScreenHeader` owns the shared title/action chrome for Settings, Vanavond and Zoeken; those screens use `react-native-safe-area-context`. Guide-specific chrome remains local until extraction can be proven not to destabilise accepted Guide mechanics.
 - Production typography and broader Guide-specific shared chrome remain pending.
-- CI runs typecheck, lint, tests, all-platform exports and a clean native Android debug compile.
+- CI runs typecheck, lint, tests, all-platform exports and a clean native Android debug compile. GitHub Actions use supported checkout/setup-node runtimes and read-only repository-content permission for the build/test workflow.
 
 ## Target mobile stack
 - React Native with Expo
@@ -87,7 +89,9 @@ GitHub Actions for repository quality gates. Expo Application Services (EAS) for
 ## Testing
 - unit tests for schedule/domain transformations and business logic;
 - component/integration tests for important UI behaviour;
-- Maestro for critical device-level flows when the app shell exists;
+- physical iPhone acceptance for interaction, appearance and representative larger system text where automated layout tests cannot prove device behaviour;
+- physical Android validation remains a separate gate when suitable hardware is available;
+- Maestro for critical device-level flows when an appropriate development-build path exists;
 - deterministic fixture data for repeatability;
 - performance validation of Guide with realistic data volume.
 
@@ -95,7 +99,7 @@ GitHub Actions for repository quality gates. Expo Application Services (EAS) for
 Do not introduce microservices, Kubernetes, event buses, GraphQL, elaborate dependency injection, a large design-system framework, native Swift/Kotlin modules, or generalized abstractions without a measured requirement.
 
 ## Performance risk
-The two-dimensional Guide is the primary technical risk. Phase 1 must validate rendering/virtualisation and gesture behaviour before backend complexity or feature breadth. Architecture may use specialised list/virtualisation primitives if measurement shows standard React Native primitives are insufficient.
+The two-dimensional Guide is the primary technical risk. Phase 1 validated the core rendering/gesture model; later changes must preserve that frozen interaction baseline unless measurement or device evidence justifies a change. Architecture may use specialised list/virtualisation primitives if measurement shows standard React Native primitives are insufficient.
 
 ## Security
 - no provider/API secrets in the client if they grant privileged access;
