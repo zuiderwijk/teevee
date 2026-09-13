@@ -11,6 +11,26 @@ Doel: een begrijpelijk chronologisch overzicht van substantiële wijzigingen, to
 
 ---
 
+## 13 september 2026, 10:14 CEST — PR #7 fysiek bevestigd voor startup, éénregelige controls en directe selected-state
+
+### Toestelbewijs
+Op dezelfde iPhone en dezelfde vergrote systeemtekst bevestigde de product owner drie van de vier gevraagde PR #7-punten:
+1. Teevee opent normaal;
+2. `Vandaag`, `Morgen` en `Nu` blijven op één horizontale regel;
+3. Morgen/Vandaag reageren direct met de juiste zwarte selected-state en `Nu` keert terug naar de actuele tijd.
+
+Dit bevestigt dat de veilige non-Reanimated controlherimplementatie de eerdere PR #6-startcrash niet opnieuw introduceert en dat de twee bedoelde controlrequirements fysiek werken.
+
+### Nog open
+De vierde observatie — of horizontaal scrollen op deze PR #7-build nog exact hetzelfde aanvoelt als de eerder geaccepteerde baseline — is nog niet beantwoord. Dat wordt niet stilzwijgend als akkoord geïnterpreteerd.
+
+De continue partial-left titelbeweging tijdens drag/momentum is bewust nog niet opnieuw gebouwd; PR #5-settled readability blijft actief.
+
+### Volgende stap
+Alleen nog bevestigen of horizontaal scrollen ongewijzigd/natuurlijk aanvoelt. Bij akkoord is PR #7 fysiek afgerond en kan het lagere-overhead ontwerp voor continue partial-left titelbeweging worden uitgewerkt.
+
+---
+
 ## 13 september 2026, 10:08 CEST — Rollback fysiek hersteld; controls veilig opnieuw opgebouwd
 
 ### Toestelbewijs
@@ -113,7 +133,7 @@ Projectfoundation, deterministische EPG-fixture, Expo/React Native strict TypeSc
 ---
 
 ## Doorlopende open technische punten
-- PR #7 controls moeten één keer fysiek op de herstelde iPhone-baseline worden gevalideerd.
+- Alleen de horizontale-scrollervaring van PR #7 moet nog tegen de geaccepteerde baseline worden bevestigd.
 - Continue partial-left title motion vereist een lager-overhead ontwerp vóór nieuwe implementatie.
 - Android gesture/back en release-achtige performance zijn nog niet fysiek gevalideerd.
 - VoiceOver/screenreader, live theme switching en expliciete current-time/progress-validatie staan open.
