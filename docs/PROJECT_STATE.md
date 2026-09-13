@@ -1,7 +1,7 @@
 # Teevee — Canonical Project State
 
-Last updated: 2026-09-13 10:20 CEST (Europe/Amsterdam). Exact commit time is in GitHub.
-Status: ACTIVE — Phase 1 Guide prototype; PR #6 startup regression is rolled back and physically recovered; safe PR #7 controls are fully physically accepted on the iPhone baseline
+Last updated: 2026-09-13 10:35 CEST (Europe/Amsterdam). Exact commit time is in GitHub.
+Status: ACTIVE — Phase 1 Guide prototype; PR #7 controls are physically accepted; PR #8 low-overhead live edge readability is integrated and technically green, pending one focused iPhone validation
 Current phase: **Phase 1 — Guide Interaction Prototype**
 Previous phase: **Phase 0 — Project Foundation: COMPLETE**
 
@@ -39,10 +39,10 @@ One Guide destination with a locally remembered presentation preference remains 
 - Programme detail selection is isolated from the heavy Guide render. Native Modal slide, button close, outside-tap close and deliberate swipe-down dismissal remain the accepted baseline.
 - Optional `Channel.logoUrl` exists. Target treatment is logo first, channel name second, with full accessible textual identity and text fallback.
 - Totaal adapts content geometry to larger system text. The tested iPhone large-text chrome correction is accepted.
-- PR #5 provides a geometry-safe partial-left readability treatment: after horizontal drag/momentum settles, title/start-time content can shift inside the unchanged programme block to the visible remainder. Programme `left` and duration-based `width` stay truthful.
-- Main shows **Vandaag · Morgen · Nu** on one row. Only these compact labels cap font scaling at 1.2x; Guide content itself continues to follow larger system text.
-- Explicit Vandaag/Morgen taps update selected state immediately and are guarded against temporary scroll-driven flips during their own animated jump. `Nu` restores today/current time.
-- The continuous during-swipe title movement attempted in PR #6 is **not currently implemented**; it remains an open requirement pending a lower-overhead approach.
+- Main shows **Vandaag · Morgen · Nu** on one row. Only these compact labels cap font scaling at 1.2x; Guide content itself continues to follow larger system text. Explicit Vandaag/Morgen selection updates immediately; `Nu` restores today/current time.
+- PR #5 settled readability remains as fallback: when horizontal motion settles, text inside a partially hidden programme block can re-anchor to the visible remainder without changing its real `left` or duration-derived `width`.
+- PR #8 adds a separate live edge-readability overlay. Horizontal/vertical viewport updates are coalesced to one overlay state update per animation frame; only visible channel rows plus small overscan render an edge mask. The heavy 48-channel Guide tree is not re-rendered per scroll frame and no new Reanimated/worklet path is used.
+- The PR #8 overlay is pointer-transparent and removed from accessibility traversal; the underlying programme controls retain the full accessible title and times. The current-time line is repeated over the overlay so it is not visually hidden.
 - CI runs install, strict TypeScript, lint, tests and iOS/Android/web Expo bundle exports. Bundle export is not a signed/native device test.
 
 No real production EPG, production artwork, account system or subscription/paywall has been introduced.
@@ -57,41 +57,40 @@ Do not retune these without concrete regression evidence:
 - deliberate swipe-down dismissal with short/cancelled drag returning to position;
 - PR #7 one-row **Vandaag · Morgen · Nu** controls and immediate selected-day state.
 
-The product owner previously described targeted scroll, detail-response and swipe-dismiss retests as **"perfect"**. PR #7 is now also physically accepted for startup stability, one-row controls, immediate selected state, `Nu` return behavior and unchanged horizontal scroll feel. These are qualitative iPhone confirmations, not blanket accessibility/performance approval.
+The product owner previously described targeted scroll, detail-response and swipe-dismiss retests as **"perfect"**. PR #7 is also physically accepted for startup stability, one-row controls, immediate selected state, `Nu` return behavior and unchanged horizontal scroll feel. These are qualitative iPhone confirmations, not blanket accessibility/performance approval.
 
 ## Larger-text iPhone validation — accepted
 The first materially enlarged system-text test exposed clipped Guide chrome. PR #4 corrected it. A follow-up screenshot at 08:59 showed `Gids`, `Nu`, day labels and time-axis labels fully readable, with channel/programme rows aligned and programme-title typography no longer vertically clipped.
 
 The tested programme detail content plus `Sluiten` remained reachable at larger text, so no internal ProgrammeDetail ScrollView is justified solely by current evidence.
 
-## 09:20 iPhone feedback
+## 09:20 feedback and recovery history
 The PR #5 retest established three requirements:
-- a partial-left programme title should eventually move continuously with horizontal drag/momentum rather than only re-anchor after release;
+- a partial-left programme title should move continuously with horizontal drag/momentum rather than only re-anchor after release;
 - explicit day selection should update its selected visual state immediately;
 - **Vandaag · Morgen · Nu** should remain on one row, with bounded scaling allowed only for these compact labels.
 
-The last two requirements are now physically accepted through PR #7. The first remains open.
+PR #6 attempted all three using per-programme Reanimated animated styles. PR/main CI were green, but Expo Go showed a white screen followed by a physical iPhone crash. Main was rolled back with **`f7c9f73568341d29e518be21e0de071e4ef7877d`**, after which the product owner confirmed normal startup. The exact native crash cause is unproven; the high-volume per-programme animated/worklet setup remains the leading hypothesis and must not be reintroduced unchanged.
 
-## PR #6 startup regression — physically recovered
-PR #6 attempted all three requirements using per-programme Reanimated animated styles driven by a shared viewport value. Its PR and main CI were green, but the physical iPhone test produced a white screen followed by an Expo Go crash. Physical device evidence overruled CI.
+PR #7 safely reintroduced only the control requirements without new Reanimated/worklet logic. It merged as **`c697c4e7b9bb026409962f319d26cebad75a3a56`** and is fully physically accepted: startup normal, controls one row, selected state/`Nu` correct and horizontal scroll still natural.
 
-Main was rolled back to the PR #5 runtime baseline with **`f7c9f73568341d29e518be21e0de071e4ef7877d`**. The product owner then confirmed that the app opened normally again. The exact PR #6 crash cause is not proven from a native error log; the per-programme animated/worklet setup across the realistic 48-channel fixture remains the leading hypothesis and must not be reintroduced unchanged.
+## PR #8 — low-overhead live edge readability
+PR #8 rebuilds only the remaining continuous partial-left title behavior with a different architecture:
+- one isolated overlay for the programme viewport, rather than an animated style/worklet per programme;
+- viewport changes are coalesced through `requestAnimationFrame` inside that small overlay;
+- only visible rows plus one overscan row participate in live edge rendering;
+- real programme start, duration, block position and block width remain untouched;
+- PR #5 settled readability stays underneath as a fallback;
+- Today/Morgen/Nu, scroll parameters, detail modal and dismissal behavior are not retuned.
 
-## Safe controls reimplementation — PR #7, physically accepted
-PR #7 deliberately reintroduced only the low-risk control changes, with no new Reanimated/worklet usage:
-- Vandaag, Morgen and Nu are one horizontal row;
-- Morgen is the compact visible label, while its accessibility label includes the actual date;
-- only these three compact labels cap scaling at 1.2x;
-- explicit Vandaag/Morgen selection updates immediately and is protected from intermediate scroll events during its own animated jump;
-- Nu restores today/current time;
-- PR #5 programme-readability behavior is otherwise untouched.
+New pure tests cover edge-programme selection, remaining visible width and visible-row windowing/clamping. The existing Guide integration suite also mounts the full 48-channel Guide with the overlay during its render/detail tests.
 
-PR #7 head **`67925d17913f5eac1aa00417f17bbf880e3724a9`** passed CI #104 / run `34746652205` completely and merged to main as **`c697c4e7b9bb026409962f319d26cebad75a3a56`**. Main CI #105 attempt 1 failed before project checks on a temporary npm `ETARGET`; attempt 2 on the exact same SHA passed install, strict TypeScript, lint, all tests and iOS/Android/web exports.
+The first PR #8 CI run (#119 / `34747757890`) failed at strict TypeScript because this React Native typing exposes `StyleSheet.absoluteFill` rather than `absoluteFillObject`; no quality gate was disabled. The overlay was changed to explicit absolute bounds. Final PR head **`35282fffc558115f60eded7534c4eb03266cf4f7`** then passed PR CI #120 / `34747825150` completely: install, typecheck, lint, tests and iOS/Android/web exports.
 
-Physical iPhone validation then confirmed all four requested checks: normal startup, one-row Vandaag/Morgen/Nu, immediate correct selected-state/`Nu` behavior, and horizontal scrolling still feeling like the accepted baseline. PR #7 is therefore fully physically accepted for its intended scope.
+PR #8 merged to main as **`1fbc4095ea50959f80a87db5db1f91905f46c2e2`**. Exact-main CI #121 / `34747935259` also passed all gates completely. This is technical evidence only; because PR #6 previously crashed despite green CI, PR #8 is not physically accepted until the focused iPhone test below.
 
 ## Remaining Phase 1 work
-- design and build a lower-overhead continuous partial-left title treatment without the PR #6 per-programme animated-worklet architecture;
+- physically validate PR #8 startup stability and title movement during drag/momentum without scroll/geometry regression;
 - VoiceOver/screen-reader behaviour and live theme switching;
 - explicit progress/current-time accuracy checks;
 - Android gesture/back behaviour and release-like performance;
@@ -101,9 +100,9 @@ Physical iPhone validation then confirmed all four requested checks: normal star
 - production EPG/logo/artwork rights/reliability, pricing/trial/paywall and final visual design are later gates.
 
 ## EXACT NEXT STEP
-**Implement the continuous partial-left programme-title behavior as an isolated low-overhead overlay/update path, not as per-programme Reanimated/worklet styles. Preserve truthful programme start/duration geometry, the accepted scroll configuration, PR #7 controls and detail interactions. Add focused pure/integration coverage, run CI, and then request one iPhone retest specifically for startup stability plus title movement during drag/momentum.**
+**On the same iPhone, pull main at `1fbc4095ea50959f80a87db5db1f91905f46c2e2` or newer and restart Metro cleanly. Confirm only: (1) Teevee opens normally; (2) while dragging horizontally, a title whose programme start moves behind the fixed channel rail remains readable at the left edge instead of waiting for release; (3) the same remains true during momentum after release; (4) the programme block itself does not jump/change width and horizontal scrolling still feels like the accepted baseline. Do not re-test already accepted Today/Morgen/Nu or detail behavior unless a regression is noticed.**
 
-Owner checkout: `~/projects/teevee`.
+Owner checkout: `~/projects/teevee`. Test with: stop Metro using Control+C, run `git pull --ff-only`, then `npm run start:clean`, and reopen Expo Go.
 
 ## Resume instruction
 > Read AGENTS.md and PROJECT_STATE. Execute EXACT NEXT STEP where possible, follow the Definition of Done, and update this state plus Dutch timestamped DEVLOG with evidence. Ask only for product choices or genuinely necessary physical-device observations. Never substitute CI or a mock for device acceptance.
