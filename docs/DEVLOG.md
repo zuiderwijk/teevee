@@ -2,230 +2,145 @@
 
 Doel: een begrijpelijk en leesbaar overzicht van wat de autonome development-agent heeft gewijzigd, waarom dat is gedaan, wat daadwerkelijk is gecontroleerd en wat de volgende stap is.
 
-Dit document is bedoeld voor product- en engineeringstakeholders, niet alleen voor developers. Het vult `docs/PROJECT_STATE.md` aan: `PROJECT_STATE.md` beschrijft de canonieke actuele stand van het project; dit logboek beschrijft de geschiedenis van de ontwikkeling.
+`docs/PROJECT_STATE.md` is de canonieke actuele toestand. Dit logboek bewaart de chronologie. Historische vermeldingen zijn compact gehouden; technische details blijven ook terugvindbaar in commits, PR's en CI-runs.
 
 ## Logboekregels
-- Voeg voor iedere substantiële development-increment één nieuwe logboekvermelding toe.
-- Plaats de nieuwste vermeldingen bovenaan.
-- Noteer altijd datum én tijd in **Europe/Amsterdam**.
-- Schrijf eerst in gewone taal wat er voor product of gebruiker is veranderd; geef daarna technische details.
-- Meld alleen dat build, tests of CI zijn geslaagd wanneer dat aantoonbaar zo is.
-- Benoem fouten en blokkades expliciet.
-- Sluit iedere vermelding af met de eerstvolgende geplande development-increment.
+- Voeg voor iedere substantiële development-increment een nieuwe vermelding bovenaan toe.
+- Noteer datum en tijd in Europe/Amsterdam.
+- Schrijf eerst wat er voor product/gebruiker veranderde, daarna techniek/verificatie.
+- Claim alleen geslaagde checks wanneer die aantoonbaar geslaagd zijn.
+- Benoem fouten/blokkades expliciet.
+- Sluit iedere vermelding af met de eerstvolgende developmentstap.
 
-> Historische vermeldingen zijn op 13 september compacter gemaakt om dit logboek scanbaar te houden. De chronologie, acceptatiestatussen, bekende fouten en verificatieclaims zijn behouden; `PROJECT_STATE.md` blijft de hogere bron van waarheid.
+---
+
+## 13 september 2026, 08:55 CEST — Grote-tekstdefect op iPhone gevonden en gericht gecorrigeerd
+
+### Toestelbewijs
+De product owner testte Totaal op dezelfde iPhone met systeemtekst duidelijk groter dan normaal. De zenderkolom en programmarijen bleven volgens de gebruiker netjes uitgelijnd. Ook bleef een programmadetail inclusief `Sluiten` bereikbaar.
+
+De aangeleverde screenshot van 08:44 liet tegelijk een concreet probleem zien: `Gids` werd afgesneden en de dagknoppen toonden geellipste labels zoals `Van...` en `Ma 1...`. De Guide-chrome en tijdgeometrie waren bij deze fontscale nog te krap.
+
+### Wat is veranderd
+PR #4 maakt de large-text variant responsiever zonder de eerder geaccepteerde interacties opnieuw af te stellen:
+- vaste line-heights verwijderd van schaalbare Guide- en programmatitels;
+- vanaf large-text mode krijgen header en dagbediening hun eigen breedte door een gestapelde layout;
+- de horizontale minuten-schaal en ruimte voor tijdlabels groeien mee met systeemtekst;
+- timeline width, programme frames, current-time positie, day jumps en visible-time conversie gebruiken consequent dezelfde schaal;
+- de geometrie op 100% systeemtekst blijft gelijk aan de geaccepteerde basis.
+
+Omdat de detailinhoud op het toestel bereikbaar bleef, is **geen interne ProgrammeDetail-ScrollView toegevoegd**. Dat voorkomt onnodige complexiteit rond reading-scroll versus swipe-to-dismiss zolang er geen concreet bereikbaarheidstekort is.
+
+### Verificatie
+PR #4 exact head `536de5b778725d2f91dba3f734c4efecd8d78028` heeft **CI #74 / run `34743728065` succesvol afgerond**: installatie, strict TypeScript, lint, tests en iOS/Android/web exports.
+
+PR #4 is gesquasht naar main als **`4f4fa94c6b1968ca03bb551fde9bb7ed376b2113`**. De daaropvolgende **main-CI #75 / run `34743812493` is eveneens geslaagd** met dezelfde gates.
+
+Geen verandering aan scrollinertie, bounce, directional lock, detailmodal, close-routes of swipe-dismiss-drempels.
+
+### Volgende stap
+De gecorrigeerde main één keer op dezelfde iPhone en dezelfde grote tekststand hertesten. Alleen controleren of `Gids`, `Nu`, beide daglabels, tijdas en programmatitels nu volledig leesbaar zijn, terwijl alignment en detailbereikbaarheid intact blijven.
 
 ---
 
 ## 13 september 2026, 08:40 CEST — Totaal aangepast voor grotere systeemtekst
 
-### Wat is veranderd
-De eerste accessibility/layout-increment is gebouwd, via PR #3 gecontroleerd en geïntegreerd op main. Totaal leest nu de systeem-fontscale en laat de vaste gidsgeometrie meegroeien: rijen worden hoger, de zenderrail wordt breder en de tijdas krijgt meer hoogte. Bij grotere tekst krijgt de programmatitel voorrang boven secundaire metadata in het blok.
+De eerste Dynamic Type/layout-increment is gebouwd via PR #3. Totaal leest `fontScale` en laat rijhoogte, zenderrail en tijdas meegroeien. Bij grotere tekst krijgt de programmatitel voorrang boven secundaire metadata. `Nu` en dagbediening hebben minimaal 44 logische punten touchhoogte.
 
-De zenderweergave is tegelijk voorbereid op de gekozen richting **logo primair, naam secundair**. Wanneer later een geschikt `logoUrl` beschikbaar is, kan het logo worden getoond met de zendernaam subtiel eronder en de volledige naam als accessibility label. Zonder logo of bij een mislukte afbeelding blijft een tekstfallback staan. De synthetische fixture bevat bewust nog geen echte zenderlogo's.
+Kanaalidentiteit is voorbereid op **logo primair, naam secundair** met een volledige accessibility-naam en tekstfallback wanneer logo-artwork ontbreekt/faalt. De synthetische fixture bevat bewust geen echte logo's.
 
-De eerdere screenshotbevinding waarbij lange namen midden in een woord braken wordt hierdoor structureel vermeden: de naam blijft één regel en ellipst zo nodig. `Nu` en de dagknoppen hebben minimaal 44 logische punten touchhoogte.
+PR-head `4c67e6cfc369e0b0f54c93ecd26bfc457336f631` passeerde CI #69. De merge `da61b3cf10f8bf79e552f2b3eacdb289439810ce` passeerde main-CI #70. De documentatiestatus `a858525ac40c4c4807a6e1a9e0afa6fc77eadf9f` passeerde CI #71.
 
-### Waarom
-De product owner heeft expliciet aangegeven dat systeemtekst boven 100% geen randgeval mag zijn. Voor een gids is het daarom beter om bij grotere tekst wat dichtheid in te leveren dan essentiële titels af te knippen of font scaling uit te schakelen. Logoherkenning mag bovendien niet worden verondersteld voor iedere zender.
-
-### Technische details
-- Nieuwe pure `guideLayoutForFontScale()` met onbegrensde groei voor accessibility-sized font scales.
-- Default fontscale houdt de eerder geaccepteerde geometrie intact.
-- Unit tests voor 1.0, 1.5, 2.5 en ongeldige font scales.
-- `Channel.logoUrl` toegevoegd als optioneel domeinveld; geen provider- of productieafhankelijkheid.
-- Nieuwe `ChannelIdentity` met logo-errorfallback en toegankelijkheidslabel.
-- Bestaande React-integratiemock uitgebreid met `useWindowDimensions` en `Image` zonder de detail/Guide render-isolatiechecks te verzwakken.
-- Geen wijziging aan `decelerationRate`, bounce, continuous timeline, `Nu`, modal slide of swipe-dismiss-drempels.
-
-### Verificatie
-Exacte PR-head `4c67e6cfc369e0b0f54c93ecd26bfc457336f631` heeft **CI #69 succesvol afgerond**: installatie, strict TypeScript, lint, tests en iOS/Android/web Expo exports. PR #3 is daarna gesquasht naar main als **`da61b3cf10f8bf79e552f2b3eacdb289439810ce`**. **Main CI #70, run `34743172096`, is eveneens geslaagd** met dezelfde gates.
-
-Dit is nog geen toestelbewijs voor grotere tekst. ProgrammeDetail heeft bovendien nog geen interne ScrollView; bereikbaarheid moet eerst op de iPhone worden getest voordat daar een nieuwe gesture/layoutwijziging voor wordt gemaakt.
-
-### Volgende stap
-Dezelfde iPhone bij een duidelijk grotere systeemtekst gebruiken om Totaal-alignment, tekstclipping en bereikbaarheid van een programmadetail inclusief `Sluiten` te controleren. Alleen concrete regressies oplossen; de geaccepteerde scroll- en dismissalbaseline niet opnieuw afstellen.
+Volgende stap was fysieke grotere-tekstvalidatie; die leverde de 08:44-bevinding hierboven op.
 
 ---
 
-## 13 september 2026, 08:23 CEST — Logo-eerst en Dynamic Type als producteis vastgelegd
+## 13 september 2026, 08:23 CEST — Logo-eerst en Dynamic Type als producteis
 
-De product owner kiest als richting: zenderlogo primair, zendernaam kleiner/secundair, maar niet logo-only. De volledige naam blijft beschikbaar omdat niet ieder zenderlogo vanzelfsprekend herkenbaar is. Bij ontbrekende of niet-gelicentieerde logo's moet de UI netjes terugvallen op tekst.
-
-Grotere systeemtekst is expliciet onderdeel van de productkwaliteit. Totaal mag bij hogere fontscale minder compact worden: hogere rijen, meer ruimte en het weglaten van secundaire metadata zijn toegestaan. Essentiële informatie mag niet worden gered door scaling uit te zetten. Programme detail moet volledig bereikbaar blijven.
-
-Deze eisen zijn vastgelegd in UX/design/projectdocumentatie. CI #65 en #66 voor die documentatie-increments zijn geslaagd. De aanname dat lineaire tv relatief veel oudere kijkers heeft is motivatie/hypothese en niet als bewezen onderzoeksfeit vastgelegd.
-
-### Volgende stap
-De eisen vertalen naar een kleine, testbare Totaal-increment zonder geaccepteerde scroll- of detailinteractie te wijzigen.
+Vastgelegd dat het zenderlogo primair mag zijn, met zendernaam kleiner/secundair maar niet verwijderd. De volledige naam blijft beschikbaar voor toegankelijkheid en als fallback. Grotere systeemtekst is expliciet productkwaliteit: de Guide mag minder compact worden om essentiële inhoud leesbaar te houden.
 
 ---
 
 ## 13 september 2026, 08:11 CEST — Dark-modebeelden beoordeeld
 
-De reeds aangeleverde Teevee-screenshots van de gids en geopende details zijn als device-evidence vastgelegd. Donkere modus vormt visueel een bruikbare basis, maar lange synthetische zendernamen braken midden in woorden en gedeeltelijk uit beeld geschoven programmablokken verloren hun begintekst/tijd achter de vaste zenderkolom. Het detailhandvat was subtiel. Het gedimde gidsbeeld achter de modal is niet gebruikt om normaal gidscontrast te beoordelen.
-
-Het bestaande TVgids.nl Nu & Straks-beeld blijft alleen een interaction reference. Geen algemene accessibility-acceptatie is uit screenshots afgeleid. Documentatiecommit `9099ec...` had groene CI #64.
-
-### Volgende stap
-Gerichte leesbaarheidscorrecties uitvoeren en grotere systeemtekst op een echt toestel valideren.
+De reeds aangeleverde dark-mode Guide- en detailbeelden zijn vastgelegd in DEVICE_TEST_REPORT. Visueel bruikbare basis, maar geen formele contrastgoedkeuring. Concrete open bevindingen waren willekeurige woordbreuk in lange synthetische zendernamen en gedeeltelijk verborgen programme-/tijdtekst bij horizontaal scrollen achter de vaste zenderrail. Het blauwe zwevende tandwiel in een screenshot heeft onbekende herkomst en is niet als Teevee-UI aangemerkt.
 
 ---
 
-## 13 september 2026, 08:05 CEST — Nu & Straks: tijd kiezen binnen vandaag, geen datumkeuze
+## 13 september 2026, 08:05 CEST — Drie Guide-presentaties en Nu & Straks-semantiek
 
-De drie Guide-presentaties zijn productmatig vastgelegd: **Totaal**, **Per zender** en **Nu & Straks**. Alleen Totaal is nu gebouwd.
+PRODUCT/UX/projectstatus leggen vast:
+- **Totaal** = huidige 2D-grid;
+- **Per zender** = verticale dagplanning van één zender met datumkeuze;
+- **Nu & Straks** = compacte lijst over alle gekozen zenders op één gedeeld referentietijdstip.
 
-Nu & Straks krijgt geen datumselector. Een horizontale tijdselector beweegt binnen vandaag en laat alle zenders op hetzelfde referentietijdstip zien. In live mode volgt de view de actuele tijd; na handmatig kiezen blijft de tijd gepind en `Nu` keert terug naar live. Een past/future snapshot mag niet als live worden gepresenteerd. Intervalgrens is `startAt <= referenceTime < endAt`; gaten worden eerlijk getoond. Kanaalvolgorde en verticale positie blijven stabiel. Amsterdamse kalenderdaggrenzen zijn leidend.
-
-Eén Guide-bestemming met een lokaal onthouden voorkeursweergave is het werkvoorstel. Eerste default, selectorplaatsing en één versus twee volgende programma's blijven open. Het TVgids.nl-voorbeeld is geen visueel ontwerpmandaat.
-
-### Verificatie
-Alleen product/UX/statusdocumentatie gewijzigd; geen runtimecode. CI #63 voor deze documentatiecommit is later als succesvol gecontroleerd.
-
-### Volgende stap
-Eerst de nog open Phase 1-leesbaarheids-/accessibilitygate afronden; daarna Per zender en Nu & Straks expliciet in een volgende buildspec plannen.
+Belangrijkste correctie: Nu & Straks heeft **geen datumselector**, maar een tijdselector binnen vandaag. Start is live/current; na bewegen is de tijd gepind; `Nu` herstelt live. Alle zenders gebruiken hetzelfde `referenceTime`. Gaps worden eerlijk getoond en een geselecteerd verleden/toekomstmoment wordt niet als live gelabeld. Geen nieuwe primary tabs geautoriseerd.
 
 ---
 
-## 13 september 2026, 07:46 CEST — Swipe-down dismissal kwalitatief akkoord
+## 13 september 2026, 07:46 CEST — Swipe-down detail op iPhone geaccepteerd
 
-Na de gerichte iPhone-hertest antwoordt de product owner **"perfect"** op de gevraagde wijzigingenset: neerwaarts sluiten, korte trek/terugveren, heropenen en behoud van bestaande sluitroutes. Dit is kwalitatief akkoord op de set, niet een afzonderlijke meting van ieder gesture-randgeval.
-
-Swipe PR #2 was geïntegreerd als `1242f7d64f8abc594f11f043459e07893a25e5b6`; main CI #61 was groen. Dark mode, grotere tekst, screenreader, Android en productieperformance vielen niet onder dit akkoord.
-
-### Volgende stap
-Leesbaarheid en toegankelijkheid valideren zonder de geaccepteerde dismissal opnieuw te tunen.
+Na de gerichte hertest antwoordde de product owner **"perfect"**. Daarmee is de swipe-dismiss change set kwalitatief geaccepteerd naast button/outside-tap close. Dit is geen individuele meting van ieder gesture-randgeval en geen toegankelijkheids-/Androidgoedkeuring.
 
 ---
 
 ## 13 september 2026, 07:36 CEST — Programmadetails naar beneden wegvegen
 
-Na akkoord op de snellere detailrespons is swipe-down dismissal toegevoegd met bestaande Gesture Handler 2, Reanimated 4 en Worklets. Het paneel volgt de vinger; een korte/cancelled drag veert terug en voldoende neerwaartse afstand of velocity sluit. Upward reversal, multitouch en cancellation sluiten volgens implementatie/tests niet.
+Swipe-down dismissal toegevoegd met bestaande Gesture Handler 2 + Reanimated 4/Worklets. Kleine/afgebroken drags veren terug; een duidelijke neerwaartse drag/flick sluit. Upward reversal, multitouch en annulering worden afgevangen. Bestaande button, backdrop, accessibility escape en Android back blijven bestaan. Native Modal-slide blijft exitmechanisme.
 
-Button, backdrop, accessibility escape en Android back blijven alternatieven. De native Modal slide blijft de exit-animatie en de verplaatste sheet springt bij committed dismissal niet eerst terug naar boven. Een aparte gesture root in de modal ondersteunt Android-modalcontext.
-
-Eerste CI #57 faalde op strict TypeScript callbacktypes in de nieuwe testmock. De types zijn aangescherpt zonder checks uit te zetten; CI #58 slaagde. Later werd bundlecontrole uitgebreid naar iOS/Android/web; PR-CI #60 slaagde vóór merge.
-
-Belangrijke grens: de detailbody was en is geen interne ScrollView. Als lange tekst later scrollbaar wordt, moet reading-scroll met dismissal worden gecoördineerd.
-
-### Volgende stap
-Native iPhone-hertest van swipe change set en vervolgens overige accessibilitychecks.
+Eerste nieuwe CI (#57) faalde op strikte callbacktypes in de testmock. Dat is opgelost zonder checks uit te schakelen. CI #58 en latere PR-CI #60 slaagden. PR #2 is geïntegreerd als `1242f7d64f8abc594f11f043459e07893a25e5b6`; main-CI #61 (`34740881328`) slaagde.
 
 ---
 
-## 13 september 2026, 07:18 CEST — Detailweergave losgemaakt van zware gidsrender
+## 13 september 2026, 07:18 CEST — Programmadetail losgemaakt van zware Guide-render
 
-De eerdere toesteltest bevestigde openen/sluiten en positiebehoud, maar beide voelden traag. Detailselectie is daarom buiten de zware memoized Guide gezet. Stabiele callbacks voorkomen dat openen/sluiten de 48-zendergrid opnieuw opbouwt. De geselecteerde tekst blijft tijdens native dismissal staan en Pressables houden visuele feedback.
+Detailselectie verhuisde naar een kleine route-state met stabiele callbacks en memoized GuideView. ProgrammeDetail werd afzonderlijk gerenderd; geselecteerde tekst blijft staan tijdens native dismissal. Button/backdrop blijven afzonderlijke sluitroutes. Geen wijziging aan Guide-scrollinstellingen.
 
-PR #1 had eerst install failure CI #52 doordat React DOM-types te ruim naar 19.3 konden resolven; versiegrens is naar 19.2 begrensd zonder force-upgrade. PR-CI #53 en latere main-CI #56 slaagden. De product owner reageerde daarna **"perfect"** en bevestigde sluiting via knop en achtergrond.
-
-### Volgende stap
-Swipe-down dismissal als aanvullende sluitroute toevoegen zonder scrollbaseline te wijzigen.
+Eerste PR-run #52 vond een React DOM-types versieconflict; versiegrens is gecorrigeerd zonder force-upgrade. PR-CI #53 slaagde. PR #1 is geïntegreerd als `1211630a424f61b83079d695df0cefa24c80c5d6`; main-CI #56 slaagde. De product owner beoordeelde de respons daarna als **"perfect"** en bevestigde button/outside-tap close.
 
 ---
 
-## 13 september 2026, 07:04 CEST — iPhone-scrollhertest akkoord
+## 13 september 2026, 07:04 CEST — Scrollbaseline op iPhone geaccepteerd
 
-Na hertest van standaardinertie, doorlopende tijdlijn, dagovergang en geanimeerde `Nu` antwoordde de product owner **"perfect"**. Dit wordt de scrollbaseline: geen nieuwe tuning zonder concreet probleem.
-
-De onderliggende code had CI #49 en documentatie-opvolger CI #50. Geen exacte framerate of swipeafstand gemeten.
-
-### Volgende stap
-Programmadetail en leesbaarheid valideren.
+De product owner antwoordde **"perfect"** na de hertest van standaardinertie, doorlopende tijdlijn, dagovergang en geanimeerde `Nu`. Deze scrollinstellingen zijn sindsdien een geaccepteerde baseline en worden niet op gevoel opnieuw getuned.
 
 ---
 
-## 13 september 2026, 06:58 CEST — Normale platforminertie en doorlopende gids
+## 13 september 2026, 06:58 CEST — Standaardinertie en doorlopende tijdlijn
 
-Ook verticaal is de gids teruggezet naar `decelerationRate="normal"`; horizontaal stond al op normal. Native bounce en directional lock blijven. De 48-zenderfixture beslaat 49 uur vanaf Amsterdamse dagstart. `Nu` beweegt geanimeerd binnen één gemounte tijdlijn en dagstatus volgt de horizontale positie.
-
-Tests zijn uitgebreid voor daggrenzen, jaarwisseling en 23/25-uursdagen. Een eerdere CI #48 faalde omdat een test nog het oude relatieve tijdvenster verwachtte; de test is inhoudelijk aangepast en timezonegedrag gecorrigeerd. **CI #49 slaagde.**
-
-### Volgende stap
-Op dezelfde iPhone langere swipes, dagovergang en `Nu` hertesten.
+Beide interactieve assen gebruiken `decelerationRate="normal"`, native bounce en directional lock. De runtime Guide gebruikt één doorlopende tijdlijn en 49 elapsed hours. Amsterdamse kalenderhelpers met DST/23-/25-uursdagen en jaarwisseling kregen tests. Codecommit `b13a7c5263cd663ed1d7ea35e3cfb46d70a8988a` passeerde CI #49; opvolgende documentatie passeerde CI #50.
 
 ---
 
-## 13 september 2026, 06:28 CEST — 48 zenders voor realistische verticale scrolltest
+## 13 september 2026, 06:28 CEST — Fixture uitgebreid naar 48 zenders
 
-De synthetische fixture is van 16 naar 48 zenders uitgebreid zodat verticale inertie niet tegen een te korte lijst wordt beoordeeld. Programme-generator en edge cases bleven intact; geen nieuwe virtualisatie of scrollbibliotheek toegevoegd. CI was groen.
-
-### Volgende stap
-Op het toestel lange verticale swipes beoordelen voordat er opnieuw aan scrollparameters wordt gesleuteld.
+De testgids ging van 16 naar 48 synthetische zenders zodat verticale inertie op een fysiek toestel voldoende scrollafstand heeft. Geen nieuwe scrollbibliotheek/virtualisatie toegevoegd.
 
 ---
 
-## 11 september 2026, 19:46 CEST — Eerste device-feedback verwerkt
+## 11 september 2026 — Phase 1 bootstrap en eerste Guide
 
-Op de eerste iPhone-test ging de horizontale tijdpositie bij dagwissel verloren, beide scrollassen voelden te gelijk en randen stopten onnatuurlijk hard. Tijdpositie werd bewaard, horizontaal kreeg `normal`, verticaal aanvankelijk `fast`, en native bounce/directional lock werden aangezet. Deze verticale `fast`-keuze is later na realistischer testing vervangen door de huidige `normal`-baseline.
+Belangrijkste milestones van de eerste implementatiedag:
 
-### Volgende stap
-Hertesten op toestel en alleen op basis van observaties verder tunen.
+| Tijd / increment | Resultaat |
+|---|---|
+| 18:33 Project Foundation | AGENTS, PRODUCT, UX, ARCHITECTURE, DATA, DESIGN_SYSTEM, BUILD_SPEC, PROJECT_STATE en ADR's vormen de agent-baseline. |
+| 18:35 Deterministische datalaag | Teevee Channel/Programme/GuideFixture, reproduceerbare synthetic fixture en domeintests. |
+| 18:40 Expo basis | Expo/React Native, Expo Router, strict TypeScript, system-aware themes en CI-bootstrap. |
+| 18:41 Eerste 2D Guide | Tijd-naar-pixel geometrie, vaste zenderkolom, horizontale tijdlijn en gesynchroniseerde verticale scroll. |
+| 19:00 Detail/progress/dagwissel | Programme selecteren, detailmodal, current progress, today/tomorrow en `Nu`. |
+| 19:05 Live klok | Guide current-time/progress gevoed door toestelklok, refresh elke 30 seconden. |
+| 19:16 Runtime fixture | Deterministische brondata worden bij appstart relatief naar actuele Amsterdamse datum/tijd verschoven; `start:device`/`start:clean` en DEVICE_TEST_REPORT toegevoegd. |
+| 19:46 Eerste iPhone-feedback | Dagpositie/scrollgedrag/bounce aangepast; latere 13-septemberincrement verving de tijdelijke verschillende deceleration-instellingen door de geaccepteerde standaardinertie op beide assen. |
 
----
-
-## 11 september 2026, 19:16 CEST — Runtime-fixture tijdrelatief en toesteltestpad vereenvoudigd
-
-De deterministische bronfixture blijft reproduceerbaar, maar `buildRuntimeGuideFixture()` verschuift timestamps éénmalig rond het appstartmoment. Daardoor werken `Nu`, progress en daglabels ook na de oorspronkelijke fixturedatum. `npm run start:device`, `npm run start:clean` en `DEVICE_TEST_REPORT.md` zijn toegevoegd.
-
-De eerste implementatie faalde terecht op React purity/refs-lint; lazy state initialization verving de problematische constructie in plaats van lint uit te zetten.
-
-### Volgende stap
-CI groen krijgen en eerste fysieke Phase 1-test uitvoeren.
-
----
-
-## 11 september 2026, 19:05 CEST — Gids gebruikt echte actuele tijd
-
-Een kleine Guide clock ververst iedere 30 seconden. Current-time-lijn, programme-progress en `Nu` gebruiken daarmee dezelfde live tijdbron in plaats van een vaste demo-klok. Geen nieuwe dependency toegevoegd.
-
-### Volgende stap
-CI afronden en de prototype geschikt maken voor devicevalidatie.
+Eerdere configuratiefouten (Expo-dependencies, TypeScript `baseUrl`, React purity/refs) zijn opgelost in plaats van genegeerd. De volledige toolchain is uiteindelijk via GitHub Actions groen gemaakt; apparaatervaring blijft altijd apart toestelbewijs.
 
 ---
 
-## 11 september 2026, 19:00 CEST — Programmadetail, progress en dagwissel
-
-Programmablokken zijn aanklikbaar gemaakt; detail toont zender, tijd, titel en beschikbare beschrijving. Lopende programma's tonen progress. Vandaag/morgen en `Nu` zijn toegevoegd rond de bestaande fixture. Nog steeds geen externe EPG.
-
-### Volgende stap
-Guide technisch verfijnen en eerste devicebuild voorbereiden.
-
----
-
-## 11 september 2026, 18:41 CEST — Eerste 2D-gidsviewport
-
-De eerste echte Totaal-grid is gebouwd: vaste zenderkolom, horizontale tijdas, duration-based programme cells, gesynchroniseerde verticale scroll en current-time indicator. Pure geometryhelpers en tests zijn toegevoegd.
-
-Tijdens CI-stabilisatie zijn dependencyproblemen en een TypeScript 6-configuratiefout rond verouderde `baseUrl` opgelost; latere runs werden groen.
-
-### Volgende stap
-Gidsinteractie, programmaselectie en performance verfijnen.
-
----
-
-## 11 september 2026, 18:40 CEST — Expo/React Native-basis
-
-Expo/React Native/Expo Router, strict TypeScript, semantische light/dark theming, lint en GitHub Actions CI zijn opgezet. Eerste dependencyconflicten binnen de Expo SDK 57-stack zijn opgelost door versies uit te lijnen in plaats van force-installatie.
-
-### Volgende stap
-De echte 2D-gidsinteractie bouwen.
-
----
-
-## 11 september 2026, 18:35 CEST — Deterministische gidsdatalaag
-
-Teevee-eigen `Channel`, `Programme` en `GuideFixture` zijn toegevoegd met een development-only fixture, programmaduur/progresshelpers en edge cases voor korte/lange programma's, lange titels, ontbrekende metadata, live/herhaling en een schemagat. De fixture is later van 16 naar 48 zenders uitgebreid.
-
-### Volgende stap
-Schedule geometry en de eerste Guideviewport bouwen.
-
----
-
-## 11 september 2026, 18:33 CEST — Project Foundation afgerond
-
-`AGENTS.md`, PRODUCT, UX, ARCHITECTURE, DATA, DESIGN_SYSTEM, BUILD_SPEC, PROJECT_STATE en ADR 0001–0004 vormen de gedeelde basis voor autonome agents. Phase 0 is pas als compleet gemarkeerd nadat de canonieke status en beslissingen daadwerkelijk in de repository stonden.
-
-### Volgende stap
-Phase 1 starten: Guide-interactie bouwen en valideren met deterministische fixture-data.
+## Doorlopende open technische punten
+- CI maakt nog een lockfile vóór `npm ci`; reproduceerbaarheid verdient een aparte cleanup.
+- Eerder zijn 15 moderate dependency-advisories gemeld. Niet automatisch/gefroceerd upgraden; nooit `npm audit fix --force` zonder impactanalyse.
+- Android gesture/back en release-achtige performance zijn nog niet fysiek gevalideerd.
+- De finite launch-anchored fixture heeft nog lifecyclewerk rond resume na middernacht/expiry.
+- Partieel verborgen programme-informatie achter de vaste zenderrail blijft een afzonderlijk leesbaarheidspunt.
+- Production EPG/logo/artwork rights/reliability, abonnement/paywall en final visual design liggen buiten de huidige Phase 1-validatiestap.

@@ -1,92 +1,100 @@
 # Teevee Phase 1 — Device Test Report
 
-Bijgewerkt op **13 september 2026, 08:40 CEST — Europe/Amsterdam**. Exacte committijd staat in GitHub.
-Een groene CI of een test met gemockte native hosts is geen geslaagde toesteltest.
+Bijgewerkt op **13 september 2026, 08:55 CEST — Europe/Amsterdam**. Exacte committijd staat in GitHub. Een groene CI of een test met gemockte native hosts is geen geslaagde toesteltest.
 
 ## Toestel en versies
 - Eigen iPhone van de product owner; wifi; testperiode 11–13 september 2026.
 - Model, iOS-versie, Expo Go-versie en exacte lokale SHA zijn nog niet genoteerd.
 - Scrollbaseline, detailrespons en gerichte swipe-dismiss-wijzigingenset zijn eerder kwalitatief geaccepteerd op dit toestel.
-- De nieuwe Dynamic Type-layout op main `da61b3cf10f8bf79e552f2b3eacdb289439810ce` is **nog niet op het toestel getest**.
 
 ## Reeds geaccepteerde interactiebaseline
 De product owner heeft eerder met **"perfect"** gereageerd op gerichte hertests van:
 - standaard platforminertie, doorlopende tijdlijn, dagovergang en geanimeerde `Nu`;
 - detailrespons na render-isolatie, inclusief sluiten met knop en buiten het paneel;
-- de swipe-down dismissal change set, inclusief gevraagde korte trek/terugveer en heropenen als gezamenlijke testset.
+- swipe-down dismissal als gerichte wijzigingenset, inclusief korte trek/terugveer en heropenen.
 
-Dit zijn kwalitatieve bevestigingen, geen afzonderlijke timings, framerates of volledige randgevalmetingen. Heropen deze instellingen niet zonder concreet regressiesignaal.
+Dit zijn kwalitatieve bevestigingen, geen timings, framerates of volledige randgevalmetingen. Heropen deze instellingen niet zonder concreet regressiesignaal.
 
-## Dark-modebeelden — ontvangen en beoordeeld
-De gebruiker leverde de gids met geopende details en de gids zonder dimlaag aan. Die screenshots zijn reeds beoordeeld; vraag ze niet opnieuw op.
+## Dark-modebeelden — eerder ontvangen en beoordeeld
+De gebruiker leverde de Guide met geopende details en de Guide zonder dimlaag aan. De beelden zijn beoordeeld; vraag ze niet opnieuw op.
 
-Visuele bevindingen:
-- donkere modus vormt een bruikbare leesbare basis; hoofdtekst en programmavlakken zijn duidelijk van de achtergrond te onderscheiden;
+Vastgelegde bevindingen:
+- dark mode vormt een bruikbare visuele basis; hoofdtekst en programmavlakken zijn duidelijk van de achtergrond te onderscheiden;
 - titel, beschrijving en `Sluiten` waren in het getoonde detail zichtbaar; het handvat was subtiel;
-- lange synthetische zendernamen braken midden in woorden af (`Internation` / `aal 2`, enz.);
-- bij deels horizontaal uit beeld geschoven programmablokken verdwijnen beginletters en soms delen van de tijd achter de vaste zenderkolom;
+- lange synthetische zendernamen braken in de oude layout midden in woorden;
+- bij deels horizontaal uit beeld geschoven programmablokken kunnen beginletters en delen van tijden achter de vaste zenderkolom verdwijnen;
 - de linkerste tijdasmarkering kan gedeeltelijk worden afgesneden;
-- de screenshot in een toekomstig zichtbaar tijdvak levert op zichzelf geen bewijs over de current-time-lijn of progressnauwkeurigheid;
+- een screenshot in een toekomstig tijdvak is geen afzonderlijk bewijs voor current-time/progressnauwkeurigheid;
 - een blauw zwevend tandwiel in één beeld heeft onbekende herkomst en wordt niet als Teevee-UI geïnterpreteerd.
 
 Het afzonderlijke TVgids.nl-beeld van Nu & Straks is een interactiereferentie, geen Teevee-toesteltest.
 
-## Nieuwste implementatie — klaar voor grotere-teksttest
-PR #3 is geïntegreerd op main als **`da61b3cf10f8bf79e552f2b3eacdb289439810ce`**.
+## Grotere systeemtekst — eerste fysieke hertest
+De product owner heeft de Dynamic Type-versie op dezelfde iPhone getest met systeemtekst duidelijk groter dan normaal en leverde een screenshot met beeldtijd **08:44**.
 
-Gerichte wijzigingen:
-- Totaal leest de systeem-`fontScale` en vergroot rijhoogte, zenderrail en tijdas naarmate tekst groter wordt;
-- de default font scale houdt de eerder geaccepteerde basisgeometrie;
-- bij grotere tekst blijft de programmatitel primair en wordt de secundaire starttijd in programmablokken weggelaten als de beschikbare dichtheid te laag wordt;
-- zendernamen blijven één regel en ellipsen in plaats van willekeurig midden in woorden te breken;
-- dag- en `Nu`-bediening hebben minimaal 44 logische punten touchhoogte;
-- het kanaalmodel ondersteunt optioneel `logoUrl` en de kanaalcomponent kan logo primair tonen met de volledige naam als subtiele visuele tekst én accessibility label;
-- wanneer een logo ontbreekt of faalt, blijft een schone tekstfallback zichtbaar.
+Gerapporteerde resultaten:
 
-De fixture bevat bewust **geen echte logo's**. Logoherkenning, uiteindelijke afmetingen/vormgeving en productierechten zijn dus niet getest of goedgekeurd.
+| Controle | Toestelbewijs | Resultaat |
+|---|---|---|
+| Zenderkolom en programmarijen blijven uitgelijnd | Antwoord: `Ja` | **Geslaagd op deze test** |
+| Gids/chrome leesbaar bij grote tekst | Screenshot | **Defect aangetroffen** |
+| Programmadetail relevante inhoud + `Sluiten` bereikbaar | Antwoord: `ja` | **Geslaagd op deze test** |
 
-De eerder geaccepteerde scrollinertie, bounce, doorlopende tijdlijn, `Nu`, detailmodal en swipe-drempels zijn in deze increment niet gewijzigd.
+### Concreet defect uit screenshot
+- De grote titel `Gids` was zichtbaar afgesneden/clipped.
+- De daglabels werden geellipst, zichtbaar als onder meer `Van...` en `Ma 1...`.
+- De tijdas en Guide-chrome hielden bij deze fontscale te weinig horizontale leesruimte over.
+
+De bevestigde alignment is belangrijk: de schaalbare rijhoogte en gesynchroniseerde zender/programmarijen werkten op dit toestel. De bevestigde detailbereikbaarheid betekent dat er op basis van deze test **geen reden is om ProgrammeDetail nu al intern scrollbaar te maken**. Dat blijft een latere oplossing wanneer echte lange content buiten bereik blijkt; dan moet reading-scroll expliciet met swipe-to-dismiss worden gecoördineerd.
+
+## Correctie naar aanleiding van de 08:44-test
+PR #4 corrigeert uitsluitend de grote-tekst-layout/chrome en laat de geaccepteerde interacties ongemoeid:
+- vaste line-heights verwijderd van schaalbare Guide-/programmatitels;
+- vanaf large-text mode krijgen header en dagbediening eigen breedte door een gestapelde layout;
+- minuten-schaal en tick-labelruimte groeien mee met `fontScale`, waardoor tijdlabels en programmablokken meer horizontale leesruimte krijgen;
+- tijdgeometrie blijft intern consistent: timeline width, programme frames, current-time positie, day jumps en scroll-naar-tijd gebruiken dezelfde schaal;
+- de 100%-fontscale behoudt de eerder geaccepteerde basisgeometrie.
+
+Geen wijziging aan scrollinertie, bounce, directional lock, native detailmodal, bestaande close-routes of swipe-dismiss-drempels.
 
 ## Technische verificatie
-- Exacte PR-head `4c67e6cfc369e0b0f54c93ecd26bfc457336f631`: **PR-CI #69 geslaagd**.
-- Integratie op main `da61b3cf10f8bf79e552f2b3eacdb289439810ce`: **main-CI #70, run `34743172096`, geslaagd**.
-- Beide CI-paden controleerden installatie, strict TypeScript, lint, tests en iOS/Android/web Expo bundle exports.
-- Pure tests bewaken de font-scale-layout bij 1.0, 1.5 en een accessibility-achtige 2.5, plus ongeldige input.
-- De React-integratietest gebruikt gemockte native hosts en een vaste test-fontscale. Dit bewijst geen echte iOS-layout, VoiceOver-ervaring of touchbereikbaarheid.
+- Eerste Dynamic Type-increment: PR #3 geïntegreerd als `da61b3cf10f8bf79e552f2b3eacdb289439810ce`; PR-CI #69 en main-CI #70 waren groen.
+- Documentatiestatus `a858525ac40c4c4807a6e1a9e0afa6fc77eadf9f`: CI #71 groen.
+- Grote-tekstcorrectie PR #4 exact head **`536de5b778725d2f91dba3f734c4efecd8d78028`**: **CI #74, run `34743728065`, geslaagd**.
+- PR #4 geïntegreerd op main als **`4f4fa94c6b1968ca03bb551fde9bb7ed376b2113`**.
+- Exacte main-integratie: **CI #75, run `34743812493`, geslaagd**. Installatie, strict TypeScript, lint, tests en iOS/Android/web Expo exports waren allemaal succesvol.
 
-## Kerncheck
-| Onderdeel | Toestelbewijs | Status |
-|---|---|---|
-| App opent in Gids | Opent/rendert via Expo Go in eerdere build. | Bevestigd. |
-| Horizontaal bereik / dagovergang / Nu | Gerichte hertest met "perfect". | Kwalitatief akkoord; niet gewijzigd. |
-| Verticale inertie en bounce | Standaardinstellingen kwalitatief akkoord. | Behouden. |
-| Programmadetail openen/respons | "Perfect" na rendercorrectie. | Kwalitatief akkoord. |
-| Sluiten via knop/achtergrond | Expliciet bevestigd. | Akkoord behouden. |
-| Neerwaarts wegvegen | Gerichte hertest met "perfect". | Kwalitatief akkoord. |
-| Gidspositie behouden | Eerder bevestigd. | Geen regressie gemeld. |
-| Dark-modegids/detail | Beide beelden ontvangen. | Visueel bruikbare basis; geen formele contrasttest. |
-| Zendernaam zonder mid-word breuk | Codecorrectie op main. | **Toesteltest op nieuwe build nodig.** |
-| Systeemtekst >100% / Dynamic Type | Nieuwe adaptieve layout op main. | **Nog geen toestelbewijs.** |
-| Detailinhoud bij grote tekst | Huidige detailbody heeft geen interne ScrollView. | **Bereikbaarheid gericht testen.** |
-| Deels verborgen programma-informatie achter zenderrail | Zichtbaar in eerder screenshot. | Open; niet opgelost door deze increment. |
-| Screenreader / VoiceOver | Geen toesteltest. | Open. |
-| Themawisseling tijdens gebruik | Geen afzonderlijke test. | Open. |
-| Voortgang / tijdnauwkeurigheid | Niet afzonderlijk gevalideerd. | Open. |
-| Android / release-achtige performance | Geen apparaatmeting. | Open. |
+Dit technische bewijs vervangt de fysieke hertest van de gecorrigeerde layout niet.
 
-## Gerichte volgende iPhone-validatie
-Gebruik main `da61b3cf10f8bf79e552f2b3eacdb289439810ce` of nieuwer. Na `git pull --ff-only` en `npm run start:clean`:
+## Kernstatus Phase 1
+| Onderdeel | Status |
+|---|---|
+| App opent/rendert via Expo Go | Bevestigd in eerdere tests |
+| Horizontaal bereik / dagovergang / Nu | Kwalitatief akkoord; ongewijzigd |
+| Verticale inertie/bounce | Kwalitatief akkoord; ongewijzigd |
+| Detail openen/respons | Kwalitatief akkoord |
+| Sluiten knop/achtergrond | Kwalitatief akkoord |
+| Swipe-down dismissal | Kwalitatief akkoord |
+| Gidspositie behouden | Eerder bevestigd |
+| Dark mode | Visueel bruikbare basis; geen formele contrastmeting |
+| Zender-/programmarijalignment bij grote tekst | **Fysiek bevestigd** |
+| Detailinhoud + Sluiten bij grote tekst | **Fysiek bevestigd voor geteste inhoud** |
+| Gidsheader/daglabels bij grote tekst | Defect gezien; codecorrectie geïntegreerd, **hertest nodig** |
+| Deels verborgen programme-informatie achter zenderrail | Open apart punt |
+| VoiceOver/screenreader | Open |
+| Themawisseling tijdens gebruik | Open |
+| Progress/current-time nauwkeurigheid | Open |
+| Android/release-achtige performance | Open |
 
-1. Zet de iPhone-systeemtekst duidelijk groter dan standaard; een accessibility-grootte is juist nuttig voor deze test.
-2. Open Totaal en controleer of de zenderkolom en programmarijen horizontaal op dezelfde hoogte blijven, ook na verticaal scrollen.
-3. Controleer `Gids`, dagkeuze, `Nu`, tijdas, zendernamen en programmatitels op clipping/overlap. De layout mag minder compact zijn; essentiële tekst mag niet onbruikbaar worden.
-4. Open een programmadetail met beschrijving. Controleer of titel, metadata, volledige relevante beschrijving en `Sluiten` bereikbaar blijven.
-5. Alleen als er een concreet probleem zichtbaar is: noteer wat ontbreekt/overlapt en lever bij voorkeur één screenshot van die toestand.
+## Volgende gerichte iPhone-validatie
+Gebruik main `4f4fa94c6b1968ca03bb551fde9bb7ed376b2113` of nieuwer. Na `git pull --ff-only` en `npm run start:clean`, laat de iPhone op dezelfde grote systeemtekststand staan.
 
-Geen noodzaak om de eerder geaccepteerde standaard-font scroll- en swipegevoelens opnieuw uitgebreid te testen, tenzij deze grotere-tekstbuild daar daadwerkelijk een regressie veroorzaakt.
+Controleer alleen:
+1. `Gids`, `Nu`, beide daglabels, tijdas en programmatitels zijn volledig leesbaar zonder clipping/rare overlap.
+2. Zenderkolom en programmarijen blijven nog steeds uitgelijnd bij verticaal scrollen.
+3. Een programmadetail blijft bereikbaar inclusief `Sluiten`.
 
-## Belangrijke grens voor detailinhoud
-ProgrammeDetail heeft momenteel geen interne ScrollView. Als grotere systeemtekst of een lange beschrijving de inhoud buiten bereik duwt, is dat een geldige bevinding en wordt de volgende implementatie scrollbaar. Daarbij moet lezen/scrollen worden afgestemd op swipe-to-dismiss, bijvoorbeeld via een duidelijke dragzone of door dismissal alleen aan de bovenrand van de content-scroll toe te staan. Reading-scroll mag niet onbedoeld sluiten.
+Geen uitgebreide herhaling van de eerder geaccepteerde scroll-/swipetests nodig, tenzij deze build daar daadwerkelijk een regressie veroorzaakt. Bij een defect volstaat een korte beschrijving plus één screenshot van die toestand.
 
 ## Samenvatting
-**De eerder geaccepteerde iPhone-interactiebaseline blijft staan. Dark mode is visueel beoordeeld. De eerste Dynamic Type/layoutcorrectie is technisch groen en geïntegreerd, maar grotere systeemtekst en detailbereikbaarheid moeten nu fysiek op de iPhone worden gevalideerd voordat dit accessibility-deel van Phase 1 kan worden afgesloten.**
+**De eerste echte larger-text toesteltest bevestigde alignment en detailbereikbaarheid, maar vond een concreet clipping/ellipsis-probleem in de Guide-chrome. Dat probleem is gericht gecorrigeerd en technisch groen geïntegreerd op main. Eén korte hertest op dezelfde grote tekststand is nu het ontbrekende bewijs voor deze accessibility-increment.**

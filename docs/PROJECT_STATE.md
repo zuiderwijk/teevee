@@ -1,7 +1,7 @@
 # Teevee — Canonical Project State
 
-Last updated: 2026-09-13 08:40 CEST (Europe/Amsterdam). Exact commit time is in GitHub.
-Status: ACTIVE — Phase 1 interaction baselines accepted; Dynamic Type groundwork integrated; larger-text device validation still open; Per zender and Nu & Straks specified but not built
+Last updated: 2026-09-13 08:55 CEST (Europe/Amsterdam). Exact commit time is in GitHub.
+Status: ACTIVE — iPhone interaction baselines accepted; large-text defect correction integrated and technically green; one focused iPhone retest remains before closing this accessibility increment
 Current phase: **Phase 1 — Guide Interaction Prototype**
 Previous phase: **Phase 0 — Project Foundation: COMPLETE**
 
@@ -12,95 +12,95 @@ Teevee is a premium, paid, ad-free television-guide app for iOS and Android unde
 
 ## Frozen decisions
 - React Native/Expo and strict TypeScript for iOS and Android.
-- Paid, ad-free, Guide-first; no mandatory core-use account.
+- Paid, ad-free and Guide-first; no mandatory core-use account.
 - Light, dark and system appearance.
 - Provider-independent Teevee EPG model; mobile never consumes/parses an external EPG directly.
-- Deterministic fixtures mandatory; free external EPG is development-only until rights/reliability are approved.
+- Deterministic fixtures mandatory; free external EPG remains development-only until rights/reliability are approved.
 - Core Guide cannot depend on artwork/enrichment.
-- Accessibility and system text scaling are product quality requirements, not optional polish.
+- Accessibility and system text scaling are product-quality requirements, not optional polish.
 - PROJECT_STATE is canonical cross-session memory. Complexity requires evidence.
 
 Relevant ADRs: `0001` through `0004` in `docs/decisions/`.
 
 ## Guide presentations
-The current grid is **Totaal**. Two additional Guide presentations are requested and documented but not implemented:
+The current implemented grid is **Totaal**. Two additional Guide presentations are specified but not yet implemented:
 
 - **Per zender:** one channel's scrollable schedule, initially around the current programme; channel navigation primary, date navigation secondary.
 - **Nu & Straks:** compact all-channel list around one common reference time. There is **no date selector**. A horizontal time selector moves within the current Amsterdam calendar day. Entry starts in live/current mode; `Nu` restores live mode. Moving the selector pins a past/future time today without calling that snapshot live.
 
-For Nu & Straks, every channel resolves `startAt <= referenceTime < endAt`, then shows following programme(s). Keep channel order and vertical reading position stable while the selected time changes. Gaps are shown honestly. The selector itself does not cross into tomorrow, although a following programme may start after midnight with an explicit day indication. An accessible alternative to dragging is required.
+For Nu & Straks, every channel resolves `startAt <= referenceTime < endAt`, followed by the next scheduled programme(s). Keep channel order and vertical reading position stable while the selected time changes. Show gaps honestly. The selector itself does not cross into tomorrow, although a following programme may start after midnight with an explicit day indication. An accessible non-drag alternative is required.
 
-One Guide destination with a locally remembered presentation preference remains the working proposal. Exact selector placement, first-install default, and one versus two following programmes are still open. No new primary tabs are authorised. Popularity of a presentation and frequency of switching are hypotheses, not validated research.
+One Guide destination with a locally remembered presentation preference remains the working proposal. Exact selector placement, first-install default, and one versus two following programmes remain open. No new primary tabs are authorised. Popularity of a presentation and frequency of switching are hypotheses, not validated research.
 
-## Channel identity and larger text
-Owner direction is now explicit:
-- channel **logo is primary** when a suitable licensed asset exists;
-- channel name remains visible but secondary, because logo recognition cannot be assumed for every channel;
-- the full channel name remains available to assistive technology;
-- when no logo is available or an image fails, show a clean text fallback rather than a broken placeholder;
-- production logo rights remain a separate later gate.
+## Current implementation reality
+- Expo SDK 57 / Expo Router / strict TypeScript with semantic system-aware themes.
+- Teevee-owned Channel, Programme and GuideFixture types.
+- 48 synthetic channels and 49 elapsed hours of deterministic runtime-aligned data.
+- Shared Amsterdam calendar helpers with DST/23-hour/25-hour/year-rollover tests.
+- Totaal uses one continuous horizontal timeline with half-hour ticks, duration-based programme blocks, current-time line and programme progress.
+- Fixed channel rail plus synchronised vertical movement; native bounce/directional lock and `normal` deceleration on both axes.
+- Day buttons and `Nu` move within the same timeline; active day follows horizontal position.
+- Programme detail selection is isolated from the heavy Guide render. The existing native Modal slide, button close, outside-tap close and swipe-down dismissal remain the accepted baseline.
+- Optional `Channel.logoUrl` exists. Channel identity is logo-first when a suitable asset exists, while the channel name remains visible/accessible and is the fallback when the logo is absent or fails. Current fixtures deliberately contain no real logos.
+- CI runs install, strict TypeScript, lint, tests and iOS/Android/web Expo bundle exports. Bundle export is not a signed device build.
 
-Larger system text must remain usable. Do not preserve default density by disabling font scaling or clipping essential information. Totaal may use taller rows, a wider channel rail and less secondary metadata as font scale increases. Programme detail must remain fully reachable; if it becomes scrollable, coordinate reading-scroll with the accepted swipe-to-dismiss interaction.
+No real production EPG, production artwork, account system or subscription/paywall has been introduced.
 
-## Implementation reality
-- Expo SDK 57 / Expo Router / strict TypeScript and semantic system-aware themes.
-- Teevee-owned Channel, Programme and GuideFixture types; `Channel` now supports optional `logoUrl` without introducing real logo assets.
-- 48 synthetic channels and 49 elapsed hours of deterministic source data, runtime-aligned to Amsterdam midnight at launch.
-- Shared `guideDayStart` logic covers timezone, DST, 23/25-hour days and year rollover.
-- Totaal uses one continuous timeline with half-hour ticks, duration-based programme cells and current-time/progress updates every 30 seconds.
-- Fixed channel column and synchronised vertical movement; native bounce/directional lock and `normal` deceleration on both axes.
-- Day controls and `Nu` animate inside the same timeline; active day follows horizontal position.
-- Detail selection lives outside the memoized Guide so opening/closing does not rebuild the heavy grid.
-- ProgrammeDetail uses the accepted native Modal slide plus button, backdrop, accessibility escape/Android back and downward swipe dismissal.
-- Gesture Handler 2 + Reanimated 4/Worklets are already present; no new runtime/native dependency was introduced by the accessibility increment.
+## Accepted interaction baselines
+Do not retune these without a concrete regression:
+- standard platform scroll inertia on both axes;
+- native bounce and directional lock;
+- continuous timeline/day navigation and animated `Nu`;
+- programme-detail response and retained Guide position;
+- close by button and outside tap;
+- deliberate swipe-down dismissal with short/cancelled drag returning to position.
 
-### Dynamic Type increment integrated on main
-PR #3 was merged as **`da61b3cf10f8bf79e552f2b3eacdb289439810ce`**.
+The product owner previously described the targeted scroll, detail-response and swipe-dismiss retests as **"perfect"**. Those are qualitative iPhone confirmations, not performance measurements or blanket accessibility approval.
 
-Totaal now reads the platform `fontScale` and derives layout metrics from it. At default scale the accepted geometry remains unchanged. As scale increases:
-- row height, channel-identity rail width and time-axis height grow;
-- programme titles keep priority while the secondary programme-time line is dropped in the denser large-text mode;
-- channel names stay on one line with ellipsis rather than splitting in the middle of a word;
-- day and `Nu` controls retain at least 44 logical points of touch height;
-- channel identity is structurally ready for logo-first presentation with an accessible text fallback.
+## Latest larger-text device evidence — 13 September 2026, 08:44 screenshot
+The product owner tested the first Dynamic Type increment on the same iPhone with system text materially larger than normal. Exact local SHA, iPhone model, iOS version and Expo Go version are still not independently recorded.
 
-The deterministic fixture intentionally remains text-only. This increment validates layout behaviour, not real logo design or logo licensing.
+Reported results:
+- **zenderkolom/programmarijen blijven uitgelijnd:** `Ja`;
+- **programmadetail blijft bereikbaar inclusief `Sluiten`:** `Ja`;
+- the supplied screenshot showed a concrete large-text defect in Guide chrome: the large `Gids` heading was visibly clipped and the day labels were ellipsized (`Van...`, `Ma 1...`). The time axis/chrome also remained too horizontally dense for that font scale.
 
-No accepted scroll physics, timeline semantics, detail dismissal thresholds or native modal animation were changed.
+Because detail content remained reachable, **do not add an internal ProgrammeDetail ScrollView solely on the basis of this test**. Revisit coordinated reading-scroll versus swipe-dismiss only when real long content proves it necessary.
 
-## Verification evidence
-- PR #3 exact head `4c67e6cfc369e0b0f54c93ecd26bfc457336f631`: **CI #69 succeeded**, including install, TypeScript, lint, tests and iOS/Android/web Expo bundle exports.
-- PR #3 merged to main as `da61b3cf10f8bf79e552f2b3eacdb289439810ce`: **main CI #70, run `34743172096`, succeeded** with the same quality/bundle gates.
-- Pure tests verify default geometry, larger-scale growth, accessibility-sized continued growth and invalid-font-scale fallback.
-- React integration mocks were updated for `useWindowDimensions`/Image without weakening the existing Guide/detail render-isolation and dismissal checks.
-- These automated checks are not native visual, screen-reader or touch tests.
+## Large-text correction integrated
+The screenshot defect was addressed in PR #4 without changing accepted scroll or dismissal behaviour:
+- scalable heading/programme text no longer uses fixed line-height boxes that can clip enlarged glyphs;
+- from large-text mode onward, header/day controls receive their own width rather than competing horizontally;
+- horizontal minute density and time-label room increase gradually with system font scale;
+- programme geometry, current-time calculations, day jumps and visible-time calculations all use the same font-scale-dependent minute width;
+- the 100% font-scale geometry remains the accepted baseline.
 
-Earlier accepted evidence remains:
-- standard platform scroll inertia, bounce, continuous day navigation and animated `Nu`: qualitative iPhone acceptance;
-- detail response, close button and backdrop dismissal: qualitative iPhone acceptance;
-- downward swipe dismissal and short-drag return/reopen change set: qualitative iPhone acceptance;
-- dark-mode Guide/detail screenshots: visually usable base with concrete open readability findings recorded in `DEVICE_TEST_REPORT.md`.
+Verification:
+- PR #4 exact head **`536de5b778725d2f91dba3f734c4efecd8d78028`** passed **CI #74, run `34743728065`**, including install, typecheck, lint, tests and iOS/Android/web exports.
+- PR #4 merged to main as **`4f4fa94c6b1968ca03bb551fde9bb7ed376b2113`**.
+- Main **CI #75, run `34743812493`, completed successfully** for that exact merge SHA with the same gates.
 
-Do not retune those accepted interaction baselines without a concrete regression.
+CI validates code/build integrity, not the resulting large-text layout on a physical iPhone.
 
-## Open Phase 1 work
-- **Physical larger-text validation is still required.** No device result exists yet for the new Dynamic Type layout.
-- Confirm Totaal remains readable/aligned at a materially enlarged iPhone system-text setting and that programme detail content plus `Sluiten` remain reachable.
-- ProgrammeDetail still has no internal ScrollView. Add one only if reachability evidence requires it, then coordinate it with swipe-to-dismiss rather than allowing reading-scroll to dismiss the sheet.
-- The screenshot finding where the leading portion of a partly off-screen programme title/time disappears behind the fixed channel rail remains open; the Dynamic Type increment did not claim to solve it.
-- Theme switching during use, screen-reader navigation, formal contrast checking, short-cell/metadata fallbacks and current-time/progress correctness remain to be validated explicitly.
-- Android gesture/back-button tests and release-like device performance remain open; JS bundle export does not replace them.
-- Finite launch-anchored fixture lifecycle across resume-after-midnight/expiry remains open.
-- CI still generates a lockfile before `npm ci`; reproducibility cleanup and previously reported moderate npm advisories require deliberate work. Do not force-upgrade.
-- Per zender and today-only Nu & Straks need explicit subsequent build increments after the current Phase 1 accessibility gate.
-- Production EPG/logo/artwork rights and reliability, exact price/trial/paywall and final visual design are later gates.
-
-No real EPG, production artwork, accounts or subscriptions have been introduced.
+## Remaining Phase 1 work
+Still open after this increment:
+- one focused iPhone retest of the corrected large-text Guide chrome;
+- partially horizontally hidden programme content behind the fixed channel rail remains a separate readability issue and is not declared solved by this increment;
+- VoiceOver/screen-reader behaviour and live theme switching;
+- explicit progress/current-time accuracy checks;
+- Android gesture/back behaviour and release-like performance;
+- long-fling/render-load instrumentation if performance becomes suspect;
+- lifecycle behaviour for the launch-anchored finite fixture after midnight/expiry;
+- CI reproducibility cleanup: workflow still generates a lockfile before `npm ci`; previously reported moderate advisories need deliberate review, never `npm audit fix --force`;
+- subsequent explicit build increments for Per zender and today-only Nu & Straks;
+- production EPG/logo/artwork rights/reliability, price/trial/paywall and final visual design are later gates.
 
 ## EXACT NEXT STEP
-**Validate the merged Dynamic Type increment on the same iPhone at a materially larger system-text setting: update the local checkout, reopen the app, inspect Totaal alignment/readability and open a programme detail to verify all content and `Sluiten` remain reachable. Record only concrete observations. If detail content is unreachable, the next implementation must add coordinated detail scrolling without changing the accepted Guide scroll or dismissal feel.**
+**Retest the merged large-text correction on the same iPhone at the same materially enlarged system-text setting: confirm that `Gids`, `Nu`, both day labels, the time axis and programme titles are fully readable while zender/programme alignment and detail reachability remain intact. Report only concrete regressions; do not reopen the accepted scroll or dismissal tuning without evidence.**
 
-Owner checkout: `~/projects/teevee`. For this appcode increment, stop Metro with Control+C, run `git pull --ff-only`, then `npm run start:clean` and reopen Expo Go. GitHub commits do not automatically update the local checkout.
+Owner checkout: `~/projects/teevee`. To test this appcode increment: stop Metro with Control+C, run `git pull --ff-only`, then `npm run start:clean` and reopen Expo Go.
+
+Do not introduce real EPG, subscriptions, accounts, Tonight, enrichment or specialised Guide virtualisation in this validation step.
 
 ## Resume instruction
 > Read AGENTS.md and PROJECT_STATE. Execute EXACT NEXT STEP where possible, follow the Definition of Done, and update this state plus Dutch timestamped DEVLOG with evidence. Ask only for product choices or genuinely necessary physical-device observations. Never substitute CI or a mock for device acceptance.
