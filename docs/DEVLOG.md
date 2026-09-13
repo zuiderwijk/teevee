@@ -11,6 +11,28 @@ Doel: een begrijpelijk chronologisch overzicht van substantiële wijzigingen, to
 
 ---
 
+## 13 september 2026, 14:07 CEST — PR #12 fysiek geaccepteerd; Guide-scroll/readabilitygate gesloten
+
+### Toestelbewijs
+De product owner leverde `ScreenRecording_09-13-2026 14-04-35_1.MP4` (10,93 s, 1170×2532). De opname is frame-voor-frame gecontroleerd op de regressie uit de 13:48-opname.
+
+Resultaat:
+- een sterke fling naar latere tijden en een sterke reverse fling terug naar eerdere tijden zijn zichtbaar;
+- programmatitels blijven tijdens reverse drag/momentum gerenderd; het massale tijdelijk tekstloos worden van zichtbare blokken komt niet terug;
+- de fysiek geaccepteerde PR #9 partial-left edge-title blijft coherent;
+- de fysiek geaccepteerde PR #11 time-axis blijft vrij van losse `:30`/`30`-fragmenten;
+- tickposities en programme `left`/`width` blijven visueel stabiel.
+
+Daarmee is **PR #12 fysiek geaccepteerd**. De combinatie PR #9 native edge-readability, PR #11 single-mask time-axis en PR #12 stale settled-state correction is nu de bevroren Guide-scroll/readabilitybaseline.
+
+### Technische status
+PR #12 was al technisch groen op PR CI #150 / `34755583818` en gemerged als **`b76edfab972b1d6194b2cbf1460515256de0e5c4`**. De gedocumenteerde post-merge main-state passeerde daarna ook CI #154 / `34755760369` volledig.
+
+### Volgende stap
+Phase 1 gaat verder met **VoiceOver/screenreader + live system-theme switching**. Eerst technisch auditen en hardenen: decoratieve rails uit de accessibility tree waar ze dupliceren, programmebuttons self-contained maken met zender+titel+tijd, modal escape/close behouden en automatische dekking toevoegen voor live light↔dark scheme-wissels. Daarna volledige CI en alleen de minimaal noodzakelijke fysieke VoiceOver/theme-check.
+
+---
+
 ## 13 september 2026, 13:55 CEST — PR #11 time-axis fysiek geaccepteerd; PR #12 reverse-scroll fix geïntegreerd
 
 ### Toestelbewijs
@@ -155,9 +177,9 @@ Projectfoundation, deterministische EPG-fixture, Expo/React Native strict TypeSc
 ---
 
 ## Doorlopende open technische punten
-- PR #12 reverse-scroll title correction staat op main en is technisch groen; één gerichte iPhone-validatie staat nog open.
+- VoiceOver/screenreader en live system-theme switching zijn de volgende Phase 1-gate.
 - Android gesture/back en release-achtige performance zijn nog niet fysiek gevalideerd.
-- VoiceOver/screenreader, live theme switching en expliciete current-time/progress-validatie staan open.
+- Expliciete current-time/progress-validatie staat open.
 - Finite fixture lifecycle rond resume na middernacht/expiry staat open.
 - CI genereert nog een lockfile vóór `npm ci`; 15 moderate advisories vereisen gerichte analyse. Nooit `npm audit fix --force`.
 - Productie-EPG/logo/artworkrechten, abonnement/paywall, exacte productietokens/fontlicentie en de definitieve Vanavond/Tonight-modules liggen buiten deze directe Phase 1-stabiliteitsstap.
