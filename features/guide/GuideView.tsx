@@ -1,4 +1,4 @@
-import { memo, useEffect, useMemo, useRef, useState } from 'react';
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   Pressable,
   SafeAreaView,
@@ -8,6 +8,13 @@ import {
   useWindowDimensions,
   View,
 } from 'react-native';
+import Animated, {
+  type SharedValue,
+  useAnimatedScrollHandler,
+  useAnimatedStyle,
+  useSharedValue,
+} from 'react-native-reanimated';
+import { scheduleOnRN } from 'react-native-worklets';
 
 import { programmeProgress } from '@/data/domain/epg';
 import { guideDayStart, GUIDE_TIME_ZONE } from '@/data/domain/guideTime';
@@ -18,6 +25,7 @@ import { ChannelIdentity } from './ChannelIdentity';
 import type { ProgrammeSelection } from './detailState';
 import {
   buildTimeTicks,
+  type ProgrammeFrame,
   programmeContentMode,
   programmeFrame,
   programmeVisibleContent,
@@ -27,8 +35,24 @@ import {
 import { guideLayoutForFontScale } from './layout';
 import { useGuideClock } from './useGuideClock';
 
+const GUIDE_CONTROL_MAX_FONT_SIZE_MULTIPLIER = 1.2;
+const PROGRAMME_TIME_SLOT_HEIGHT = 14;
+
 type GuideViewProps = {
   onSelectProgramme: (selection: ProgrammeSelection) => void;
+};
+
+type ProgrammeReadableContentProps = {
+  frame: ProgrammeFrame;
+  viewportX: SharedValue<number>;
+  horizontalPadding: number;
+  title: string;
+  titleLines: number;
+  compact: boolean;
+  titleColor: string;
+  showStartTime: boolean;
+  startTime: string;
+  timeColor: string;
 };
 
 function formatTime(timeMs: number) {
@@ -41,12 +65,66 @@ function formatTime(timeMs: number) {
 
 function formatDay(timeMs: number) {
   return new Date(timeMs).toLocaleDateString('nl-NL', {
-    weekday: 'short',
+    weekday: 'long',
     day: 'numeric',
-    month: 'short',
+    month: 'long',
     timeZone: GUIDE_TIME_ZONE,
   });
 }
+
+const ProgrammeReadableContent = memo(function ProgrammeReadableContent({
+  frame,
+  viewportX,
+  horizontalPadding,
+  title,
+  titleLines,
+  compact,
+  titleColor,
+  showStartTime,
+  startTime,
+  timeColor,
+}: ProgrammeReadableContentProps) {
+  const contentStyle = useAnimatedStyle(() => {
+    const visibleContent = programmeVisibleContent(frame, viewportX.value);
+    return {
+      width: Math.max(0, visibleContent.visibleWidth - horizontalPadding * 2),
+      transform: [{ translateX: visibleContent.contentTranslateX }],
+    };
+  }, [frame.left, frame.width, horizontalPadding, viewportX]);
+
+  const timeSlotStyle = useAnimatedStyle(() => {
+    const visibleContent = programmeVisibleContent(frame, viewportX.value);
+    const visible = showStartTime && visibleContent.canShowStartTime;
+    return {
+      height: visible ? PROGRAMME_TIME_SLOT_HEIGHT : 0,
+      marginTop: visible ? 4 : 0,
+      opacity: visible ? 1 : 0,
+    };
+  }, [frame.left, frame.width, showStartTime, viewportX]);
+
+  return (
+    <Animated.View style={[styles.programmeTextContent, contentStyle]}>
+      <Text
+        numberOfLines={titleLines}
+        ellipsizeMode="tail"
+        style={[
+          styles.programmeTitle,
+          compact ? styles.programmeTitleCompact : null,
+          { color: titleColor },
+        ]}
+      >
+        {title}
+      </Text>
+      {showStartTime ? (
+        <Animated.View style={[styles.programmeTimeSlot, timeSlotStyle]}>
+          <Text numberOfLines={1} style={[styles.programmeTime, { color: timeColor }]}>
+            {startTime}
+          </Text>
+        </Animated.View>
+      ) : null}
+    </Animated.View>
+  );
+});
 
 // Modal visibility lives outside this memo boundary. Keep the same mounted
 // ScrollViews and stable selection callback when opening or closing a detail.
@@ -59,7 +137,9 @@ export const GuideView = memo(function GuideView({ onSelectProgramme }: GuideVie
   const [initialNow] = useState(() => Date.now());
   const runtimeFixture = useMemo(() => buildRuntimeGuideFixture(initialNow), [initialNow]);
   const [dayOffset, setDayOffset] = useState(0);
-  const [readabilityViewportX, setReadabilityViewportX] = useState(0);
+  const readabilityViewportX = useSharedValue(0);
+  const visibleDayOffset = useSharedValue(0);
+  const dayJumpTargetX = useSharedValue(-1);
   const nowMs = useGuideClock();
 
   const windowStart = useMemo(
@@ -77,16 +157,69 @@ export const GuideView = memo(function GuideView({ onSelectProgramme }: GuideVie
   const tomorrowStart = useMemo(() => guideDayStart(initialNow, 1), [initialNow]);
   const guideHeight = runtimeFixture.channels.length * layout.rowHeight;
 
+  const updateDayOffsetFromScroll = useCallback((nextOffset: number) => {
+    setDayOffset((currentOffset) => (currentOffset === nextOffset ? currentOffset : nextOffset));
+  }, []);
+
+  const horizontalScrollHandler = useAnimatedScrollHandler(
+    {
+      onBeginDrag: () => {
+        dayJumpTargetX.value = -1;
+      },
+      onScroll: (event) => {
+        const viewportX = Math.max(0, event.contentOffset.x);
+        readabilityViewportX.value = viewportX;
+
+        if (dayJumpTargetX.value >= 0) {
+          if (Math.abs(viewportX - dayJumpTargetX.value) <= 1) {
+            dayJumpTargetX.value = -1;
+          }
+          return;
+        }
+
+        const visibleTime = windowStart + (viewportX / layout.minuteWidth) * 60_000;
+        const nextOffset = visibleTime >= tomorrowStart ? 1 : 0;
+        if (visibleDayOffset.value !== nextOffset) {
+          visibleDayOffset.value = nextOffset;
+          scheduleOnRN(updateDayOffsetFromScroll, nextOffset);
+        }
+      },
+      onMomentumEnd: (event) => {
+        dayJumpTargetX.value = -1;
+        const viewportX = Math.max(0, event.contentOffset.x);
+        readabilityViewportX.value = viewportX;
+        const visibleTime = windowStart + (viewportX / layout.minuteWidth) * 60_000;
+        const nextOffset = visibleTime >= tomorrowStart ? 1 : 0;
+        if (visibleDayOffset.value !== nextOffset) {
+          visibleDayOffset.value = nextOffset;
+          scheduleOnRN(updateDayOffsetFromScroll, nextOffset);
+        }
+      },
+    },
+    [layout.minuteWidth, tomorrowStart, updateDayOffsetFromScroll, windowStart],
+  );
+
   useEffect(() => {
     const initialX = Math.max(0, timeToX(initialNow, windowStart, layout.minuteWidth) - 120);
-    setReadabilityViewportX(initialX);
+    readabilityViewportX.value = initialX;
+    visibleDayOffset.value = 0;
+    dayJumpTargetX.value = -1;
     const frame = requestAnimationFrame(() => horizontalRef.current?.scrollTo({ x: initialX, animated: false }));
     return () => cancelAnimationFrame(frame);
-  }, [initialNow, layout.minuteWidth, windowStart]);
+  }, [
+    dayJumpTargetX,
+    initialNow,
+    layout.minuteWidth,
+    readabilityViewportX,
+    visibleDayOffset,
+    windowStart,
+  ]);
 
   const jumpToNow = () => {
     const x = Math.max(0, timeToX(Date.now(), windowStart, layout.minuteWidth) - 120);
-    setReadabilityViewportX(x);
+    setDayOffset(0);
+    visibleDayOffset.value = 0;
+    dayJumpTargetX.value = x;
     horizontalRef.current?.scrollTo({ x, animated: true });
   };
 
@@ -95,43 +228,34 @@ export const GuideView = memo(function GuideView({ onSelectProgramme }: GuideVie
   const changeDay = (nextOffset: number) => {
     const targetTime = nextOffset === 0 ? windowStart : tomorrowStart;
     const x = Math.max(0, timeToX(targetTime, windowStart, layout.minuteWidth));
-    setReadabilityViewportX(x);
+    setDayOffset(nextOffset);
+    visibleDayOffset.value = nextOffset;
+    dayJumpTargetX.value = x;
     horizontalRef.current?.scrollTo({ x, animated: true });
   };
 
   return (
     <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.colors.background }]}>
-      <View style={[styles.header, layout.stackedControls ? styles.headerStacked : null]}>
-        <View style={[styles.headerTitleGroup, layout.stackedControls ? styles.headerTitleGroupStacked : null]}>
+      <View style={styles.header}>
+        <View style={styles.headerTitleGroup}>
           <Text style={[styles.eyebrow, { color: theme.colors.textMuted }]}>TEEVEE</Text>
           <Text accessibilityRole="header" style={[styles.title, { color: theme.colors.text }]}>Gids</Text>
         </View>
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel="Ga naar nu"
-          onPress={jumpToNow}
-          style={[
-            styles.nowBadge,
-            layout.stackedControls ? styles.nowBadgeStacked : null,
-            { backgroundColor: theme.colors.accent },
-          ]}
-        >
-          <Text style={[styles.nowText, { color: theme.colors.background }]}>Nu</Text>
-        </Pressable>
       </View>
 
-      <View style={[styles.daySwitcher, layout.stackedControls ? styles.daySwitcherStacked : null]}>
+      <View style={styles.guideControls}>
         {[0, 1].map((offset) => {
           const active = dayOffset === offset;
+          const label = offset === 0 ? 'Vandaag' : 'Morgen';
           return (
             <Pressable
               key={offset}
               accessibilityRole="button"
+              accessibilityLabel={offset === 0 ? 'Vandaag' : `Morgen, ${formatDay(tomorrowStart)}`}
               accessibilityState={{ selected: active }}
               onPress={() => changeDay(offset)}
               style={[
                 styles.dayButton,
-                layout.stackedControls ? styles.dayButtonStacked : null,
                 {
                   backgroundColor: active ? theme.colors.accent : theme.colors.surface,
                   borderColor: theme.colors.border,
@@ -139,17 +263,32 @@ export const GuideView = memo(function GuideView({ onSelectProgramme }: GuideVie
               ]}
             >
               <Text
+                maxFontSizeMultiplier={GUIDE_CONTROL_MAX_FONT_SIZE_MULTIPLIER}
                 numberOfLines={1}
                 style={[
                   styles.dayButtonText,
                   { color: active ? theme.colors.background : theme.colors.textSecondary },
                 ]}
               >
-                {offset === 0 ? 'Vandaag' : formatDay(tomorrowStart)}
+                {label}
               </Text>
             </Pressable>
           );
         })}
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel="Ga naar nu"
+          onPress={jumpToNow}
+          style={[styles.nowBadge, { backgroundColor: theme.colors.accent }]}
+        >
+          <Text
+            maxFontSizeMultiplier={GUIDE_CONTROL_MAX_FONT_SIZE_MULTIPLIER}
+            numberOfLines={1}
+            style={[styles.nowText, { color: theme.colors.background }]}
+          >
+            Nu
+          </Text>
+        </Pressable>
       </View>
 
       <View style={[styles.guideFrame, { borderColor: theme.colors.border }]}>
@@ -190,7 +329,7 @@ export const GuideView = memo(function GuideView({ onSelectProgramme }: GuideVie
           </ScrollView>
         </View>
 
-        <ScrollView
+        <Animated.ScrollView
           testID="guide-time-scroll"
           ref={horizontalRef}
           horizontal
@@ -199,13 +338,7 @@ export const GuideView = memo(function GuideView({ onSelectProgramme }: GuideVie
           decelerationRate="normal"
           showsHorizontalScrollIndicator={false}
           scrollEventThrottle={16}
-          onScroll={(event) => {
-            const visibleTime = windowStart + (event.nativeEvent.contentOffset.x / layout.minuteWidth) * 60_000;
-            const visibleDay = visibleTime >= tomorrowStart ? 1 : 0;
-            if (visibleDay !== dayOffset) setDayOffset(visibleDay);
-          }}
-          onScrollEndDrag={(event) => setReadabilityViewportX(Math.max(0, event.nativeEvent.contentOffset.x))}
-          onMomentumScrollEnd={(event) => setReadabilityViewportX(Math.max(0, event.nativeEvent.contentOffset.x))}
+          onScroll={horizontalScrollHandler}
         >
           <View style={{ width }}>
             <View
@@ -269,12 +402,9 @@ export const GuideView = memo(function GuideView({ onSelectProgramme }: GuideVie
                       const isCurrent = nowMs >= startMs && nowMs < endMs;
                       const progress = isCurrent ? programmeProgress(programme, new Date(nowMs)) : 0;
                       const contentMode = programmeContentMode(frame.width);
-                      const visibleContent = programmeVisibleContent(frame, readabilityViewportX);
                       const horizontalPadding = contentMode === 'compact' ? 5 : 8;
-                      const readableTextWidth = Math.max(0, visibleContent.visibleWidth - horizontalPadding * 2);
                       const titleLines = layout.largeText ? 1 : contentMode === 'comfortable' ? 2 : 1;
-                      const showProgrammeTime =
-                        !layout.largeText && contentMode !== 'compact' && visibleContent.canShowStartTime;
+                      const showProgrammeTime = !layout.largeText && contentMode !== 'compact';
 
                       return (
                         <Pressable
@@ -308,32 +438,18 @@ export const GuideView = memo(function GuideView({ onSelectProgramme }: GuideVie
                               />
                             </View>
                           ) : null}
-                          <View
-                            style={[
-                              styles.programmeTextContent,
-                              {
-                                width: readableTextWidth,
-                                transform: [{ translateX: visibleContent.contentTranslateX }],
-                              },
-                            ]}
-                          >
-                            <Text
-                              numberOfLines={titleLines}
-                              ellipsizeMode="tail"
-                              style={[
-                                styles.programmeTitle,
-                                contentMode === 'compact' ? styles.programmeTitleCompact : null,
-                                { color: theme.colors.text },
-                              ]}
-                            >
-                              {programme.title}
-                            </Text>
-                            {showProgrammeTime ? (
-                              <Text numberOfLines={1} style={[styles.programmeTime, { color: theme.colors.textMuted }]}>
-                                {formatTime(startMs)}
-                              </Text>
-                            ) : null}
-                          </View>
+                          <ProgrammeReadableContent
+                            frame={frame}
+                            viewportX={readabilityViewportX}
+                            horizontalPadding={horizontalPadding}
+                            title={programme.title}
+                            titleLines={titleLines}
+                            compact={contentMode === 'compact'}
+                            titleColor={theme.colors.text}
+                            showStartTime={showProgrammeTime}
+                            startTime={formatTime(startMs)}
+                            timeColor={theme.colors.textMuted}
+                          />
                         </Pressable>
                       );
                     })}
@@ -351,7 +467,7 @@ export const GuideView = memo(function GuideView({ onSelectProgramme }: GuideVie
               </View>
             </ScrollView>
           </View>
-        </ScrollView>
+        </Animated.ScrollView>
       </View>
     </SafeAreaView>
   );
@@ -363,21 +479,31 @@ const styles = StyleSheet.create({
     paddingHorizontal: 18,
     paddingTop: 12,
     paddingBottom: 8,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    gap: 12,
-  },
-  headerStacked: {
-    flexDirection: 'column',
-    alignItems: 'stretch',
   },
   headerTitleGroup: { flexShrink: 1 },
-  headerTitleGroupStacked: { flexShrink: 0, width: '100%' },
   eyebrow: { fontSize: 10, fontWeight: '700', letterSpacing: 1.1 },
   title: { fontSize: 32, fontWeight: '700', letterSpacing: -1.2 },
+  guideControls: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    paddingHorizontal: 18,
+    paddingBottom: 12,
+  },
+  dayButton: {
+    flex: 1,
+    minWidth: 0,
+    minHeight: 44,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+    borderRadius: 22,
+    borderWidth: StyleSheet.hairlineWidth,
+  },
+  dayButtonText: { fontSize: 12, fontWeight: '700' },
   nowBadge: {
-    minWidth: 52,
+    minWidth: 60,
     minHeight: 44,
     paddingHorizontal: 14,
     paddingVertical: 8,
@@ -385,20 +511,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  nowBadgeStacked: { alignSelf: 'flex-end' },
   nowText: { fontSize: 14, fontWeight: '700' },
-  daySwitcher: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, paddingHorizontal: 18, paddingBottom: 12 },
-  daySwitcherStacked: { flexDirection: 'column', alignItems: 'stretch' },
-  dayButton: {
-    minHeight: 44,
-    justifyContent: 'center',
-    paddingHorizontal: 13,
-    paddingVertical: 8,
-    borderRadius: 22,
-    borderWidth: StyleSheet.hairlineWidth,
-  },
-  dayButtonStacked: { alignSelf: 'stretch' },
-  dayButtonText: { fontSize: 12, fontWeight: '700', textTransform: 'capitalize' },
   guideFrame: { flex: 1, flexDirection: 'row', borderTopWidth: StyleSheet.hairlineWidth },
   channelColumn: { zIndex: 2, borderRightWidth: StyleSheet.hairlineWidth },
   channelAxisCorner: { justifyContent: 'center', paddingHorizontal: 8, borderBottomWidth: StyleSheet.hairlineWidth },
@@ -431,7 +544,8 @@ const styles = StyleSheet.create({
   programmeTextContent: { flexShrink: 1 },
   programmeTitle: { fontSize: 12, fontWeight: '600' },
   programmeTitleCompact: { fontSize: 10 },
-  programmeTime: { fontSize: 10, marginTop: 4 },
+  programmeTimeSlot: { overflow: 'hidden' },
+  programmeTime: { fontSize: 10 },
   progressTrack: { height: 2, borderRadius: 1, overflow: 'hidden', marginBottom: 4 },
   progressFill: { height: '100%' },
   currentTimeLine: { position: 'absolute', top: 0, width: 2, zIndex: 4 },
