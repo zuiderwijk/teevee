@@ -11,14 +11,22 @@ export type ScheduleWindowWrite = {
   schedule: GuideSchedule;
 };
 
-export type ScheduleWindowWriteResult = {
-  removedProgrammeCount: number;
-  storedProgrammeCount: number;
-};
+export type ScheduleWindowWriteResult =
+  | {
+      status: 'stored';
+      removedProgrammeCount: number;
+      storedProgrammeCount: number;
+    }
+  | {
+      status: 'ignored-stale';
+      removedProgrammeCount: 0;
+      storedProgrammeCount: 0;
+    };
 
 /**
  * Backend-independent storage boundary for canonical Teevee schedules.
- * Implementations may use Postgres/Supabase, SQLite for tooling, or deterministic memory in tests.
+ * `getSchedule` returns null when the requested channel/time scope is not fully covered;
+ * a fully covered schedule with zero programmes remains a valid non-null result.
  */
 export interface ScheduleRepository {
   replaceWindow(input: ScheduleWindowWrite): Promise<ScheduleWindowWriteResult>;
