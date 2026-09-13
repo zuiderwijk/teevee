@@ -6,12 +6,10 @@ import {
 } from './geometry';
 
 export const GUIDE_LARGE_TEXT_THRESHOLD = 1.15;
-export const GUIDE_STACKED_CONTROLS_THRESHOLD = GUIDE_LARGE_TEXT_THRESHOLD;
 
 export type GuideLayoutMetrics = {
   fontScale: number;
   largeText: boolean;
-  stackedControls: boolean;
   rowHeight: number;
   channelWidth: number;
   timeAxisHeight: number;
@@ -32,7 +30,6 @@ export function guideLayoutForFontScale(fontScale: number): GuideLayoutMetrics {
   return {
     fontScale: scale,
     largeText: scale >= GUIDE_LARGE_TEXT_THRESHOLD,
-    stackedControls: scale >= GUIDE_STACKED_CONTROLS_THRESHOLD,
     rowHeight: Math.round(GUIDE_ROW_HEIGHT + 40 * growth),
     channelWidth: Math.round(GUIDE_CHANNEL_WIDTH + 28 * growth),
     timeAxisHeight: Math.round(GUIDE_TIME_AXIS_HEIGHT + 18 * growth),
