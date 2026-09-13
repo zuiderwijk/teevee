@@ -1,9 +1,9 @@
 # Teevee Phased Build Specification
 
-Status: phased baseline, amended 13 September 2026 to incorporate the accepted Guide/Programme Detail UX direction. Implementation status remains governed by `docs/PROJECT_STATE.md`.
+Status: phased baseline, amended 13 September 2026 to incorporate the accepted Guide/Programme Detail UX direction and the owner-approved Phase 1B Guide-presentation validation. Implementation status remains governed by `docs/PROJECT_STATE.md`.
 
 ## Build philosophy
-Build risk-first, not screen-count-first. The Guide interaction is the defining product and largest technical/UX risk, so it is validated before broad feature development.
+Build risk-first, not screen-count-first. The Guide interaction is the defining product and largest technical/UX risk, so its distinct interaction models are validated before broad shell and production-data development.
 
 Accepted visual/UX direction in `docs/UX.md` and `docs/DESIGN_SYSTEM.md` is the target for implementation; it must not be confused with already-shipped runtime behaviour.
 
@@ -20,8 +20,8 @@ Deliverables:
 
 Exit criterion: an autonomous agent can start Phase 1 without rediscovering product intent or architecture.
 
-## Phase 1 — Guide Interaction Prototype
-Goal: prove the best possible mobile TV-guide interaction using deterministic realistic fixture data.
+## Phase 1A — Totaal Interaction Prototype
+Goal: prove the hardest two-dimensional mobile TV-guide interaction using deterministic realistic fixture data.
 
 Build only what is needed to validate:
 - React Native/Expo app bootstrap;
@@ -32,8 +32,8 @@ Build only what is needed to validate:
 - horizontal time navigation;
 - vertical channel navigation;
 - current-time marker;
-- current-programme progress where required by the current prototype;
-- Now action;
+- current-programme progress where required by the prototype;
+- Nu action;
 - day navigation sufficient for prototype testing;
 - direct programme tap/detail presentation;
 - performance instrumentation where useful;
@@ -42,20 +42,40 @@ Build only what is needed to validate:
 Acceptance gate:
 - smooth interaction at realistic channel/programme volume;
 - no major scroll synchronisation defects;
-- Now/date behaviour is intuitive;
+- Nu/date behaviour is intuitive;
 - information remains legible at practical density;
 - light and dark both function;
-- core interaction is demonstrably preferable to a conventional mobile guide.
+- the core Totaal interaction is demonstrably preferable to a conventional mobile guide.
 
-Do not pull broad later-phase scope into Phase 1 merely because the visual baseline is now known. The current exact next step and accepted runtime baseline remain in `PROJECT_STATE.md`.
+The accepted iPhone Totaal interaction baseline is technically frozen in `docs/PROJECT_STATE.md`; do not retune it without concrete regression evidence.
+
+## Phase 1B — Guide Presentation Prototypes
+Goal: prove the two Guide interaction models that were defined during Phase 1 before App Shell and real-data architecture are hardened around Totaal alone.
+
+Build in this order on the same deterministic fixture domain and existing Programme Detail path:
+1. **Per zender** — one channel's vertically time-based schedule, persistent/browsable horizontal channel strip, direct logo/channel selection, horizontal adjacent-channel paging that preserves the viewed time anchor, secondary day controls and Nu.
+2. **Nu & Straks** — today-only shared reference-time selector, live/browse states, `Nu` and `Primetime`, and reference programme plus three following programmes per channel.
+
+Acceptance gate:
+- both presentations have interaction semantics that work on a physical available iPhone rather than only in tests;
+- channel/time/reference context survives the expected navigation and Programme Detail round-trip;
+- vertical/horizontal gesture arbitration is usable and does not create obvious accidental switching, jank, white screens or crashes;
+- semantics remain based on the shared Teevee schedule domain rather than presentation-specific EPG models;
+- light/dark and representative larger-text behaviour remain usable;
+- Totaal's accepted implementation is not destabilised merely to share code prematurely.
+
+Phase 1B is prototype scope. It deliberately does **not** pull production EPG integration, persistent channel management, offline production behaviour, accounts or subscriptions forward. Physical Android interaction validation remains required before release but may be deferred when no Android device is available; CI/native compilation is build evidence, not device acceptance.
+
+Detailed Phase 1B gates live in `docs/PHASE_1B.md` and ADR 0005.
 
 ## Phase 2 — App Shell
-Goal: turn the prototype into a maintainable product shell.
+Goal: turn the proven Guide interaction models into a maintainable product shell.
 
 Deliver:
 - routing/navigation;
 - semantic design tokens/components;
-- canonical Guide shell/chrome behaviour from UX baseline;
+- canonical Guide shell/chrome shared by Totaal, Per zender and Nu & Straks;
+- presentation-state contract and locally remembered Guide presentation preference;
 - settings foundation;
 - local preference persistence;
 - robust loading/error boundaries;
@@ -78,12 +98,12 @@ Deliver:
 The free provider is not declared production-safe by completing this phase.
 
 ## Phase 4 — Core Guide MVP
-Deliver the accepted Guide UX from `docs/UX.md` on production-quality schedule data:
+Deliver and harden the accepted Guide UX from `docs/UX.md` on production-quality schedule data:
 - robust multi-day Totaal schedule;
-- Per zender vertical day list with sticky/swipeable channel-logo navigation and horizontal adjacent-channel swipe;
-- Nu & Straks today-only shared time selector with live/browse states, `Primetime`/`Nu` shortcuts and reference programme + three following programmes per channel;
+- production-quality Per zender using the Phase 1B interaction baseline;
+- production-quality Nu & Straks using the Phase 1B interaction baseline;
 - channel selection and ordering;
-- reliable Now behaviour;
+- reliable Nu behaviour;
 - Programme Detail direct-open flow;
 - `Herinner mij` + `Bewaar` primary actions and contextual sticky bottom copies after the canonical actions scroll away;
 - offline/stale-cache handling;
@@ -112,4 +132,4 @@ Performance profiling, accessibility audit, offline/failure scenarios, observabi
 TestFlight and Google closed testing, store assets/metadata, subscription products, review submission, staged production rollout and post-release monitoring.
 
 ## Scope rule
-A later-phase feature may be pulled forward only when it is required to validate an earlier-phase risk. Otherwise phases remain sequential.
+A later-phase capability may be prototyped earlier only when it is required to validate an earlier architectural or interaction risk. Production hardening remains in its designated phase unless explicitly re-planned and approved.
