@@ -71,8 +71,9 @@ describe('NowNextLoadErrorNotice', () => {
     expect(container.textContent).toContain('De andere gidsweergaven blijven beschikbaar');
     expect(container.textContent).not.toContain('Error:');
 
-    const retry = container.querySelector<HTMLButtonElement>('[aria-label="Nu & Straks opnieuw laden"]');
+    const retry = container.querySelector<HTMLButtonElement>('button');
     expect(retry).not.toBeNull();
+    expect(retry?.getAttribute('aria-label')).toBe('Nu & Straks opnieuw laden');
     await act(async () => retry?.click());
     expect(onRetry).toHaveBeenCalledOnce();
   });
