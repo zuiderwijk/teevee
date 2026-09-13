@@ -1,9 +1,19 @@
 # Teevee UX and Information Architecture
 
-Status: Phase 0 baseline, amended with owner guide-view, accessibility and Totaal time-navigation requirements on 13 September 2026. Interaction principles are stronger constraints than the current visual references. Only Totaal is implemented so far.
+Status: accepted visual/UX baseline as of 13 September 2026. The repository remains the technical source of truth. This document records the owner-approved UX direction; implementation status may lag behind it.
 
 ## Experience objective
-Teevee should feel like a purpose-built mobile instrument for television schedules, not a desktop EPG compressed onto a phone and not a content portal with a guide attached.
+Teevee is a premium, advertising-free TV guide for iOS and Android. The Guide is the primary product. It should feel calm, modern, precise and purpose-built for television schedules: not a content portal, not a streaming catalogue, and not a desktop EPG compressed onto a phone.
+
+Core principles:
+- information hierarchy before decoration;
+- generous breathing room rather than maximum information per viewport;
+- restrained app chrome;
+- channel logo primary, channel name secondary/contextual;
+- light, dark and system appearance;
+- substantive content remains usable with larger system fonts;
+- no advertising surfaces;
+- artwork is enrichment, never a dependency for Guide usability.
 
 ## Information architecture
 Working primary navigation:
@@ -11,154 +21,154 @@ Working primary navigation:
 - Tonight
 - Search
 
-Settings/profile is secondary navigation. Saved programmes and reminders are reachable contextually from Guide/Tonight and through the secondary area. This remains revisable if usability evidence shows that saved content deserves primary navigation.
+Settings/profile is secondary. Saved programmes and reminders are contextual capabilities rather than reasons to overload primary navigation.
 
-## Guide
-The Guide is the default surface and the most important interaction in the product. It is not synonymous with the Totaal grid. The owner has requested Totaal, Per zender and Nu & Straks as different presentations of the same programme domain.
+## Canonical Guide shell
+Guide contains three presentations of the same schedule domain:
+- Totaal
+- Per zender
+- Nu & Straks
 
-### View preference and context — working proposal
-Keep the presentations within Guide rather than creating three primary tabs. Remember the chosen presentation locally. Retain shared channel choices/order and programme detail, while respecting that a time reference is not the same as a view-specific pixel offset. Returning from details must preserve the originating view, selected time/channel and scroll position.
+They share one coherent app shell. The brand header may condense during vertical scrolling: the `tv.` identity is branding, not permanent functional chrome. Essential view-specific context remains available. Bottom navigation remains stable.
 
-Remembering a view preference must not make an old selected time look live on a later visit. Exact cross-view/session restoration, the initial default, selector placement and one versus two following programmes need the subsequent build specification. Do not treat preference stability or popularity as established user research.
+Returning from Programme Detail preserves the originating Guide view and its relevant channel, time and scroll context.
 
 ### Shared channel identity
-Across Guide presentations, the target treatment is **logo first, channel name second** when a licensed, readable logo is available. The name remains visible in a smaller/subtler form or otherwise directly available because not every channel mark can be assumed recognisable.
+Use the channel logo as the primary visual identifier when licensed/readable artwork exists. Channel name is secondary/contextual and remains available to accessibility APIs. Provide an intentional text fallback when artwork is unavailable. Never distort channel marks merely to fit the UI.
 
-The full channel name must always be available to screen readers. If logo artwork is unavailable, delayed, illegible or not licensed, fall back cleanly to the channel name. Schedule use may never depend on artwork availability. The current text-only synthetic channel column is prototype scaffolding rather than the final visual treatment.
+## Totaal — accepted interaction baseline
+Purpose: compare multiple channels across time.
 
-### Totaal — existing interaction model
-- vertical gesture: move through channels;
-- horizontal gesture: move through time;
-- tap programme: open programme detail;
-- Now action: return to current date/time;
-- date control: navigate to a guide day within the continuous timeline;
-- current programmes show progress;
-- current time is represented by a clear timeline marker;
-- channel identity remains understandable while moving through time;
-- time context remains understandable while moving through channels.
+- vertical movement: channels;
+- horizontal movement: time;
+- time axis remains available/sticky where needed for orientation;
+- channel identity rail remains available while moving through time;
+- tap programme: open Programme Detail directly;
+- current time uses a restrained indicator; do not add a redundant full-height red line when the time marker itself gives sufficient orientation;
+- current programme information prioritises the useful end time; avoid duplicating a start time that is already spatially evident;
+- future programmes prioritise start time; end time is normally unnecessary in the grid;
+- avoid genres and other low-value metadata inside compact schedule cells;
+- primary time navigation remains `Vandaag · Morgen · Nu` on one row;
+- `Nu` returns to actual current date/time;
+- platform-standard inertia and elastic/bounce behaviour are part of the intended tactile quality; avoid hard unnatural scroll stops.
 
-The accepted platform-standard inertia, bounce, day transitions and detail interactions remain unchanged unless concrete device evidence demonstrates a regression.
+Programme geometry continues to represent real schedule time. Text may adapt within the visible part of a programme cell, but the programme block itself must not move away from its real start/duration geometry.
 
-### Totaal primary time navigation
-The current Phase 1 owner requirement is a **single horizontal row** containing:
+At larger system text sizes, adapt row height, geometry and secondary metadata density rather than clipping essential information or globally disabling text scaling.
 
-**Vandaag · Morgen · Nu**
+## Per zender — accepted interaction baseline
+Purpose: inspect the schedule of one channel while making adjacent-channel comparison effortless.
+
+- vertical movement: programme schedule through the day;
+- horizontal swipe across the schedule: previous/next channel;
+- direction locking prevents diagonal gestures from accidentally switching channel;
+- a horizontal channel-logo strip remains available/sticky during vertical scrolling;
+- the logo strip itself can be horizontally browsed; tapping a logo selects that channel directly;
+- no previous/next arrow buttons are required around the logo strip when swipe/scroll affordance is clear;
+- active channel remains visible and may be centred automatically after a channel change;
+- channel logo is primary; channel name is contextual/secondary;
+- changing channel preserves the viewed time anchor rather than blindly preserving a pixel offset;
+- date remains available as secondary context/navigation;
+- give deliberate visual breathing room between the channel selector and schedule content;
+- programme rows remain open and typographic rather than stacked cards;
+- do not add genre chips or thumbnails merely to increase information density.
+
+## Nu & Straks — accepted interaction baseline
+Purpose: answer quickly what is on now/at a chosen time and what follows on each channel.
+
+- today only; no date selector;
+- vertical movement: channels;
+- horizontal movement/time selector: reference time today;
+- common reference time applies to every channel row;
+- time selector remains available/sticky while browsing vertically;
+- live mode follows the actual current time;
+- moving away from live pins the selected time (browse mode); clock ticks do not pull it back;
+- a clear `Nu` affordance returns to live mode;
+- `Primetime` is the explicit shortcut to the evening/prime-time reference point. Prefer this television-specific term over an ambiguous `Vanavond` shortcut;
+- each channel shows the programme airing at the reference instant plus **three following programmes**;
+- the current/reference programme is visually dominant; the three following programmes use lower typographic weight/contrast;
+- for a programme currently airing, show the useful end-time context (`tot …`) rather than redundantly repeating both start and end;
+- following programmes show their start times; their end times are unnecessary;
+- no progress bars in this view: the shared time context and hierarchy are sufficient and removing bars improves scanning;
+- no genre labels, artwork, chevrons, `Daarna` labels or card-heavy treatment;
+- keep channel order and vertical position stable when the reference time changes;
+- schedule semantics are `startAt <= referenceTime < endAt`;
+- at gaps, show an honest no-schedule state rather than pretending the last programme is still current;
+- selector remains bounded to the current Amsterdam calendar day, though a relevant following programme may begin after midnight.
+
+The design intentionally differentiates itself from TVgids.nl by showing three following programmes while using less interface and lower visual density.
+
+## Programme Detail — accepted interaction baseline
+Tap a programme in any Guide presentation to open Programme Detail directly. Do **not** insert an intermediate preview/action sheet.
+
+Information hierarchy:
+1. title;
+2. channel logo/name and broadcast date/time;
+3. relevant status such as `Nu bezig` only when useful;
+4. `Herinner mij` and `Bewaar`;
+5. description;
+6. optional secondary metadata/enrichment.
+
+Artwork is optional enrichment, not structural. A detail screen without artwork must still feel complete and premium.
+
+Current phase actions are deliberately limited to:
+- Herinner mij;
+- Bewaar.
+
+No share action, overflow menu, calendar action or recommendation feedback is required in this phase.
+
+### One-handed action behaviour
+The canonical actions live naturally in the content near the programme identity. They are not permanently duplicated at the bottom.
+
+When both original actions have clearly scrolled out of view, a compact sticky bottom action bar appears with `Herinner mij` and `Bewaar`. When the original actions become substantially visible again, the sticky copy disappears. Use hysteresis so it does not flicker around the threshold.
 
 Rules:
-- these three primary time-navigation actions stay on one row, including at the larger system-text setting currently used for physical validation;
-- `Morgen` is deliberately the compact visible label rather than a weekday/date string; the actual date remains available to accessibility APIs and elsewhere when context requires it;
-- tapping `Vandaag` or `Morgen` must update the selected/active visual state immediately, before the animated timeline jump finishes;
-- manual horizontal timeline browsing may subsequently update the selected day according to the visible time context;
-- `Nu` returns to today and the actual current time;
-- the compact control labels may use a **local maximum font multiplier** where necessary to preserve this three-action row. The current prototype uses `maxFontSizeMultiplier=1.2` only for these labels. This is a targeted control-layout exception, not permission to disable Dynamic Type globally or for Guide content;
-- touch targets remain at least platform-appropriate even when label scaling is bounded.
+- action targets remain platform-appropriate and safe-area aware;
+- `Herinner mij` may receive primary accent emphasis; `Bewaar` remains quieter;
+- state changes give immediate feedback (`Herinnering aan`, `Bewaard`, or equivalent state treatment);
+- if accessibility text no longer allows comfortable side-by-side labels, stack the actions vertically rather than shrinking text;
+- reserve enough bottom content padding so the sticky actions never obscure content;
+- short detail pages where the original actions never leave the viewport never show the sticky bar;
+- swipe-to-dismiss behaviour must remain usable without turning the action bar into a gesture trap.
 
-The exact final visual styling is still part of the visual-design work; the one-row information architecture and behaviour above are the current functional baseline.
+## Tonight / Vanavond — provisional visual direction
+This surface is intentionally less frozen than Guide and Programme Detail.
 
-### Totaal layout principle
-This presentation should behave as a two-dimensional schedule surface with a sticky/fixed channel identity region and time axis where appropriate. It must not be implemented as a naive nested collection that becomes unstable under realistic schedule volume. These grid-specific rules are not layout requirements for every other Guide view.
+Purpose: help the user choose what to watch tonight. It may be more image-led than Guide but must not become an endless content feed or streaming catalogue.
 
-At larger platform text sizes, Totaal may increase row height, widen channel/time geometry, reflow non-primary chrome and reduce secondary metadata density. It must not preserve default density by clipping essential channel/programme identity or globally disabling text scaling. Programme detail remains the reliable place for the full readable title and metadata when a compact cell cannot contain everything.
+Current direction:
+- title and date;
+- compact time choices such as `Nu · 20:30 · 21:00 · 22:00`;
+- one visually stronger highlighted programme;
+- a restrained `Verder vanavond` selection;
+- optional useful television groupings such as Films, Series and Sport;
+- channel and start time remain immediately visible;
+- no news/article feed;
+- artwork is progressive enrichment and the screen must degrade gracefully without it.
 
-When a programme's real left edge moves behind the fixed channel rail during horizontal browsing, Teevee may reposition **only the inner readable programme content** into the visible remainder. The programme block itself must keep the exact start position and duration-derived width. The title should follow the visible viewport continuously during drag and momentum rather than jumping only after release. A start time must either be fully readable or hidden; never display a clipped fragment that could be mistaken for a complete time. Narrow real-duration cells may still honestly ellipsize.
-
-### Per zender — requested, not yet implemented
-A vertical list shows one channel's schedule for the selected day, initially positioned at the current programme. Earlier and later programmes remain reachable by scrolling. Channel navigation is primary; date selection is secondary. A channel picker must make distant channels directly reachable, not require repeated swiping through the entire lineup.
-
-Working proposal: preserve the viewed time when changing channel, and use the shared programme-detail behaviour without losing list position. The full day is scrollable content, not a requirement to fit every programme on one physical screen.
-
-### Nu & Straks — today-only time selector
-Owner correction of 13 September 2026: **there is no date selector in Nu & Straks**. Show a horizontal time selector for today. Moving it changes the reference time for all channel cards, not the channel selection and not the chosen day. The provided screenshot is an interaction reference only; its date dropdown is explicitly not part of the requested Teevee view.
-
-At each reference time, each channel displays the programme airing at that instant, followed by its next scheduled programme(s). The number of following programmes is still open (initial proposal: one). Programme lengths do not become horizontally stretched grid cells: this remains a compact channel list, unlike Totaal.
-
-Implementation rules derived from this requirement, to validate in the later prototype:
-- **Live mode:** on initial entry use the actual current time; programme selection/progress may follow the clock. The Nu action returns to this mode.
-- **Browse mode:** moving the selector pins a chosen time today. Display that time prominently, for example "Vandaag 20:30". Clock ticks must not pull the selection back to now. Schedule corrections may still refresh the underlying data at the pinned time.
-- Keep the time selector visible while vertically browsing channels. All visible channel cards must correspond to the same reference time; update while selecting, without a screen reload or reset to the first channel.
-- Keep channel order and vertical reading position stable as programmes change. Do not re-sort channels by the next programme's start time.
-- Use "Op dat moment" / "Daarna" or equivalent clear labels for a non-live reference. Do not use "nu live", a real-time countdown or a live-looking progress indicator for a future/past snapshot. Actual broadcast start/end times remain visible.
-- Use schedule interval semantics `startAt <= referenceTime < endAt`. At an exact programme boundary show the programme that starts, not the one that has just ended. This is not a list of only programmes starting after the selected time.
-- During a schedule gap show "Geen uitzending bekend op dit tijdstip" or an equivalent honest state, with the next known start time. Do not display the last ended programme as current or invent a start time.
-- Bound time selection to the current Amsterdam calendar day, not a fixed assumption of 24 elapsed hours. Moving past the end does not navigate into tomorrow. A relevant next programme may start after midnight and must then show its day; the selector itself remains today-only.
-- On resume/day rollover, an old pinned selection must not silently be labelled today. The lifecycle implementation must explicitly rebase to the new day's live mode and make the selected time clear.
-- Provide an accessible alternative to dragging, such as adjustable time steps or a time picker, and expose the chosen time to assistive technology. The exact control treatment is not frozen.
-
-A worked, fictional example: at 20:30 channel A may still show a programme that began at 20:00, followed by one at 21:00. Channel B may show a programme from 20:25, followed by one at 20:55. The selector changes the common reference instant; channels do not all acquire identical start times.
-
-This means Nu & Straks supports both choosing something immediately and comparing what is on later today, without becoming a multi-day planner. Totaal and Per zender retain date navigation. No production data or programme rights are implied by the illustrative example.
-
-### Guide performance UX
-- initial useful content appears quickly;
-- gestures remain responsive while programme cells render;
-- jumping to Now is immediate;
-- programme widths accurately represent duration in Totaal within practical display constraints;
-- viewport-aware programme text must not require heavy React rerendering on every scroll frame;
-- no unexpected scroll jumps after data refresh;
-- schedule updates preserve user context where possible.
-
-### States
-Guide must define: loading, partial/stale cached data, offline cached data, empty channel, provider/data error and no schedule available. A selected time with missing data must not look like a valid live answer.
-
-## Tonight
-Tonight is an alternative discovery presentation of programme data, not a news feed. It may be more visual than Guide and may use optional artwork/enrichment.
-
-Potential groupings include Now, prime time, films, series, sport and later tonight. These are hypotheses, not frozen modules. The screen must degrade gracefully when enrichment or artwork is unavailable.
-
-## Programme detail
-Required hierarchy:
-1. title;
-2. channel and broadcast time;
-3. duration/status;
-4. available description;
-5. Save and Remind actions;
-6. optional metadata/enrichment.
-
-A missing image must never make the page feel broken. Programme detail must remain fully reachable at larger system text sizes; if content exceeds the viewport, the content must scroll independently without breaking swipe-to-dismiss semantics.
+Do not treat the exact Tonight module composition as frozen yet.
 
 ## Search
-One prominent search field. Search targets programmes and channels in the MVP. The core programme answer is when/where the programme airs. Results should prioritise upcoming broadcasts.
+One prominent search field. MVP search targets programmes and channels, prioritising useful upcoming broadcasts and answering when/where something airs.
 
 ## Channel management
-Users can choose and reorder channels. A sensible default lineup is provided so onboarding can be skipped or completed quickly. Channel choices persist locally.
-
-## Onboarding
-At most three functional steps:
-1. welcome/value proposition;
-2. choose or confirm channels;
-3. enter Guide.
-
-Subscription onboarding/paywall behaviour is intentionally not frozen yet.
+Users can choose and reorder channels. Provide a sensible default lineup so onboarding can be skipped or completed quickly. Choices persist locally.
 
 ## Accessibility
-Accessibility is a core quality requirement, not a later specialist mode. The product owner specifically calls out users who increase system font size above 100%; Teevee must remain usable under that real-world setting. A possible older linear-TV audience is motivation to test this well, not an assumed demographic fact.
+Accessibility is a core quality requirement.
 
-- respect platform text scaling rather than forcing fixed visual sizes as a global shortcut;
-- targeted compact-navigation labels may cap their multiplier only when necessary to preserve a critical one-row control grouping, while keeping touch targets, accessible labels and all substantive Guide content readable;
-- test representative larger Dynamic Type / font-scale settings on physical devices;
-- adapt row heights, wrapping and information density where necessary instead of clipping essential content;
-- accessible programme and channel labels, including the full textual channel name when a logo is shown;
-- adequate touch targets that remain usable when text grows;
-- do not encode programme state using colour alone;
-- support screen-reader navigation with meaningful programme summaries and time context;
+- support larger platform text sizes for substantive content;
+- adapt density, row height and wrapping instead of clipping essential information;
+- narrow font-scaling caps are allowed only for documented compact controls where a critical grouping must remain intact;
+- provide full channel names and meaningful programme/time context to screen readers;
+- keep touch targets usable as text grows;
+- do not encode state using colour alone;
 - maintain contrast in light and dark themes;
-- respect reduced-motion preferences where animation is non-essential;
-- ensure programme detail and long descriptions remain reachable and scrollable at larger text sizes;
-- treat default-density screenshots as one layout mode, not as a layout that must be preserved at all accessibility sizes.
+- respect reduced-motion preferences;
+- validate representative larger text sizes on physical devices.
 
-## Visual direction
-Existing light and dark concept visuals are registered as **Visual Direction 01 — reference, not specification**.
+## Visual/interaction principle
+Teevee should achieve **more utility with less interface**. Avoid card stacking, gratuitous separators, repeated metadata, decorative controls and UI that exists only because other media apps contain it.
 
-Useful qualities to preserve during exploration:
-- clean and modern;
-- strong hierarchy;
-- restrained chrome;
-- clear time/channel structure;
-- premium typography;
-- functional guide density;
-- richer imagery away from the core timeline.
-
-No exact colour, typography, spacing, component or navigation treatment from those concepts is frozen.
-
-## UX validation gate
-Phase 1 exists to validate the Guide interaction before building broad product scope. Evaluation should use realistic channel counts, programme durations and schedule density, not a hand-picked presentation dataset. Recording the new views is not acceptance of their implementation and does not close outstanding Phase 1 checks. Before the Guide layout is frozen, representative larger system text must be included in device validation.
+## Validation status
+The decisions above marked accepted are owner-approved UX baselines from the visual-design process. They are not claims that every item is already implemented. Implementation should be checked against the repository and validated on representative iOS and Android devices before being considered technically complete.
