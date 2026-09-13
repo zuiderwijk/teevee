@@ -1,7 +1,7 @@
 import { useCallback, useReducer } from 'react';
 
 import { detailReducer, initialDetailState, type ProgrammeSelection } from '@/features/guide/detailState';
-import { GuideView } from '@/features/guide/GuideView';
+import { PerChannelGuideView } from '@/features/guide/PerChannelGuideView';
 import { ProgrammeDetail } from '@/features/guide/ProgrammeDetail';
 
 export default function GuideScreen() {
@@ -14,7 +14,9 @@ export default function GuideScreen() {
 
   return (
     <>
-      <GuideView onSelectProgramme={openDetail} />
+      {/* Phase 1B deliberately exposes Per zender as the active interaction prototype.
+          The physically accepted Totaal implementation remains intact in GuideView. */}
+      <PerChannelGuideView onSelectProgramme={openDetail} />
       <ProgrammeDetail state={detail} onClose={closeDetail} />
     </>
   );
