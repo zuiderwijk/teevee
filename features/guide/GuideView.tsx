@@ -27,6 +27,8 @@ import {
 import { guideLayoutForFontScale } from './layout';
 import { useGuideClock } from './useGuideClock';
 
+const GUIDE_CONTROL_MAX_FONT_SIZE_MULTIPLIER = 1.2;
+
 type GuideViewProps = {
   onSelectProgramme: (selection: ProgrammeSelection) => void;
 };
@@ -56,6 +58,8 @@ export const GuideView = memo(function GuideView({ onSelectProgramme }: GuideVie
   const layout = useMemo(() => guideLayoutForFontScale(fontScale), [fontScale]);
   const horizontalRef = useRef<ScrollView>(null);
   const channelRef = useRef<ScrollView>(null);
+  const visibleDayOffsetRef = useRef(0);
+  const dayJumpTargetXRef = useRef<number | null>(null);
   const [initialNow] = useState(() => Date.now());
   const runtimeFixture = useMemo(() => buildRuntimeGuideFixture(initialNow), [initialNow]);
   const [dayOffset, setDayOffset] = useState(0);
@@ -77,15 +81,29 @@ export const GuideView = memo(function GuideView({ onSelectProgramme }: GuideVie
   const tomorrowStart = useMemo(() => guideDayStart(initialNow, 1), [initialNow]);
   const guideHeight = runtimeFixture.channels.length * layout.rowHeight;
 
+  const syncDayFromViewport = (viewportX: number) => {
+    const visibleTime = windowStart + (viewportX / layout.minuteWidth) * 60_000;
+    const visibleDay = visibleTime >= tomorrowStart ? 1 : 0;
+    if (visibleDayOffsetRef.current !== visibleDay) {
+      visibleDayOffsetRef.current = visibleDay;
+      setDayOffset(visibleDay);
+    }
+  };
+
   useEffect(() => {
     const initialX = Math.max(0, timeToX(initialNow, windowStart, layout.minuteWidth) - 120);
     setReadabilityViewportX(initialX);
+    visibleDayOffsetRef.current = 0;
+    dayJumpTargetXRef.current = null;
     const frame = requestAnimationFrame(() => horizontalRef.current?.scrollTo({ x: initialX, animated: false }));
     return () => cancelAnimationFrame(frame);
   }, [initialNow, layout.minuteWidth, windowStart]);
 
   const jumpToNow = () => {
     const x = Math.max(0, timeToX(Date.now(), windowStart, layout.minuteWidth) - 120);
+    setDayOffset(0);
+    visibleDayOffsetRef.current = 0;
+    dayJumpTargetXRef.current = x;
     setReadabilityViewportX(x);
     horizontalRef.current?.scrollTo({ x, animated: true });
   };
@@ -95,43 +113,35 @@ export const GuideView = memo(function GuideView({ onSelectProgramme }: GuideVie
   const changeDay = (nextOffset: number) => {
     const targetTime = nextOffset === 0 ? windowStart : tomorrowStart;
     const x = Math.max(0, timeToX(targetTime, windowStart, layout.minuteWidth));
+    setDayOffset(nextOffset);
+    visibleDayOffsetRef.current = nextOffset;
+    dayJumpTargetXRef.current = x;
     setReadabilityViewportX(x);
     horizontalRef.current?.scrollTo({ x, animated: true });
   };
 
   return (
     <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.colors.background }]}>
-      <View style={[styles.header, layout.stackedControls ? styles.headerStacked : null]}>
-        <View style={[styles.headerTitleGroup, layout.stackedControls ? styles.headerTitleGroupStacked : null]}>
+      <View style={styles.header}>
+        <View style={styles.headerTitleGroup}>
           <Text style={[styles.eyebrow, { color: theme.colors.textMuted }]}>TEEVEE</Text>
           <Text accessibilityRole="header" style={[styles.title, { color: theme.colors.text }]}>Gids</Text>
         </View>
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel="Ga naar nu"
-          onPress={jumpToNow}
-          style={[
-            styles.nowBadge,
-            layout.stackedControls ? styles.nowBadgeStacked : null,
-            { backgroundColor: theme.colors.accent },
-          ]}
-        >
-          <Text style={[styles.nowText, { color: theme.colors.background }]}>Nu</Text>
-        </Pressable>
       </View>
 
-      <View style={[styles.daySwitcher, layout.stackedControls ? styles.daySwitcherStacked : null]}>
+      <View style={styles.guideControls}>
         {[0, 1].map((offset) => {
           const active = dayOffset === offset;
+          const label = offset === 0 ? 'Vandaag' : 'Morgen';
           return (
             <Pressable
               key={offset}
               accessibilityRole="button"
+              accessibilityLabel={offset === 0 ? 'Vandaag' : `Morgen, ${formatDay(tomorrowStart)}`}
               accessibilityState={{ selected: active }}
               onPress={() => changeDay(offset)}
               style={[
                 styles.dayButton,
-                layout.stackedControls ? styles.dayButtonStacked : null,
                 {
                   backgroundColor: active ? theme.colors.accent : theme.colors.surface,
                   borderColor: theme.colors.border,
@@ -139,17 +149,32 @@ export const GuideView = memo(function GuideView({ onSelectProgramme }: GuideVie
               ]}
             >
               <Text
+                maxFontSizeMultiplier={GUIDE_CONTROL_MAX_FONT_SIZE_MULTIPLIER}
                 numberOfLines={1}
                 style={[
                   styles.dayButtonText,
                   { color: active ? theme.colors.background : theme.colors.textSecondary },
                 ]}
               >
-                {offset === 0 ? 'Vandaag' : formatDay(tomorrowStart)}
+                {label}
               </Text>
             </Pressable>
           );
         })}
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel="Ga naar nu"
+          onPress={jumpToNow}
+          style={[styles.nowBadge, { backgroundColor: theme.colors.accent }]}
+        >
+          <Text
+            maxFontSizeMultiplier={GUIDE_CONTROL_MAX_FONT_SIZE_MULTIPLIER}
+            numberOfLines={1}
+            style={[styles.nowText, { color: theme.colors.background }]}
+          >
+            Nu
+          </Text>
+        </Pressable>
       </View>
 
       <View style={[styles.guideFrame, { borderColor: theme.colors.border }]}>
@@ -199,13 +224,25 @@ export const GuideView = memo(function GuideView({ onSelectProgramme }: GuideVie
           decelerationRate="normal"
           showsHorizontalScrollIndicator={false}
           scrollEventThrottle={16}
+          onScrollBeginDrag={() => {
+            dayJumpTargetXRef.current = null;
+          }}
           onScroll={(event) => {
-            const visibleTime = windowStart + (event.nativeEvent.contentOffset.x / layout.minuteWidth) * 60_000;
-            const visibleDay = visibleTime >= tomorrowStart ? 1 : 0;
-            if (visibleDay !== dayOffset) setDayOffset(visibleDay);
+            const viewportX = Math.max(0, event.nativeEvent.contentOffset.x);
+            const jumpTarget = dayJumpTargetXRef.current;
+            if (jumpTarget !== null) {
+              if (Math.abs(viewportX - jumpTarget) <= 1) dayJumpTargetXRef.current = null;
+              return;
+            }
+            syncDayFromViewport(viewportX);
           }}
           onScrollEndDrag={(event) => setReadabilityViewportX(Math.max(0, event.nativeEvent.contentOffset.x))}
-          onMomentumScrollEnd={(event) => setReadabilityViewportX(Math.max(0, event.nativeEvent.contentOffset.x))}
+          onMomentumScrollEnd={(event) => {
+            const viewportX = Math.max(0, event.nativeEvent.contentOffset.x);
+            setReadabilityViewportX(viewportX);
+            dayJumpTargetXRef.current = null;
+            syncDayFromViewport(viewportX);
+          }}
         >
           <View style={{ width }}>
             <View
@@ -363,19 +400,18 @@ const styles = StyleSheet.create({
     paddingHorizontal: 18,
     paddingTop: 12,
     paddingBottom: 8,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    gap: 12,
-  },
-  headerStacked: {
-    flexDirection: 'column',
-    alignItems: 'stretch',
   },
   headerTitleGroup: { flexShrink: 1 },
-  headerTitleGroupStacked: { flexShrink: 0, width: '100%' },
   eyebrow: { fontSize: 10, fontWeight: '700', letterSpacing: 1.1 },
   title: { fontSize: 32, fontWeight: '700', letterSpacing: -1.2 },
+  guideControls: {
+    flexDirection: 'row',
+    flexWrap: 'nowrap',
+    alignItems: 'center',
+    gap: 8,
+    paddingHorizontal: 18,
+    paddingBottom: 12,
+  },
   nowBadge: {
     minWidth: 52,
     minHeight: 44,
@@ -384,11 +420,9 @@ const styles = StyleSheet.create({
     borderRadius: 22,
     alignItems: 'center',
     justifyContent: 'center',
+    marginLeft: 'auto',
   },
-  nowBadgeStacked: { alignSelf: 'flex-end' },
   nowText: { fontSize: 14, fontWeight: '700' },
-  daySwitcher: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, paddingHorizontal: 18, paddingBottom: 12 },
-  daySwitcherStacked: { flexDirection: 'column', alignItems: 'stretch' },
   dayButton: {
     minHeight: 44,
     justifyContent: 'center',
@@ -397,8 +431,7 @@ const styles = StyleSheet.create({
     borderRadius: 22,
     borderWidth: StyleSheet.hairlineWidth,
   },
-  dayButtonStacked: { alignSelf: 'stretch' },
-  dayButtonText: { fontSize: 12, fontWeight: '700', textTransform: 'capitalize' },
+  dayButtonText: { fontSize: 12, fontWeight: '700' },
   guideFrame: { flex: 1, flexDirection: 'row', borderTopWidth: StyleSheet.hairlineWidth },
   channelColumn: { zIndex: 2, borderRightWidth: StyleSheet.hairlineWidth },
   channelAxisCorner: { justifyContent: 'center', paddingHorizontal: 8, borderBottomWidth: StyleSheet.hairlineWidth },
