@@ -11,6 +11,25 @@ Doel: een begrijpelijk chronologisch overzicht van substantiële wijzigingen, to
 
 ---
 
+## 13 september 2026, 10:20 CEST — PR #7 volledig fysiek geaccepteerd
+
+### Toestelbewijs
+Op dezelfde iPhone en dezelfde vergrote systeemtekst bevestigde de product owner nu alle vier de gerichte PR #7-punten:
+1. Teevee opent normaal;
+2. `Vandaag`, `Morgen` en `Nu` blijven op één horizontale regel;
+3. Morgen/Vandaag reageren direct met de juiste zwarte selected-state en `Nu` keert terug naar de actuele tijd;
+4. horizontaal scrollen voelt nog hetzelfde/natuurlijk als de eerder geaccepteerde baseline.
+
+Daarmee is de veilige non-Reanimated controlherimplementatie volledig fysiek geaccepteerd voor haar bedoelde scope. De PR #6-startcrash is niet teruggekeerd en de scrollbaseline is niet verslechterd.
+
+### Nog open
+De continue partial-left titelbeweging tijdens drag/momentum is bewust nog niet opnieuw gebouwd; PR #5-settled readability blijft actief. De PR #6-aanpak met per-programme Reanimated/workletstyles wordt niet opnieuw gebruikt zonder sterkere runtimebasis.
+
+### Volgende stap
+Bouw de continue partial-left titelbeweging opnieuw via een geïsoleerde, lager-overhead overlay/update-route die alleen de zichtbare randinhoud bijwerkt en de echte programmegeometrie, geaccepteerde scrollinstellingen, PR #7-controls en detailinteracties intact laat.
+
+---
+
 ## 13 september 2026, 10:14 CEST — PR #7 fysiek bevestigd voor startup, éénregelige controls en directe selected-state
 
 ### Toestelbewijs
@@ -133,8 +152,7 @@ Projectfoundation, deterministische EPG-fixture, Expo/React Native strict TypeSc
 ---
 
 ## Doorlopende open technische punten
-- Alleen de horizontale-scrollervaring van PR #7 moet nog tegen de geaccepteerde baseline worden bevestigd.
-- Continue partial-left title motion vereist een lager-overhead ontwerp vóór nieuwe implementatie.
+- Continue partial-left title motion vereist een lager-overhead ontwerp en implementatie; de PR #6 per-programme worklet-opzet blijft uitgesloten.
 - Android gesture/back en release-achtige performance zijn nog niet fysiek gevalideerd.
 - VoiceOver/screenreader, live theme switching en expliciete current-time/progress-validatie staan open.
 - Finite fixture lifecycle rond resume na middernacht/expiry staat open.
