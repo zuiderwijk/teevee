@@ -1,7 +1,7 @@
 # Teevee — Canonical Project State
 
-Last updated: 2026-09-13 15:31 CEST.
-Status: ACTIVE — Phase 1 Guide prototype. The iPhone Guide interaction/stability baseline is physically accepted through PR #15. PR #16 current-time/progress accuracy and PR #17 finite-fixture lifecycle hardening are merged and fully green. The next unresolved Phase 1 gate is physical Android gesture/back/performance validation.
+Last updated: 2026-09-13 15:39 CEST.
+Status: ACTIVE — Phase 1 Guide prototype. The iPhone Guide interaction/stability baseline is physically accepted through PR #15. PR #16 current-time/progress accuracy, PR #17 finite-fixture lifecycle hardening and PR #18 CI reproducibility are merged and fully green. The next unresolved Phase 1 gate is physical Android gesture/back/performance validation.
 Current phase: **Phase 1 — Guide Interaction Prototype**
 Previous phase: **Phase 0 — Project Foundation: COMPLETE**
 
@@ -59,7 +59,8 @@ Detailed rules live in `docs/UX.md`, `docs/DESIGN_SYSTEM.md`, `docs/PRODUCT.md` 
 - PR #15 removed the remaining horizontal settle full-grid rerenders. Physical A/B validation now shows post-horizontal-fling detail response practically equal to the still-Guide case.
 - PR #16 centralises `[start,end)` current-programme semantics, uses one `nowMs` snapshot for progress, preserves fractional progress precision and tests sub-minute current-time geometry.
 - PR #17 refreshes the Guide clock immediately on app resume and rebuilds the finite runtime fixture when the Amsterdam calendar day changes, including DST boundaries.
-- CI runs install, strict TypeScript, lint, tests and iOS/Android/web Expo bundle exports. Bundle export is not a signed/native device test.
+- PR #18 commits npm lockfile v3 and makes CI install deterministically with `npm ci` from that lockfile; CI no longer regenerates dependency resolution before each run.
+- CI runs strict TypeScript, lint, tests and iOS/Android/web Expo bundle exports after deterministic install. Bundle export is not a signed/native device test.
 
 No real production EPG, production artwork, account system or subscription/paywall has been introduced.
 
@@ -130,13 +131,30 @@ Evidence:
 - merged as `0853cdebaccb4036ff6567c17ded444def8d5401`;
 - exact merged main passed CI #176 / `34760047645` completely.
 
+## PR #18 — reproducible npm/CI dependency install
+Problem: CI ran `npm install --package-lock-only` immediately before `npm ci`, while no lockfile was committed. An unchanged codebase could therefore resolve a different transitive dependency graph on a later run.
+
+Correction:
+- generated and committed npm `package-lock.json` lockfile v3;
+- removed lockfile generation from normal CI;
+- `actions/setup-node` now enables npm cache using the committed lockfile;
+- dependency install is `npm ci` only;
+- no application code or `package.json` dependency ranges changed;
+- no `npm audit fix --force` was performed.
+
+Evidence:
+- one-off lockfile generator run `34760223440` completed successfully;
+- PR head `142a92d9ffdc836af063c91200a315832cff1071` passed PR CI #181 / `34760300933` completely;
+- merged as `8ee173794d60cebf171b307400e5dcd21d48e488`;
+- exact merged main passed CI #182 / `34760389374` completely: `npm ci`, strict TypeScript, lint, tests and iOS/Android/web Expo exports.
+
 ## Android/back audit
 Programme Detail already supplies React Native Modal `onRequestClose={requestClose}`, and the integration suite exercises the equivalent native-request-close path alongside button/backdrop/swipe close. The modal also places gestures in an Android-native `GestureHandlerRootView`. This gives good automated confidence, but it does **not** substitute for a real Android device: native back arbitration, gesture interaction and realistic performance remain physically unverified.
 
 ## Remaining Phase 1 work
 - **Physical Android validation:** startup, horizontal/vertical Guide movement, programme tap response, Android system/hardware Back closing Programme Detail, deliberate swipe-down dismissal, and basic stability/performance.
 - Release-like performance validation outside Expo Go when a suitable build path/device is available.
-- CI reproducibility cleanup; previously reported 15 moderate advisories require deliberate review, never `npm audit fix --force`.
+- The previously reported 15 moderate dependency advisories require deliberate security review; never `npm audit fix --force`.
 - Later explicit builds for Per zender and Nu & Straks.
 - Production EPG/logo/artwork rights/reliability, pricing/trial/paywall, production tokens/font licensing and final Tonight composition remain later gates.
 
