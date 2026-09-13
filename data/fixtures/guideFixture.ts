@@ -3,7 +3,7 @@ import type { Channel, GuideFixture, Programme } from '../domain/epg';
 const START_MS = Date.parse('2026-09-11T00:00:00+02:00');
 const HOUR_MS = 60 * 60 * 1000;
 
-const channelNames = [
+const primaryChannelNames = [
   'Publiek 1',
   'Publiek 2',
   'Publiek 3',
@@ -21,6 +21,43 @@ const channelNames = [
   'Muziek',
   'Internationaal',
 ] as const;
+
+const additionalChannelNames = [
+  'Regionaal 1',
+  'Regionaal 2',
+  'Nieuws Extra',
+  'Sport Extra 1',
+  'Sport Extra 2',
+  'Film Extra 1',
+  'Film Extra 2',
+  'Series Extra 1',
+  'Series Extra 2',
+  'Reality',
+  'Lifestyle',
+  'Food',
+  'Travel',
+  'History',
+  'Science',
+  'Nature',
+  'Crime',
+  'Comedy',
+  'Drama',
+  'Kids Extra 1',
+  'Kids Extra 2',
+  'Muziek Extra',
+  'Cultuur',
+  'Klassiek',
+  'Internationaal 2',
+  'Internationaal 3',
+  'Nieuws Wereld',
+  'Sport Wereld',
+  'Film Wereld',
+  'Series Wereld',
+  'Documentaire 2',
+  'Thema',
+] as const;
+
+const channelNames = [...primaryChannelNames, ...additionalChannelNames];
 
 export const fixtureChannels: Channel[] = channelNames.map((name, index) => ({
   id: `channel-${index + 1}`,
