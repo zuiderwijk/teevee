@@ -87,8 +87,9 @@ export class InMemoryScheduleRepository implements ScheduleRepository {
       }
     }
 
-    for (const channel of validated.channelsById.values()) {
-      this.channels.set(channel.id, { ...channel });
+    for (const channelId of replacementChannelIds) {
+      const channel = validated.channelsById.get(channelId);
+      if (channel) this.channels.set(channel.id, { ...channel });
     }
 
     let removedProgrammeCount = 0;
