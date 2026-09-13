@@ -1,12 +1,12 @@
 # Teevee testen op een fysiek toestel
 
-Status: Phase 2 final device gate. Current feature/device gates are governed by `PROJECT_STATE.md`.
+Status: Phase 3 development testpad. Current feature/device gates are governed by `PROJECT_STATE.md`.
 
 Doel: echte iOS- en Android-interactie vroeg bewijzen zonder te wachten op TestFlight, Google Play of production-data. CI blijft technisch bewijs, geen vervanging voor toestelacceptatie.
 
 ## Snelste testpad: Expo Go
 
-De huidige app gebruikt alleen Expo-compatible libraries en heeft nog geen custom native modules nodig. Daardoor kan de App Shell voorlopig via Expo Go worden getest.
+De huidige app gebruikt alleen Expo-compatible libraries en heeft nog geen custom native modules nodig. Daardoor kan de huidige mobiele app voorlopig via Expo Go worden getest.
 
 ### Eenmalig op je telefoon
 1. Installeer **Expo Go** uit de Apple App Store of Google Play Store.
@@ -40,57 +40,80 @@ Bij vreemd cachegedrag of voor een gerichte acceptatiepass:
 npm run start:clean
 ```
 
-De runtime-fixture wordt rond de actuele tijd gelegd. Daardoor blijven `Nu`, programma-progress en vandaag/morgen bruikbaar terwijl de onderliggende testfixture deterministisch blijft voor CI.
+## Phase 2 fysieke status — CLOSED
 
-## Actieve Phase 2 mini-recheck — na PR #35
+Broad evidence: `ScreenRecording_09-13-2026 23-10-50_1.MP4` / `docs/PHYSICAL_EVIDENCE_2026-09-13_2310.md`.
+Final remediation evidence: `ScreenRecording_09-13-2026 23-56-18_1.MP4` / `docs/PHYSICAL_EVIDENCE_2026-09-13_2356.md`.
 
-De brede Phase 2 iPhone-pass van `ScreenRecording_09-13-2026 23-10-50_1.MP4` is inhoudelijk geslaagd voor Settings, appearance-persistence, shared headers/safe areas, de drie Guide-presentaties, Programme Detail en 135% systeemtekst. Die brede pass hoeft **niet** opnieuw.
+De beschikbare iPhone heeft Phase 2 fysiek geaccepteerd:
+- Settings als secundaire route;
+- live Light/Dark/System;
+- expliciete appearance-persistence na restart;
+- shared headers/safe areas;
+- Totaal, Per zender en Nu & Straks bij representatieve 135% iOS-tekst;
+- Programme Detail onder grotere tekst;
+- Per zender text-only kanaalidentiteiten blijven na PR #35 onderscheidend;
+- directe zenderselectie en adjacent-channel swipe houden strip en schedule synchroon;
+- geen redbox, wit scherm, crash of brede interaction-regressie.
 
-Hij bracht één concrete defect aan het licht: bij 135% tekst werden de text-only Per zender identities `Publiek 1`, `Publiek 2` en `Publiek 3` allemaal zichtbaar als `Publie…`. PR #35 verandert alleen de truncatie van text-only channel identities naar middle ellipsis, zodat het onderscheidende suffix zichtbaar blijft. Stripbreedte, pager, tijdanker en gestures zijn niet gewijzigd.
+Deze Phase 2-gates hoeven niet routinematig opnieuw te worden bewezen. Heropen een fysiek geaccepteerde interaction baseline alleen bij concrete regressie-evidence.
 
-### Voorbereiding
-1. Zorg dat `main` is bijgewerkt en start met `npm run start:clean`.
-2. Laat iOS tekstgrootte op **135%** staan.
-3. Open `Gids` → `Per zender`.
+## Phase 3 — teststrategie voor real data
 
-### Vier checks
-1. Controleer dat `Publiek 1`, `Publiek 2` en `Publiek 3` in de horizontale zenderstrip visueel van elkaar te onderscheiden zijn. Een vorm als `Publ…1`, `Publ…2`, `Publ…3` is correct als de volledige namen niet passen.
-2. Tik op minimaal twee van deze zenders en controleer dat de juiste zender direct geselecteerd wordt.
-3. Veeg de schedule één keer horizontaal naar een aangrenzende zender.
-4. Controleer dat de actieve state in de zenderstrip de nieuwe schedule-zender volgt.
+Phase 3 vervangt de deterministische fixtures **niet**. Real data wordt als aparte provider-/API-route toegevoegd terwijl fixtures de betrouwbare test- en offline-developmentbasis blijven.
 
-### Pass/fail
-**Pass:** alle vier checks slagen, zonder redbox, wit scherm, crash of nieuwe strip/pager-regressie. Dan is geen verdere brede Phase 2-devicepass nodig.
+Voor iedere Phase 3-slice moeten minimaal de relevante lagen afzonderlijk bewijs krijgen:
 
-**Fail:** noteer alleen de concrete mislukte stap en lever bij voorkeur een korte screenrecording. Heropen geen andere fysiek geaccepteerde Guide-mechanica zonder bewijs.
+### Provider / ingestion
+- geldige providerrecords worden correct geparsed;
+- malformed records geven diagnostics in plaats van onverklaarde crashes;
+- provider-specifieke IDs/velden lekken niet voorbij de adapter/normalisatielaag;
+- timestamps worden canoniek opgeslagen en Amsterdam-rendering blijft correct;
+- channel mappings zijn expliciet en onbekende mappings worden gedetecteerd;
+- overlaps, ontbrekende titels, ongeldige tijden en verdachte volumes leveren data-quality diagnostics.
 
-## Reeds bewezen in de brede Phase 2-pass
-Evidence: `ScreenRecording_09-13-2026 23-10-50_1.MP4`; repository record: `docs/PHYSICAL_EVIDENCE_2026-09-13_2310.md`.
+### Canonical storage / API
+- dezelfde Teevee `Channel` / `Programme` semantiek blijft leidend;
+- schedule-upserts/correcties kunnen bestaande items vervangen zonder willekeurige duplicaten;
+- API-responses zijn getypeerd en provider-onafhankelijk;
+- lege, gedeeltelijke en foutresponsen zijn gedefinieerd;
+- secrets/providercredentials komen niet in de mobiele bundle of repository terecht.
 
-Op de beschikbare iPhone is bewezen dat:
-- Settings als secundaire route werkt;
-- `Licht`, `Systeem` en `Donker` live toepassen;
-- een expliciete dark preference reload/restart overleeft;
-- Settings en Vanavond shared headers/safe areas correct blijven;
-- Totaal, Per zender en Nu & Straks bruikbaar blijven op 135% tekst;
-- de 44pt Guide-controls bereikbaar blijven;
-- Nu & Straks reference controls coherent reflowen;
-- Programme Detail onder 135% tekst opent, leesbaar blijft en sluit;
-- light mode na de grotere-tekstpass bruikbaar blijft;
-- geen brede crash- of interaction-regressie optreedt.
+### Mobile client
+- real data komt binnen via een typed Teevee API/service boundary, nooit rechtstreeks vanaf de provider;
+- loading/error/offline states laten de app gecontroleerd degraderen;
+- fixturemode blijft beschikbaar voor deterministic tests/development;
+- schedule refresh mag de fysiek geaccepteerde Guide-scroll-/channel-/time-context niet onnodig resetten;
+- Totaal, Per zender en Nu & Straks blijven hetzelfde canonical domain consumeren.
 
-## Open maar niet-blockerende accessibility debt
-De compacte volgende-programma-rijen in Nu & Straks gebruiken momenteel 24pt minimumhoogte. De 23:10-pass leverde geen concrete tap failure op. Dit punt blijft daarom expliciet als latere Core Guide accessibility-hardening staan en blokkeert de huidige Phase 2-mini-recheck niet.
+### Cache / refresh
+Wanneer Phase 3 caching toevoegt, test expliciet:
+- cold load;
+- warm cache;
+- refresh met ongewijzigde data;
+- refresh met schedulecorrectie;
+- netwerkfout met bruikbare cache;
+- stale-data communicatie wanneer relevant;
+- app resume en Amsterdam-dagwissel.
 
-Niet oplossen met overlappende `hitSlop` en niet stilzwijgend alle rijen naar 44pt vergroten: beide keuzes kunnen respectievelijk tap-arbitrage of de geaccepteerde informatiedichtheid veranderen. Een latere oplossing moet density-aware zijn en fysiek worden gevalideerd.
+## Fysieke device-checks tijdens Phase 3
+
+Een backend/data-only wijziging vereist niet automatisch een volledige Guide-acceptatiepass. Gebruik risicogestuurde devicechecks:
+- **geen UI/interaction boundary geraakt:** CI + integratietests kunnen voldoende zijn;
+- **Guide krijgt een nieuwe data source/cache/refresh path:** korte iPhone smoke voor startup, actuele data, Nu, channel/time context en Programme Detail;
+- **scroll/gesture/layout code geraakt:** de relevante fysiek bevroren baseline gericht opnieuw samplen;
+- **native dependency/config gewijzigd:** iOS/Android buildpad en geschikt device opnieuw beoordelen.
 
 ## Historische Phase 1/1B-baseline
-De volgende interaction models zijn al fysiek geaccepteerd en hoeven niet routinematig opnieuw te worden bewezen:
+De volgende interaction models zijn al fysiek geaccepteerd:
 - Totaal: tweedimensionale tijd/zender-guide, native inertia/bounce/directional lock, Vandaag/Morgen/Nu, Programme Detail;
 - Per zender: verticale tijdpositie, horizontale adjacent-channel pager, browsable/direct-tap zenderstrip, contextbehoud;
 - Nu & Straks: live/browse referentietijd, native tijdrail, Nu/Primetime, stabiele verticale context en Programme Detail round-trip.
 
-Heropen deze baselines alleen bij concrete regressie-evidence.
+## Open maar niet-blockerende accessibility debt
+De compacte volgende-programma-rijen in Nu & Straks gebruiken momenteel 24pt minimumhoogte. Fysieke larger-text evidence leverde geen concrete tap failure op. Dit blijft latere Core Guide accessibility-hardening.
+
+Niet oplossen met overlappende `hitSlop` en niet stilzwijgend alle rijen naar 44pt vergroten: beide keuzes kunnen respectievelijk tap-arbitrage of de geaccepteerde informatiedichtheid veranderen. Een latere oplossing moet density-aware zijn en fysiek worden gevalideerd.
 
 ## Geautomatiseerde kwaliteitscontrole
 Iedere PR en iedere push naar `main` start GitHub Actions met:
