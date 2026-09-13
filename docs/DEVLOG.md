@@ -11,6 +11,31 @@ Doel: een begrijpelijk chronologisch overzicht van substantiële wijzigingen, to
 
 ---
 
+## 13 september 2026, 10:08 CEST — Rollback fysiek hersteld; controls veilig opnieuw opgebouwd
+
+### Toestelbewijs
+Na de rollback van PR #6 bevestigde de product owner op dezelfde iPhone dat Teevee **weer normaal opent**. Daarmee is de rollback naar de PR #5-runtimebaseline fysiek bevestigd; de white-screen/startcrash is op die baseline verdwenen.
+
+### Veilige vervolgstap
+PR #7 herintroduceert uitsluitend de twee controlwijzigingen uit de 09:20-feedback, zonder Reanimated/worklets of nieuwe per-programme animated styles:
+- Vandaag, Morgen en Nu staan op één horizontale regel;
+- alleen deze compacte labels begrenzen scaling tot 1.2x;
+- Morgen is het zichtbare label, met werkelijke datum in accessibility-context;
+- expliciete Vandaag/Morgen-selectie wordt direct actief en wordt tijdens de eigen animated jump niet tijdelijk door tussenliggende scroll-events teruggezet;
+- Nu zet de dagstatus terug naar vandaag/current time.
+
+De live tijdens-swipe titelverplaatsing uit PR #6 blijft bewust uitgeschakeld. PR #5 blijft de veilige geometry-safe settled-update leveren totdat een lager-overhead ontwerp is gekozen.
+
+### Verificatie
+PR #7 head **`67925d17913f5eac1aa00417f17bbf880e3724a9`** passeerde CI #104 / run `34746652205` volledig. PR #7 is gesquasht naar main als **`c697c4e7b9bb026409962f319d26cebad75a3a56`**.
+
+Main-CI #105 attempt 1 faalde al bij `npm install --package-lock-only` op een externe npm `ETARGET` voor `@csstools/css-calc@^3.4.0`; er draaide nog geen projectcode of test. De rerun van exact dezelfde SHA, attempt 2, passeerde installatie, strict TypeScript, lint, alle tests en iOS/Android/web exports volledig.
+
+### Volgende stap
+Op dezelfde iPhone met dezelfde grotere systeemtekst alleen controleren dat de nieuwe main nog normaal opent, Vandaag/Morgen/Nu op één regel blijven, Vandaag/Morgen direct de juiste zwarte selected-state tonen, Nu teruggaat naar current time en de geaccepteerde horizontale scroll ongewijzigd aanvoelt.
+
+---
+
 ## 13 september 2026, 09:56 CEST — PR #6 veroorzaakt iPhone-startcrash; main teruggezet naar runnable Guide
 
 ### Toestelbewijs
@@ -28,10 +53,7 @@ De drie productrequirements uit de 09:20-test blijven geldig en moeten later vei
 PR #6 introduceerde per-programme Reanimated animated styles over de volledige realistische 48-zenderfixture. Dat is een sterke kandidaat voor de native startregressie, maar zonder native foutlog is de oorzaak **nog niet bewezen**. Dezelfde architectuur wordt niet opnieuw ingevoerd zonder runtimebewijs.
 
 ### Verificatie
-CI voor de rollback draait afzonderlijk; toestelstabiliteit moet opnieuw fysiek worden bevestigd. CI alleen kan deze regressie niet uitsluiten, omdat de eerdere PR #6 PR- en main-CI beide groen waren terwijl Expo Go op het echte toestel crashte.
-
-### Volgende stap
-Main schoon binnenhalen en alleen bevestigen dat Teevee weer normaal opent. Als de crash blijft bestaan: laatste Expo-/Terminalfout vastleggen voordat verdere UX-aanpassingen worden gedaan.
+De rollbackcode passeerde CI #101. De fysieke bevestiging dat de app daarna weer normaal opende staat in de entry hierboven.
 
 ---
 
@@ -91,8 +113,7 @@ Projectfoundation, deterministische EPG-fixture, Expo/React Native strict TypeSc
 ---
 
 ## Doorlopende open technische punten
-- iPhone-startstabiliteit na rollback eerst opnieuw bevestigen.
-- Daarna éénregelige Vandaag/Morgen/Nu-controls en directe selected-state veilig herintroduceren zonder de crashgevoelige per-programme animation-opzet.
+- PR #7 controls moeten één keer fysiek op de herstelde iPhone-baseline worden gevalideerd.
 - Continue partial-left title motion vereist een lager-overhead ontwerp vóór nieuwe implementatie.
 - Android gesture/back en release-achtige performance zijn nog niet fysiek gevalideerd.
 - VoiceOver/screenreader, live theme switching en expliciete current-time/progress-validatie staan open.
