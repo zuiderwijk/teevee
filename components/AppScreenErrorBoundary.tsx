@@ -1,5 +1,5 @@
 import type { ErrorBoundaryProps } from 'expo-router';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, Text } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { useTeeveeTheme } from '@/theme/useTeeveeTheme';
@@ -9,7 +9,7 @@ export function AppScreenErrorBoundary({ retry }: ErrorBoundaryProps) {
 
   return (
     <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.colors.background }]}>
-      <View style={styles.content}>
+      <ScrollView contentContainerStyle={styles.content}>
         <Text accessible={false} style={[styles.eyebrow, { color: theme.colors.textMuted }]}>TEEVEE</Text>
         <Text accessibilityRole="header" style={[styles.title, { color: theme.colors.text }]}>Er ging iets mis</Text>
         <Text style={[styles.body, { color: theme.colors.textSecondary }]}>Dit scherm kon niet worden geladen. Je kunt het opnieuw proberen of via de navigatie naar een ander onderdeel gaan.</Text>
@@ -27,7 +27,7 @@ export function AppScreenErrorBoundary({ retry }: ErrorBoundaryProps) {
         >
           <Text style={[styles.retryButtonText, { color: theme.colors.background }]}>Opnieuw proberen</Text>
         </Pressable>
-      </View>
+      </ScrollView>
     </SafeAreaView>
   );
 }
@@ -37,7 +37,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   content: {
-    flex: 1,
+    flexGrow: 1,
     justifyContent: 'center',
     paddingHorizontal: 24,
     paddingVertical: 32,
