@@ -1,7 +1,7 @@
 # Teevee — Canonical Project State
 
-Last updated: 2026-09-13 16:07 CEST.
-Status: ACTIVE — **Phase 1B Guide Presentation Prototypes**. Phase 1A Totaal is physically accepted/frozen on iPhone. Per zender is now technically implemented as the first Phase 1B prototype and awaits physical iPhone interaction acceptance. Nu & Straks follows after that gate. Physical Android interaction validation is explicitly deferred because the owner currently has no Android device; native Android compilation is now covered in CI but is not device acceptance.
+Last updated: 2026-09-13 16:34 CEST.
+Status: ACTIVE — **Phase 1B Guide Presentation Prototypes**. Phase 1A Totaal is physically accepted/frozen on iPhone. The core Per zender gesture/time-anchor architecture is now physically evidenced on iPhone; a small set of targeted controls/detail/theme checks remains open. Nu & Straks is technically implemented and merged as PR #21 and now awaits physical iPhone validation. Physical Android interaction validation remains explicitly deferred because the owner currently has no Android device; native Android compilation is covered in CI but is not device acceptance.
 Current phase: **Phase 1B — Guide Presentation Prototypes**
 Previous phase: **Phase 1A — Totaal Interaction Prototype: physically accepted on iPhone**
 
@@ -23,58 +23,85 @@ Teevee is a premium, paid, ad-free television-guide app for iOS and Android unde
 Relevant ADRs: `0001` through `0005` in `docs/decisions/`.
 
 ## Phasing decision — ADR 0005
-Per zender and Nu & Straks were defined during Phase 1, after the original build plan had already placed broader Guide MVP work in Phase 4. The owner approved correcting that sequence so architecture is not hardened around Totaal alone.
+Per zender and Nu & Straks were defined during Phase 1, after the original plan had placed broader Guide MVP work in Phase 4. The owner approved correcting the order so the app shell and data architecture are not hardened around Totaal alone.
 
 Current sequence:
-1. **Phase 1A — Totaal:** prove the difficult two-dimensional Guide interaction. Complete on available iPhone.
-2. **Phase 1B — Guide presentations:** prove Per zender first, then Nu & Straks, on deterministic fixture data and the existing Programme Detail path.
-3. **Phase 2 — App Shell:** only after all three Guide interaction models are understood; define shared presentation state/navigation/persistence then.
+1. **Phase 1A — Totaal:** prove the difficult two-dimensional Guide interaction. Complete on the available iPhone.
+2. **Phase 1B — Guide presentations:** prove Per zender and Nu & Straks on deterministic fixture data and the existing Programme Detail path.
+3. **Phase 2 — App Shell:** only after all three Guide interaction models are understood; define the shared presentation state/navigation/persistence contract then.
 4. **Phase 3 — Real Data Vertical Slice.**
-5. **Phase 4 — Core Guide MVP hardening:** production-grade versions of Totaal, Per zender and Nu & Straks plus channel management/offline production behaviour.
+5. **Phase 4 — Core Guide MVP hardening:** production-grade Totaal, Per zender and Nu & Straks plus channel management/offline production behaviour.
 
 Phase 1B does **not** pull production EPG integration, accounts, subscriptions, production offline behaviour or persistent channel management forward.
 
 ## Guide presentations
-### Totaal — implemented and frozen
+### Totaal — implemented and frozen on iPhone
 - Two-dimensional Guide: horizontal time, vertical channels.
 - Continuous timeline, real duration geometry, current-time marker/progress, `Vandaag · Morgen · Nu`.
 - Fixed channel rail and time context.
 - Native bounce/directional lock/standard inertia.
-- Physically accepted iPhone fixes through PR #15 remain frozen unless concrete regression evidence exists.
+- Physically accepted fixes through PR #15 remain frozen unless concrete regression evidence exists.
 
-### Per zender — Phase 1B prototype implemented, physical acceptance OPEN
+### Per zender — prototype implemented; core physical architecture evidenced
 Purpose: inspect one channel through the day while switching adjacent channels without losing time context.
 
-Current implementation from PR #20:
+Implementation from PR #20:
 - vertical Y is a **time axis**, not programme-row index;
-- programme top/height follow real start/duration and are clipped to Amsterdam day boundaries;
-- outer native vertical ScrollView owns the viewed time position;
-- inner horizontal `pagingEnabled` pager mounts only previous/current/next channel pages;
-- because horizontal channel paging occurs inside the same vertical schedule surface, the Y/time anchor stays unchanged when changing channel;
-- pager recentres without animation after an accepted previous/next channel change;
-- persistent/browsable horizontal channel strip supports direct channel selection and recentres the active item;
-- `Vandaag`, `Morgen` and `Nu` are available; `Nu` validates fixture freshness and returns to current time today;
+- programme top/height follow real start/duration and clip to Amsterdam day boundaries;
+- one native vertical ScrollView owns the viewed time position;
+- a horizontal `pagingEnabled` pager mounts only previous/current/next channel pages;
+- horizontal paging therefore preserves the vertical wall-clock anchor without bridging scroll position to React state;
+- pager recentres after previous/next channel selection;
+- persistent/browsable horizontal channel strip supports direct selection and recentres the active item;
+- `Vandaag`, `Morgen` and `Nu` are available;
 - programme tap reuses the existing Programme Detail path;
-- no per-frame vertical scroll position is bridged into React state/JS;
-- fixture channels currently lack licensed `logoUrl`, so the intentional text fallback is visible; this is not the intended final production logo treatment.
+- fixture channels currently lack licensed `logoUrl`, so the intentional text fallback is visible.
 
-`app/index.tsx` temporarily starts in frozen **Totaal** and exposes a small bottom-right `Per zender`/`Totaal` switch for Phase 1B comparison. This is test scaffolding, **not** the final presentation selector, default-view decision or persistence model.
+Physical evidence — `ScreenRecording_09-13-2026 16-16-00_1.MP4`:
+- opens around actual current time;
+- strong vertical movement through the day remains coherent/stable;
+- horizontal schedule swipes move Publiek 1 → Publiek 2 → Publiek 3 one adjacent channel at a time;
+- active channel state follows the schedule page;
+- viewed wall-clock position stays materially unchanged across channel changes;
+- no white screen, crash or obvious gesture collapse is visible.
 
-### Nu & Straks — accepted UX, not yet implemented
-- Today only; one shared reference time for all channels.
-- Live mode follows actual time; moving away pins browse time; `Nu` restores live.
-- `Primetime` shortcut.
-- Current/reference programme + three following programmes per channel.
-- Stable channel order/vertical position when reference time changes.
-- No progress bars, genre labels, artwork, chevrons or `Daarna` labels.
-- Schedule semantics remain `startAt <= referenceTime < endAt`; gaps must be honest.
+Conclusion: the **main Per zender nested-gesture/time-anchor architecture risk is closed on the available iPhone**. This recording did not deliberately exercise every acceptance item, so the following remain targeted residual checks rather than blockers to building Nu & Straks:
+- horizontal browsing and direct tap of a distant channel in the top strip;
+- `Vandaag`/`Morgen`/`Nu` behaviour;
+- Programme Detail round-trip/context preservation and immediate post-swipe response;
+- light/dark and representative larger system text.
+
+### Nu & Straks — Phase 1B prototype implemented; physical acceptance OPEN
+Purpose: answer quickly what is on now/at one shared reference time and what follows on each channel.
+
+Implementation from PR #21:
+- today only; no date selector;
+- all 48 fixture channels share one reference instant;
+- live mode follows actual current time;
+- interacting with the horizontal time rail leaves live mode and pins a browse time;
+- the rail uses 30-minute slots and native snapping; live mode itself retains the actual current instant rather than rounding the schedule semantics;
+- `Nu` restores live mode/current time and recentres the rail;
+- `Primetime` selects **20:30 as a prototype value**; this exact value is not yet a frozen product/commercial decision;
+- each channel row shows the reference programme plus up to **three following programmes**;
+- reference programme is visually dominant; following programmes are quieter and show start time only;
+- live/current programme shows useful `Nu · tot …` context;
+- honest `Geen programma` state is shown for schedule gaps;
+- no progress bars, genres, artwork, chevrons or `Daarna` labels;
+- channel order/vertical list position is structurally independent from reference-time state;
+- schedule semantics use start-inclusive/end-exclusive `[start,end)` matching;
+- Programme Detail opens directly through the existing shared path;
+- Amsterdam day boundaries generate the available time slots, including non-24-hour DST days.
+
+Temporary Phase 1B test scaffolding in `app/index.tsx` now cycles:
+**Totaal → Per zender → Nu & Straks → Totaal**.
+This is not the final presentation selector, default-view decision or persistence model.
 
 ## Programme Detail
 - Direct from every Guide presentation; no intermediate preview sheet.
 - Native React Native Modal presentation.
 - Close button/backdrop, `onRequestClose`, accessibility escape and deliberate swipe-down dismissal.
 - Current-phase actions: `Herinner mij` + `Bewaar`; no share action in this phase.
-- Returning from detail must preserve the originating Guide channel/time/scroll context.
+- Returning from detail must preserve the originating Guide presentation and relevant channel/time/scroll context.
 
 ## Phase 1A frozen iPhone interaction baseline
 Do not retune without concrete regression evidence:
@@ -88,87 +115,60 @@ Do not retune without concrete regression evidence:
 - PR #14/#15 horizontal performance architecture: per-frame `scrollX` stays on UI thread and no settled full-grid readability state remains;
 - Programme Detail button/backdrop/native-request/swipe dismissal behaviour.
 
-Important historical evidence:
-- PR #6 rejected physically: >1000 per-programme Reanimated styles produced white screen/Expo Go crash despite green CI.
-- PR #8 rejected physically: React-state edge overlay lagged native ScrollView.
-- PR #9 accepted: only 48 UI-thread edge rows for partial-left title readability.
-- PR #10 rejected: clipped `30` time fragment remained.
-- PR #11 accepted: one fixed UI-thread left mask.
-- PR #13 accepted: VoiceOver and live light/dark.
-- PR #14/#15 accepted: post-horizontal-fling Programme Detail response became practically equal to still-Guide response in `ScreenRecording_09-13-2026 15-11-35_1.MP4`.
+Important rejected/accepted history is retained in `docs/DEVLOG.md`.
 
 ## Data/time baseline
 - Teevee-owned `Channel`, `Programme` and `GuideFixture` types.
 - 48 synthetic channels and deterministic runtime schedule fixture aligned to Amsterdam calendar days.
 - Calendar helpers handle normal days, 23-hour/25-hour DST transitions and year rollover.
-- Shared `[start,end)` `isProgrammeCurrent` semantics from PR #16; progress uses one numeric `nowMs` snapshot and fractional precision.
-- PR #17 refreshes Guide clock immediately on app resume and rebuilds the finite fixture when the Amsterdam calendar day changes; `Nu` also checks fixture freshness.
+- Shared `[start,end)` current-programme semantics from PR #16; progress uses one numeric `nowMs` snapshot and fractional precision.
+- PR #17 refreshes Guide clock immediately on app resume and rebuilds the finite fixture when the Amsterdam calendar day changes.
+- Nu & Straks helper tests cover reference boundaries, three-following selection, honest gaps, day clamping, non-24-hour slot generation and nearest-slot positioning.
 
 ## CI / reproducibility baseline
-### PR #18 — deterministic npm install
-- committed npm lockfile v3;
-- normal CI uses `npm ci` and npm cache;
-- no lockfile regeneration inside normal CI;
-- no `npm audit fix --force`.
+- `package-lock.json` v3 is committed; normal CI installs only with `npm ci` and uses the npm cache.
+- CI `quality` runs strict TypeScript, lint, tests and iOS/Android/web Expo exports.
+- CI `android-native` performs a clean Expo Android prebuild and Gradle `:app:assembleDebug`.
+- Never run `npm audit fix --force`; the previously reported 15 moderate advisories require targeted review.
 
-Evidence: PR head `142a92d9ffdc836af063c91200a315832cff1071` passed CI #181 / `34760300933`; merge `8ee173794d60cebf171b307400e5dcd21d48e488` passed exact-main CI #182 / `34760389374` completely.
-
-### PR #20 — Per zender Phase 1B prototype
-The first red run `34761329960` exposed that replacing `app/index.tsx` outright broke the established Totaal Programme Detail integration harness because its mocked ScrollView refs do not implement native `scrollTo`. The solution preserved the Totaal initial boundary and added temporary prototype switching; existing tests were **not** weakened.
-
-Evidence:
-- final PR head `67ad6133e84a632b0354721186f439858a49174f` passed PR CI #193 / `34761468823`: deterministic install, strict TypeScript, lint, **100/100 tests** and iOS/Android/web Expo exports;
-- merged as `5f71cf30175a4c5686a058d86eda7f0873e99238`;
-- exact PR #20 merge passed main CI #194 / `34761570305` completely.
-
-### PR #19 — native Android compile gate
-Because no physical Android device is currently available, CI now adds technical Android build evidence without pretending it proves interaction quality:
-- Expo generates a clean Android native project;
-- Java 17/Gradle are configured in CI;
-- Gradle compiles `:app:assembleDebug`;
-- generated `/android/` and `/ios/` directories are ignored for the Continuous Native Generation workflow.
-
-Evidence:
-- original PR head `60db410901e6a6607f6b049c8197c9593b36d251` passed PR CI #185 / `34760593076` completely, including Expo Android prebuild and Gradle debug APK compilation;
-- branch reconciled with PR #20/current main as `3b72fafac09fafdc1e3a9c10134c08972301c83e`;
-- merged as `eac7cae6df8083d4906a3ea1280c0add646dcc40`;
-- exact combined-main CI #196 / `34761643473`: quality job is fully green; Android prebuild is green and the Gradle debug compile is still running at this document timestamp.
+Key evidence:
+- PR #18 reproducible install: head `142a92d9ffdc836afc91200a315832cff1071` passed CI #181 / `34760300933`; merge `8ee173794d60cebf171b307400e5dcd21d48e488` passed main CI #182 / `34760389374`.
+- PR #20 Per zender: head `67ad6133e84a632b0354721186f439858a49174f` passed CI #193 / `34761468823`; merge `5f71cf30175a4c5686a058d86eda7f0873e99238` passed main CI #194 / `34761570305`.
+- PR #19 Android native compile gate: head `60db410901e6a6607f6b049c8197c9593b36d251` passed CI #185 / `34760593076`, including Expo Android prebuild and Gradle debug APK compilation; merged as `eac7cae6df8083d4906a3ea1280c0add646dcc40`.
+- PR #21 Nu & Straks: final head `fb388f1fefbc9dd64891bd69e70e4b79d7bb574d`; CI #200 / `34762548963` has successful `npm ci`, typecheck, lint, tests, all-platform Expo exports and Android prebuild; its long-running Gradle compile was still in progress at merge time. PR #21 merged as `dccc02d635cb9b3189a4ea7a857b56100e2e3ab9`. Exact-main CI #201 / `34762970766` is running at this document timestamp; quality has reached tests successfully so far and the native job is still progressing. Do not infer Android physical acceptance from any of these checks.
 
 ## Android validation status
-Automated confidence is materially stronger but physical Android acceptance remains **OPEN/DEFERRED** because the owner has no Android device.
+Physical Android interaction acceptance remains **OPEN/DEFERRED** because no Android device is currently available.
 
-Already covered technically:
+Automated confidence covers:
 - Android JS/native bundle export;
-- native Expo Android prebuild;
-- Gradle debug APK compilation on PR #19 evidence;
+- clean Expo Android prebuild;
+- Gradle debug APK compilation on established PR #19 evidence;
 - Programme Detail `onRequestClose` wiring and integration equivalent;
 - `GestureHandlerRootView` inside the native Modal path.
 
-Still unproven without a real/interactive Android environment:
-- Android system/hardware Back arbitration on-device;
-- nested-scroll/gesture feel and accidental gesture arbitration;
+Still physically unproven:
+- Android system/hardware Back arbitration;
+- nested-scroll/gesture feel;
 - realistic Android frame pacing/performance;
 - device-specific visual/runtime defects.
 
-Do not claim these as accepted from CI.
-
 ## Remaining Phase 1B work
-1. **Physical iPhone acceptance of Per zender.**
-2. Iterate Per zender only on concrete device evidence until interaction gate closes.
-3. Build and physically validate **Nu & Straks**.
-4. Only then enter Phase 2 and formalise the shared Guide presentation-state/shell contract.
+1. **Physical iPhone pass for Nu & Straks plus the residual Per zender checks.**
+2. Iterate either presentation only on concrete device evidence.
+3. Once both Phase 1B interaction models are credible, enter **Phase 2 App Shell** and formalise one shared Guide presentation-state/navigation/persistence contract.
 
 Deferred but tracked:
 - physical Android validation when a suitable Android device/interactive environment becomes available;
 - release-like performance outside Expo Go;
-- targeted review of the previously reported 15 moderate dependency advisories; never `npm audit fix --force`;
+- targeted review of the 15 moderate dependency advisories;
 - production EPG/logo/artwork rights and reliability;
 - pricing/trial/paywall;
 - production design tokens/font licensing;
 - final Tonight composition.
 
 ## EXACT NEXT STEP
-**Physically validate the merged Per zender Phase 1B prototype on the available iPhone.**
+**Run current `main` on the available iPhone and perform one combined Phase 1B validation pass.**
 
 Owner checkout: `~/projects/teevee`.
 
@@ -178,18 +178,30 @@ git pull --ff-only
 npm run start:clean
 ```
 
-The app opens in the frozen **Totaal** prototype. Tap the temporary bottom-right **Per zender** control, then validate:
-1. Per zender opens around the current time on `Vandaag`.
-2. Vertical slow scroll and fling feel native/stable; hour/programme geometry stays coherent.
-3. Horizontal swipe **inside the schedule** changes exactly one adjacent channel; reverse repeatedly and confirm the viewed time does not jump.
-4. Diagonal movement should not accidentally switch channels during normal vertical browsing.
-5. Browse the channel strip horizontally and tap a distant channel; the selected channel becomes active/visible while the schedule stays at the same time anchor.
-6. `Morgen` and `Vandaag` preserve the approximate viewed time; `Nu` returns to today/current time.
-7. Open a programme and close Programme Detail; the same channel/day/time context must remain. Repeat immediately after horizontal channel swipes and note any latency.
-8. Run a short mixed session of vertical flings, horizontal channel swipes and strip browsing; no crash, white screen, blank schedule or obvious performance collapse.
-9. Confirm light/dark remain usable; sample a larger system-text size if convenient.
+The app starts in frozen **Totaal**. The temporary bottom-right control cycles:
+1. `Per zender`
+2. `Nu & Straks`
+3. `Totaal`
 
-Do **not** retune the frozen Totaal interaction from Per zender impressions alone.
+### Nu & Straks — primary gate
+Validate:
+1. It opens in live mode around the actual current time and the visible reference programme matches that shared instant.
+2. Horizontally drag/fling the time rail. It should leave live mode, settle cleanly on a browse time and update all channel rows to the same reference instant.
+3. Scroll vertically to another set of channels, then change reference time again. The vertical channel position/order should not jump.
+4. Tap `Nu`: live mode/current time should return and the rail should recentre.
+5. Tap `Primetime`: the prototype should move to 20:30.
+6. Scan several rows: one dominant reference programme plus three quieter following programmes where data exists; following items show start time only.
+7. Open a programme and close Programme Detail. The same Nu & Straks reference time and vertical channel context should remain.
+8. Mix vertical channel flings with horizontal time-rail movement; no crash, white screen, blank list or obvious performance collapse.
+9. Check dark mode; sample a larger system-text size if convenient.
+
+### Per zender — residual checks in the same pass
+- browse the top channel strip horizontally and tap a distant channel;
+- test `Morgen`, `Vandaag` and `Nu`;
+- open/close Programme Detail and verify channel/day/time context is preserved, including immediately after a horizontal channel swipe;
+- confirm dark mode remains usable.
+
+Do **not** retune the frozen Totaal interaction from Phase 1B impressions alone.
 
 ## Resume instruction
-> Read `AGENTS.md` and `PROJECT_STATE.md`. Execute EXACT NEXT STEP where possible. Phase 1B order is Per zender physical acceptance -> Nu & Straks prototype/acceptance -> Phase 2 App Shell. Update PROJECT_STATE and the Dutch timestamped DEVLOG after every substantive increment. Ask only for product choices or genuinely necessary physical-device observations. Never substitute CI for physical acceptance.
+> Read `AGENTS.md` and `PROJECT_STATE.md`. Execute EXACT NEXT STEP where possible. Phase 1B now has Per zender core physical architecture evidence and a merged Nu & Straks prototype; the next gate is the combined iPhone validation pass. Update PROJECT_STATE and the Dutch timestamped DEVLOG after every substantive increment. Ask only for product choices or genuinely necessary physical-device observations. Never substitute CI for physical acceptance.
