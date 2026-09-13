@@ -11,6 +11,24 @@ Doel: een begrijpelijk chronologisch overzicht van substantiële wijzigingen, to
 
 ---
 
+## 13 september 2026, 23:37 CEST — Brede Phase 2 iPhone-pass geslaagd; één large-text defect gevonden en gefixt in PR #35
+
+De gefocuste Phase 2 iPhone-acceptatiepass is uitgevoerd met `ScreenRecording_09-13-2026 23-10-50_1.MP4`. De opname bewijst de belangrijkste App Shell-gates die na Phase 1/1B nog fysiek openstonden: Settings opent als secundaire route, Licht/Systeem/Donker werken live, een expliciete dark preference overleeft reload/restart, de gedeelde Settings/Vanavond-headers blijven binnen de safe area en de drie Guide-presentaties blijven op 135% iOS-tekstgrootte bruikbaar. De 44pt day/now/shortcut-controls blijven bereikbaar, de Nu & Straks referentiecontrols reflowen coherent en Programme Detail blijft bij grotere tekst leesbaar en sluitbaar. Er trad geen redbox, wit scherm, crash of brede interaction-regressie op.
+
+De pass vond één concrete accessibility-regressie in **Per zender**: de text-only fallback-identiteiten `Publiek 1`, `Publiek 2` en `Publiek 3` werden bij 135% tekst alle drie zichtbaar als `Publie…`. De controls hielden hun volledige accessibility labels, maar sighted large-text users konden de aangrenzende zenders in de strip visueel niet meer onderscheiden.
+
+De fix is bewust minimaal gehouden. PR #35 verandert voor `ChannelIdentity` alleen de truncatiestrategie: text-only identities gebruiken middle ellipsis, zodat onderscheidende suffixen behouden blijven; logo-backed identities houden tail ellipsis. Channel-stripbreedte, density, Per zender pager, schedule geometry, time anchor, nested gestures, momentum en de deferred Nu & Straks startup-boundary zijn niet gewijzigd. Gerichte componenttests bewaken beide truncatiepaden. Het fysieke bewijs en de exacte mini-recheck staan in `docs/PHYSICAL_EVIDENCE_2026-09-13_2310.md`.
+
+Verificatie PR #35: exacte head `ab08ab6868326eaa1cf03cca60d7719bbc9badbc`; CI #252 / `34783450317` eindigde volledig `completed/success` voor `quality` en `android-native`, inclusief typecheck, lint, tests, alle Expo exports, clean Android prebuild en Gradle debug-APK compile. PR #35 is daarna gesquasht naar `main` als `f067cf8543921464dba70c3966b1870c1ac2666a`. Exact-main CI #253 / `34784323448` is gestart; de completionstatus wordt pas geclaimd zodra die expliciet groen is.
+
+De eerdere technische gates zijn intussen eveneens volledig dicht: exact-main CI #248 / `34781494594` na PR #34 en de gereconcilieerde main-run #249 / `34781668104` zijn beide volledig groen voor `quality` en `android-native`.
+
+De 24pt interactieve volgende-programma-rijen in Nu & Straks blijven apart geregistreerde accessibility/UX debt. De 23:10-pass leverde daar geen concrete tap failure voor op. Het punt blokkeert daarom de huidige Phase 2-afronding niet, maar moet later density-aware worden opgelost en fysiek worden gevalideerd; geen overlappende `hitSlop` of stilzwijgende generieke 44pt-densitywijziging.
+
+Volgende stap: uitsluitend een korte iPhone-recheck op current `main` met iOS-tekst op 135%: bevestig dat `Publiek 1/2/3` visueel onderscheidend zijn, tap minimaal twee zenders en doe één adjacent-channel schedule swipe waarbij de actieve stripselectie correct volgt. Als dit groen is kan Phase 2 formeel worden gesloten; de brede appearance/header/Guide-pass hoeft niet opnieuw.
+
+---
+
 ## 13 september 2026, 22:41 CEST — Phase 2 technisch gehard t/m PR #34; fysieke iPhone-gate is nu leidend
 
 Sinds de vorige logentry zijn de resterende kleine App Shell-hardeningstappen technisch afgerond zonder de fysiek geaccepteerde Guide-mechanica te retunen.
@@ -358,11 +376,11 @@ Projectfoundation, deterministische EPG-fixture, Expo/React Native strict TypeSc
 ---
 
 ## Doorlopende open technische punten
-- **Phase 2 App Shell:** technisch geïmplementeerd en CI-gegate t/m PR #34; de leidende resterende gate is de gefocuste fysieke iPhone appearance/header/larger-text pass uit `docs/TESTING.md`.
+- **Phase 2 App Shell:** technisch geïmplementeerd t/m PR #35; brede iPhone acceptance is geslaagd. Alleen de vier-stappen 135% Per zender recheck van de PR #35 channel-identity fix blokkeert formele Phase 2-sluiting.
 - **Guide presentation persistence:** fysiek geaccepteerd op iPhone na PR #26; Android-devicevalidatie blijft open.
-- **Theme/accessibility:** System/Light/Dark en de shell-/Guide-controlhardening zijn technisch geïmplementeerd; fysieke appearance-persistence, shared-header/safe-area en representatieve grotere tekst blijven te accepteren op iPhone.
-- **Nu & Straks compacte volgende-programma-rijen:** aparte accessibility/UX-vraag; niet oplossen met overlappende hit targets of stilzwijgende density-wijziging zonder toestelbewijs.
+- **Theme/accessibility:** System/Light/Dark, restart persistence, shared headers/safe areas en representatieve 135% tekst zijn fysiek bewezen op iPhone. De large-text channel-strip defect is in PR #35 technisch gefixt en wacht alleen op mini-recheck.
+- **Nu & Straks compacte volgende-programma-rijen:** aparte, niet-blockerende accessibility/UX debt zolang geen concrete tap failure is bewezen; later density-aware hardenen en fysiek valideren.
 - Android system/hardware Back, nested gestures en realistische performance fysiek valideren zodra een geschikt Android-toestel/interactive environment beschikbaar is; native compile-CI is geen toestelacceptatie.
 - Release-like performance buiten Expo Go valideren wanneer een geschikte build/device beschikbaar is.
-- De 15 moderate dependency-advisories vereisen gerichte analyse. Nooit `npm audit fix --force`.
+- De moderate dependency-advisories vereisen gerichte analyse. Nooit `npm audit fix --force`.
 - Productie-EPG/logo/artworkrechten, abonnement/paywall, productietokens/fontlicentie en definitieve Vanavond/Tonight-modules blijven latere gates.

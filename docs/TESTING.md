@@ -1,124 +1,96 @@
 # Teevee testen op een fysiek toestel
 
-Status: Phase 2 development testpad. Current feature/device gates are governed by `PROJECT_STATE.md`.
+Status: Phase 2 final device gate. Current feature/device gates are governed by `PROJECT_STATE.md`.
 
-Doel: de gidsinteractie zo vroeg mogelijk op echte iOS- en Android-hardware beoordelen zonder te wachten op TestFlight, Google Play of production-data.
+Doel: echte iOS- en Android-interactie vroeg bewijzen zonder te wachten op TestFlight, Google Play of production-data. CI blijft technisch bewijs, geen vervanging voor toestelacceptatie.
 
-## Snelste testpad in Phase 2: Expo Go
+## Snelste testpad: Expo Go
 
-De huidige app gebruikt alleen Expo-compatible libraries en heeft nog geen custom native modules nodig. Daardoor kan de huidige App Shell voorlopig via Expo Go worden getest.
+De huidige app gebruikt alleen Expo-compatible libraries en heeft nog geen custom native modules nodig. Daardoor kan de App Shell voorlopig via Expo Go worden getest.
 
 ### Eenmalig op je telefoon
 1. Installeer **Expo Go** uit de Apple App Store of Google Play Store.
 2. Zorg dat telefoon en developmentcomputer op hetzelfde netwerk zitten.
 
 ### Eerste keer op de developmentcomputer
-1. Clone de repository:
-   `git clone https://github.com/zuiderwijk/teevee.git`
-2. Ga naar de projectmap:
-   `cd teevee`
-3. Installeer dependencies:
-   `npm ci`
-4. Start de toestelmodus:
-   `npm run start:device`
+1. Clone de repository: `git clone https://github.com/zuiderwijk/teevee.git`
+2. `cd teevee`
+3. `npm ci`
+4. `npm run start:device`
 5. Scan de QR-code met de camera/Expo Go.
 
 ### Volgende testsessies
-Na een `git pull` is meestal alleen nodig:
+Werk eerst current `main` bij:
 
-`npm run start:device`
+```bash
+cd ~/projects/teevee
+git checkout main
+git pull --ff-only
+```
 
-Als Expo-cachegedrag vreemd lijkt:
+Normaal starten:
 
-`npm run start:clean`
+```bash
+npm run start:device
+```
 
-De runtime-fixture wordt bij het starten rond de actuele tijd gelegd. Daardoor blijven `Nu`, programma-progress en vandaag/morgen bruikbaar, ook wanneer de test op een latere datum wordt uitgevoerd. De onderliggende testfixture blijft deterministisch voor CI.
+Bij vreemd cachegedrag of voor een gerichte acceptatiepass:
 
-## Actieve Phase 2 iPhone-acceptatiepass
+```bash
+npm run start:clean
+```
 
-Deze pass is bewust klein. Hij herhaalt niet de fysiek bevroren Phase 1/1B-scrollphysics, maar valideert de App Shell-, appearance- en accessibility-wijzigingen die daarna zijn toegevoegd. Noteer bij voorkeur iPhone-model, iOS-versie, Expo Go-versie en de gebruikte grotere-tekstinstelling.
+De runtime-fixture wordt rond de actuele tijd gelegd. Daardoor blijven `Nu`, programma-progress en vandaag/morgen bruikbaar terwijl de onderliggende testfixture deterministisch blijft voor CI.
 
-### 1. Settings en appearance
-1. Start op `Gids` en open `Instellingen`; Settings moet als secundaire route openen, niet als vierde tab.
-2. Kies `Donker`; de zichtbare Settings-surface moet direct omschakelen. Sluit Settings en controleer ook Gids.
-3. Kies `Licht` en herhaal dezelfde live-check.
-4. Kies `Systeem`; verander daarna het iOS-systeemthema terwijl Teevee actief blijft. Teevee moet het systeem live volgen.
-5. Kies vervolgens expliciet `Licht` of `Donker`, sluit de app volledig en start opnieuw. De expliciete keuze moet behouden blijven.
-6. Open Programme Detail vanuit Gids; detail moet de actieve appearance volgen en normaal te sluiten zijn.
+## Actieve Phase 2 mini-recheck — na PR #35
 
-Stop en noteer als een theme-wissel een reload vereist, de verkeerde preference na restart terugkomt of een surface in het oude theme achterblijft.
+De brede Phase 2 iPhone-pass van `ScreenRecording_09-13-2026 23-10-50_1.MP4` is inhoudelijk geslaagd voor Settings, appearance-persistence, shared headers/safe areas, de drie Guide-presentaties, Programme Detail en 135% systeemtekst. Die brede pass hoeft **niet** opnieuw.
 
-### 2. Shared headers en safe areas
-Controleer `Instellingen`, `Vanavond` en `Zoeken`:
-- titel en action mogen elkaar niet overlappen;
-- header/content mag niet onder notch/statusbar vallen;
-- Settings openen/sluiten blijft logisch vanuit iedere primaire tab;
-- bottom navigation blijft bruikbaar en stabiel.
+Hij bracht één concrete defect aan het licht: bij 135% tekst werden de text-only Per zender identities `Publiek 1`, `Publiek 2` en `Publiek 3` allemaal zichtbaar als `Publie…`. PR #35 verandert alleen de truncatie van text-only channel identities naar middle ellipsis, zodat het onderscheidende suffix zichtbaar blijft. Stripbreedte, pager, tijdanker en gestures zijn niet gewijzigd.
 
-### 3. Representatieve grotere systeemtekst
-Kies in iOS één duidelijk grotere maar nog representatieve tekstinstelling en noteer welke. Een accessibility-maximum is voor deze smoke niet vereist; het doel is reflow en bereikbaarheid onder realistische grotere tekst.
+### Voorbereiding
+1. Zorg dat `main` is bijgewerkt en start met `npm run start:clean`.
+2. Laat iOS tekstgrootte op **135%** staan.
+3. Open `Gids` → `Per zender`.
 
-Controleer vervolgens:
+### Vier checks
+1. Controleer dat `Publiek 1`, `Publiek 2` en `Publiek 3` in de horizontale zenderstrip visueel van elkaar te onderscheiden zijn. Een vorm als `Publ…1`, `Publ…2`, `Publ…3` is correct als de volledige namen niet passen.
+2. Tik op minimaal twee van deze zenders en controleer dat de juiste zender direct geselecteerd wordt.
+3. Veeg de schedule één keer horizontaal naar een aangrenzende zender.
+4. Controleer dat de actieve state in de zenderstrip de nieuwe schedule-zender volgt.
 
-**Gids algemeen**
-- de drie-weg selector `Totaal / Per zender / Nu & Straks` blijft volledig zichtbaar en tappable;
-- geen header/action overlap of essentiële clipping;
-- Programme Detail opent en sluit nog normaal vanuit alle drie presentaties.
+### Pass/fail
+**Pass:** alle vier checks slagen, zonder redbox, wit scherm, crash of nieuwe strip/pager-regressie. Dan is geen verdere brede Phase 2-devicepass nodig.
 
-**Per zender**
-- de horizontale zenderstrip blijft beschikbaar;
-- `Vandaag`, `Morgen` en `Nu` blijven goed bereikbaar en visueel intact;
-- channel/date-context blijft leesbaar zonder de schedule-interactie kapot te drukken;
-- een horizontale swipe naar een aangrenzende zender en een verticale schedulescroll blijven bruikbaar.
+**Fail:** noteer alleen de concrete mislukte stap en lever bij voorkeur een korte screenrecording. Heropen geen andere fysiek geaccepteerde Guide-mechanica zonder bewijs.
 
-**Nu & Straks**
-- referentietijd en shortcuts mogen naar meerdere regels reflowen zonder overlap;
-- `Primetime` en `Nu` blijven goed bereikbaar;
-- de tijdrail blijft bruikbaar;
-- verticaal scrollen door zenders en wisselen van referentietijd blijven coherent.
+## Reeds bewezen in de brede Phase 2-pass
+Evidence: `ScreenRecording_09-13-2026 23-10-50_1.MP4`; repository record: `docs/PHYSICAL_EVIDENCE_2026-09-13_2310.md`.
 
-De compacte volgende-programma-rijen in Nu & Straks zijn nog een expliciet open accessibility/UX-vraagstuk. Deze pass moet registreren hoe ze zich bij grotere tekst gedragen; verander hun informatiedichtheid niet impliciet zonder aparte beslissing.
+Op de beschikbare iPhone is bewezen dat:
+- Settings als secundaire route werkt;
+- `Licht`, `Systeem` en `Donker` live toepassen;
+- een expliciete dark preference reload/restart overleeft;
+- Settings en Vanavond shared headers/safe areas correct blijven;
+- Totaal, Per zender en Nu & Straks bruikbaar blijven op 135% tekst;
+- de 44pt Guide-controls bereikbaar blijven;
+- Nu & Straks reference controls coherent reflowen;
+- Programme Detail onder 135% tekst opent, leesbaar blijft en sluit;
+- light mode na de grotere-tekstpass bruikbaar blijft;
+- geen brede crash- of interaction-regressie optreedt.
 
-### 4. Pass/fail voor deze sessie
-De Phase 2 fysieke gate kan worden gesloten wanneer:
-- Light/Dark/System live correct werken;
-- een expliciete appearance na restart behouden blijft;
-- gedeelde headers/safe areas geen overlap of clipping tonen;
-- representatief grotere tekst de kerncontrols in Per zender en Nu & Straks bereikbaar houdt;
-- de drie Guide-presentaties en Programme Detail bruikbaar blijven;
-- geen redbox, wit scherm, crash of duidelijke interaction-regressie optreedt.
+## Open maar niet-blockerende accessibility debt
+De compacte volgende-programma-rijen in Nu & Straks gebruiken momenteel 24pt minimumhoogte. De 23:10-pass leverde geen concrete tap failure op. Dit punt blijft daarom expliciet als latere Core Guide accessibility-hardening staan en blokkeert de huidige Phase 2-mini-recheck niet.
 
-Bij een visuele of interaction-regressie: maak bij voorkeur één korte screenrecording en noteer de exacte stappen. Itereer daarna alleen op die concrete bevinding; heropen fysiek geaccepteerde Guide-mechanica niet zonder bewijs.
+Niet oplossen met overlappende `hitSlop` en niet stilzwijgend alle rijen naar 44pt vergroten: beide keuzes kunnen respectievelijk tap-arbitrage of de geaccepteerde informatiedichtheid veranderen. Een latere oplossing moet density-aware zijn en fysiek worden gevalideerd.
 
-## Historische Phase 1-baseline
+## Historische Phase 1/1B-baseline
+De volgende interaction models zijn al fysiek geaccepteerd en hoeven niet routinematig opnieuw te worden bewezen:
+- Totaal: tweedimensionale tijd/zender-guide, native inertia/bounce/directional lock, Vandaag/Morgen/Nu, Programme Detail;
+- Per zender: verticale tijdpositie, horizontale adjacent-channel pager, browsable/direct-tap zenderstrip, contextbehoud;
+- Nu & Straks: live/browse referentietijd, native tijdrail, Nu/Primetime, stabiele verticale context en Programme Detail round-trip.
 
-### Gids
-- Start de app direct in de gids.
-- Scroll horizontaal door de tijd.
-- Scroll verticaal door de zenders.
-- Controleer of de zenderkolom synchroon blijft lopen.
-- Tik op `Nu` en controleer of de gids terugkeert naar het actuele punt.
-- Wissel naar morgen en terug.
-- Tik programma's met verschillende lengtes aan.
-- Controleer dat zeer korte programma's compact maar niet kapot worden weergegeven.
-- Open en sluit de programmadetailweergave.
-
-### Visueel
-- Test light mode.
-- Test dark mode.
-- Verander het systeemthema terwijl de app draait.
-- Let vooral op leesbaarheid, informatiedichtheid en rust.
-
-### Performance
-Let op:
-- haperingen bij horizontaal scrollen;
-- haperingen bij verticaal scrollen;
-- achterlopende zenderlabels;
-- scrollsprongen;
-- vertraagde respons bij het openen van programma-details;
-- duidelijk verschil tussen oudere en nieuwere toestellen.
-
-Noteer toestelmodel + OS-versie bij performancefeedback. Gebruik `docs/DEVICE_TEST_REPORT.md` als compact rapportformat. Een korte screenrecording is bij scroll- of synchronisatieproblemen waardevoller dan alleen een omschrijving.
+Heropen deze baselines alleen bij concrete regressie-evidence.
 
 ## Geautomatiseerde kwaliteitscontrole
 Iedere PR en iedere push naar `main` start GitHub Actions met:
@@ -129,7 +101,7 @@ Iedere PR en iedere push naar `main` start GitHub Actions met:
 - Expo exports voor iOS, Android en web;
 - een schone Android prebuild en Gradle debug-APK compile.
 
-Een groene CI zegt dat de code technisch door de afgesproken checks komt. Het zegt **niet** dat scrollgevoel en mobiele UX goed zijn; daarvoor blijft testen op echte hardware noodzakelijk.
+Een groene CI zegt dat de code technisch door de afgesproken checks komt. Het zegt **niet** dat scrollgevoel en mobiele UX goed zijn.
 
 ## Android
 Fysieke Android-validatie is nog open omdat momenteel geen Android-toestel beschikbaar is. CI bewijst Android export/prebuild/compile, niet system Back, nested gestures, device-performance of device-specifieke defects.
