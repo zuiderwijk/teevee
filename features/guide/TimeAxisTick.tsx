@@ -1,3 +1,4 @@
+import { memo } from 'react';
 import { StyleSheet, View } from 'react-native';
 import Animated, { type SharedValue, useAnimatedStyle } from 'react-native-reanimated';
 
@@ -12,7 +13,7 @@ type TimeAxisTickProps = {
   scrollX: SharedValue<number>;
 };
 
-export function TimeAxisTick({
+export const TimeAxisTick = memo(function TimeAxisTick({
   left,
   label,
   labelWidth,
@@ -35,7 +36,7 @@ export function TimeAxisTick({
       </Animated.Text>
     </View>
   );
-}
+});
 
 const styles = StyleSheet.create({
   tick: {
