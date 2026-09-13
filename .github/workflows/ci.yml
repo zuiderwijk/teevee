@@ -18,4 +18,6 @@ jobs:
       - run: npm run typecheck
       - run: npm run lint
       - run: npm test
-      - run: npm run build:web
+      # Bundle checks exercise native imports/worklets too; not a signed native build.
+      - name: Export iOS, Android and web bundles
+        run: npx expo export --platform all
