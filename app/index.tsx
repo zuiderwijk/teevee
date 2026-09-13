@@ -1,5 +1,5 @@
 import { type ComponentType, type ReactNode, useCallback, useEffect, useReducer, useRef, useState } from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 
 import { SettingsButton } from '@/components/SettingsButton';
 import { detailReducer, initialDetailState, type ProgrammeSelection } from '@/features/guide/detailState';
@@ -9,6 +9,7 @@ import {
   type GuidePresentation,
 } from '@/features/guide/guidePresentation';
 import { GuideView } from '@/features/guide/GuideView';
+import { NowNextLoadErrorNotice } from '@/features/guide/NowNextLoadErrorNotice';
 import { PerChannelGuideView } from '@/features/guide/PerChannelGuideView';
 import { ProgrammeDetail } from '@/features/guide/ProgrammeDetail';
 import { withGuidePresentation } from '@/features/settings/appPreferences';
@@ -16,7 +17,6 @@ import {
   readAppPreferences,
   writeAppPreferences,
 } from '@/services/storage/appPreferencesStorage';
-import { useTeeveeTheme } from '@/theme/useTeeveeTheme';
 
 const settingsAction = <SettingsButton />;
 
@@ -26,7 +26,6 @@ type NowNextGuideComponent = ComponentType<{
 }>;
 
 export default function GuideScreen() {
-  const theme = useTeeveeTheme();
   const [initialPreferredPresentation] = useState<GuidePresentation>(
     () => readAppPreferences().guidePresentation,
   );
@@ -38,7 +37,7 @@ export default function GuideScreen() {
   const requestedPresentationRef = useRef<GuidePresentation>(initialPreferredPresentation);
   const [nowNextComponent, setNowNextComponent] = useState<NowNextGuideComponent | null>(null);
   const [nowNextLoading, setNowNextLoading] = useState(false);
-  const [nowNextLoadError, setNowNextLoadError] = useState<string | null>(null);
+  const [nowNextLoadFailed, setNowNextLoadFailed] = useState(false);
   const [detail, dispatch] = useReducer(detailReducer, initialDetailState);
 
   // Stable props are essential: selecting a programme must not rebuild the Guide.
@@ -60,7 +59,7 @@ export default function GuideScreen() {
     }
 
     setNowNextLoading(true);
-    setNowNextLoadError(null);
+    setNowNextLoadFailed(false);
 
     try {
       const module = await import('@/features/guide/NowNextGuideView');
@@ -68,9 +67,8 @@ export default function GuideScreen() {
       if (requestedPresentationRef.current === 'now-next') {
         setPresentation('now-next');
       }
-    } catch (error) {
-      const message = error instanceof Error ? error.message : String(error);
-      setNowNextLoadError(message);
+    } catch {
+      setNowNextLoadFailed(true);
     } finally {
       setNowNextLoading(false);
     }
@@ -95,7 +93,7 @@ export default function GuideScreen() {
   const selectPresentation = useCallback(
     (nextPresentation: GuidePresentation) => {
       requestedPresentationRef.current = nextPresentation;
-      setNowNextLoadError(null);
+      setNowNextLoadFailed(false);
       persistPresentationPreference(nextPresentation);
 
       if (nextPresentation === 'now-next') {
@@ -118,22 +116,8 @@ export default function GuideScreen() {
         <GuideView onSelectProgramme={openDetail} headerAction={settingsAction} />
       )}
 
-      {nowNextLoadError ? (
-        <View
-          accessibilityRole="alert"
-          style={[
-            styles.loadError,
-            {
-              backgroundColor: theme.colors.surfaceElevated,
-              borderColor: theme.colors.border,
-            },
-          ]}
-        >
-          <Text style={[styles.loadErrorTitle, { color: theme.colors.text }]}>Nu & Straks kon niet laden</Text>
-          <Text selectable style={[styles.loadErrorText, { color: theme.colors.textSecondary }]}>
-            {nowNextLoadError}
-          </Text>
-        </View>
+      {nowNextLoadFailed ? (
+        <NowNextLoadErrorNotice onRetry={() => void loadAndShowNowNext()} />
       ) : null}
 
       <View pointerEvents="box-none" style={styles.presentationSelectorDock}>
@@ -157,27 +141,5 @@ const styles = StyleSheet.create({
     bottom: 16,
     zIndex: 20,
     alignItems: 'center',
-  },
-  loadError: {
-    position: 'absolute',
-    left: 16,
-    right: 16,
-    bottom: 72,
-    zIndex: 21,
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-    borderRadius: 14,
-    borderWidth: StyleSheet.hairlineWidth,
-  },
-  loadErrorTitle: {
-    fontSize: 13,
-    lineHeight: 18,
-    fontWeight: '800',
-  },
-  loadErrorText: {
-    marginTop: 4,
-    fontSize: 12,
-    lineHeight: 17,
-    fontWeight: '500',
   },
 });
