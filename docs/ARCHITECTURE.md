@@ -18,7 +18,9 @@ Status: Phase 2 App Shell. Implemented mobile foundations are listed below; back
 - Local presentation state and memoised Guide surfaces preserve detail round-trip context.
 - Versioned small JSON preferences use Expo FileSystem on native and localStorage on web (ADR 0006).
 - Settings appearance uses a small React Context for live cross-screen updates; no global state library is installed.
-- Semantic colour tokens are implemented. Production typography and broader shared chrome remain pending.
+- Semantic colour tokens are implemented.
+- `AppScreenHeader` owns the shared title/action chrome for Settings, Vanavond and Zoeken; those screens use `react-native-safe-area-context`. Guide-specific chrome remains local until extraction can be proven not to destabilise accepted Guide mechanics.
+- Production typography and broader Guide-specific shared chrome remain pending.
 - CI runs typecheck, lint, tests, all-platform exports and a clean native Android debug compile.
 
 ## Target mobile stack
