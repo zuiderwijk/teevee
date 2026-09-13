@@ -1,76 +1,69 @@
 # Teevee Phase 1 — Device Test Report
 
-Bijgewerkt tijdens de detailrespons-increment op **13 september 2026**. Codeversie `85e3d408` vastgelegd om **07:18:07 CEST (Europe/Amsterdam)**; exacte tijd van deze rapportwijziging staat in GitHub.
-Een groene CI is geen geslaagde toesteltest. Alleen concrete observaties worden als resultaat vastgelegd.
+Vastlegging bijgewerkt op **13 september 2026, 07:36 CEST — Europe/Amsterdam**. Exacte committijden staan in GitHub.
+Een groene CI of een test met gemockte gestures is geen geslaagde toesteltest.
 
 ## Toestel en versies
-- Testperiode: 11–13 september 2026.
-- Platform: iOS, eigen iPhone van de product owner; netwerk wifi.
-- Toestelmodel, iOS-versie en Expo Go-versie: nog niet genoteerd.
-- Eerste scrollretest na `df6873e2`: akkoord.
-- Latere 48-zendertest: exacte lokale SHA niet doorgegeven.
-- Scrollbaseline-hertest gevraagd voor `b13a7c5` of documentatie-opvolger `0e9be91`; kwalitatief akkoord ontvangen. Lokale SHA niet afzonderlijk bevestigd.
-- Laatste detailtest: dezelfde geïnstalleerde app, geen nieuwe runtimecode sinds het scrollakkoord.
-- Nieuwe te hertesten detailcode: PR #1, `85e3d408` of geïntegreerde opvolger met dezelfde code. **Nog niet op iPhone geaccepteerd.**
+- Eigen iPhone van de product owner; wifi; testperiode 11–13 september 2026.
+- Model, iOS-versie, Expo Go-versie en exacte lokale SHA zijn nog niet genoteerd.
+- Scrollbaseline kwalitatief akkoord na de hertest gevraagd voor `b13a7c5` / `0e9be91`.
+- Detailrespons-hertest gevraagd na integratie `1211630` (PR #1); nu kwalitatief akkoord. Geen afzonderlijk bevestigde lokale SHA.
+- Nieuwe swipefunctie: PR #2, `feat/detail-swipe-dismiss`. Nog niet op het toestel getest.
 
-## Laatste feedback — detail werkt, reactie voelt te traag
-De product owner meldt:
-> Openen gaat goed. Voelt wel traag. Tussen de tik, en het openen zit dusdanig veel tijd (gevoelsmatig, niet gemeten) dat het traag voelt. Zelfde geldt wanneer je de Sluiten knop indrukt.
-> Gidspositite blijft behouden.
+## Nieuwste feedback — detailrespons akkoord; extra sluitoptie gevraagd
+Na het verzoek de rendercorrectie te hertesten antwoordt de gebruiker:
+> perfect. Sluiten werk door de button, maar ook door buiten de programmadetails te klikken. Extra optie zou zijn door de details naar beneden weg te swipen.
 
-Daaruit volgt uitsluitend:
-- Openen en sluiten functioneren.
-- De tijd- en zenderpositie blijft volgens de gebruiker behouden.
-- De reactie bij beide acties is nog niet prettig genoeg.
-- Er zijn geen milliseconden, frames, exacte toestelgegevens of afzonderlijke animatie-/wachttijdmetingen aangeleverd.
+Vastgelegd als kwalitatief akkoord op de verbeterde detailrespons en bevestiging van sluiten via Sluiten en via de achtergrond. Swipe-down is hier een **nieuw verzoek**, niet een al geslaagde test. Er zijn geen milliseconden, framerates of afzonderlijke nieuwe metingen aangeleverd.
 
-## Eerder akkoord — scrollbaseline
-Op 13 september antwoordde de owner **"perfect"** na de gerichte hertest van standaardinertie, doorlopende tijdlijn voorbij 16:00/over middernacht en geanimeerde terugkeer met `Nu`. Dit blijft kwalitatief akkoord op die wijzigingenset. De nieuwe detailmelding heropent de goedgekeurde scrollinstellingen niet.
+## Eerder bewijs en aanleiding
+De vorige detailtest meldde dat openen/sluiten werkte, de gidspositie behouden bleef, maar beide acties vertraagd voelden. Dat leidde tot scheiding van detailselectie en de zware gidsrender. De native slide is daarbij niet versneld of vervangen. Het nieuwe "perfect" sluit de kwalitatieve responsklacht voor die geteste versie.
 
-De oorspronkelijke aanleiding blijft als geschiedenis staan: een harde swipe kwam met snellere afremming ongeveer één scherm ver tegenover circa twee in de vergelijking met TVgids.nl; horizontale navigatie stopte rond 16:00 en `Nu` voelde vanaf maandag als schermvervanging. De continuous-timeline/normal-inertia-wijziging is daarvoor geaccepteerd. Dit waren geen metingen met identieke beginsnelheden.
+De scrollbaseline was eerder akkoord: standaardinertie, een doorlopende tijdlijn voorbij de eerdere grens rond 16:00, dagovergangen en geanimeerde terugkeer via Nu. De oorspronkelijke vergelijking van ongeveer één tegenover twee schermen uitloop was subjectief, niet instrumenteel. Die goedgekeurde basis blijft behouden.
 
 ## Kerncheck
-| Onderdeel | Laatste toestelobservatie | Status |
+| Onderdeel | Toestelbewijs | Status |
 |---|---|---|
-| App opent direct in Gids | Opent en rendert via Expo Go. | Bevestigd. |
-| Horizontaal scrollen / tijdsbereik | Onderdeel van hertest met antwoord "perfect". | Kwalitatief akkoord. |
-| Verticaal scrollen | Standaardinertie geaccepteerd. | `normal` behouden. |
-| Zenderkolom synchroon | Geen eerdere klacht; geen aparte nieuwe meting. | Meenemen in performancechecks. |
-| Boven-/onderrand | Bounce eerder akkoord. | Baseline behouden. |
-| `Nu` vanuit volgende dag | Geanimeerde terugkeer geaccepteerd. | Kwalitatief akkoord. |
-| Huidige-tijdlijn | Eerste screenshot leek correct. | Geen nieuwe nauwkeurigheidsmeting. |
-| Voortgang lopend programma | Niet afzonderlijk getest. | Open. |
-| Vandaag / volgende dag | Continue overgang geaccepteerd. | Kwalitatief akkoord. |
-| Korte programmablokken | Niet afzonderlijk beoordeeld. | Open. |
-| Programmadetail openen/sluiten | Functioneert, maar beide acties voelen vertraagd. | Responsprobleem open; renderfix klaar voor hertest. |
-| Gidspositie na sluiten | Gebruiker bevestigt behoud. | Bevestigd op pre-fix-versie; na wijziging hercontroleren. |
-| Ontbrekende beschrijving | Geen afzonderlijke toesteluitkomst. | Geautomatiseerde fallback-check toegevoegd; device open. |
-| Light / dark mode | Eerste light-screenshot, geen aparte beoordeling. | Open. |
-| Grotere tekst / toegankelijkheid | Niet afzonderlijk getest. | Open. |
-| Android / release-performance | Niet getest of gemeten. | Open. |
+| App opent in Gids | Opent en rendert via Expo Go. | Bevestigd. |
+| Horizontaal bereik / dagovergang / Nu | Gerichte hertest met "perfect". | Kwalitatief akkoord. |
+| Verticale inertie en bounce | Standaardinstellingen kwalitatief akkoord. | Ongewijzigd behouden. |
+| Zenderkolom synchroon | Geen eerdere klacht; geen aparte meting. | Later instrumenteel controleren. |
+| Programmadetail openen en respons | Nieuw antwoord "perfect" na gerichte update. | Kwalitatief akkoord op die versie. |
+| Sluiten met knop | Gebruiker bevestigt werking. | Akkoord; regressiecheck na swipe. |
+| Sluiten buiten het paneel | Gebruiker bevestigt werking. | Akkoord; regressiecheck na swipe. |
+| Gidspositie behouden | Eerder expliciet bevestigd. | Opnieuw meenemen na swipewijziging. |
+| Neerwaarts wegvegen | Nieuw verzoek, geen toestelresultaat. | Geïmplementeerd voor hertest. |
+| Korte veeg annuleren / heropenen na swipe | Geen toestelresultaat. | Geautomatiseerd met mocks; native open. |
+| Korte cellen / ontbrekende beschrijvingen | Geen apart toestelresultaat. | Open; fallback heeft geautomatiseerde checks. |
+| Light/dark / grotere tekst / toegankelijkheid | Niet afzonderlijk beoordeeld. | Open. |
+| Voortgang / tijdnauwkeurigheid | Eerste screenshot leek juist; geen aparte voortgangstest. | Open. |
+| Android / release-achtige performance | Geen apparaatmeting. | Open. |
 
-## Wat in code is veranderd — niet verwarren met toestelbewijs
-De geselecteerde programmastatus zat in dezelfde component als de volledige gids. Dat leverde een onnodige herberekening van de programmaboom op bij openen én sluiten. De detailstatus zit nu in een kleine parent, naast een memoized Guide met een stabiele callback. De gids blijft gemount en hoeft niet opnieuw te renderen alleen door detailselectie.
+## Nieuwe implementatie — nog geen toestelacceptatie
+Het detailpaneel volgt een neerwaartse veeg. Een korte veeg veert terug; voldoende afstand of een duidelijke neerwaartse flick sluit. Meerdere vingers, systeemonderbreking en duidelijke terugbeweging omhoog leiden niet tot sluiten. De bestaande native slide rondt de sluiting af vanaf de verplaatste paneelpositie. Geen extra exit-animatie of eerst terugschieten naar boven.
 
-Bij sluiten blijft de geselecteerde tekst aanwezig tijdens de native animatie. Er is pressed-feedback toegevoegd op programmablokken en Sluiten; activering blijft na een voltooide tik. Tikken op sheettekst sluit de backdrop niet. Geen verandering aan gidsinertie, bounce, geometrie, dagovergangen of native `slide`-animatie.
+De knop, achtergrondtik, toegankelijkheids-escape en Android-terugactie blijven alternatieven. Een volgende opening begint weer op de normale positie. De gids blijft een afzonderlijke memoized component; geen verandering aan scrollinertie, bounce, tijdlijn of selectieregels.
 
-Dit is een gerichte correctie van onnodig renderwerk. De precieze bijdrage aan de gevoelde vertraging is **nog niet op iPhone gemeten**. We verkorten de animatie niet tegelijk; zo blijft de volgende vergelijking zinvol.
+De al geïnstalleerde Gesture Handler/Reanimated/Worklets worden gebruikt, met een eigen gestureroot binnen de modal. Er zijn geen packages toegevoegd. Het huidige korte detailpaneel heeft geen interne ScrollView. Bij latere lange scrollbare teksten moet lezen/scrollen van dismissing worden gescheiden.
 
-## Technische verificatie
-- Bestaande scrollcode eerder CI #49/#50; acceptatiedocumentatie #51.
-- PR-run #52 faalde op een nieuwe React DOM-typeversie die niet bij React 19.2 paste. Alleen de test-typesversiereeks is aangescherpt.
-- PR-run **#53** voor `85e3d408` is geslaagd: install, TypeScript, lint, tests en Expo-webexport.
-- Nieuwe reducerchecks en React/jsdom-tests bewaken herhaald openen/sluiten zonder extra Guide-render, dezelfde gemounte scrollhosts/offsets, juiste vervolgselectie, tekstretentie bij sluiten en fallback bij ontbrekende/lege beschrijvingen.
-- Native hosts en de klok zijn in de React-test gemockt. Dit bewijst geen native animatie, tikvertraging, toegankelijkheid, framerate of iPhone-scrollpositie. De bestaande toestelbevestiging van positie is afzonderlijk bewijs.
+## Technische controle
+- Detailfix PR #1 geïntegreerd in `1211630`; main-CI #56 geslaagd. Nu ook kwalitatief iPhone-akkoord ontvangen.
+- Swipe PR #2: eerste CI #57 faalde typecheck; callbacks in de testmock aangescherpt. Geen regels uitgezet.
+- CI #58 voor `26a733d5` slaagt voor installatie, TypeScript, lint, tests en webexport.
+- De CI-uitbreiding exporteert voortaan ook iOS- en Android-bundels. De actuele PR-/integratierun heeft een eigen resultaat dat vóór overdracht moet worden gecontroleerd.
+- Pure tests controleren afstand, snelheidseenheden, begrenzing en ongeldige invoer. React-mocks controleren short-drag/cancellation, heropenen, slechts eenmaal sluiten, accessibility escape en geen extra Guide-render/verlies van de mock-scrollhosts.
+- Dit bewijst geen native gesture-gevoel, touch-arbitrage, visuele overgang, schermlezerervaring, native build of latencywinst.
 
-## Volgende gerichte hertest
-Stop Metro met Control+C. Haal in `~/projects/teevee` de nieuwe versie op met `git pull --ff-only`, installeer de toegevoegde testtooling met `npm install` en start `npm run start:clean`. Open opnieuw via Expo Go; de app zelf gebruikt geen nieuwe native dependencies.
+## Gerichte hertest
+Stop Metro met Control+C. Voer in `~/projects/teevee` `git pull --ff-only` uit en start `npm run start:clean`. Open via Expo Go. Geen nieuwe dependency-installatie nodig voor deze wijziging.
 
-Test enkele verschillende programma's, ook een smal blok. Let op de reactie direct na de tik en daarna op de schuifbeweging. Sluit opnieuw en controleer dat tijd- en zenderpositie behouden blijven. Meld of de reactie merkbaar directer is; geen stopwatch of verplicht verbeterpercentage nodig.
+1. Scroll naar een herkenbare tijd en zender, en open een programma.
+2. Trek het paneel een klein stukje omlaag en laat rustig los: het hoort terug te veren zonder sluiten.
+3. Veeg duidelijk omlaag, vanaf het handvat of de detailtekst: het paneel hoort te sluiten zonder terugschieten of een leeg tussenpaneel.
+4. Open hetzelfde en daarna een ander programma. Beide moeten op de normale positie openen en direct reageren.
+5. Sluit ook via knop en achtergrond. Controleer dat de tijd- en zenderpositie behouden blijft.
 
-Bij aanhoudende traagheid: profiler/screenrecording gebruiken om wachten vóór de animatie te onderscheiden van de native overgang, en later release-achtig vergelijken. Nog geen nieuwe animatieparameters gokken. Leesbaarheid, ontbrekende tekst, grotere tekst en light/dark worden daarna apart afgerond.
+Deze stappen zijn een testplan, geen geregistreerd resultaat. Een screenshot of opname is alleen nodig wanneer iets niet goed voelt. Noteer model/OS wanneer beschikbaar.
 
-## Beeldmateriaal en samenvatting
-De eerste iPhone-screenshot rond 19:43 staat in de ontwikkelthread; er is geen nieuwe opname of instrumentele meting ontvangen.
-
-**Scrollbaseline blijft akkoord. Detailfunctie en positiebehoud zijn bevestigd, maar tikrespons vraagt hertest na de rendercorrectie. Phase 1 blijft open**, inclusief leesbaarheid, toegankelijkheid, lifecycle, Android en release-achtige performance.
+## Samenvatting
+**Scrollbaseline en detailrespons zijn kwalitatief akkoord.** Sluiten via knop en achtergrond is expliciet bevestigd. Swipe-down is als extra optie geïmplementeerd en vraagt nog een gerichte iPhone-hertest. Phase 1 blijft open voor die test plus leesbaarheid, toegankelijkheid, lifecycle, Android en release-performance.
