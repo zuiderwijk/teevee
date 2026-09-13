@@ -22,11 +22,11 @@ describe('guideLayoutForFontScale', () => {
     });
   });
 
-  it('grows the guide while keeping moderate larger-text controls compact', () => {
+  it('grows the guide and gives larger-text controls their own width', () => {
     expect(guideLayoutForFontScale(1.5)).toEqual({
       fontScale: 1.5,
       largeText: true,
-      stackedControls: false,
+      stackedControls: true,
       rowHeight: GUIDE_ROW_HEIGHT + 20,
       channelWidth: GUIDE_CHANNEL_WIDTH + 14,
       timeAxisHeight: GUIDE_TIME_AXIS_HEIGHT + 9,
@@ -35,7 +35,7 @@ describe('guideLayoutForFontScale', () => {
     });
   });
 
-  it('adds horizontal room and stacks chrome at accessibility-sized scales', () => {
+  it('continues adding horizontal room at accessibility-sized scales', () => {
     const regular = guideLayoutForFontScale(1.5);
     const accessibility = guideLayoutForFontScale(2.5);
 
