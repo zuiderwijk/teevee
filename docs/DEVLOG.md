@@ -11,240 +11,107 @@ Doel: een begrijpelijk chronologisch overzicht van substantiële wijzigingen, to
 
 ---
 
-## 13 september 2026, 14:42 CEST — PR #13 fysiek geaccepteerd; PR #14 post-scroll latencyfix geïntegreerd
+## 13 september 2026, 15:00 CEST — PR #14 fysiek verbeterd maar niet voltooid; PR #15 geïntegreerd
 
-### PR #13 toestelbewijs
-De product owner bevestigt na de gerichte VoiceOver-test:
-- focus-/traversalvolgorde is goed;
-- een programmebutton wordt uitgesproken als `NPO 1, titel, 14:00 tot 15:00`;
-- de VoiceOver twee-vinger-scrub sluit Programme Detail.
+### Toestelbewijs 14:49
+De product owner leverde `ScreenRecording_09-13-2026 14-49-22_1.MP4` en rapporteerde:
+- Programme Detail opent direct na een horizontale fling duidelijk sneller dan vóór PR #14;
+- het blijft nog merkbaar trager dan een tap nadat de Guide circa twee seconden stil heeft gestaan;
+- na een verticale fling opent Programme Detail wel even snel als in de still-case;
+- Vandaag→Morgen blijft correct schakelen.
 
-`ScreenRecording_09-13-2026 14-28-46_1.MP4` (43,75 s, 1170×2532) bevestigt daarnaast live system-theme switching: de Guide schakelt licht → donker → licht zonder reload en de interface/statusbar reageren ook wanneer Programme Detail geopend is.
+Daarmee is **PR #14 fysiek bevestigd als materiële performanceverbetering**, maar de latencydoelstelling is nog niet volledig gehaald. Het verschil tussen horizontale en verticale fling is sterk bewijs dat de resterende kost horizontaal-specifiek is en niet primair in Modal/Pressable zit.
 
-Daarmee is **PR #13 fysiek geaccepteerd** voor de VoiceOver- en live-theme-doelstelling.
+### Tweede bottleneck
+Code-audit wees op de oudere `readabilityViewportX` React state uit de PR #5-settled fallback. Die werd bij `onEndDrag` en nogmaals bij `onMomentumEnd` gezet. Iedere update kon de volledige realistische 48-zenders / >1000-programmacellen Guide opnieuw renderen vlak rond een programme-tap.
 
-### Nieuwe performancebevinding
-Dezelfde sessie levert nieuw regressiebewijs voor één eerder als snel ervaren flow: kort na horizontaal tijdscrollen opent Programme Detail merkbaar later dan wanneer de Guide even stilstaat. Frame-review van bemonsterde openingsmomenten laat grofweg **0,7–0,9 s** zien tussen duidelijke press-reactie en het zichtbaar starten van de modalpresentatie na recente horizontale beweging.
+Sinds PR #9 volgt de edge overlay de zichtbare linker titel continu op de UI-thread, ook na settle. De oude settled state was daardoor dubbelop.
 
-Code-audit vond een plausibele JS-queuebron: horizontale `onScroll` bridge-te met `scrollEventThrottle={16}` ieder scrollframe via `scheduleOnRN(...)` naar JS. Programme selection/detail-state heeft diezelfde JS-thread nodig.
-
-### PR #14 — per-frame horizontal JS bridge verwijderd
-PR #14 houdt de bestaande native/UI-thread scrollarchitectuur intact maar verwijdert die per-frame JS-hop:
-- `scrollX` blijft ieder frame op de UI-thread updaten voor PR #9 edge-readability en PR #11 time-axis mask;
-- `Vandaag/Morgen` wordt met een UI-thread reaction afgeleid en bridge-t alleen bij een echte daggrenswijziging;
-- `onEndDrag`/`onMomentumEnd` bridge-en nog eenmaal voor settled readability/end-state;
-- expliciete `Vandaag`, `Morgen` en `Nu` acties blijven React state direct bijwerken;
-- inertia, bounce, directional lock, `decelerationRate`, programme geometry, PR #9/#11/#12, detailmodal/gesturecode en verticale sync zijn niet gewijzigd;
-- `guideDayOffsetForViewport` heeft unit coverage rond de daggrens.
+### PR #15
+PR #15 verwijdert alleen die redundante zware laag:
+- `readabilityViewportX` en alle setters zijn uit `GuideView` verwijderd;
+- de horizontale `onEndDrag` JS callback is weg;
+- `onMomentumEnd` doet alleen nog een lichte day-state eindcontrole;
+- onderliggende programme content gebruikt weer de echte programme frame-breedte;
+- PR #9 blijft verantwoordelijk voor partial-left readability;
+- inertia, bounce, directional lock, programme `left`/`width`, PR #11 time-axis mask, PR #14 UI-thread scrollpad, Programme Detail en verticale sync zijn niet gewijzigd.
 
 ### CI en integratie
-PR-head **`33bcb83381f575a0f1a22cc4a571f4325a957582`** passeerde **PR CI #163 / `34757663408`** volledig: install, strict TypeScript, lint, tests en iOS/Android/web Expo exports.
+PR-head **`bf743618b3d062d8771d220fc94ae9f99cc01c87`** passeerde **PR CI #168 / `34758480218`** volledig: install, strict TypeScript, lint, tests en iOS/Android/web Expo exports.
 
-PR #14 is gesquasht naar main als **`e7f45a04544106803b2f49fe4e086d304bf061c8`**. Exact die gemergde code passeerde daarna ook **main CI #164 / `34757796962`** volledig.
+PR #15 is gesquasht naar main als **`48e54008d8925fe4533bdbfd44f8639c63e645bc`**.
 
 ### Volgende stap
-Op dezelfde iPhone één korte A/B-opname maken: (A) duidelijke horizontale fling en vrijwel direct een programma aantikken; (B) Guide circa 2 seconden stil laten staan en een ander programma aantikken. De detailpresentatie in A mag geen duidelijke extra wachttijd meer hebben ten opzichte van B. Daarnaast één keer handmatig de Vandaag→Morgen-grens passeren en bevestigen dat selected day correct wisselt. Algemene scrollphysics alleen heropenen bij spontane regressie.
+Op dezelfde iPhone opnieuw één korte A/B-test: sterke horizontale fling → programma zo snel mogelijk aantikken versus circa twee seconden stilstand → ander programma aantikken. De start van Programme Detail moet praktisch gelijk voelen. Tegelijk alleen een regressieblik op PR #9 partial-left title en PR #11 time-axis; Vandaag→Morgen hoeft niet opnieuw bewust getest te worden.
+
+---
+
+## 13 september 2026, 14:42 CEST — PR #13 fysiek geaccepteerd; PR #14 eerste latencyfix geïntegreerd
+
+VoiceOver: volgorde goed, programma self-contained uitgesproken (`NPO 1, titel, 14:00 tot 15:00`) en twee-vinger-scrub sluit Programme Detail. `ScreenRecording_09-13-2026 14-28-46_1.MP4` bevestigde daarnaast live light→dark→light in Guide en Programme Detail zonder reload. PR #13 is daarmee fysiek geaccepteerd.
+
+Dezelfde sessie liet circa 0,7–0,9 s post-horizontal-scroll detailvertraging zien. PR #14 verwijderde de per-frame `scheduleOnRN(...)` uit horizontale `onScroll`; `scrollX` blijft UI-thread-native en day state bridge-t alleen bij echte grenswijziging. PR CI #163 en exact-main CI #164 waren volledig groen. Merge: `e7f45a04544106803b2f49fe4e086d304bf061c8`.
 
 ---
 
 ## 13 september 2026, 14:16 CEST — PR #13 accessibility/theme technisch afgerond
 
-### Product-/gebruikerseffect
-Na de fysieke acceptatie van PR #12 is de volgende Phase 1-gate uitgevoerd: VoiceOver/screenreader-semantiek en live system-theme switching.
-
-Voor screenreaders is de Guide nu minder redundant en ieder programma zelfstandig begrijpelijk:
-- de vaste visuele zenderrail is uit accessibility-traversal gehaald; de gebruiker hoeft niet eerst 48 losse zendernamen te doorlopen;
-- de visuele halfuur-tijdas is uit accessibility-traversal gehaald; programmebuttons bevatten hun eigen tijden;
-- het decoratieve `TEEVEE`-eyebrow wordt niet apart aangekondigd; `Gids` blijft een header;
-- programmebuttons spreken zender + titel + begin/eindtijd en voegen `nu bezig` toe wanneer relevant;
-- de hint `Opent programmadetails` maakt de actie expliciet.
-
-Programme Detail behoudt zijn bestaande modal-semantiek, accessibility escape/twee-vinger-scrub-route en expliciete close-label.
-
-### Live theme switching
-De productiehook hoefde niet aangepast te worden: `useTeeveeTheme()` gebruikt al React Native `useColorScheme()` en is daarmee op de live systeemscheme geabonneerd. Er is nu wel expliciete render-dekking toegevoegd die bewijst dat dezelfde gemounte component light → dark → light volgt zonder remount, plus een null→light fallback.
-
-### Tests en CI
-De bestaande Guide/detail-integratietest is uitgebreid om de verborgen visuele rails, self-contained programme-labels/hint en bestaande accessibility escape te bewaken. Een nieuwe `theme/useTeeveeTheme.test.tsx` test de live scheme-subscription.
-
-PR-head **`766be594f6e8af193e3f9b364c7c6378a7c210df`** passeerde **PR CI #158 / `34756492990`** volledig: install, strict TypeScript, lint, tests en iOS/Android/web Expo exports.
-
-PR #13 is gesquasht naar main als **`a8651b26c2521b53d0077bbd499862c3b1b71ed2`**.
-
-### Volgende stap
-Eén kleine fysieke iPhone-gate: met VoiceOver controleren dat de vaste zenderrail/tijdas geen lange dubbele focusreeksen vormen, enkele programmebuttons laten uitspreken en Programme Detail één keer via accessibility escape sluiten. Daarna iOS Appearance Light → Dark → Light wisselen terwijl Teevee open blijft, inclusief één wissel met Programme Detail geopend. Geen scrollretour nodig.
+De vaste visuele zenderrail en tijdas zijn uit dubbele accessibility-traversal gehaald. Programmebuttons spreken zender + titel + begin/eindtijd (+ `nu bezig`) en hebben de hint `Opent programmadetails`. Programme Detail behoudt modal/escape/close-semantiek. `useTeeveeTheme()` bleek al correct live op `useColorScheme()` geabonneerd; nieuwe tests bewijzen light→dark→light zonder remount. PR CI #158 volledig groen; merge `a8651b26c2521b53d0077bbd499862c3b1b71ed2`.
 
 ---
 
-## 13 september 2026, 14:07 CEST — PR #12 fysiek geaccepteerd; Guide-scroll/readabilitygate gesloten
+## 13 september 2026, 14:07 CEST — PR #12 fysiek geaccepteerd
 
-### Toestelbewijs
-De product owner leverde `ScreenRecording_09-13-2026 14-04-35_1.MP4` (10,93 s, 1170×2532). De opname is frame-voor-frame gecontroleerd op de regressie uit de 13:48-opname.
-
-Resultaat:
-- een sterke fling naar latere tijden en een sterke reverse fling terug naar eerdere tijden zijn zichtbaar;
-- programmatitels blijven tijdens reverse drag/momentum gerenderd; het massale tijdelijk tekstloos worden van zichtbare blokken komt niet terug;
-- de fysiek geaccepteerde PR #9 partial-left edge-title blijft coherent;
-- de fysiek geaccepteerde PR #11 time-axis blijft vrij van losse `:30`/`30`-fragmenten;
-- tickposities en programme `left`/`width` blijven visueel stabiel.
-
-Daarmee is **PR #12 fysiek geaccepteerd**. De combinatie PR #9 native edge-readability, PR #11 single-mask time-axis en PR #12 stale settled-state correction is nu de bevroren Guide-scroll/readabilitybaseline.
-
-### Technische status
-PR #12 was al technisch groen op PR CI #150 / `34755583818` en gemerged als **`b76edfab972b1d6194b2cbf1460515256de0e5c4`**. De gedocumenteerde post-merge main-state passeerde daarna ook CI #154 / `34755760369` volledig.
-
-### Volgende stap
-Phase 1 gaat verder met **VoiceOver/screenreader + live system-theme switching**. Eerst technisch auditen en hardenen: decoratieve rails uit de accessibility tree waar ze dupliceren, programmebuttons self-contained maken met zender+titel+tijd, modal escape/close behouden en automatische dekking toevoegen voor live light↔dark scheme-wissels. Daarna volledige CI en alleen de minimaal noodzakelijke fysieke VoiceOver/theme-check.
+`ScreenRecording_09-13-2026 14-04-35_1.MP4` bevestigde dat programmatitels tijdens sterke reverse drag/momentum zichtbaar blijven. PR #9 partial-left readability en PR #11 time-axis bleven intact. PR #12 was technisch groen op CI #150 en main CI #154. De later door PR #15 verwijderde settled fallback was hiermee destijds veilig gecorrigeerd.
 
 ---
 
-## 13 september 2026, 13:55 CEST — PR #11 time-axis fysiek geaccepteerd; PR #12 reverse-scroll fix geïntegreerd
+## 13 september 2026, 13:55 CEST — PR #11 fysiek geaccepteerd; reverse-scroll bug geïsoleerd
 
-### Toestelbewijs
-De product owner leverde `ScreenRecording_09-13-2026 13-48-10_1.MP4` (14,28 s, 1170×2532).
-
-De PR #11 single-mask time-axisoplossing slaagt de fysieke doelstelling:
-- bij de frame-voor-frame gecontroleerde overgang 13:30 → 14:00 verdwijnt 13:30 als geheel; er is geen tussenframe met alleen `:30` of `30`;
-- hetzelfde whole-label gedrag is zichtbaar bij andere bemonsterde tijdsovergangen;
-- verticale tickposities blijven stabiel; er is geen tijdlijnsprong;
-- programmeblokken blijven geometrisch stabiel.
-
-Daarmee is de **PR #11 time-axis mechanism fysiek geaccepteerd** en wordt de single-mask aanpak bevroren tenzij nieuw regressiebewijs ontstaat.
-
-### Nieuwe bevinding uit dezelfde opname
-Rond **7,0–7,4 s** zijn tijdens een snelle reverse scroll meerdere zichtbare programmeblokken tijdelijk volledig zonder titeltekst. De titels keren daarna terug. Dit bleek geen PR #11-maskerprobleem en ook niet de eerder vermoede extra per-tick animated workload uit PR #10.
-
-Root cause in de oudere PR #5 settled-readability fallback:
-- `readabilityViewportX` wordt pas bij drag/momentum settle bijgewerkt;
-- tijdens reverse scroll kan native content al naar links bewegen terwijl die remembered viewport nog verder rechts staat;
-- `programmeVisibleContent` behandelde een programma dat volledig vóór die stale viewport lag als volledig verborgen en kon daardoor `visibleWidth` tot nul reduceren;
-- dat verklaart de sterke asymmetrie: forward scroll bleef grotendeels leesbaar, reverse scroll kon tekst massaal blanken.
-
-### PR #12 — gerichte correctie
-PR #12 verandert alleen de pure settled-readabilityberekening:
-- re-anchoring gebeurt uitsluitend wanneer de remembered viewport daadwerkelijk door het programmaframe snijdt;
-- vóór het programma of op/voorbij het programma-einde blijft de normale volledige tekstgeometrie behouden;
-- PR #9 blijft verantwoordelijk voor live partial-left edge readability;
-- programme `left`/`width`, native inertia/bounce/directional lock, PR #11 time-axis mask, controls en Programme Detail zijn niet gewijzigd.
-
-Nieuwe regressietests dekken een stale viewport voorbij het programma-einde en de exacte end boundary.
-
-### CI en integratie
-PR-head **`0f00e69b3fc7d5211e8522367a8217ce360b9649`** passeerde **PR CI #150 / `34755583818`** volledig: install, strict TypeScript, lint, tests en iOS/Android/web Expo exports.
-
-PR #12 is daarna succesvol gesquasht naar main als **`b76edfab972b1d6194b2cbf1460515256de0e5c4`**.
-
-### Volgende stap
-Current `main` op dezelfde iPhone binnenhalen en één korte opname maken met een stevige fling naar later en daarna een stevige reverse fling terug. Te bevestigen: titels blijven tijdens reverse drag/momentum zichtbaar, PR #9 edge-readability blijft coherent, PR #11 blijft vrij van afgesneden time-label-fragmenten en programmeframes blijven geometrisch stabiel.
+`ScreenRecording_09-13-2026 13-48-10_1.MP4` bevestigde whole-label time-axis disappearance zonder `:30`/`30`-fragmenten. Dezelfde opname bracht een aparte reverse-scroll titelblanking aan het licht, veroorzaakt door stale settled-readability state. Dat leidde tot PR #12.
 
 ---
 
-## 13 september 2026, 13:17 CEST — PR #10 fysiek afgewezen; PR #11 single-mask rebuild geïntegreerd
+## 13 september 2026, 13:17 CEST — PR #10 fysiek afgewezen; PR #11 rebuilt
 
-De 13:09-iPhone-screenrecording wees PR #10 fysiek af: rond 8,7 s bleef links alleen `30` van een verder afgeknipt tijdlabel zichtbaar. Tijdens snelle horizontale beweging verdwenen bovendien meerdere programmatitels tijdelijk terwijl de blokken zichtbaar bleven.
-
-PR #11 verving de per-tick Reanimated-opacityarchitectuur door één `TimeAxisLeftMask` aan de vaste linker tijdasrand. Alle ticks/labels werden weer statische ScrollView-content. PR-head **`8cba485c4c24bbf5160c652a13aba685c5520b3e`** passeerde PR CI #145 / `34754026981` volledig en merge **`9ed7113bc114911218107263b6df224940d5dd09`** landde op main.
-
-De destijds gemaakte hypothese dat extra per-tick animated workload de titelblanking veroorzaakte is later door de 13:48-opname weerlegd; PR #12 documenteert en corrigeert de echte stale settled-state oorzaak.
+De 13:09-opname liet nog een los `30`-fragment zien met per-tick Reanimated opacity. PR #10 werd fysiek afgewezen. PR #11 verving dit door één vaste UI-thread `TimeAxisLeftMask`; PR CI #145 groen, merge `9ed7113bc114911218107263b6df224940d5dd09`.
 
 ---
 
-## 13 september 2026, 11:58 CEST — PR #9 fysiek geaccepteerd; PR #10 time-axisfix geïntegreerd
+## 13 september 2026, 11:58 CEST — PR #9 fysiek geaccepteerd
 
-De 11:35-iPhone-screenrecording bevestigde dat PR #9 partial-left programmatitels tijdens drag en momentum synchroon met de native tijdlijn houdt, dat een oude edge bij het echte programma-einde verdwijnt en geen opvolger bedekt, en dat programmeframes stabiel blijven.
-
-PR #9 werd daarmee fysiek geaccepteerd en bevroren. Dezelfde opname liet nog het losse left-edge time-axisfragment zien, waarna PR #10 als geïsoleerde label-opacitycorrectie werd gebouwd. PR #10 was technisch groen maar werd later fysiek afgewezen; zie 13:17.
+De 11:35-opname bevestigde dat de UI-thread edge overlay partial-left programmatitels tijdens drag/momentum synchroon met de native tijdlijn houdt, bij echte programme boundaries stopt en programme geometry/scrollfeel niet wijzigt. Deze architectuur blijft de frozen readabilitybaseline.
 
 ---
 
-## 13 september 2026, 11:45 CEST — Visual/UX baseline gesynchroniseerd met GitHub-docs
+## 13 september 2026, 11:08–11:45 CEST — scroll/recovery en visual baseline
 
-De visual-designthread is als accepted target baseline vastgelegd in `docs/UX.md`, `docs/DESIGN_SYSTEM.md`, `docs/PRODUCT.md`, `docs/BUILD_SPEC.md` en `docs/PROJECT_STATE.md`.
-
-Vastgelegd zijn onder meer premium utility, restrained chrome, logo-first channel identity, de Totaal/Per zender/Nu & Straks-richtingen, Programme Detail met `Herinner mij` + `Bewaar`, grotere-text reflow en de sticky zenderlogobalk + horizontale channel swipe voor Per zender.
-
-Dit was documentatie; geen runtime-acceptatieclaim.
+PR #8 werd fysiek afgewezen omdat een React-state overlay achter native ScrollView liep. PR #9 herbouwde dit met slechts 48 kleine UI-thread edge rows. De geaccepteerde visual/UX-richting werd daarnaast vastgelegd in `UX.md`, `DESIGN_SYSTEM.md`, `PRODUCT.md`, `BUILD_SPEC.md` en `PROJECT_STATE.md`.
 
 ---
 
-## 13 september 2026, 11:19 CEST — PR #9 geïntegreerd; iPhone-gate geopend
+## 13 september 2026, 09:56 CEST — PR #6 crash; rollback
 
-PR #9 verving de afgewezen PR #8 React-state overlay door UI-thread-gesynchroniseerde edge-geometrie. Definitieve PR-head **`8a37cef550e0558a03d0876a356e295ff4ac424b`** passeerde PR CI #128 / `34749068020`; exact main passeerde CI #129 / `34749225666`.
-
----
-
-## 13 september 2026, 11:08 CEST — PR #8 fysiek afgewezen; PR #9 rebuilt
-
-De 10:49-screenrecording toonde dat PR #8 tijdens drag/momentum achter de native ScrollView liep. Een stale opaque edge kon opvolgende programma-inhoud bedekken. Onderliggende programmeframes en native scroll bleven stabiel. PR #8 werd fysiek afgewezen ondanks groene CI.
+Een high-volume per-programme Reanimated-architectuur (>1000 worklets/styles) was CI-groen maar gaf fysiek wit scherm/Expo Go-crash. Rollback herstelde startup. Deze architectuur blijft afgewezen.
 
 ---
 
-## 13 september 2026, 10:35 CEST — PR #8 live partial-left titelbeweging
+## 13 september 2026, 07:04–10:20 CEST — Phase 1 interaction baseline
 
-PR #8 bouwde de live edge-readability opnieuw met één React-state overlay in plaats van >1000 per-programme worklets. PR CI #120 en exact-main CI #121 waren groen. De latere fysieke opname wees deze architectuur alsnog af wegens synchronisatielag.
-
----
-
-## 13 september 2026, 10:20 CEST — PR #7 volledig fysiek geaccepteerd
-
-Op dezelfde iPhone bevestigde de product owner normale startup, `Vandaag · Morgen · Nu` op één regel, directe selected-state/`Nu`-terugkeer en ongewijzigd/natuurlijk horizontaal scrollgevoel.
-
----
-
-## 13 september 2026, 09:56 CEST — PR #6 veroorzaakt iPhone-startcrash; rollback
-
-PR #6 introduceerde per-programme Reanimated styles over de >1000-cell fixture. CI was groen, maar Expo Go gaf een wit scherm gevolgd door crash. Main werd teruggezet naar PR #5 (`f7c9f73568341d29e518be21e0de071e4ef7877d`), waarna startup weer normaal was. De exacte native oorzaak is niet bewezen; de high-volume workletarchitectuur blijft afgewezen.
-
----
-
-## 13 september 2026, 09:12 CEST — PR #5 geometry-safe partial-left readability
-
-Na settle kan titel/tijd binnen een gedeeltelijk links verborgen programmablok naar het zichtbare restant verschuiven zonder echte start of duur-gebaseerde breedte te vervalsen. De latere PR #12-correctie voorkomt dat een stale settled viewport deze content tijdens reverse scroll tot nul breedte reduceert.
-
----
-
-## 13 september 2026, 09:01 CEST — Grote-tekstcorrectie fysiek geaccepteerd
-
-Bij vergrote systeemtekst bleven `Gids`, `Nu`, daglabels, tijdas, zender/programmarijalignment en Programme Detail + `Sluiten` zichtbaar/bereikbaar.
-
----
-
-## 13 september 2026, 08:40 CEST — Dynamic Type en logo-ready kanaalidentiteit
-
-Totaal kreeg schaalbare rij-, zender- en tijdasgeometrie. Kanaalidentiteit is voorbereid op logo primair, naam secundair, met accessibility-naam en tekstfallback.
-
----
-
-## 13 september 2026, 08:05 CEST — Drie Guide-presentaties vastgelegd
-
-- **Totaal** = 2D-grid.
-- **Per zender** = verticale dagplanning per zender, zenderlogobalk blijft beschikbaar en horizontale swipe kan naar vorige/volgende zender.
-- **Nu & Straks** = compacte all-channel lijst op één gedeeld referentietijdstip vandaag.
-
----
-
-## 13 september 2026, 07:46 CEST — Swipe-down detail fysiek geaccepteerd
-
-Detailrespons en swipe-down dismissal werden door de product owner als **"perfect"** beoordeeld. Button-close en outside-tap blijven geaccepteerd.
-
----
-
-## 13 september 2026, 07:04 CEST — Scrollbaseline fysiek geaccepteerd
-
-Standaard platforminertie, native bounce/directional lock, doorlopende tijdlijn, dagovergang en geanimeerde `Nu` werden op iPhone als **"perfect"** beoordeeld. Niet retunen zonder concreet regressiesignaal.
+Native scrollinertie/bounce/directional lock, doorlopende tijdlijn, `Vandaag · Morgen · Nu`, Programme Detail response/close/swipe-down, grotere systeemtekst en logo-ready kanaalidentiteit zijn in gerichte iPhone-rondes opgebouwd en geaccepteerd. De product owner beschreef de kern scroll/detailinteracties als **"perfect"** vóór de later geïsoleerde post-horizontal-scroll latencybevinding.
 
 ---
 
 ## 11 september 2026 — Phase 1 bootstrap
 
-Projectfoundation, deterministische EPG-fixture, Expo/React Native strict TypeScript, eerste 2D Guide, detailmodal, current-time/progress, runtime-aligned Amsterdamse fixture, CI en device-workflow zijn opgebouwd. De fixture is later uitgebreid naar 48 synthetische zenders.
+Projectfoundation, deterministische EPG-fixture, Expo/React Native strict TypeScript, eerste Totaal-grid, Programme Detail, current-time/progress, runtime-aligned Amsterdam fixture, CI en device-workflow zijn opgebouwd. Fixture later uitgebreid naar 48 synthetische zenders.
 
 ---
 
 ## Doorlopende open technische punten
-- PR #14 post-scroll Programme Detail latency is technisch groen; alleen de gerichte iPhone A/B-validatie staat open.
-- Android gesture/back en release-achtige performance zijn nog niet fysiek gevalideerd.
-- Expliciete current-time/progress-validatie staat open.
+- PR #15 post-horizontal-scroll Programme Detail latency + PR #9/PR #11 regressiegate fysiek valideren.
+- Expliciete current-time/progress-nauwkeurigheid staat open.
+- Android gesture/back en release-achtige performance staan open.
 - Finite fixture lifecycle rond resume na middernacht/expiry staat open.
 - CI genereert nog een lockfile vóór `npm ci`; 15 moderate advisories vereisen gerichte analyse. Nooit `npm audit fix --force`.
-- Productie-EPG/logo/artworkrechten, abonnement/paywall, exacte productietokens/fontlicentie en de definitieve Vanavond/Tonight-modules liggen buiten deze directe Phase 1-stabiliteitsstap.
+- Productie-EPG/logo/artworkrechten, abonnement/paywall, productietokens/fontlicentie en definitieve Vanavond/Tonight-modules liggen buiten deze directe Phase 1-stabiliteitsstap.
