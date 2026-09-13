@@ -44,7 +44,8 @@ function nonEmptyText(value: string | undefined): string | undefined {
   return trimmed ? trimmed : undefined;
 }
 
-function parsedTimestamp(value: string): number | null {
+function parsedTimestamp(value: string | undefined): number | null {
+  if (!value) return null;
   const timestamp = Date.parse(value);
   return Number.isFinite(timestamp) ? timestamp : null;
 }
@@ -79,10 +80,16 @@ function diagnostic(
 
 function providerProgrammeKey(programme: ExternalProgramme): string {
   const providerId = nonEmptyText(programme.id);
+  const providerChannelId = nonEmptyText(programme.channelId) ?? '';
   if (providerId) {
-    return [programme.channelId.trim(), `id:${providerId}`, programme.startAt].join('\u0000');
+    return [providerChannelId, `id:${providerId}`, programme.startAt ?? ''].join('\u0000');
   }
-  return [programme.channelId.trim(), programme.startAt, programme.endAt, programme.title].join('\u0000');
+  return [
+    providerChannelId,
+    programme.startAt ?? '',
+    programme.endAt ?? '',
+    programme.title ?? '',
+  ].join('\u0000');
 }
 
 function canonicalProgramme(
@@ -221,7 +228,7 @@ export function normaliseProviderSchedule(
   const programmes: Programme[] = [];
 
   for (const external of input.programmes) {
-    const providerChannelId = external.channelId.trim();
+    const providerChannelId = nonEmptyText(external.channelId) ?? '';
     const providerProgrammeId = nonEmptyText(external.id);
     const duplicateKey = providerProgrammeKey(external);
 
@@ -232,7 +239,7 @@ export function normaliseProviderSchedule(
           'duplicate-provider-programme',
           'Duplicate provider programme was ignored.',
           {
-            providerChannelId,
+            ...(providerChannelId ? { providerChannelId } : {}),
             ...(providerProgrammeId ? { providerProgrammeId } : {}),
           },
         ),
@@ -249,7 +256,7 @@ export function normaliseProviderSchedule(
         diagnostic(
           'warning',
           'unmapped-provider-channel',
-          `Programme references unmapped provider channel ${providerChannelId || '(empty)'}.`,
+          `Programme references unmapped provider channel ${providerChannelId || '(missing)'}.`,
           {
             ...(providerChannelId ? { providerChannelId } : {}),
             ...(providerProgrammeId ? { providerProgrammeId } : {}),
@@ -274,7 +281,7 @@ export function normaliseProviderSchedule(
     const startMs = parsedTimestamp(external.startAt);
     if (startMs === null) {
       diagnostics.push(
-        diagnostic('error', 'invalid-start', `Invalid programme start: ${external.startAt}`, {
+        diagnostic('error', 'invalid-start', `Invalid programme start: ${external.startAt ?? '(missing)'}`, {
           providerChannelId,
           ...(providerProgrammeId ? { providerProgrammeId } : {}),
           channelId,
@@ -286,7 +293,7 @@ export function normaliseProviderSchedule(
     const endMs = parsedTimestamp(external.endAt);
     if (endMs === null) {
       diagnostics.push(
-        diagnostic('error', 'invalid-end', `Invalid programme end: ${external.endAt}`, {
+        diagnostic('error', 'invalid-end', `Invalid programme end: ${external.endAt ?? '(missing)'}`, {
           providerChannelId,
           ...(providerProgrammeId ? { providerProgrammeId } : {}),
           channelId,
