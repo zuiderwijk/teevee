@@ -1,7 +1,7 @@
 # Teevee — Canonical Project State
 
-Last updated: 2026-09-13 11:08 CEST (Europe/Amsterdam). Exact commit time is in GitHub.
-Status: ACTIVE — Phase 1 Guide prototype; PR #8 is physically rejected from screen-recording evidence; PR #9 native-synchronised edge readability is implemented and its code head is technically green, pending final post-documentation CI before merge
+Last updated: 2026-09-13 11:19 CEST (Europe/Amsterdam). Exact commit time is in GitHub.
+Status: ACTIVE — Phase 1 Guide prototype; PR #8 is physically rejected from screen-recording evidence; PR #9 native-synchronised edge readability is integrated on main and technically green, pending focused iPhone validation
 Current phase: **Phase 1 — Guide Interaction Prototype**
 Previous phase: **Phase 0 — Project Foundation: COMPLETE**
 
@@ -84,7 +84,7 @@ The product owner supplied an iPhone screen recording at 10:49. Frame-by-frame r
 Therefore PR #8 is **physically rejected**. Its green CI is retained as technical history, not acceptance evidence. The recording starts after the app is already open, so it does not independently prove cold-start stability.
 
 ## PR #9 — native/UI-thread-synchronised edge readability
-PR #9 (`fix/guide-edge-readability-native-sync`) is the replacement architecture for the same product requirement.
+PR #9 replaces only the rejected synchronisation layer for the same product requirement.
 
 Design:
 - horizontal and vertical ScrollViews expose shared UI-thread positions through Reanimated scroll handlers;
@@ -96,12 +96,14 @@ Design:
 - programme `left`, duration-derived `width`, scroll inertia, bounce, directional lock, day controls and detail interactions are not intentionally changed;
 - overlay content remains pointer-transparent and removed from accessibility traversal; underlying programme buttons remain authoritative.
 
-Pure tests now cover start/end edge boundaries and exact boundary switching. The existing 48-channel Guide/detail integration path remains present with the expanded animation mocks.
+Pure tests cover start/end edge boundaries and exact boundary switching. The existing 48-channel Guide/detail integration path remains present with expanded animation mocks.
 
-Implementation head **`ff39a16e717e5f89f57509d6b18b54b72e9d1d3a`** passed PR CI #125 / run **`34748926153`** completely: install, strict TypeScript, lint, tests and iOS/Android/web exports. Documentation changes made after that code head require a final PR-head CI before merge; do not treat PR #9 as merged or physically accepted yet.
+Implementation head **`ff39a16e717e5f89f57509d6b18b54b72e9d1d3a`** passed PR CI #125 / run **`34748926153`** completely. The final documented PR head **`8a37cef550e0558a03d0876a356e295ff4ac424b`** then passed PR CI #128 / run **`34749068020`** completely: install, strict TypeScript, lint, tests and iOS/Android/web exports.
+
+PR #9 is now integrated on main at **`8a37cef550e0558a03d0876a356e295ff4ac424b`**. GitHub recognises PR #9 as merged; exact-main push CI #129 / run **`34749225666`** also passed all gates completely. This is technical evidence only. Because both PR #6 and PR #8 exposed device-only failures after green CI, PR #9 is not physically accepted until the focused iPhone test below.
 
 ## Remaining Phase 1 work
-- finish PR #9 technical integration and physically validate startup, title movement during drag/momentum, stale-overlay prevention and unchanged scroll feel;
+- physically validate PR #9 startup, title movement during drag/momentum, stale-overlay prevention and unchanged scroll feel;
 - separately address partially clipped time-axis labels at the left viewport edge after the title-motion increment is settled;
 - VoiceOver/screen-reader behaviour and live theme switching;
 - explicit progress/current-time accuracy checks;
@@ -112,9 +114,9 @@ Implementation head **`ff39a16e717e5f89f57509d6b18b54b72e9d1d3a`** passed PR CI 
 - production EPG/logo/artwork rights/reliability, pricing/trial/paywall and final visual design are later gates.
 
 ## EXACT NEXT STEP
-**Run and confirm the final PR #9 CI after these documentation commits. If that exact PR head is green, merge PR #9 and confirm the exact-main push CI before changing the device-test gate. Do not request another iPhone test from the product owner until those two technical gates are complete.**
+**On the same iPhone, pull current main and restart Metro cleanly. Confirm: (1) Teevee opens normally; (2) while horizontally dragging, the partial-left programme title follows the visible left edge without lagging behind the native timeline; (3) the same remains true through momentum after release; (4) an old edge disappears at its real programme end and never covers a successor programme; (5) programme blocks do not jump/change width and horizontal scrolling still feels like the accepted baseline. Prefer one short screen recording similar to the 10:49 recording because drag/momentum synchronisation cannot be proven by a screenshot. Do not re-test already accepted Vandaag/Morgen/Nu or detail behaviour unless a regression is noticed.**
 
-Owner checkout: `~/projects/teevee`.
+Owner checkout: `~/projects/teevee`. Test with: stop Metro using Control+C, run `git pull --ff-only`, then `npm run start:clean`, and reopen Expo Go.
 
 ## Resume instruction
 > Read AGENTS.md and PROJECT_STATE. Execute EXACT NEXT STEP where possible, follow the Definition of Done, and update this state plus Dutch timestamped DEVLOG with evidence. Ask only for product choices or genuinely necessary physical-device observations. Never substitute CI or a mock for device acceptance.
