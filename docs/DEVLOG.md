@@ -11,6 +11,42 @@ Doel: een begrijpelijk chronologisch overzicht van substantiële wijzigingen, to
 
 ---
 
+## 13 september 2026, 11:08 CEST — PR #8 fysiek afgewezen; PR #9 rebuilt met UI-thread synchronisatie
+
+### Toestelbewijs uit screen recording
+De product owner leverde een iPhone-screenrecording van PR #8. Daarin is zichtbaar dat de live partial-left titel wel verschijnt tijdens horizontale beweging, maar niet synchroon blijft met de native ScrollView.
+
+Tijdens drag en vooral momentum kan de React-state overlay achterlopen. Een oude programmanaam blijft dan tijdelijk als opaque edge-laag staan terwijl de onderliggende tijdlijn al bij volgende programma's is, waardoor delen van opvolgende titels en tijden worden bedekt. De onderliggende programmablokken lijken zelf stabiel te blijven en de native horizontale scroll oogt vloeiend.
+
+De opname begint nadat Teevee al open staat. Daardoor levert deze opname geen zelfstandig bewijs voor cold-startstabiliteit, al crasht de app gedurende de opname niet.
+
+Conclusie: **PR #8 is fysiek afgewezen**, ondanks volledig groene PR- en main-CI. De PR-titel/body zijn aangepast zodat de repositorygeschiedenis deze status expliciet weergeeft.
+
+### PR #9 — nieuwe synchronisatie-aanpak
+De edge-readability is opnieuw gebouwd in PR #9, nu met een andere verantwoordelijkheidsscheiding:
+- horizontale en verticale ScrollViews schrijven hun actuele positie naar UI-thread shared values;
+- edge-breedte, zichtbaarheid, verticale verplaatsing en de herhaalde current-time line volgen die waarden direct op de UI-thread;
+- React wisselt alleen de edge-programmanaam wanneer een programmastart/eindegrens wordt gepasseerd;
+- als die inhoudswissel op JavaScript zou vertragen, stopt de oude edge op de UI-thread exact buiten zijn eigen programmaframe met tekenen en kan hij dus geen volgende uitzending afdekken;
+- de live animatielaag bestaat uit maximaal 48 kleine edge-rijen in plaats van animated styles op de volledige >1000-cell Guide zoals in de crashgevoelige PR #6-aanpak;
+- tijdens beweging toont de edge alleen de titel; na settle blijft PR #5 de uitgebreidere titel/tijd-readability afhandelen;
+- programmastart/duur, inertia, bounce, directional lock, Vandaag/Morgen/Nu en detailinteracties zijn niet bewust gewijzigd.
+
+Nieuwe pure tests dekken programmaboundaries en exacte switching-semantiek. De bestaande 48-zender Guide/detail-integratietest blijft actief met aangepaste Reanimated/workletmocks.
+
+### Technische verificatie
+PR #9 implementation head **`ff39a16e717e5f89f57509d6b18b54b72e9d1d3a`** passeerde **CI #125 / `34748926153`** volledig: installatie, strict TypeScript, lint, tests en iOS/Android/web Expo exports.
+
+Daarna zijn PROJECT_STATE, DEVICE_TEST_REPORT en dit DEVLOG bijgewerkt. Die documentatiecommits wijzigen de PR-head en vereisen daarom nog een finale CI voordat er gemerged wordt.
+
+### Apart open punt
+De recording toont ook opnieuw een gedeeltelijk afgesneden tijdaslabel wanneer een tick precies aan de linker viewportgrens ligt. Dit is separaat van de stale-overlayfout en wordt pas aangepakt nadat PR #9 fysiek is beoordeeld.
+
+### Volgende stap
+Laat de finale PR #9-head CI volledig slagen; merge daarna naar main en bevestig exact-main CI. Pas daarna opnieuw een korte iPhone-screenrecording vragen voor startup, drag, momentum, geen stale overlap en ongewijzigd scrollgevoel.
+
+---
+
 ## 13 september 2026, 10:35 CEST — PR #8: live partial-left titelbeweging herbouwd zonder per-programme worklets
 
 ### Wat verandert voor de gebruiker
@@ -38,11 +74,8 @@ Final PR-head **`35282fffc558115f60eded7534c4eb03266cf4f7`** passeerde **CI #120
 
 PR #8 is gesquasht naar main als **`1fbc4095ea50959f80a87db5db1f91905f46c2e2`**. De exacte merge passeerde ook **main-CI #121 / `34747935259`** volledig met dezelfde gates.
 
-### Fysieke gate
-PR #6 heeft bewezen dat groene CI geen bewijs van native startupstabiliteit is. PR #8 is daarom nog niet fysiek geaccepteerd.
-
-### Volgende stap
-Op dezelfde iPhone alleen controleren: normale startup; titel beweegt/blijft leesbaar tijdens drag én momentum aan de linker rand; het echte programmablok springt niet/verandert niet van breedte; horizontale scroll voelt nog als de geaccepteerde baseline.
+### Latere fysieke uitkomst
+Zie de entry hierboven: de 10:49-screenrecording toonde runtime-desynchronisatie tussen native scroll en React-overlay. PR #8 is daardoor alsnog fysiek afgewezen.
 
 ---
 
@@ -63,7 +96,7 @@ Daarmee is de veilige non-Reanimated controlherimplementatie volledig fysiek gea
 
 Na de PR #6-versie meldde de product owner een wit scherm gevolgd door een Expo Go-crash. PR #6 had per-programme Reanimated animated styles over de realistische 48-zenderfixture geïntroduceerd. Dat is een sterke kandidaat voor de regressie, maar zonder native foutlog niet bewezen.
 
-Main is teruggezet naar PR #5 met **`f7c9f73568341d29e518be21e0de071e4ef7877d`**. De product owner bevestigde daarna normale startup. De drie 09:20-producteisen bleven geldig; twee zijn later veilig opgelost in PR #7, de derde wordt nu via PR #8 aangepakt.
+Main is teruggezet naar PR #5 met **`f7c9f73568341d29e518be21e0de071e4ef7877d`**. De product owner bevestigde daarna normale startup. De drie 09:20-producteisen bleven geldig; twee zijn later veilig opgelost in PR #7, de derde wordt via PR #9 opnieuw aangepakt.
 
 ---
 
@@ -113,7 +146,8 @@ Projectfoundation, deterministische EPG-fixture, Expo/React Native strict TypeSc
 ---
 
 ## Doorlopende open technische punten
-- PR #8 live edge readability is technisch groen maar wacht op gerichte iPhone-acceptatie.
+- PR #9 native-synced edge readability is technisch gebouwd maar wacht eerst op finale PR/main-CI en daarna fysieke iPhone-validatie.
+- Het linker time-axis ticklabel kan gedeeltelijk worden afgeknipt; separaat readability-punt.
 - Android gesture/back en release-achtige performance zijn nog niet fysiek gevalideerd.
 - VoiceOver/screenreader, live theme switching en expliciete current-time/progress-validatie staan open.
 - Finite fixture lifecycle rond resume na middernacht/expiry staat open.
