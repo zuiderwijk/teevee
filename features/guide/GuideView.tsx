@@ -28,6 +28,8 @@ import {
   timelineWidth,
 } from './geometry';
 import { guideLayoutForFontScale } from './layout';
+import { GUIDE_TIME_TICK_INTERVAL_MINUTES } from './timeAxis';
+import { TimeAxisLeftMask } from './TimeAxisLeftMask';
 import { TimeAxisTick } from './TimeAxisTick';
 import { useGuideClock } from './useGuideClock';
 
@@ -82,6 +84,8 @@ export const GuideView = memo(function GuideView({ onSelectProgramme }: GuideVie
   );
   const width = timelineWidth(windowStart, windowEnd, layout.minuteWidth);
   const ticks = useMemo(() => buildTimeTicks(windowStart, windowEnd), [windowStart, windowEnd]);
+  const firstTickX = ticks.length > 0 ? timeToX(ticks[0]!, windowStart, layout.minuteWidth) : 0;
+  const tickSpacing = GUIDE_TIME_TICK_INTERVAL_MINUTES * layout.minuteWidth;
   const nowX = timeToX(nowMs, windowStart, layout.minuteWidth);
   const nowInWindow = nowMs >= windowStart && nowMs < windowEnd;
   const tomorrowStart = useMemo(() => guideDayStart(initialNow, 1), [initialNow]);
@@ -331,7 +335,6 @@ export const GuideView = memo(function GuideView({ onSelectProgramme }: GuideVie
                     labelWidth={layout.tickLabelWidth}
                     labelColor={theme.colors.textMuted}
                     borderColor={theme.colors.border}
-                    scrollX={scrollX}
                   />
                 );
               })}
@@ -454,6 +457,19 @@ export const GuideView = memo(function GuideView({ onSelectProgramme }: GuideVie
             </Animated.ScrollView>
           </View>
         </Animated.ScrollView>
+
+        {ticks.length > 0 ? (
+          <TimeAxisLeftMask
+            left={layout.channelWidth}
+            height={layout.timeAxisHeight}
+            firstTickX={firstTickX}
+            tickSpacing={tickSpacing}
+            labelWidth={layout.tickLabelWidth}
+            backgroundColor={theme.colors.surface}
+            borderBottomColor={theme.colors.border}
+            scrollX={scrollX}
+          />
+        ) : null}
 
         <View
           pointerEvents="none"
