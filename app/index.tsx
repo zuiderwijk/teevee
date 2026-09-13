@@ -7,6 +7,7 @@ import { buildRuntimeGuideFixture, programmesForRuntimeChannel } from '@/data/fi
 import {
   buildTimeTicks,
   GUIDE_CHANNEL_WIDTH,
+  GUIDE_MINUTE_WIDTH,
   GUIDE_ROW_HEIGHT,
   GUIDE_TIME_AXIS_HEIGHT,
   programmeContentMode,
@@ -17,85 +18,51 @@ import {
 import { useGuideClock } from '@/features/guide/useGuideClock';
 import { useTeeveeTheme } from '@/theme/useTeeveeTheme';
 
-const HOUR_MS = 60 * 60 * 1000;
-const DAY_MS = 24 * HOUR_MS;
-const WINDOW_DURATION_MS = 12 * HOUR_MS;
+const DAY_MS = 24 * 60 * 60 * 1000;
 
 function formatTime(timeMs: number) {
-  return new Date(timeMs).toLocaleTimeString('nl-NL', {
-    hour: '2-digit',
-    minute: '2-digit',
-    timeZone: 'Europe/Amsterdam',
-  });
+  return new Date(timeMs).toLocaleTimeString('nl-NL', { hour: '2-digit', minute: '2-digit', timeZone: 'Europe/Amsterdam' });
 }
 
 function formatDay(timeMs: number) {
-  return new Date(timeMs).toLocaleDateString('nl-NL', {
-    weekday: 'short',
-    day: 'numeric',
-    month: 'short',
-    timeZone: 'Europe/Amsterdam',
-  });
+  return new Date(timeMs).toLocaleDateString('nl-NL', { weekday: 'short', day: 'numeric', month: 'short', timeZone: 'Europe/Amsterdam' });
 }
 
 export default function GuideScreen() {
   const theme = useTeeveeTheme();
   const horizontalRef = useRef<ScrollView>(null);
   const channelRef = useRef<ScrollView>(null);
-  const horizontalOffsetRef = useRef(0);
-  const pendingDayOffsetRef = useRef<number | null>(null);
   const [initialNow] = useState(() => Date.now());
-  const [baseWindowStart] = useState(() => Math.floor(initialNow / HOUR_MS) * HOUR_MS - 2 * HOUR_MS);
   const runtimeFixture = useMemo(() => buildRuntimeGuideFixture(initialNow), [initialNow]);
   const [dayOffset, setDayOffset] = useState(0);
   const [selectedProgramme, setSelectedProgramme] = useState<Programme | null>(null);
   const nowMs = useGuideClock();
 
-  const windowStart = baseWindowStart + dayOffset * DAY_MS;
-  const windowEnd = windowStart + WINDOW_DURATION_MS;
+  const windowStart = useMemo(() => Math.min(...runtimeFixture.programmes.map((programme) => Date.parse(programme.startAt))), [runtimeFixture]);
+  const windowEnd = useMemo(() => Math.max(...runtimeFixture.programmes.map((programme) => Date.parse(programme.endAt))), [runtimeFixture]);
   const width = timelineWidth(windowStart, windowEnd);
   const ticks = useMemo(() => buildTimeTicks(windowStart, windowEnd), [windowStart, windowEnd]);
   const nowX = timeToX(nowMs, windowStart);
   const nowInWindow = nowMs >= windowStart && nowMs <= windowEnd;
+  const tomorrowStart = windowStart + DAY_MS;
 
   useEffect(() => {
-    const pendingX = pendingDayOffsetRef.current;
-    if (pendingX !== null) {
-      requestAnimationFrame(() => {
-        horizontalRef.current?.scrollTo({ x: pendingX, animated: false });
-      });
-      pendingDayOffsetRef.current = null;
-      return;
-    }
-
-    if (dayOffset !== 0) return;
-    const initialX = timeToX(initialNow, baseWindowStart);
-    requestAnimationFrame(() => {
-      const x = Math.max(0, initialX - 120);
-      horizontalOffsetRef.current = x;
-      horizontalRef.current?.scrollTo({ x, animated: false });
-    });
-  }, [baseWindowStart, dayOffset, initialNow]);
+    const initialX = Math.max(0, timeToX(initialNow, windowStart) - 120);
+    requestAnimationFrame(() => horizontalRef.current?.scrollTo({ x: initialX, animated: false }));
+  }, [initialNow, windowStart]);
 
   const jumpToNow = () => {
-    const x = Math.max(0, timeToX(nowMs, baseWindowStart) - 120);
-    horizontalOffsetRef.current = x;
-    if (dayOffset !== 0) {
-      pendingDayOffsetRef.current = x;
-      setDayOffset(0);
-      return;
-    }
+    setDayOffset(0);
+    const x = Math.max(0, timeToX(nowMs, windowStart) - 120);
     horizontalRef.current?.scrollTo({ x, animated: true });
   };
 
-  const syncVerticalScroll = (y: number) => {
-    channelRef.current?.scrollTo({ y, animated: false });
-  };
+  const syncVerticalScroll = (y: number) => channelRef.current?.scrollTo({ y, animated: false });
 
   const changeDay = (nextOffset: number) => {
-    if (nextOffset === dayOffset) return;
-    pendingDayOffsetRef.current = horizontalOffsetRef.current;
     setDayOffset(nextOffset);
+    const targetTime = windowStart + nextOffset * DAY_MS;
+    horizontalRef.current?.scrollTo({ x: Math.max(0, timeToX(targetTime, windowStart)), animated: true });
   };
 
   return (
@@ -114,21 +81,9 @@ export default function GuideScreen() {
         {[0, 1].map((offset) => {
           const active = dayOffset === offset;
           return (
-            <Pressable
-              key={offset}
-              accessibilityRole="button"
-              accessibilityState={{ selected: active }}
-              onPress={() => changeDay(offset)}
-              style={[
-                styles.dayButton,
-                {
-                  backgroundColor: active ? theme.colors.accent : theme.colors.surface,
-                  borderColor: theme.colors.border,
-                },
-              ]}
-            >
+            <Pressable key={offset} accessibilityRole="button" accessibilityState={{ selected: active }} onPress={() => changeDay(offset)} style={[styles.dayButton, { backgroundColor: active ? theme.colors.accent : theme.colors.surface, borderColor: theme.colors.border }]}>
               <Text style={[styles.dayButtonText, { color: active ? theme.colors.background : theme.colors.textSecondary }]}>
-                {offset === 0 ? 'Vandaag' : formatDay(baseWindowStart + offset * DAY_MS)}
+                {offset === 0 ? 'Vandaag' : formatDay(tomorrowStart)}
               </Text>
             </Pressable>
           );
@@ -149,18 +104,11 @@ export default function GuideScreen() {
           </ScrollView>
         </View>
 
-        <ScrollView
-          ref={horizontalRef}
-          horizontal
-          bounces
-          directionalLockEnabled
-          decelerationRate="normal"
-          showsHorizontalScrollIndicator={false}
-          scrollEventThrottle={16}
-          onScroll={(event) => {
-            horizontalOffsetRef.current = event.nativeEvent.contentOffset.x;
-          }}
-        >
+        <ScrollView ref={horizontalRef} horizontal bounces directionalLockEnabled decelerationRate="normal" showsHorizontalScrollIndicator={false} scrollEventThrottle={16} onScroll={(event) => {
+          const visibleTime = windowStart + (event.nativeEvent.contentOffset.x / GUIDE_MINUTE_WIDTH) * 60_000;
+          const visibleDay = visibleTime >= tomorrowStart ? 1 : 0;
+          if (visibleDay !== dayOffset) setDayOffset(visibleDay);
+        }}>
           <View style={{ width }}>
             <View style={[styles.timeAxis, { height: GUIDE_TIME_AXIS_HEIGHT, backgroundColor: theme.colors.surface, borderBottomColor: theme.colors.border }]}>
               {ticks.map((tick) => {
@@ -173,15 +121,7 @@ export default function GuideScreen() {
               })}
             </View>
 
-            <ScrollView
-              bounces
-              alwaysBounceVertical
-              directionalLockEnabled
-              decelerationRate="fast"
-              showsVerticalScrollIndicator
-              scrollEventThrottle={16}
-              onScroll={(event) => syncVerticalScroll(event.nativeEvent.contentOffset.y)}
-            >
+            <ScrollView bounces alwaysBounceVertical directionalLockEnabled decelerationRate={0.995} showsVerticalScrollIndicator scrollEventThrottle={16} onScroll={(event) => syncVerticalScroll(event.nativeEvent.contentOffset.y)}>
               <View style={{ width, height: runtimeFixture.channels.length * GUIDE_ROW_HEIGHT }}>
                 {runtimeFixture.channels.map((channel, rowIndex) => (
                   <View key={channel.id} style={[styles.programmeRow, { top: rowIndex * GUIDE_ROW_HEIGHT, height: GUIDE_ROW_HEIGHT, width, borderBottomColor: theme.colors.border }]}>
@@ -189,55 +129,22 @@ export default function GuideScreen() {
                       const frame = programmeFrame(programme, windowStart);
                       const end = frame.left + frame.width;
                       if (end < 0 || frame.left > width) return null;
-
                       const startMs = Date.parse(programme.startAt);
                       const endMs = Date.parse(programme.endAt);
                       const isCurrent = nowMs >= startMs && nowMs < endMs;
                       const progress = isCurrent ? programmeProgress(programme, new Date(nowMs)) : 0;
                       const contentMode = programmeContentMode(frame.width);
-
                       return (
-                        <Pressable
-                          key={programme.id}
-                          accessibilityRole="button"
-                          accessibilityLabel={`${programme.title}, ${formatTime(startMs)} tot ${formatTime(endMs)}`}
-                          onPress={() => setSelectedProgramme(programme)}
-                          style={[
-                            styles.programme,
-                            contentMode === 'compact' ? styles.programmeCompact : null,
-                            {
-                              left: frame.left,
-                              width: frame.width,
-                              backgroundColor: isCurrent ? theme.colors.programmeCurrent : theme.colors.programme,
-                            },
-                          ]}
-                        >
-                          {isCurrent && contentMode !== 'compact' ? (
-                            <View style={[styles.progressTrack, { backgroundColor: theme.colors.border }]}>
-                              <View style={[styles.progressFill, { width: `${Math.round(progress * 100)}%`, backgroundColor: theme.colors.currentTime }]} />
-                            </View>
-                          ) : null}
-                          <Text
-                            numberOfLines={contentMode === 'comfortable' ? 2 : 1}
-                            style={[
-                              styles.programmeTitle,
-                              contentMode === 'compact' ? styles.programmeTitleCompact : null,
-                              { color: theme.colors.text },
-                            ]}
-                          >
-                            {programme.title}
-                          </Text>
-                          {contentMode !== 'compact' ? (
-                            <Text numberOfLines={1} style={[styles.programmeTime, { color: theme.colors.textMuted }]}>{formatTime(startMs)}</Text>
-                          ) : null}
+                        <Pressable key={programme.id} accessibilityRole="button" accessibilityLabel={`${programme.title}, ${formatTime(startMs)} tot ${formatTime(endMs)}`} onPress={() => setSelectedProgramme(programme)} style={[styles.programme, contentMode === 'compact' ? styles.programmeCompact : null, { left: frame.left, width: frame.width, backgroundColor: isCurrent ? theme.colors.programmeCurrent : theme.colors.programme }]}>
+                          {isCurrent && contentMode !== 'compact' ? <View style={[styles.progressTrack, { backgroundColor: theme.colors.border }]}><View style={[styles.progressFill, { width: `${Math.round(progress * 100)}%`, backgroundColor: theme.colors.currentTime }]} /></View> : null}
+                          <Text numberOfLines={contentMode === 'comfortable' ? 2 : 1} style={[styles.programmeTitle, contentMode === 'compact' ? styles.programmeTitleCompact : null, { color: theme.colors.text }]}>{programme.title}</Text>
+                          {contentMode !== 'compact' ? <Text numberOfLines={1} style={[styles.programmeTime, { color: theme.colors.textMuted }]}>{formatTime(startMs)}</Text> : null}
                         </Pressable>
                       );
                     })}
                   </View>
                 ))}
-                {nowInWindow ? (
-                  <View pointerEvents="none" style={[styles.currentTimeLine, { left: nowX, backgroundColor: theme.colors.currentTime, height: runtimeFixture.channels.length * GUIDE_ROW_HEIGHT }]} />
-                ) : null}
+                {nowInWindow ? <View pointerEvents="none" style={[styles.currentTimeLine, { left: nowX, backgroundColor: theme.colors.currentTime, height: runtimeFixture.channels.length * GUIDE_ROW_HEIGHT }]} /> : null}
               </View>
             </ScrollView>
           </View>
@@ -247,23 +154,13 @@ export default function GuideScreen() {
       <Modal transparent visible={selectedProgramme !== null} animationType="slide" onRequestClose={() => setSelectedProgramme(null)}>
         <Pressable style={styles.modalBackdrop} onPress={() => setSelectedProgramme(null)}>
           <Pressable style={[styles.detailSheet, { backgroundColor: theme.colors.surfaceElevated }]} onPress={() => undefined}>
-            {selectedProgramme ? (
-              <>
-                <View style={styles.detailHandleRow}>
-                  <View style={[styles.detailHandle, { backgroundColor: theme.colors.border }]} />
-                </View>
-                <Text style={[styles.detailMeta, { color: theme.colors.textMuted }]}>
-                  {runtimeFixture.channels.find((channel) => channel.id === selectedProgramme.channelId)?.displayName ?? 'Zender'} · {formatTime(Date.parse(selectedProgramme.startAt))}–{formatTime(Date.parse(selectedProgramme.endAt))}
-                </Text>
-                <Text style={[styles.detailTitle, { color: theme.colors.text }]}>{selectedProgramme.title}</Text>
-                <Text style={[styles.detailDescription, { color: theme.colors.textSecondary }]}>
-                  {selectedProgramme.description ?? 'Voor dit programma is in de huidige testdata nog geen beschrijving beschikbaar.'}
-                </Text>
-                <Pressable accessibilityRole="button" onPress={() => setSelectedProgramme(null)} style={[styles.closeButton, { backgroundColor: theme.colors.accent }]}>
-                  <Text style={[styles.closeButtonText, { color: theme.colors.background }]}>Sluiten</Text>
-                </Pressable>
-              </>
-            ) : null}
+            {selectedProgramme ? <>
+              <View style={styles.detailHandleRow}><View style={[styles.detailHandle, { backgroundColor: theme.colors.border }]} /></View>
+              <Text style={[styles.detailMeta, { color: theme.colors.textMuted }]}>{runtimeFixture.channels.find((channel) => channel.id === selectedProgramme.channelId)?.displayName ?? 'Zender'} · {formatTime(Date.parse(selectedProgramme.startAt))}–{formatTime(Date.parse(selectedProgramme.endAt))}</Text>
+              <Text style={[styles.detailTitle, { color: theme.colors.text }]}>{selectedProgramme.title}</Text>
+              <Text style={[styles.detailDescription, { color: theme.colors.textSecondary }]}>{selectedProgramme.description ?? 'Voor dit programma is in de huidige testdata nog geen beschrijving beschikbaar.'}</Text>
+              <Pressable accessibilityRole="button" onPress={() => setSelectedProgramme(null)} style={[styles.closeButton, { backgroundColor: theme.colors.accent }]}><Text style={[styles.closeButtonText, { color: theme.colors.background }]}>Sluiten</Text></Pressable>
+            </> : null}
           </Pressable>
         </Pressable>
       </Modal>
