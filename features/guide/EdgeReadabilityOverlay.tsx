@@ -7,7 +7,7 @@ import Animated, {
 } from 'react-native-reanimated';
 import { scheduleOnRN } from 'react-native-worklets';
 
-import type { GuideFixture, Programme } from '@/data/domain/epg';
+import { isProgrammeCurrent, type GuideFixture, type Programme } from '@/data/domain/epg';
 import { useTeeveeTheme } from '@/theme/useTeeveeTheme';
 
 import {
@@ -63,9 +63,7 @@ function EdgeRow({
   const hasEdge = edge !== null;
   const contentMode = edge ? programmeContentMode(edge.frame.width) : 'compact';
   const horizontalPadding = contentMode === 'compact' ? 5 : 8;
-  const startMs = edge ? Date.parse(edge.programme.startAt) : 0;
-  const endMs = edge ? Date.parse(edge.programme.endAt) : 0;
-  const isCurrent = hasEdge && nowMs >= startMs && nowMs < endMs;
+  const isCurrent = edge !== null && isProgrammeCurrent(edge.programme, nowMs);
   const leavesProgressVisible = isCurrent && contentMode !== 'compact';
   const topInset = leavesProgressVisible ? 14 : 4;
   const bottomInset = 4;
