@@ -1,6 +1,7 @@
 import { Tabs } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 
+import { AppScreenErrorBoundary } from '@/components/AppScreenErrorBoundary';
 import { AppearancePreferenceProvider } from '@/features/settings/AppearancePreferenceProvider';
 import { useTeeveeTheme } from '@/theme/useTeeveeTheme';
 
@@ -12,6 +13,7 @@ function ThemedTabs() {
       <StatusBar style={theme.dark ? 'light' : 'dark'} />
       <Tabs
         backBehavior="history"
+        unstable_screenErrorBoundary={AppScreenErrorBoundary}
         screenOptions={{
           headerShown: false,
           tabBarHideOnKeyboard: true,
