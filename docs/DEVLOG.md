@@ -11,6 +11,47 @@ Doel: een begrijpelijk chronologisch overzicht van substantiële wijzigingen, to
 
 ---
 
+## 13 september 2026, 15:31 CEST — PR #15 fysiek geaccepteerd; PR #16 timing en PR #17 lifecycle afgerond
+
+### PR #15 fysieke performanceacceptatie
+De product owner leverde `ScreenRecording_09-13-2026 15-11-35_1.MP4` voor de gerichte A/B-gate.
+
+Framevergelijking:
+- direct na horizontale fling: press feedback circa **2,40 s**, eerste modal-dimming circa **2,42 s**;
+- na stilstand: press feedback circa **5,72 s**, eerste modal-dimming circa **5,74 s**;
+- het verschil ligt binnen ongeveer één videoframe;
+- de bottom-sheetanimatie start in beide gevallen binnen grofweg twee tienden van een seconde;
+- PR #9 partial-left titles blijven zichtbaar/coherent en PR #11 laat geen nieuw `:30`/`30`-fragment zien.
+
+Conclusie: **PR #15 en daarmee de gecombineerde PR #14/#15 post-horizontal-scroll performancecorrectie zijn fysiek geaccepteerd en bevroren op iPhone.**
+
+### PR #16 — current-time/progress accuracy
+Na sluiting van de performancegate is de timinglogica gehard zonder gesture/layout-wijzigingen:
+- één gedeelde `isProgrammeCurrent(programme, nowMs)` met `[start,end)` semantiek;
+- progress gebruikt dezelfde `nowMs` snapshot en blijft exact geclamped;
+- de progress-fill behoudt fractionele percentages in plaats van hele procenten;
+- tests dekken exact begin/einde en sub-minute current-time pixelmapping.
+
+PR-head `534b21dd1e14709553535638683078c5267f6e90` passeerde PR CI #173 / `34759584228`; merge `c65715886a81c932d6096e000a2e13aba12a1406` passeerde exact-main CI #174 / `34759721513` volledig.
+
+### PR #17 — finite fixture lifecycle
+De launch-anchored testfixture kon zonder correctie na middernacht aan gisteren blijven hangen. De lifecycle is nu kalendercorrect:
+- fixture refresh wordt bepaald op Amsterdamse kalenderdag, niet op 24-uursduur;
+- normale middernacht, spring-DST, autumn-DST en teruggezette toestelklok hebben tests;
+- `useGuideClock` ververst onmiddellijk bij `AppState → active` en ruimt de listener op;
+- GuideView bouwt bij dagwissel opnieuw `Vandaag + Morgen`, reset day state naar Vandaag en herankert de Guide naar de actuele tijd;
+- `Nu` valideert eveneens eerst de fixture day.
+
+PR-head `5ee42f8089cd2d4428c3f46e1da6cb609f78429c` passeerde PR CI #175 / `34759940178`; merge `0853cdebaccb4036ff6567c17ded444def8d5401` passeerde exact-main CI #176 / `34760047645` volledig.
+
+### Android-audit
+Programme Detail heeft al native React Native Modal `onRequestClose={requestClose}`, een Android `GestureHandlerRootView` en integratiedekking voor de native-request-close route. Dat is goede technische dekking, maar geen vervanging voor Android-devicebewijs.
+
+### Volgende stap
+Fysieke Android-gate op current `main`: startup, horizontale/verticale Guide-beweging, programme tap, system/hardware Back vanuit Programme Detail, swipe-down dismissal en een korte gemengde stability/performance-run. De geaccepteerde iPhone-scrollbaseline niet retunen zonder apart regressiebewijs.
+
+---
+
 ## 13 september 2026, 15:00 CEST — PR #14 fysiek verbeterd maar niet voltooid; PR #15 geïntegreerd
 
 ### Toestelbewijs 14:49
@@ -40,9 +81,6 @@ PR #15 verwijdert alleen die redundante zware laag:
 PR-head **`bf743618b3d062d8771d220fc94ae9f99cc01c87`** passeerde **PR CI #168 / `34758480218`** volledig: install, strict TypeScript, lint, tests en iOS/Android/web Expo exports.
 
 PR #15 is gesquasht naar main als **`48e54008d8925fe4533bdbfd44f8639c63e645bc`**.
-
-### Volgende stap
-Op dezelfde iPhone opnieuw één korte A/B-test: sterke horizontale fling → programma zo snel mogelijk aantikken versus circa twee seconden stilstand → ander programma aantikken. De start van Programme Detail moet praktisch gelijk voelen. Tegelijk alleen een regressieblik op PR #9 partial-left title en PR #11 time-axis; Vandaag→Morgen hoeft niet opnieuw bewust getest te worden.
 
 ---
 
@@ -109,9 +147,8 @@ Projectfoundation, deterministische EPG-fixture, Expo/React Native strict TypeSc
 ---
 
 ## Doorlopende open technische punten
-- PR #15 post-horizontal-scroll Programme Detail latency + PR #9/PR #11 regressiegate fysiek valideren.
-- Expliciete current-time/progress-nauwkeurigheid staat open.
-- Android gesture/back en release-achtige performance staan open.
-- Finite fixture lifecycle rond resume na middernacht/expiry staat open.
+- Android system/hardware Back, gestures en realistische performance fysiek valideren.
+- Release-like performance buiten Expo Go valideren wanneer een geschikte build/device beschikbaar is.
 - CI genereert nog een lockfile vóór `npm ci`; 15 moderate advisories vereisen gerichte analyse. Nooit `npm audit fix --force`.
+- Per zender en Nu & Straks zijn gespecificeerd maar nog niet gebouwd.
 - Productie-EPG/logo/artworkrechten, abonnement/paywall, productietokens/fontlicentie en definitieve Vanavond/Tonight-modules liggen buiten deze directe Phase 1-stabiliteitsstap.

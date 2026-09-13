@@ -1,24 +1,24 @@
 # Teevee Phase 1 — Device Test Report
 
-Bijgewerkt op **13 september 2026, 15:00 CEST — Europe/Amsterdam**. Een groene CI of bundle-export is geen geslaagde toesteltest.
+Bijgewerkt op **13 september 2026, 15:31 CEST — Europe/Amsterdam**. Een groene CI of bundle-export is geen geslaagde toesteltest.
 
 ## Toestel
 - Eigen iPhone van de product owner; wifi; testperiode 11–13 september 2026.
 - Model, iOS-versie en Expo Go-versie zijn nog niet canoniek genoteerd.
+- Android is nog niet fysiek gevalideerd.
 
-## Fysiek geaccepteerde baseline
-De volgende gedragingen zijn gericht op iPhone gevalideerd en mogen niet zonder concreet regressiebewijs worden heropend:
+## Fysiek geaccepteerde iPhone-baseline
+De volgende gedragingen zijn gericht gevalideerd en mogen niet zonder concreet regressiebewijs worden heropend:
 - standaard platforminertie, native bounce/directional lock en doorlopende tijdlijn;
 - `Vandaag · Morgen · Nu` op één regel, directe day selected-state en `Nu`-terugkeer;
-- Programme Detail button/backdrop close en deliberate swipe-down dismissal;
+- Programme Detail openen/sluiten, button/backdrop close en deliberate swipe-down dismissal;
 - grote systeemtekst/chrome alignment;
 - PR #9 live partial-left programmatitel tijdens drag/momentum/settle en programme boundaries;
 - PR #11 single-mask time-axis zonder losse `:30`/`30`-fragmenten;
 - reverse-scroll readability zonder massale blanking;
 - PR #13 VoiceOver traversal/labels + accessibility escape;
-- PR #13 live system-theme switching in Guide en Programme Detail.
-
-De performancebevindingen hieronder kwalificeren alleen de respons van een Programme Detail-tap kort na horizontaal scrollen; ze heropenen de geaccepteerde scrollphysics of detailgestures niet.
+- PR #13 live system-theme switching in Guide en Programme Detail;
+- PR #14/#15 post-horizontal-scroll Programme Detail response.
 
 ## Belangrijkste fysieke historie
 ### PR #6 — afgewezen
@@ -31,13 +31,13 @@ React-state edge overlay liep achter native ScrollView tijdens drag/momentum en 
 `ScreenRecording_09-13-2026 11-35-40_1.MP4` bevestigde native/UI-thread partial-left edge readability zonder geometry jump of successor overlap.
 
 ### PR #10 — afgewezen
-`ScreenRecording_09-13-2026 13-09-16_1.MP4` liet rond 8,7 s een los `30`-fragment op de tijdas zien. Per-tick Reanimated opacity blijft afgewezen.
+`ScreenRecording_09-13-2026 13-09-16_1.MP4` liet een los `30`-fragment op de tijdas zien. Per-tick Reanimated opacity blijft afgewezen.
 
 ### PR #11 — geaccepteerd
 `ScreenRecording_09-13-2026 13-48-10_1.MP4` bevestigde whole-label disappearance op de tijdas met stabiele ticks/programme geometry.
 
 ### PR #12 — geaccepteerd
-`ScreenRecording_09-13-2026 14-04-35_1.MP4` bevestigde bij sterke forward/reverse swipes dat programmatitels zichtbaar blijven en PR #9/PR #11 intact blijven. De settled-readability state die PR #12 destijds corrigeerde is later door PR #15 volledig uit `GuideView` verwijderd; PR #9 is nu de enige partial-left readabilitylaag.
+`ScreenRecording_09-13-2026 14-04-35_1.MP4` bevestigde bij sterke forward/reverse swipes dat programmatitels zichtbaar blijven en PR #9/PR #11 intact blijven. De settled-readability state die PR #12 destijds corrigeerde is later door PR #15 volledig uit `GuideView` verwijderd.
 
 ## PR #13 — VoiceOver + live theme: fysiek geaccepteerd
 Evidence: geschreven ownerobservatie plus `ScreenRecording_09-13-2026 14-28-46_1.MP4`.
@@ -52,80 +52,75 @@ Theme:
 - Programme Detail volgt een system Appearance-wissel terwijl het geopend blijft;
 - status-bar treatment schakelt mee.
 
-Conclusie: **PR #13 fysiek geaccepteerd.**
+## Post-horizontal-scroll detail performance
+### 14:28 — probleem vastgelegd
+`ScreenRecording_09-13-2026 14-28-46_1.MP4` liet na recente horizontale beweging grofweg 0,7–0,9 s zien tussen duidelijke press feedback en het zichtbaar starten van Programme Detail.
 
-## 14:28 — post-horizontal-scroll detail latency
-Dezelfde sessie bracht een aparte performancebevinding aan het licht:
-- direct na horizontaal tijdscrollen voelt een programme-tap duidelijk trager;
-- na korte stilstand opent dezelfde detailinteractie snel;
-- frame-review liet in bemonsterde gevallen ongeveer **0,7–0,9 s** zien tussen press feedback en zichtbaar starten van Programme Detail na recente horizontale beweging.
+### PR #14 — eerste bottleneck verwijderd
+De per-frame horizontal UI→JS bridge werd verwijderd. `ScreenRecording_09-13-2026 14-49-22_1.MP4` plus owner feedback bevestigde duidelijke winst, maar de post-horizontal-fling case bleef trager dan een tap na circa twee seconden stilstand. Een verticale fling was wel direct, waarmee resterend horizontaal settle-werk als oorzaak sterk werd geïsoleerd.
 
-Code-audit wees als eerste bron op een per-frame UI→JS bridge vanuit horizontale `onScroll`.
+### PR #15 — tweede bottleneck verwijderd en fysiek geaccepteerd
+PR #15 verwijderde legacy `readabilityViewportX` React state en daarmee de full-Guide rerenders bij horizontal finger-up/momentum settle. PR #9 verzorgt sindsdien als enige laag de partial-left readability.
 
-## PR #14 — per-frame horizontal JS bridge verwijderd
-PR #14 houdt iedere `scrollX` frame-update op de UI-thread. `Vandaag/Morgen` bridge-t alleen wanneer de echte daggrens verandert; scrollphysics en programme geometry zijn niet gewijzigd.
+Evidence: `ScreenRecording_09-13-2026 15-11-35_1.MP4`.
 
-Technische verificatie:
-- PR-head `33bcb83381f575a0f1a22cc4a571f4325a957582`: PR CI #163 / `34757663408` volledig groen;
-- merge `e7f45a04544106803b2f49fe4e086d304bf061c8`;
-- exact merged code: main CI #164 / `34757796962` volledig groen.
+Framevergelijking:
+- **post-horizontal-fling:** duidelijke press feedback circa **2,40 s**, modal-dimming circa **2,42 s**;
+- **still Guide:** press feedback circa **5,72 s**, modal-dimming circa **5,74 s**;
+- het verschil ligt binnen ongeveer één opgenomen videoframe;
+- de native bottom-sheetanimatie start in beide gevallen binnen grofweg twee tienden van een seconde;
+- geen terugkeer van PR #9 title blanking of PR #11 `:30`/`30`-fragmenten zichtbaar.
 
-### 14:49 device result — duidelijke winst, nog niet gelijk aan stilstand
-Evidence: ownerobservatie plus `ScreenRecording_09-13-2026 14-49-22_1.MP4`.
+Conclusie: **PR #15 en de gecombineerde PR #14/#15 latencycorrectie zijn fysiek geaccepteerd op iPhone.**
 
-De product owner bevestigt:
-- direct na een horizontale fling opent Programme Detail **sneller dan in de vorige versie**;
-- het is nog **niet zo snel als na ongeveer twee seconden stilstand**;
-- na een **verticale fling** opent Programme Detail wel even snel als in de still-case;
-- de overgang Vandaag→Morgen blijft correct.
+## Technisch afgerond zonder nieuwe toestelgate
+### PR #16 — current-time/progress accuracy
+Pure timing/precision hardening:
+- gedeelde start-inclusive/end-exclusive current-programme semantiek;
+- exact boundarytests;
+- één `nowMs` snapshot voor current/progress;
+- fractionele progress-fill;
+- sub-minute current-time geometry test.
 
-Conclusie: **PR #14 is fysiek gevalideerd als materiële verbetering, maar sluit de latencygate niet volledig.** De verticale controle maakt algemene Modal/Pressable-performance als primaire oorzaak onwaarschijnlijk en wijst naar resterend horizontaal settle-werk.
+PR CI #173 en exact-main CI #174 volledig groen.
 
-## PR #15 — settled full-grid rerenders verwijderd
-Vervolgaudit vond de resterende horizontale kost:
-- legacy `readabilityViewportX` React state werd bij `onEndDrag` én `onMomentumEnd` bijgewerkt;
-- iedere update kon de volledige 48-channel / >1000-programme-cell Guide opnieuw renderen vlak rond een programme-tap;
-- PR #9 levert partial-left readability al continu, ook na settle.
+### PR #17 — finite fixture lifecycle
+- runtimefixture herankert bij een nieuwe Amsterdamse kalenderdag;
+- same-day resume houdt dezelfde fixture;
+- normal midnight + beide DST-overgangen getest;
+- Guide-klok ververst onmiddellijk op `AppState → active`;
+- `Nu` controleert stale fixture day voordat het scrollt.
 
-PR #15 verwijdert daarom:
-- `readabilityViewportX` en zijn setters;
-- de horizontale `onEndDrag` JS callback;
-- de zware readability-state update op `onMomentumEnd`.
-
-`onMomentumEnd` houdt alleen een lichte day-state eindcontrole. Onderliggende programme content gebruikt de echte programme frame-breedte; de PR #9 edge overlay verzorgt partial-left readability. Native inertia/bounce/directional lock, programme `left`/`width`, PR #11 time-axis mask, PR #14 UI-thread scrollpad, Programme Detail en verticale synchronisatie zijn niet veranderd.
-
-Technische verificatie:
-- PR-head `bf743618b3d062d8771d220fc94ae9f99cc01c87` passeerde PR CI #168 / `34758480218` volledig;
-- PR #15 is gesquasht naar main als `48e54008d8925fe4533bdbfd44f8639c63e645bc`.
-
-Conclusie: **PR #15 technisch geaccepteerd; fysieke latency- en regressievalidatie staat open.**
+PR CI #175 en exact-main CI #176 volledig groen. Dit is deterministische lifecyclelogica; er is geen claim dat een echte overnight-device-run is uitgevoerd.
 
 ## Kernstatus Phase 1
 | Onderdeel | Status |
 |---|---|
-| App opent/rendert via Expo Go | **Fysiek bevestigd** |
+| App opent/rendert via Expo Go iPhone | **Fysiek bevestigd** |
 | Horizontale scroll/inertie/bounce | **Fysiek geaccepteerde/frozen baseline** |
 | PR #9 edge readability | **Fysiek geaccepteerd** |
 | PR #11 time-axis mask | **Fysiek geaccepteerd** |
 | Reverse-scroll readability | **Fysiek geaccepteerd** |
-| Vandaag/Morgen/Nu | **Fysiek bevestigd, incl. 14:49 transition** |
-| Programme Detail gestures/close | **Fysiek bevestigd** |
+| Vandaag/Morgen/Nu | **Fysiek bevestigd** |
+| Programme Detail gestures/close iPhone | **Fysiek bevestigd** |
 | VoiceOver/screenreader | **Fysiek geaccepteerd — PR #13** |
 | Live theme switching | **Fysiek geaccepteerd — PR #13** |
-| Post-horizontal-scroll Programme Detail response | **PR #14 verbeterde fysiek; PR #15 technisch groen, hertest nodig** |
-| Progress/current-time nauwkeurigheid | Open |
-| Android/release-achtige performance | Open |
-| Midnight/fixture lifecycle | Open |
+| Post-horizontal-scroll Programme Detail response | **Fysiek geaccepteerd — PR #14/#15** |
+| Current-time/progress semantics | **Technisch groen — PR #16** |
+| Midnight/resume finite fixture lifecycle | **Technisch groen — PR #17** |
+| Android native back/gestures/performance | **Open — fysiek toestel nodig** |
+| Release-like performance buiten Expo Go | **Open** |
 
 ## Volgende fysieke validatie
-Gebruik current `main` en vergelijk in één korte opname:
-1. Geef de tijdlijn een stevige horizontale fling en tik een programma zodra dat praktisch tappable is.
-2. Sluit Programme Detail.
-3. Laat de Guide ongeveer twee seconden volledig stilstaan en tik een ander programma.
-4. Beoordeel of de start van Programme Detail in stap 1 nu praktisch gelijk voelt aan stap 3.
-5. Controleer tijdens/na de fling alleen als regressiegate dat de PR #9 partial-left titel natuurlijk blijft en de tijdas geen afgesneden `:30`/`30` toont.
+Op een fysiek Android-toestel met current `main`:
+1. App opent normaal.
+2. Horizontale en verticale Guide-beweging blijven bruikbaar en stabiel.
+3. Tik een programma; Programme Detail opent prompt.
+4. Gebruik Android system/hardware Back; Detail sluit één keer en de Guide blijft op dezelfde positie.
+5. Open opnieuw en sluit met een deliberate swipe-down.
+6. Doe een korte gemengde scrollsessie; geen crash, wit scherm of duidelijke performance collapse.
 
-Vandaag→Morgen hoeft niet opnieuw bewust getest te worden; de 14:49-test heeft die overgang al bevestigd.
+De iPhone-scrollphysics hoeven hierbij niet opnieuw ontworpen of geretuned te worden.
 
 ## Samenvatting
-**PR #14 leverde op iPhone aantoonbaar snellere detailrespons na horizontaal scrollen, maar nog geen gelijkheid met de still-case. Het contrast met de snelle verticale-fling-case leidde tot de tweede horizontale bottleneck: twee redundante full-grid settled-readability renders. PR #15 verwijdert die renders en is volledig technisch groen; één gerichte iPhone A/B-hertest resteert.**
+**De volledige gerichte iPhone Phase 1-interactie-/performancegate is nu gesloten. PR #15 brengt post-horizontal-fling detailrespons op praktisch hetzelfde niveau als de still-case en houdt PR #9/PR #11 intact. PR #16 en PR #17 hardenen vervolgens timing/progress en midnight/resume deterministisch. De resterende native productgate is Android.**
