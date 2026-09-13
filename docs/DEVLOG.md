@@ -11,6 +11,37 @@ Doel: een begrijpelijk chronologisch overzicht van substantiële wijzigingen, to
 
 ---
 
+## 13 september 2026, 11:45 CEST — Visual/UX baseline gesynchroniseerd met GitHub-docs
+
+### Product-/gebruikerseffect
+De aparte visual-designthread heeft de Guide en Programme Detail voldoende uitgewerkt om de gekozen richting expliciet als **accepted UX/visual baseline** vast te leggen. Dit voorkomt dat vervolgdevelopment terugvalt op oudere open vragen of op Visual Direction 01 alsof die nog de actuele specificatie is.
+
+Vastgelegd zijn onder meer:
+- premium utility, weinig chrome, open gids-canvas, kanaallogo primair en bijna-witte/donker-antraciete thema-richting;
+- Söhne als voorkeursrichting voor typografie, onder voorbehoud van productie-licentie/technische levering;
+- Totaal als horizontale tijd/verticale zenderweergave met terughoudende tijdmarkering en zonder lage-waarde celmetadata;
+- Per zender met sticky horizontale zenderlogobalk, verticale daglijst, horizontale swipe naar vorige/volgende zender en contextual `Primetime`/`Nu`;
+- Nu & Straks als today-only gedeelde tijdreferentie met programma op dat moment plus **drie volgende programma's** per zender; geen progressbars, genres, artwork, chevrons of herhaalde `Daarna`-labels;
+- Programme Detail opent direct vanuit de gids, met alleen `Herinner mij` en `Bewaar` als fase-acties; wanneer die acties buiten beeld scrollen verschijnt contextueel een compacte sticky bottom copy voor bereikbaarheid met één hand;
+- grotere systeemtekst mag de dichtheid verminderen en acties laten reflowen in plaats van content af te knijpen.
+
+Vanavond/Tonight heeft wel een sterke voorlopige richting gekregen, maar de exacte modulesamenstelling is bewust nog niet bevroren.
+
+### Documentatie
+Bijgewerkt op main:
+- `docs/UX.md` — commit **`c0f30a1354fe59a7ce783b1bb90e3600d41c04a1`**;
+- `docs/DESIGN_SYSTEM.md` — **`5de5eee993fabf14e19a10f246622f4af0ea8514`**;
+- `docs/PRODUCT.md` — **`af6208e5be94f308a4905bcf111ec349845b3019`**;
+- `docs/BUILD_SPEC.md` — **`8cd40d59614b88853d24f7e850911e3bf4bebee4`**;
+- `docs/PROJECT_STATE.md` — **`5298175e02a072102cc4332c89b8c8b265ed287b`**.
+
+Dit zijn documentatie-updates. Er is geen runtime-code gewijzigd en er wordt geen CI- of toestelacceptatie geclaimd voor de nog niet geïmplementeerde visuals/views.
+
+### Volgende stap
+De **bestaande Phase 1 EXACT NEXT STEP blijft ongewijzigd**: PR #9 fysiek valideren op dezelfde iPhone met één korte opname van startup, horizontale drag/momentum, edge-title synchronisatie, programme-boundarygedrag en ongewijzigd scrollgevoel. Pas daarna de afzonderlijke left-edge time-axis clipping aanpakken.
+
+---
+
 ## 13 september 2026, 11:19 CEST — PR #9 geïntegreerd; nieuwe iPhone-gate klaar
 
 ### Technische afronding
@@ -164,4 +195,4 @@ Projectfoundation, deterministische EPG-fixture, Expo/React Native strict TypeSc
 - VoiceOver/screenreader, live theme switching en expliciete current-time/progress-validatie staan open.
 - Finite fixture lifecycle rond resume na middernacht/expiry staat open.
 - CI genereert nog een lockfile vóór `npm ci`; 15 moderate advisories vereisen gerichte analyse. Nooit `npm audit fix --force`.
-- Productie-EPG/logo/artworkrechten, abonnement/paywall en final visual design liggen buiten deze directe Phase 1-stabiliteitsstap.
+- Productie-EPG/logo/artworkrechten, abonnement/paywall, exacte productietokens/fontlicentie en de definitieve Vanavond/Tonight-modules liggen buiten deze directe Phase 1-stabiliteitsstap.
