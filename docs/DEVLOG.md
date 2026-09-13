@@ -11,6 +11,42 @@ Doel: een begrijpelijk chronologisch overzicht van substantiële wijzigingen, to
 
 ---
 
+## 13 september 2026, 13:17 CEST — PR #10 fysiek afgewezen; PR #11 single-mask rebuild geïntegreerd
+
+### Toestelbewijs
+De product owner leverde `ScreenRecording_09-13-2026 13-09-16_1.MP4`. De opname is frame-voor-frame beoordeeld.
+
+PR #10 faalt de fysieke gate op twee punten:
+- rond **8,7 s** blijft links in de tijdas alleen `30` van een verder afgeknipt tijdlabel zichtbaar; exact het soort fragment dat de fix moest voorkomen;
+- tijdens snelle horizontale beweging verdwijnen meerdere programmatitels tijdelijk terwijl de blokken zelf zichtbaar blijven, waarna de titels pas na settle terugkomen. Dat botst met de fysiek geaccepteerde PR #9-eis dat partial-left titels tijdens drag/momentum bruikbaar blijven.
+
+De programmablokken zelf blijven in de opname wel visueel stabiel qua positie en breedte. Er is dus geen regressiebewijs tegen de bevroren native scrollphysics of programme geometry.
+
+Conclusie: **PR #10 is fysiek afgewezen**. De per-tick Reanimated-opacityarchitectuur mag niet terugkomen. Dat de extra animated tijdlabels de PR #9 live-titlebeschikbaarheid onder druk zetten is aannemelijk, maar nog een hypothese en geen bewezen native root cause.
+
+### PR #11 — nieuwe architectuur
+PR #11 vervangt alleen de afgewezen tijdaslaag:
+- alle halfuur-ticks en hun teksten zijn weer statische/native ScrollView-content;
+- geen Reanimated style meer per tijdlabel;
+- één kleine `TimeAxisLeftMask` staat vast aan de linker tijdasrand;
+- op de UI-thread wordt alleen de breedte van dit masker aangepast aan het zichtbare restant van het ene label dat gedeeltelijk uit beeld is;
+- zodra dat label volledig verdwenen is, wordt de maskerbreedte nul;
+- de volgende halfuurtick ligt met de bestaande layout buiten het masker;
+- de bestaande PR #9 `scrollX` shared value wordt hergebruikt;
+- programme `left`/`width`, inertia, bounce, directional lock, PR #9 edge overlay, controls en detailinteracties zijn niet gewijzigd.
+
+Gerichte pure tests dekken eerste en volgende labels, exacte boundaries, negatieve iOS-bounce en larger-text metrics.
+
+### CI en integratie
+PR-head **`8cba485c4c24bbf5160c652a13aba685c5520b3e`** passeerde **PR CI #145 / `34754026981`** volledig: installatie, strict TypeScript, lint, tests en iOS/Android/web Expo exports.
+
+PR #11 is daarna succesvol gesquasht naar main als **`9ed7113bc114911218107263b6df224940d5dd09`**.
+
+### Volgende stap
+Current `main` op dezelfde iPhone binnenhalen en één korte screen recording maken met langzaam horizontaal scrollen én een duidelijke fling. Te bevestigen: geen enkel half tijdlabel links, tijdticks blijven stabiel, programmablokken blijven geometrisch gelijk en de bevroren PR #9 partial-left programmatitels blijven tijdens drag/momentum zichtbaar/coherent.
+
+---
+
 ## 13 september 2026, 11:58 CEST — PR #9 fysiek geaccepteerd; PR #10 time-axisfix geïntegreerd
 
 ### Product-/gebruikerseffect
@@ -213,7 +249,7 @@ Projectfoundation, deterministische EPG-fixture, Expo/React Native strict TypeSc
 ---
 
 ## Doorlopende open technische punten
-- PR #10 time-axis left-edge labelcorrectie staat op main en is technisch groen; één gerichte iPhone-validatie staat nog open.
+- PR #11 single-mask time-axiscorrectie staat op main en is technisch groen; één gerichte iPhone-validatie staat nog open.
 - Android gesture/back en release-achtige performance zijn nog niet fysiek gevalideerd.
 - VoiceOver/screenreader, live theme switching en expliciete current-time/progress-validatie staan open.
 - Finite fixture lifecycle rond resume na middernacht/expiry staat open.
