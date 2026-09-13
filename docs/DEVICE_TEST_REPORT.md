@@ -1,74 +1,76 @@
 # Teevee Phase 1 — Device Test Report
 
-Vastlegging gestart: **13 september 2026, 07:04 CEST — Europe/Amsterdam**. Exacte committijd staat in GitHub.
-Gebruik alleen concrete observaties. Een wijziging in code of een groene CI is geen geslaagde toesteltest.
+Bijgewerkt tijdens de detailrespons-increment op **13 september 2026**. Codeversie `85e3d408` vastgelegd om **07:18:07 CEST (Europe/Amsterdam)**; exacte tijd van deze rapportwijziging staat in GitHub.
+Een groene CI is geen geslaagde toesteltest. Alleen concrete observaties worden als resultaat vastgelegd.
 
 ## Toestel en versies
 - Testperiode: 11–13 september 2026.
-- Platform: iOS, eigen iPhone van de product owner.
+- Platform: iOS, eigen iPhone van de product owner; netwerk wifi.
 - Toestelmodel, iOS-versie en Expo Go-versie: nog niet genoteerd.
-- Netwerk: wifi.
-- Eerste scrollretest: na `df6873e24d24cf2747da6936fab1b0f60f0d1073`; wijzigingen akkoord.
-- Latere test: 48-zenderversie; exacte lokale SHA niet doorgegeven.
-- Laatste hertest gevraagd voor code **`b13a7c5263cd663ed1d7ea35e3cfb46d70a8988a`** of documentatie-opvolger `0e9be9103ec2ff96ec63e702476b56dfd8669603`. De werkelijk geïnstalleerde lokale SHA is niet afzonderlijk bevestigd.
+- Eerste scrollretest na `df6873e2`: akkoord.
+- Latere 48-zendertest: exacte lokale SHA niet doorgegeven.
+- Scrollbaseline-hertest gevraagd voor `b13a7c5` of documentatie-opvolger `0e9be91`; kwalitatief akkoord ontvangen. Lokale SHA niet afzonderlijk bevestigd.
+- Laatste detailtest: dezelfde geïnstalleerde app, geen nieuwe runtimecode sinds het scrollakkoord.
+- Nieuwe te hertesten detailcode: PR #1, `85e3d408` of geïntegreerde opvolger met dezelfde code. **Nog niet op iPhone geaccepteerd.**
 
-## Laatste ontvangen feedback — akkoord
-Na de instructie om de standaardinertie, de doorlopende tijdlijn voorbij 16:00/over middernacht en de geanimeerde terugkeer met `Nu` te hertesten, antwoordde de product owner op 13 september 2026: **"perfect"**.
+## Laatste feedback — detail werkt, reactie voelt te traag
+De product owner meldt:
+> Openen gaat goed. Voelt wel traag. Tussen de tik, en het openen zit dusdanig veel tijd (gevoelsmatig, niet gemeten) dat het traag voelt. Zelfde geldt wanneer je de Sluiten knop indrukt.
+> Gidspositite blijft behouden.
 
-Dit is vastgelegd als **kwalitatief akkoord op die gerichte wijzigingenset**. De scrolluitloop, doorlopende dagovergang en terugkeer met `Nu` vormen voortaan de werkbaseline op deze iPhone. Er zijn geen nieuwe afzonderlijke swipeafstanden, snelheden, framerates of animatieduren gemeld. Er is ook geen afzonderlijke beoordeling van detailweergave, grotere tekst, toegankelijkheid of dark mode gegeven.
+Daaruit volgt uitsluitend:
+- Openen en sluiten functioneren.
+- De tijd- en zenderpositie blijft volgens de gebruiker behouden.
+- De reactie bij beide acties is nog niet prettig genoeg.
+- Er zijn geen milliseconden, frames, exacte toestelgegevens of afzonderlijke animatie-/wachttijdmetingen aangeleverd.
 
-## Eerdere bevindingen — aanleiding voor de wijzigingen
-De langere gids maakte het eerdere vermoeden concreter: een harde verticale swipe vanaf boven kwam ongeveer tot Docu/Muziek, circa één scherm. De product owner meldde dat dezelfde soort swipe in TVgids.nl circa twee schermen aflegde. Dit was een kwalitatieve vergelijking, geen gemeten gelijke beginsnelheid.
+## Eerder akkoord — scrollbaseline
+Op 13 september antwoordde de owner **"perfect"** na de gerichte hertest van standaardinertie, doorlopende tijdlijn voorbij 16:00/over middernacht en geanimeerde terugkeer met `Nu`. Dit blijft kwalitatief akkoord op die wijzigingenset. De nieuwe detailmelding heropent de goedgekeurde scrollinstellingen niet.
 
-Daarnaast werd gemeld:
-- Vandaag en maandag stopten horizontaal rond 16:00.
-- Vanaf maandag voelde `Nu` als een herladen/vervangen van het scherm, in plaats van terugschuiven over de daggrens.
-- Gewenst: één doorlopende tijdlijn en een geanimeerde terugkeer naar de huidige tijd.
-
-Deze punten zijn als gerichte wijzigingenset nu akkoord bevonden; de oorspronkelijke bevindingen blijven hier als geschiedenis staan.
+De oorspronkelijke aanleiding blijft als geschiedenis staan: een harde swipe kwam met snellere afremming ongeveer één scherm ver tegenover circa twee in de vergelijking met TVgids.nl; horizontale navigatie stopte rond 16:00 en `Nu` voelde vanaf maandag als schermvervanging. De continuous-timeline/normal-inertia-wijziging is daarvoor geaccepteerd. Dit waren geen metingen met identieke beginsnelheden.
 
 ## Kerncheck
 | Onderdeel | Laatste toestelobservatie | Status |
 |---|---|---|
-| App opent direct in Gids | Opent en rendert via Expo Go. | Eerder bevestigd. |
-| Horizontaal scrollen / tijdsbereik | Doorlopende tijdlijn onderdeel van de hertest waarop "perfect" is geantwoord. | Kwalitatief akkoord; geen detailmeting. |
-| Verticaal scrollen | Standaardinertie onderdeel van dezelfde geaccepteerde hertest. | Kwalitatief akkoord; `normal` behouden. |
-| Zenderkolom synchroon | Geen probleem gemeld in eerdere test. Geen afzonderlijke nieuwe meting. | Meenemen bij latere performancemeting. |
-| Boven-/onderrand | Eerdere bouncewijziging akkoord; geen nieuwe klacht. | Baseline behouden. |
-| `Nu` vanuit volgende dag | Geanimeerde terugkeer onderdeel van de geaccepteerde hertest. | Kwalitatief akkoord. |
-| Huidige-tijdlijn | Eerste screenshot rond 19:43 leek correct. | Geen nieuwe nauwkeurigheidscontrole gemeld. |
-| Voortgang lopend programma | Nog niet afzonderlijk getest. | Open. |
-| Vandaag / volgende dag | Continue overgang onderdeel van de geaccepteerde hertest. | Kwalitatief akkoord. |
-| Korte programmablokken | Nog niet afzonderlijk getest. | Open. |
-| Programmadetail openen/sluiten | Nog niet afzonderlijk getest. | Open. |
-| Light mode | Eerste screenshot zichtbaar, niet definitief beoordeeld. | Open. |
-| Dark mode | Nog niet afzonderlijk getest. | Open. |
-| Grotere systeemtekst / toegankelijkheid | Nog niet afzonderlijk getest. | Open. |
-| Android / release-achtige performance | Nog niet getest of gemeten. | Open. |
+| App opent direct in Gids | Opent en rendert via Expo Go. | Bevestigd. |
+| Horizontaal scrollen / tijdsbereik | Onderdeel van hertest met antwoord "perfect". | Kwalitatief akkoord. |
+| Verticaal scrollen | Standaardinertie geaccepteerd. | `normal` behouden. |
+| Zenderkolom synchroon | Geen eerdere klacht; geen aparte nieuwe meting. | Meenemen in performancechecks. |
+| Boven-/onderrand | Bounce eerder akkoord. | Baseline behouden. |
+| `Nu` vanuit volgende dag | Geanimeerde terugkeer geaccepteerd. | Kwalitatief akkoord. |
+| Huidige-tijdlijn | Eerste screenshot leek correct. | Geen nieuwe nauwkeurigheidsmeting. |
+| Voortgang lopend programma | Niet afzonderlijk getest. | Open. |
+| Vandaag / volgende dag | Continue overgang geaccepteerd. | Kwalitatief akkoord. |
+| Korte programmablokken | Niet afzonderlijk beoordeeld. | Open. |
+| Programmadetail openen/sluiten | Functioneert, maar beide acties voelen vertraagd. | Responsprobleem open; renderfix klaar voor hertest. |
+| Gidspositie na sluiten | Gebruiker bevestigt behoud. | Bevestigd op pre-fix-versie; na wijziging hercontroleren. |
+| Ontbrekende beschrijving | Geen afzonderlijke toesteluitkomst. | Geautomatiseerde fallback-check toegevoegd; device open. |
+| Light / dark mode | Eerste light-screenshot, geen aparte beoordeling. | Open. |
+| Grotere tekst / toegankelijkheid | Niet afzonderlijk getest. | Open. |
+| Android / release-performance | Niet getest of gemeten. | Open. |
 
-## Wijzigingen versus bewijs
-`0.995` was een onbewezen tussenstap. Na bespreking is `decelerationRate="normal"` op beide assen ingevoerd; native bounce blijft aan. Het oude 12-uursvenster is vervangen door één fixturetijdlijn van 49 uur vanaf de Amsterdamse dagstart bij openen. `Nu` en dagknoppen gebruiken dezelfde horizontale ScrollView. Kalendergrenzen gebruiken expliciet Europe/Amsterdam.
+## Wat in code is veranderd — niet verwarren met toestelbewijs
+De geselecteerde programmastatus zat in dezelfde component als de volledige gids. Dat leverde een onnodige herberekening van de programmaboom op bij openen én sluiten. De detailstatus zit nu in een kleine parent, naast een memoized Guide met een stabiele callback. De gids blijft gemount en hoeft niet opnieuw te renderen alleen door detailselectie.
 
-CI run #49 is geslaagd voor de codecommit; documentatie-opvolger `0e9be91` had een geslaagde run #50. Het nieuwe kwalitatieve iPhone-akkoord is apart bewijs voor het scrollgevoel. Het is geen volledige Phase 1-acceptatie en geen productiebenchmark.
+Bij sluiten blijft de geselecteerde tekst aanwezig tijdens de native animatie. Er is pressed-feedback toegevoegd op programmablokken en Sluiten; activering blijft na een voltooide tik. Tikken op sheettekst sluit de backdrop niet. Geen verandering aan gidsinertie, bounce, geometrie, dagovergangen of native `slide`-animatie.
 
-## Volgende gerichte validatie — programmadetail en leesbaarheid
-Gebruik de huidige geïnstalleerde app; voor alleen deze documentatie-update hoeft niets opnieuw te worden geïnstalleerd of geladen.
+Dit is een gerichte correctie van onnodig renderwerk. De precieze bijdrage aan de gevoelde vertraging is **nog niet op iPhone gemeten**. We verkorten de animatie niet tegelijk; zo blijft de volgende vergelijking zinvol.
 
-1. Open en sluit enkele programma's, waaronder een smal blok en een langere titel. Controleer of na sluiten dezelfde tijd- en zenderpositie terugkomt.
-2. Bekijk een programma zonder beschrijving. Er moet een begrijpelijke fallback staan, geen kapotte of onbedoeld lege weergave.
-3. Controleer light en dark mode en wissel tijdens gebruik. Let op leesbare titels, tijden, detailtekst en knoppen.
-4. Vergroot de systeemtekst. Controleer of inhoud bereikbaar blijft en detail nog gesloten kan worden.
+## Technische verificatie
+- Bestaande scrollcode eerder CI #49/#50; acceptatiedocumentatie #51.
+- PR-run #52 faalde op een nieuwe React DOM-typeversie die niet bij React 19.2 paste. Alleen de test-typesversiereeks is aangescherpt.
+- PR-run **#53** voor `85e3d408` is geslaagd: install, TypeScript, lint, tests en Expo-webexport.
+- Nieuwe reducerchecks en React/jsdom-tests bewaken herhaald openen/sluiten zonder extra Guide-render, dezelfde gemounte scrollhosts/offsets, juiste vervolgselectie, tekstretentie bij sluiten en fallback bij ontbrekende/lege beschrijvingen.
+- Native hosts en de klok zijn in de React-test gemockt. Dit bewijst geen native animatie, tikvertraging, toegankelijkheid, framerate of iPhone-scrollpositie. De bestaande toestelbevestiging van positie is afzonderlijk bewijs.
 
-Dit zijn geplande checks, geen vastgelegde testresultaten. Noteer model/OS wanneer beschikbaar. Registreer problemen per onderdeel; heropen het goedgekeurde scrollgevoel alleen bij een concrete regressie.
+## Volgende gerichte hertest
+Stop Metro met Control+C. Haal in `~/projects/teevee` de nieuwe versie op met `git pull --ff-only`, installeer de toegevoegde testtooling met `npm install` en start `npm run start:clean`. Open opnieuw via Expo Go; de app zelf gebruikt geen nieuwe native dependencies.
 
-## Productgevoel
-- Akkoord: de laatste gerichte combinatie van scrolluitloop, doorlopende tijdlijn en `Nu`-terugkeer.
-- Informatiedichtheid, definitief visueel ontwerp en algemene productvoorkeur zijn nog niet afzonderlijk beoordeeld.
-- Precies twee schermen per swipe is geen vastgelegde eis.
+Test enkele verschillende programma's, ook een smal blok. Let op de reactie direct na de tik en daarna op de schuifbeweging. Sluit opnieuw en controleer dat tijd- en zenderpositie behouden blijven. Meld of de reactie merkbaar directer is; geen stopwatch of verplicht verbeterpercentage nodig.
 
-## Beeldmateriaal
-- Screenshot van de eerste succesvolle iPhone-run rond 19:43 CEST staat in de ontwikkelthread.
-- Geen nieuwe screenrecording of instrumentele framerate-/velocitymeting ontvangen.
+Bij aanhoudende traagheid: profiler/screenrecording gebruiken om wachten vóór de animatie te onderscheiden van de native overgang, en later release-achtig vergelijken. Nog geen nieuwe animatieparameters gokken. Leesbaarheid, ontbrekende tekst, grotere tekst en light/dark worden daarna apart afgerond.
 
-## Samenvatting
-**Gerichte iPhone-scrollhertest akkoord.** Behoud de standaardinertie en doorlopende tijdlijn. De volgende stap is programmadetail en leesbaarheid valideren, niet verder aan de goedgekeurde inertie sleutelen. **Phase 1 blijft open** voor de overige interactie-, toegankelijkheids-, lifecycle- en Android-/performancechecks.
+## Beeldmateriaal en samenvatting
+De eerste iPhone-screenshot rond 19:43 staat in de ontwikkelthread; er is geen nieuwe opname of instrumentele meting ontvangen.
+
+**Scrollbaseline blijft akkoord. Detailfunctie en positiebehoud zijn bevestigd, maar tikrespons vraagt hertest na de rendercorrectie. Phase 1 blijft open**, inclusief leesbaarheid, toegankelijkheid, lifecycle, Android en release-achtige performance.
