@@ -1,6 +1,6 @@
 # Teevee Phase 1 — Device Test Report
 
-Bijgewerkt op **13 september 2026, 10:14 CEST — Europe/Amsterdam**. Exacte committijd staat in GitHub. Een groene CI of bundle-export is geen geslaagde toesteltest.
+Bijgewerkt op **13 september 2026, 10:20 CEST — Europe/Amsterdam**. Exacte committijd staat in GitHub. Een groene CI of bundle-export is geen geslaagde toesteltest.
 
 ## Toestel en versies
 - Eigen iPhone van de product owner; wifi; testperiode 11–13 september 2026.
@@ -45,7 +45,7 @@ Main is met rollbackcommit **`f7c9f73568341d29e518be21e0de071e4ef7877d`** terugg
 
 De product owner heeft daarna expliciet bevestigd: **Teevee opent weer normaal**. Dit is het fysieke bewijs dat de rollback de startup-regressie heeft verwijderd.
 
-## PR #7 — veilige controlherimplementatie
+## PR #7 — veilige controlherimplementatie, fysiek geaccepteerd
 Na het herstelde startupbewijs zijn alleen de controlwijzigingen opnieuw gebouwd, zonder nieuwe Reanimated/workletlogica:
 - Vandaag, Morgen en Nu staan op één horizontale regel;
 - alleen deze compacte labels hebben `maxFontSizeMultiplier=1.2`;
@@ -60,19 +60,20 @@ Technische verificatie:
 - Main-CI #105 attempt 1 faalde vóór projectchecks door npm `ETARGET` op `@csstools/css-calc@^3.4.0`.
 - De rerun van exact dezelfde main SHA, attempt 2, slaagde volledig: installatie, strict TypeScript, lint, tests en iOS/Android/web Expo exports.
 
-### Fysieke hertest om 10:14 CEST
-De product owner bevestigde op dezelfde iPhone en dezelfde vergrote systeemtekst:
+### Fysieke hertest
+De product owner bevestigde op dezelfde iPhone en dezelfde vergrote systeemtekst alle vier gevraagde punten:
 1. Teevee opent normaal;
 2. `Vandaag`, `Morgen` en `Nu` staan op één regel;
-3. de geselecteerde dag reageert direct correct en `Nu` keert terug naar de actuele tijd.
+3. de geselecteerde dag reageert direct correct en `Nu` keert terug naar de actuele tijd;
+4. horizontaal scrollen voelt nog hetzelfde/natuurlijk als de eerder geaccepteerde baseline.
 
-De gevraagde vierde observatie — of horizontale scroll nog hetzelfde aanvoelt als de eerder geaccepteerde baseline — is nog niet beantwoord en wordt daarom niet als akkoord geregistreerd.
+PR #7 is daarmee **fysiek geaccepteerd** voor zijn volledige bedoelde scope.
 
 ## Kernstatus Phase 1
 | Onderdeel | Status |
 |---|---|
 | App opent/rendert via Expo Go | **Bevestigd na rollback én PR #7** |
-| Horizontale scroll/inertie/bounce | Eerdere baseline kwalitatief akkoord; **PR #7-retstgevoel nog niet bevestigd** |
+| Horizontale scroll/inertie/bounce | **Kwalitatief opnieuw bevestigd op PR #7** |
 | Verticale scroll/inertie/bounce | Kwalitatief akkoord |
 | Detail openen/sluiten/swipe-down | Kwalitatief akkoord |
 | Grote systeemtekst chrome/alignment | **Fysiek bevestigd** |
@@ -87,11 +88,10 @@ De gevraagde vierde observatie — of horizontale scroll nog hetzelfde aanvoelt 
 | Android/release-achtige performance | Open |
 
 ## Volgende gerichte iPhone-validatie
-Er resteert voor PR #7 nog maar één vraag: **voelt horizontaal scrollen nog hetzelfde/natuurlijk als de eerder geaccepteerde baseline?**
-
-Bij `ja` is de PR #7 fysieke validatie afgerond. Bij `nee` is een concrete beschrijving van de regressie nodig voordat er weer code wordt aangepast.
-
-**Niet opnieuw beoordelen:** live meebewegen van partial-left programmatitels. Dat is bewust nog niet herbouwd.
+De volgende toesteltest is pas nodig na de nieuwe, lager-overhead implementatie van continue partial-left titelbeweging. Dan hoeft alleen te worden gecontroleerd:
+- app-start blijft stabiel;
+- titel beweegt tijdens drag én momentum mee in het zichtbare restant;
+- programmablokpositie/duur en geaccepteerde scroll voelen ongewijzigd.
 
 ## Samenvatting
-**De PR #6 startcrash is fysiek hersteld en de veilige PR #7-controlherimplementatie is op de iPhone bevestigd voor startup, éénregelige Vandaag/Morgen/Nu-controls en directe selected-state. Alleen het scrollgevoel van deze exacte build staat nog open; continue titelbeweging blijft een aparte volgende technische increment.**
+**De PR #6 startcrash is fysiek hersteld. PR #7 is volledig fysiek geaccepteerd: startup, éénregelige Vandaag/Morgen/Nu-controls, directe selected-state/`Nu`-werking en het horizontale scrollgevoel zijn goed. Alleen de continue partial-left titelbeweging resteert uit de 09:20-feedback en wordt opnieuw ontworpen met een lager-overhead pad.**
