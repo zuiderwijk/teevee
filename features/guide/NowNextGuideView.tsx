@@ -230,7 +230,9 @@ export const NowNextGuideView = memo(function NowNextGuideView({
 
   const goPrimetime = useCallback(() => {
     const primetimeIndex = slots.findIndex((slot) => formatTime(slot) === PRIMETIME_LABEL);
-    const index = primetimeIndex >= 0 ? primetimeIndex : nearestSlotIndex(slots, dayStartMs + 20.5 * 60 * 60 * 1000);
+    const index = primetimeIndex >= 0
+      ? primetimeIndex
+      : nearestSlotIndex(slots, dayStartMs + 20.5 * 60 * 60 * 1000);
     chooseSlot(index);
   }, [chooseSlot, dayStartMs, slots]);
 
@@ -271,7 +273,10 @@ export const NowNextGuideView = memo(function NowNextGuideView({
             accessibilityRole="button"
             accessibilityLabel="Ga naar primetime"
             onPress={goPrimetime}
-            style={[styles.shortcutButton, { borderColor: theme.colors.border, backgroundColor: theme.colors.surface }]}
+            style={[
+              styles.shortcutButton,
+              { borderColor: theme.colors.border, backgroundColor: theme.colors.surface },
+            ]}
           >
             <Text
               maxFontSizeMultiplier={CONTROL_MAX_FONT_SIZE_MULTIPLIER}
@@ -295,7 +300,10 @@ export const NowNextGuideView = memo(function NowNextGuideView({
           >
             <Text
               maxFontSizeMultiplier={CONTROL_MAX_FONT_SIZE_MULTIPLIER}
-              style={[styles.shortcutText, { color: live ? theme.colors.background : theme.colors.textSecondary }]}
+              style={[
+                styles.shortcutText,
+                { color: live ? theme.colors.background : theme.colors.textSecondary },
+              ]}
             >
               Nu
             </Text>
@@ -340,7 +348,7 @@ export const NowNextGuideView = memo(function NowNextGuideView({
                     styles.timeSlotText,
                     {
                       color: selected ? theme.colors.text : theme.colors.textMuted,
-                      fontWeight: selected ? '750' : '600',
+                      fontWeight: selected ? '700' : '600',
                     },
                   ]}
                 >
@@ -429,13 +437,13 @@ const styles = StyleSheet.create({
   referenceCaption: {
     fontSize: 11,
     lineHeight: 14,
-    fontWeight: '650',
+    fontWeight: '600',
   },
   referenceTime: {
     marginTop: 2,
     fontSize: 20,
     lineHeight: 24,
-    fontWeight: '780',
+    fontWeight: '800',
     letterSpacing: -0.3,
   },
   shortcutRow: {
@@ -508,7 +516,7 @@ const styles = StyleSheet.create({
   referenceTitle: {
     fontSize: 17,
     lineHeight: 21,
-    fontWeight: '780',
+    fontWeight: '800',
     letterSpacing: -0.2,
   },
   gapTitle: {
@@ -520,7 +528,7 @@ const styles = StyleSheet.create({
     marginTop: 3,
     fontSize: 12,
     lineHeight: 16,
-    fontWeight: '650',
+    fontWeight: '600',
   },
   followingList: {
     marginTop: 9,
@@ -535,7 +543,7 @@ const styles = StyleSheet.create({
     width: 48,
     fontSize: 11,
     lineHeight: 15,
-    fontWeight: '650',
+    fontWeight: '600',
     fontVariant: ['tabular-nums'],
   },
   followingTitle: {
