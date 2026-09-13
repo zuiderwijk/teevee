@@ -47,8 +47,6 @@ export function programmeVisibleContent(
   viewportX: number,
   minimumTimeWidth = GUIDE_PROGRAMME_TIME_MIN_VISIBLE_WIDTH,
 ): ProgrammeVisibleContent {
-  'worklet';
-
   const safeViewportX = Number.isFinite(viewportX) ? Math.max(0, viewportX) : 0;
   const hiddenLeft = Math.min(frame.width, Math.max(0, safeViewportX - frame.left));
   const visibleWidth = Math.max(0, frame.width - hiddenLeft);

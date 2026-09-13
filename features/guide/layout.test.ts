@@ -13,6 +13,7 @@ describe('guideLayoutForFontScale', () => {
     expect(guideLayoutForFontScale(1)).toEqual({
       fontScale: 1,
       largeText: false,
+      stackedControls: false,
       rowHeight: GUIDE_ROW_HEIGHT,
       channelWidth: GUIDE_CHANNEL_WIDTH,
       timeAxisHeight: GUIDE_TIME_AXIS_HEIGHT,
@@ -21,10 +22,11 @@ describe('guideLayoutForFontScale', () => {
     });
   });
 
-  it('grows the guide geometry for larger system text', () => {
+  it('grows the guide and gives larger-text controls their own width', () => {
     expect(guideLayoutForFontScale(1.5)).toEqual({
       fontScale: 1.5,
       largeText: true,
+      stackedControls: true,
       rowHeight: GUIDE_ROW_HEIGHT + 20,
       channelWidth: GUIDE_CHANNEL_WIDTH + 14,
       timeAxisHeight: GUIDE_TIME_AXIS_HEIGHT + 9,
@@ -33,10 +35,11 @@ describe('guideLayoutForFontScale', () => {
     });
   });
 
-  it('continues adding content room at accessibility-sized scales', () => {
+  it('continues adding horizontal room at accessibility-sized scales', () => {
     const regular = guideLayoutForFontScale(1.5);
     const accessibility = guideLayoutForFontScale(2.5);
 
+    expect(accessibility.stackedControls).toBe(true);
     expect(accessibility.rowHeight).toBeGreaterThan(regular.rowHeight);
     expect(accessibility.channelWidth).toBeGreaterThan(regular.channelWidth);
     expect(accessibility.timeAxisHeight).toBeGreaterThan(regular.timeAxisHeight);
