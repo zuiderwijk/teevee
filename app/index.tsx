@@ -3,6 +3,7 @@ import { Modal, Pressable, SafeAreaView, ScrollView, StyleSheet, Text, View } fr
 
 import type { Programme } from '@/data/domain/epg';
 import { programmeProgress } from '@/data/domain/epg';
+import { guideDayStart, GUIDE_TIME_ZONE } from '@/data/domain/guideTime';
 import { buildRuntimeGuideFixture, programmesForRuntimeChannel } from '@/data/fixtures/runtimeGuideFixture';
 import {
   buildTimeTicks,
@@ -18,14 +19,12 @@ import {
 import { useGuideClock } from '@/features/guide/useGuideClock';
 import { useTeeveeTheme } from '@/theme/useTeeveeTheme';
 
-const DAY_MS = 24 * 60 * 60 * 1000;
-
 function formatTime(timeMs: number) {
-  return new Date(timeMs).toLocaleTimeString('nl-NL', { hour: '2-digit', minute: '2-digit', timeZone: 'Europe/Amsterdam' });
+  return new Date(timeMs).toLocaleTimeString('nl-NL', { hour: '2-digit', minute: '2-digit', timeZone: GUIDE_TIME_ZONE });
 }
 
 function formatDay(timeMs: number) {
-  return new Date(timeMs).toLocaleDateString('nl-NL', { weekday: 'short', day: 'numeric', month: 'short', timeZone: 'Europe/Amsterdam' });
+  return new Date(timeMs).toLocaleDateString('nl-NL', { weekday: 'short', day: 'numeric', month: 'short', timeZone: GUIDE_TIME_ZONE });
 }
 
 export default function GuideScreen() {
@@ -43,25 +42,25 @@ export default function GuideScreen() {
   const width = timelineWidth(windowStart, windowEnd);
   const ticks = useMemo(() => buildTimeTicks(windowStart, windowEnd), [windowStart, windowEnd]);
   const nowX = timeToX(nowMs, windowStart);
-  const nowInWindow = nowMs >= windowStart && nowMs <= windowEnd;
-  const tomorrowStart = windowStart + DAY_MS;
+  const nowInWindow = nowMs >= windowStart && nowMs < windowEnd;
+  const tomorrowStart = useMemo(() => guideDayStart(initialNow, 1), [initialNow]);
 
   useEffect(() => {
     const initialX = Math.max(0, timeToX(initialNow, windowStart) - 120);
-    requestAnimationFrame(() => horizontalRef.current?.scrollTo({ x: initialX, animated: false }));
+    const frame = requestAnimationFrame(() => horizontalRef.current?.scrollTo({ x: initialX, animated: false }));
+    return () => cancelAnimationFrame(frame);
   }, [initialNow, windowStart]);
 
   const jumpToNow = () => {
-    setDayOffset(0);
-    const x = Math.max(0, timeToX(nowMs, windowStart) - 120);
+    const x = Math.max(0, timeToX(Date.now(), windowStart) - 120);
+    // Move within the same timeline; the active day follows onScroll.
     horizontalRef.current?.scrollTo({ x, animated: true });
   };
 
   const syncVerticalScroll = (y: number) => channelRef.current?.scrollTo({ y, animated: false });
 
   const changeDay = (nextOffset: number) => {
-    setDayOffset(nextOffset);
-    const targetTime = windowStart + nextOffset * DAY_MS;
+    const targetTime = nextOffset === 0 ? windowStart : tomorrowStart;
     horizontalRef.current?.scrollTo({ x: Math.max(0, timeToX(targetTime, windowStart)), animated: true });
   };
 
@@ -121,7 +120,8 @@ export default function GuideScreen() {
               })}
             </View>
 
-            <ScrollView bounces alwaysBounceVertical directionalLockEnabled decelerationRate={0.995} showsVerticalScrollIndicator scrollEventThrottle={16} onScroll={(event) => syncVerticalScroll(event.nativeEvent.contentOffset.y)}>
+            {/* Use each platform's standard momentum as the measured baseline. */}
+            <ScrollView bounces alwaysBounceVertical directionalLockEnabled decelerationRate="normal" showsVerticalScrollIndicator scrollEventThrottle={16} onScroll={(event) => syncVerticalScroll(event.nativeEvent.contentOffset.y)}>
               <View style={{ width, height: runtimeFixture.channels.length * GUIDE_ROW_HEIGHT }}>
                 {runtimeFixture.channels.map((channel, rowIndex) => (
                   <View key={channel.id} style={[styles.programmeRow, { top: rowIndex * GUIDE_ROW_HEIGHT, height: GUIDE_ROW_HEIGHT, width, borderBottomColor: theme.colors.border }]}>

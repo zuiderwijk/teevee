@@ -1,4 +1,5 @@
 import type { GuideFixture } from '../domain/epg';
+import { guideDayStart } from '../domain/guideTime';
 import { guideFixture } from './guideFixture';
 
 const FIXTURE_START_MS = Math.min(
@@ -6,17 +7,13 @@ const FIXTURE_START_MS = Math.min(
 );
 
 /**
- * Rebase the deterministic fixture onto the user's current local day for
- * manual device testing. Programme spacing, durations, ids and edge cases
- * stay deterministic; only timestamps shift.
- *
- * Teevee is Netherlands-first. Device tests therefore align the 49-hour
- * fixture to local midnight, yielding two complete guide days plus one hour.
+ * Align the deterministic fixture to midnight in Europe/Amsterdam.
+ * Programme spacing, durations, ids and edge cases remain unchanged.
+ * The 49 elapsed hours cover two complete Amsterdam calendar days, including
+ * a daylight-saving transition. This is a finite test horizon, not live EPG.
  */
 export function buildRuntimeGuideFixture(nowMs = Date.now()): GuideFixture {
-  const localMidnight = new Date(nowMs);
-  localMidnight.setHours(0, 0, 0, 0);
-  const shiftMs = localMidnight.getTime() - FIXTURE_START_MS;
+  const shiftMs = guideDayStart(nowMs) - FIXTURE_START_MS;
 
   return {
     ...guideFixture,
