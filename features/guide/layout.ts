@@ -6,7 +6,7 @@ import {
 } from './geometry';
 
 export const GUIDE_LARGE_TEXT_THRESHOLD = 1.15;
-export const GUIDE_STACKED_CONTROLS_THRESHOLD = 1.6;
+export const GUIDE_STACKED_CONTROLS_THRESHOLD = GUIDE_LARGE_TEXT_THRESHOLD;
 
 export type GuideLayoutMetrics = {
   fontScale: number;
