@@ -1,6 +1,6 @@
 # Teevee Phase 1 — Device Test Report
 
-Bijgewerkt op **13 september 2026, 10:08 CEST — Europe/Amsterdam**. Exacte committijd staat in GitHub. Een groene CI of bundle-export is geen geslaagde toesteltest.
+Bijgewerkt op **13 september 2026, 10:14 CEST — Europe/Amsterdam**. Exacte committijd staat in GitHub. Een groene CI of bundle-export is geen geslaagde toesteltest.
 
 ## Toestel en versies
 - Eigen iPhone van de product owner; wifi; testperiode 11–13 september 2026.
@@ -60,34 +60,38 @@ Technische verificatie:
 - Main-CI #105 attempt 1 faalde vóór projectchecks door npm `ETARGET` op `@csstools/css-calc@^3.4.0`.
 - De rerun van exact dezelfde main SHA, attempt 2, slaagde volledig: installatie, strict TypeScript, lint, tests en iOS/Android/web Expo exports.
 
+### Fysieke hertest om 10:14 CEST
+De product owner bevestigde op dezelfde iPhone en dezelfde vergrote systeemtekst:
+1. Teevee opent normaal;
+2. `Vandaag`, `Morgen` en `Nu` staan op één regel;
+3. de geselecteerde dag reageert direct correct en `Nu` keert terug naar de actuele tijd.
+
+De gevraagde vierde observatie — of horizontale scroll nog hetzelfde aanvoelt als de eerder geaccepteerde baseline — is nog niet beantwoord en wordt daarom niet als akkoord geregistreerd.
+
 ## Kernstatus Phase 1
 | Onderdeel | Status |
 |---|---|
-| App opent/rendert via Expo Go | **Bevestigd na rollback** |
-| Horizontale scroll/inertie/bounce | Kwalitatief akkoord op eerdere baseline |
+| App opent/rendert via Expo Go | **Bevestigd na rollback én PR #7** |
+| Horizontale scroll/inertie/bounce | Eerdere baseline kwalitatief akkoord; **PR #7-retstgevoel nog niet bevestigd** |
 | Verticale scroll/inertie/bounce | Kwalitatief akkoord |
 | Detail openen/sluiten/swipe-down | Kwalitatief akkoord |
 | Grote systeemtekst chrome/alignment | **Fysiek bevestigd** |
 | Detailinhoud + Sluiten bij grote tekst | **Fysiek bevestigd voor geteste inhoud** |
 | Partial-left geometry-safe readability | Technisch geïntegreerd; na settle fysiek waargenomen |
 | Continue titelbeweging tijdens swipe | **Open; PR #6-opzet teruggedraaid** |
-| Vandaag/Morgen/Nu op één regel | **PR #7 technisch groen; fysieke hertest nodig** |
-| Actieve dag direct na tap | **PR #7 technisch groen; fysieke hertest nodig** |
+| Vandaag/Morgen/Nu op één regel | **Fysiek bevestigd in PR #7** |
+| Actieve dag direct na tap | **Fysiek bevestigd in PR #7** |
 | VoiceOver/screenreader | Open |
 | Live theme switching | Open |
 | Progress/current-time nauwkeurigheid | Open |
 | Android/release-achtige performance | Open |
 
 ## Volgende gerichte iPhone-validatie
-Gebruik main **`c697c4e7b9bb026409962f319d26cebad75a3a56`** of nieuwer en laat dezelfde vergrote systeemtekst actief.
+Er resteert voor PR #7 nog maar één vraag: **voelt horizontaal scrollen nog hetzelfde/natuurlijk als de eerder geaccepteerde baseline?**
 
-Controleer uitsluitend:
-1. Teevee opent normaal en blijft stabiel.
-2. `Vandaag`, `Morgen` en `Nu` staan op één regel.
-3. Tik `Morgen`: Morgen wordt direct zwart/geselecteerd. Tik `Vandaag`: Vandaag wordt direct zwart/geselecteerd. Tik `Nu`: de Guide keert terug naar vandaag/de actuele tijd.
-4. Horizontale scroll voelt nog als de eerder geaccepteerde baseline.
+Bij `ja` is de PR #7 fysieke validatie afgerond. Bij `nee` is een concrete beschrijving van de regressie nodig voordat er weer code wordt aangepast.
 
 **Niet opnieuw beoordelen:** live meebewegen van partial-left programmatitels. Dat is bewust nog niet herbouwd.
 
 ## Samenvatting
-**De PR #6 native startregressie is door rollback fysiek hersteld. De controls zijn daarna als aparte, kleine niet-Reanimated increment opnieuw geïntegreerd en technisch groen op main. Alleen startup + Vandaag/Morgen/Nu + direct selected-state + scrollgevoel moeten nu nog één keer fysiek worden bevestigd.**
+**De PR #6 startcrash is fysiek hersteld en de veilige PR #7-controlherimplementatie is op de iPhone bevestigd voor startup, éénregelige Vandaag/Morgen/Nu-controls en directe selected-state. Alleen het scrollgevoel van deze exacte build staat nog open; continue titelbeweging blijft een aparte volgende technische increment.**
