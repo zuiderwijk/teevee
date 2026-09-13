@@ -44,7 +44,7 @@ function schedule(
 }
 
 describe('InMemoryScheduleRepository', () => {
-  it('distinguishes an empty repository from a valid empty query result', async () => {
+  it('distinguishes uncovered scope from a valid covered empty result', async () => {
     const repository = new InMemoryScheduleRepository();
 
     await expect(
@@ -64,6 +64,9 @@ describe('InMemoryScheduleRepository', () => {
       generatedAt: '2026-09-14T10:00:00.000Z',
       programmes: [],
     });
+    await expect(
+      repository.getSchedule({ from: '2026-09-14T18:00:00Z', to: '2026-09-14T20:00:00Z' }),
+    ).resolves.toBeNull();
   });
 
   it('queries programmes by interval intersection and canonical channel order', async () => {
@@ -134,13 +137,18 @@ describe('InMemoryScheduleRepository', () => {
       ], '2026-09-14T10:05:00Z'),
     });
 
-    expect(write).toEqual({ removedProgrammeCount: 1, storedProgrammeCount: 1 });
+    expect(write).toEqual({
+      status: 'stored',
+      removedProgrammeCount: 1,
+      storedProgrammeCount: 1,
+    });
 
     const result = await repository.getSchedule({
       from: '2026-09-14T18:00:00Z',
       to: '2026-09-14T22:00:00Z',
     });
     expect(result?.programmes.map(({ id }) => id)).toEqual(['before', 'corrected', 'after']);
+    expect(result?.generatedAt).toBe('2026-09-14T10:00:00.000Z');
   });
 
   it('keeps unrelated channels intact during a partial-channel refresh', async () => {
@@ -169,9 +177,43 @@ describe('InMemoryScheduleRepository', () => {
       to: '2026-09-14T20:00:00Z',
     });
     expect(result?.programmes.map(({ id }) => id)).toEqual(['a-new', 'b-keep']);
+    expect(result?.generatedAt).toBe('2026-09-14T10:00:00.000Z');
   });
 
-  it('never moves repository freshness backwards when an older window is replayed', async () => {
+  it('ignores an older overlapping write instead of rolling newer schedule data back', async () => {
+    const repository = new InMemoryScheduleRepository();
+    await repository.replaceWindow({
+      from: '2026-09-14T18:00:00Z',
+      to: '2026-09-14T19:00:00Z',
+      channelIds: ['channel-a'],
+      schedule: schedule([
+        programme('newer', 'channel-a', '2026-09-14T18:00:00Z', '2026-09-14T19:00:00Z'),
+      ], '2026-09-14T10:10:00Z'),
+    });
+
+    const staleWrite = await repository.replaceWindow({
+      from: '2026-09-14T18:00:00Z',
+      to: '2026-09-14T19:00:00Z',
+      channelIds: ['channel-a'],
+      schedule: schedule([
+        programme('older', 'channel-a', '2026-09-14T18:00:00Z', '2026-09-14T19:00:00Z'),
+      ], '2026-09-14T09:00:00Z'),
+    });
+
+    expect(staleWrite).toEqual({
+      status: 'ignored-stale',
+      removedProgrammeCount: 0,
+      storedProgrammeCount: 0,
+    });
+    const result = await repository.getSchedule({
+      from: '2026-09-14T18:00:00Z',
+      to: '2026-09-14T19:00:00Z',
+    });
+    expect(result?.programmes.map(({ id }) => id)).toEqual(['newer']);
+    expect(result?.generatedAt).toBe('2026-09-14T10:10:00.000Z');
+  });
+
+  it('reports freshness conservatively across adjacent coverage windows', async () => {
     const repository = new InMemoryScheduleRepository();
     await repository.replaceWindow({
       from: '2026-09-14T18:00:00Z',
@@ -180,25 +222,41 @@ describe('InMemoryScheduleRepository', () => {
       schedule: schedule([], '2026-09-14T10:10:00Z'),
     });
     await repository.replaceWindow({
-      from: '2026-09-14T17:00:00Z',
-      to: '2026-09-14T18:00:00Z',
+      from: '2026-09-14T19:00:00Z',
+      to: '2026-09-14T20:00:00Z',
       channelIds: ['channel-a'],
       schedule: schedule([], '2026-09-14T09:00:00Z'),
     });
 
     const result = await repository.getSchedule({
-      from: '2026-09-14T17:00:00Z',
-      to: '2026-09-14T19:00:00Z',
+      from: '2026-09-14T18:00:00Z',
+      to: '2026-09-14T20:00:00Z',
     });
-    expect(result?.generatedAt).toBe('2026-09-14T10:10:00.000Z');
+    expect(result?.generatedAt).toBe('2026-09-14T09:00:00.000Z');
   });
 
-  it('fails fast on invalid repository ranges and broken canonical relations', async () => {
+  it('fails fast on invalid repository ranges, scopes and broken canonical relations', async () => {
     const repository = new InMemoryScheduleRepository();
 
     await expect(
       repository.getSchedule({ from: '2026-09-14T18:00:00Z', to: '2026-09-14T18:00:00Z' }),
     ).rejects.toThrow('to must be after from');
+    await expect(
+      repository.getSchedule({
+        from: '2026-09-14T18:00:00Z',
+        to: '2026-09-14T19:00:00Z',
+        channelIds: [],
+      }),
+    ).rejects.toThrow('channelIds must contain at least one channel');
+
+    await expect(
+      repository.replaceWindow({
+        from: '2026-09-14T18:00:00Z',
+        to: '2026-09-14T19:00:00Z',
+        channelIds: [],
+        schedule: schedule([]),
+      }),
+    ).rejects.toThrow('channelIds must contain at least one channel');
 
     await expect(
       repository.replaceWindow({
