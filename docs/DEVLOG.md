@@ -11,6 +11,22 @@ Doel: een begrijpelijk chronologisch overzicht van substantiële wijzigingen, to
 
 ---
 
+## 13 september 2026, 20:47 CEST — Gedeelde app-shell header gemerged; status opnieuw gereconcilieerd
+
+De actuele repository, documentatie, branches, Pull Requests en CI zijn opnieuw volledig geïnspecteerd voordat nieuw developmentwerk begon. Daarbij bleek dat PR #27 Settings/appearance al naar `main` was gemerged als `61785994632ce397afbebf1f7c82f677719c1d23`, terwijl `PROJECT_STATE.md` dat nog als pending beschreef. Exact-main CI #232 / `34774120843` is inmiddels volledig groen: zowel `quality` als `android-native` zijn `completed/success`, inclusief de native Android debug-APK compile. De kleine iPhone appearance-smoke blijft wel expliciet open; CI is geen toestelacceptatie.
+
+Phase 2 increment 4 centraliseert aantoonbaar gedupliceerde app-shell chrome zonder de fysiek geaccepteerde Guide-mechanica te retunen. PR #29 introduceert `AppScreenHeader` voor Instellingen, Vanavond en Zoeken. Deze drie secundaire/placeholder-surfaces delen nu één semantische titel/action-structuur die bij grotere tekst kan ombreken. Vanavond en Zoeken gebruiken voortaan dezelfde `react-native-safe-area-context` primitive die Instellingen al gebruikte. Settings-navigatie en appearance-state zijn inhoudelijk niet gewijzigd.
+
+De Guide-views zijn bewust niet meegenomen: Totaal, Per zender en Nu & Straks behouden hun bestaande headers en alle scroll-, gesture-, momentum- en deferred-importgrenzen. Er zijn geen dependencies of native instellingen gewijzigd. Gerichte componenttests bewaken één semantische titel en de optionele action-slot.
+
+Verificatie op de exacte PR-head `752b6efc66915025aeeec6705d9abcdd3e6e6bbf`: PR CI #233 / `34774978748` eindigde volledig groen. `quality` passeerde `npm ci`, strict TypeScript, lint, tests en iOS/Android/web exports; `android-native` passeerde clean Expo Android prebuild en Gradle debug-APK compile. PR #29 is daarna gesquasht naar `main` als `68f60bae8ac5888054bf92973ef92041694a19f8`.
+
+De architectuurdocumentatie noemt nu expliciet de gedeelde secondary/placeholder header en houdt Guide-specifieke chrome lokaal totdat veilige extractie aantoonbaar is. De resterende fysieke acceptatie is een kleine gecombineerde iPhone-smoke voor appearance plus de nieuwe header/safe-area-presentatie; fysieke Android-interactie blijft uitgesteld door ontbreken van een Android-toestel.
+
+Volgende technische stap: een kleine Expo Router 57 screen/route error-boundary foundation met retry en theming onderzoeken/implementeren, zonder nieuwe dependency en zonder Guide-interactielogica te wijzigen. De open iPhone appearance/header-smoke blijft een acceptatiegate voordat Phase 2 als geheel kan sluiten.
+
+---
+
 ## 13 september 2026, 19:57 CEST — Work-intake en herstel Settings PR #27
 
 De nieuwe development-thread heeft main, alle PR-records, remote branches, code en projectdocumentatie geïnspecteerd. Alleen PR #27 was open. PR #26 en zijn iPhone-herstartgate waren al gesloten; de update stond nog op de Settings-branch. Het intakeverslag staat in `INTAKE_2026-09-13.md`.
@@ -319,9 +335,9 @@ Projectfoundation, deterministische EPG-fixture, Expo/React Native strict TypeSc
 ---
 
 ## Doorlopende open technische punten
-- **Phase 2 App Shell:** Settings/appearance is de actieve increment; daarna gedeelde shell/chrome, loading/error boundaries en accessibility shell-hardening.
+- **Phase 2 App Shell:** Settings/appearance en de gedeelde secondary/placeholder header zijn technisch gemerged; route/screen error boundaries en accessibility shell-hardening zijn de volgende technische hardeningstappen.
 - **Guide presentation persistence:** fysiek geaccepteerd op iPhone na PR #26; Android-devicevalidatie blijft open.
-- **Theme/accessibility:** explicit System/Light/Dark preference wordt nu gebouwd; Per zender en Nu & Straks representatieve grotere tekst fysiek samplen tijdens Phase 2/4 hardening.
+- **Theme/accessibility:** System/Light/Dark preference is technisch geïmplementeerd en exact-main CI-groen; de kleine iPhone appearance/header-smoke en representatieve grotere tekst voor Per zender/Nu & Straks blijven fysieke checks.
 - Android system/hardware Back, nested gestures en realistische performance fysiek valideren zodra een geschikt Android-toestel/interactive environment beschikbaar is; native compile-CI is geen toestelacceptatie.
 - Release-like performance buiten Expo Go valideren wanneer een geschikte build/device beschikbaar is.
 - De 15 moderate dependency-advisories vereisen gerichte analyse. Nooit `npm audit fix --force`.
