@@ -13,6 +13,6 @@ The first Per zender prototype deliberately keeps the physically accepted Totaal
 - No per-frame vertical scroll offset is bridged into React state or JS. This follows the performance lesson from Totaal PR #14/#15.
 
 ## Prototype scope
-`app/index.tsx` temporarily mounts `PerChannelGuideView` so the interaction can be tested directly. `GuideView` (Totaal) is not removed or retuned. A final shared selector belongs after both Phase 1B interaction models have been proven.
+`app/index.tsx` temporarily exposes a small Phase 1B switch between the frozen Totaal surface and `PerChannelGuideView`. Totaal remains the initial prototype view so its established integration boundary keeps running unchanged; the switch is test scaffolding, not the final presentation selector or default-view decision. The final shared Guide presentation contract belongs after both Phase 1B interaction models have been proven.
 
 Fixture channels currently have no licensed logo URLs, so the accepted textual channel fallback is shown. This must not be mistaken for the intended production logo treatment.
