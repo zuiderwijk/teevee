@@ -2,6 +2,7 @@ import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
+import { AppScreenHeader } from '@/components/AppScreenHeader';
 import {
   type AppearancePreference,
 } from '@/features/settings/appPreferences';
@@ -23,30 +24,28 @@ export default function SettingsScreen() {
   const theme = useTeeveeTheme();
   const { appearance, setAppearance } = useAppearancePreferenceSettings();
 
+  const closeButton = (
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel="Sluit instellingen"
+      onPress={() => router.canGoBack() ? router.back() : router.replace('/')}
+      style={({ pressed }) => [
+        styles.doneButton,
+        {
+          backgroundColor: theme.colors.surface,
+          borderColor: theme.colors.border,
+          opacity: pressed ? 0.72 : 1,
+        },
+      ]}
+    >
+      <Text style={[styles.doneButtonText, { color: theme.colors.textSecondary }]}>Gereed</Text>
+    </Pressable>
+  );
+
   return (
     <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.colors.background }]}>
       <ScrollView contentContainerStyle={styles.content}>
-        <View style={styles.topRow}>
-          <View>
-            <Text accessible={false} style={[styles.eyebrow, { color: theme.colors.textMuted }]}>TEEVEE</Text>
-            <Text accessibilityRole="header" style={[styles.title, { color: theme.colors.text }]}>Instellingen</Text>
-          </View>
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel="Sluit instellingen"
-            onPress={() => router.canGoBack() ? router.back() : router.replace('/')}
-            style={({ pressed }) => [
-              styles.doneButton,
-              {
-                backgroundColor: theme.colors.surface,
-                borderColor: theme.colors.border,
-                opacity: pressed ? 0.72 : 1,
-              },
-            ]}
-          >
-            <Text style={[styles.doneButtonText, { color: theme.colors.textSecondary }]}>Gereed</Text>
-          </Pressable>
-        </View>
+        <AppScreenHeader title="Instellingen" action={closeButton} />
 
         <Text style={[styles.sectionLabel, { color: theme.colors.textMuted }]}>WEERGAVE</Text>
         <View
@@ -106,27 +105,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingTop: 18,
     paddingBottom: 40,
-  },
-  topRow: {
-    minHeight: 64,
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    gap: 16,
-  },
-  eyebrow: {
-    fontSize: 10,
-    lineHeight: 13,
-    fontWeight: '800',
-    letterSpacing: 2.2,
-  },
-  title: {
-    marginTop: 2,
-    fontSize: 34,
-    lineHeight: 38,
-    fontWeight: '800',
-    letterSpacing: -1.1,
   },
   doneButton: {
     minHeight: 44,
