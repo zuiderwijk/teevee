@@ -2,7 +2,11 @@ import { describe, expect, it } from 'vitest';
 
 import type { Programme } from '@/data/domain/epg';
 
-import { edgeReadableProgramme, visibleRowRange } from './edgeReadability';
+import {
+  edgeBoundaryBucket,
+  edgeBoundaryXs,
+  edgeReadableProgramme,
+} from './edgeReadability';
 
 const windowStart = Date.parse('2026-09-13T08:00:00Z');
 const programme: Programme = {
@@ -11,6 +15,13 @@ const programme: Programme = {
   title: 'Testprogramma',
   startAt: '2026-09-13T08:00:00Z',
   endAt: '2026-09-13T09:00:00Z',
+};
+const nextProgramme: Programme = {
+  id: 'programme-2',
+  channelId: 'channel-1',
+  title: 'Volgend programma',
+  startAt: '2026-09-13T09:00:00Z',
+  endAt: '2026-09-13T09:30:00Z',
 };
 
 describe('edgeReadableProgramme', () => {
@@ -38,19 +49,25 @@ describe('edgeReadableProgramme', () => {
   });
 });
 
-describe('visibleRowRange', () => {
-  it('limits rendering to the visible rows plus small overscan', () => {
-    expect(visibleRowRange(160, 240, 80, 48, 1)).toEqual({ first: 1, last: 6 });
+describe('edge boundary switching', () => {
+  it('builds sorted visual start/end boundaries including the programme gap', () => {
+    expect(edgeBoundaryXs([programme, nextProgramme], windowStart, 3)).toEqual([0, 178, 180, 268]);
   });
 
-  it('clamps to the first and last available row', () => {
-    expect(visibleRowRange(0, 160, 80, 3, 1)).toEqual({ first: 0, last: 2 });
-    expect(visibleRowRange(800, 160, 80, 3, 1)).toEqual({ first: 2, last: 2 });
+  it('changes buckets only after crossing a boundary, not merely reaching it', () => {
+    const boundaries = [0, 178, 180, 268];
+
+    expect(edgeBoundaryBucket(boundaries, 0)).toBe(-1);
+    expect(edgeBoundaryBucket(boundaries, 0.1)).toBe(0);
+    expect(edgeBoundaryBucket(boundaries, 178)).toBe(0);
+    expect(edgeBoundaryBucket(boundaries, 178.1)).toBe(1);
+    expect(edgeBoundaryBucket(boundaries, 180)).toBe(1);
+    expect(edgeBoundaryBucket(boundaries, 180.1)).toBe(2);
+    expect(edgeBoundaryBucket(boundaries, 500)).toBe(3);
   });
 
-  it('returns null for unusable geometry', () => {
-    expect(visibleRowRange(0, 0, 80, 48)).toBeNull();
-    expect(visibleRowRange(0, 100, 0, 48)).toBeNull();
-    expect(visibleRowRange(0, 100, 80, 0)).toBeNull();
+  it('clamps invalid or negative viewport positions to the left edge', () => {
+    expect(edgeBoundaryBucket([0, 100], -20)).toBe(-1);
+    expect(edgeBoundaryBucket([0, 100], Number.NaN)).toBe(-1);
   });
 });
