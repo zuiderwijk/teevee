@@ -16,6 +16,43 @@ Dit document is bedoeld voor product- en engineeringstakeholders, niet alleen vo
 
 ---
 
+## 13 september 2026, 07:18 CEST — Detailweergave losgemaakt van het zware gidswerk
+
+Codeversie `85e3d408cfbbe73c0f7402baadaae22089650f92` vastgelegd om **07:18:07 CEST (Europe/Amsterdam)**. De eerste implementatie staat in `7ab9b73`; het resultaat is hieronder aangevuld na de geslaagde PR-controle. De exacte tijd van de documentatiecommit staat in GitHub.
+
+### Wat is veranderd
+De product owner bevestigt dat programmadetail opent en sluit en dat de gidspositie behouden blijft. De wachttijd na zowel een programmat ik als de Sluiten-knop voelt echter traag; dit is niet gemeten.
+
+Openen en sluiten zijn daarom losgemaakt van het opnieuw opbouwen van de gehele gids. De gids blijft op dezelfde plek staan en de detailweergave kan afzonderlijk veranderen. Programmablokken en Sluiten hebben ook visuele feedback tijdens indrukken. Tijdens het wegschuiven blijft de detailtekst behouden, in plaats van direct uit het paneel te verdwijnen.
+
+### Waarom
+In de vorige component veranderde detailselectie de status van hetzelfde scherm dat alle programma's doorliep. Dat is concreet onnodig renderwerk en een plausibele bijdrage aan de vertraging. Het is nog geen gemeten verklaring voor de volledige wachttijd op de iPhone.
+
+De native schuifanimatie is bewust niet aangepast: eerst het onnodige renderwerk wegnemen, daarna op hetzelfde toestel vergelijken. De geaccepteerde scrollinertie, bounce, tijdlijn en `Nu`-beweging blijven hetzelfde.
+
+### Technische details
+- Kleine routecomponent voor detailstatus, met stabiele callbacks naar een memoized `GuideView` en een aparte `ProgrammeDetail`.
+- Reducer houdt inhoud vast terwijl `visible=false` de native modal sluit; herhaalde sluitacties veranderen de status niet opnieuw.
+- Backdrop en sheet zijn siblings, zodat tikken op tekst niet per ongeluk sluit.
+- Activeren blijft op `onPress`, niet op `onPressIn`; een begonnen veegbeweging mag geen detail openen.
+- Vier reducerchecks en vijf React/jsdom-integratiecases toegevoegd. Die controleren onder meer geen extra Guide-render bij openen/sluiten, behoud van gemounte hosts/offsets, vervolgselectie en ontbrekende/lege beschrijving.
+- Geen nieuwe runtime/native dependency, geen scrollbibliotheek en geen kunstmatige animatieduur. Alleen testtooling toegevoegd: `jsdom` 29.1.1 en React DOM-types op de 19.2-reeks.
+- Werk eerst op branch `fix/detail-render-isolation` / PR #1 gecontroleerd, zodat een falende eerste testsetup niet meteen de werkende `main` vervangt.
+
+### Verificatie
+De eerste PR-run **#52** stopte tijdens installeren: een te ruime versiegrens voor React DOM-types koos 19.3, terwijl Expo op React 19.2 staat. De grens is beperkt tot `~19.2.0`, zonder runtime-upgrade of `--force`.
+
+**PR-CI #53 is geslaagd** voor `85e3d408`: installatie, TypeScript, lint, alle tests en Expo-webexport. De nieuwe React-test gebruikt de echte componenten en de 48-zenderfixture met gemockte native hosts en klok. Hij controleert rendergedrag, niet iPhone-animatie of milliseconden winst. Native tikrespons en de schuifanimatie zijn nog niet hertest. De agent kon de repository niet lokaal downloaden door netwerk/DNS-beperkingen; volledige checks zijn in GitHub Actions uitgevoerd, niet als lokale toesteltest.
+
+De nieuwe documentatie en latere integratie hebben hun eigen CI-resultaat. Geen aanname dat een toekomstige run vanzelf slaagt. Het testverslag onderscheidt bevestigd positiebehoud op de vorige versie van nog te beoordelen respons in deze versie.
+
+Bronnen voor de aanpak: [React memo](https://react.dev/reference/react/memo), [React useCallback](https://react.dev/reference/react/useCallback), [React Native performance](https://reactnative.dev/docs/performance) en [Modal](https://reactnative.dev/docs/modal). Deze bronnen beschrijven het mechanisme; ze bewijzen geen latencyverbetering in onze app.
+
+### Volgende stap
+Na groene integratie dezelfde iPhone gericht hertesten op openen/sluiten en positiebehoud. Bij blijvende vertraging eerst JS-render/commit en native presentatie onderscheiden; niet op gevoel animatieparameters veranderen. De overige leesbaarheids-, toegankelijkheids- en Androidchecks blijven open binnen Phase 1.
+
+---
+
 ## 13 september 2026, 07:04 CEST — iPhone-scrollhertest akkoord
 
 Vastlegging gestart om 07:04 CEST (Europe/Amsterdam). De exacte committijd staat in GitHub.

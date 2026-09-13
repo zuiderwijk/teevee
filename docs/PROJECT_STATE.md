@@ -1,7 +1,7 @@
 # Teevee — Canonical Project State
 
-Last updated: 2026-09-13 07:04 CEST (Europe/Amsterdam; acceptance-recording session)
-Status: ACTIVE — targeted iPhone scroll retest accepted; remaining Phase 1 checks open
+Last updated: 2026-09-13, programme-detail response increment. Code revision `85e3d408` recorded at 07:18:07 CEST (Europe/Amsterdam); exact documentation commit time is in GitHub.
+Status: ACTIVE — scroll baseline accepted; detail render isolation CI-verified, iPhone response retest pending
 Current phase: **Phase 1 — Guide Interaction Prototype**
 Previous phase: **Phase 0 — Project Foundation: COMPLETE**
 
@@ -32,68 +32,71 @@ Primary navigation later: Guide / Tonight / Search. RevenueCat preferred for sub
 Existing light/dark concepts are **Visual Direction 01 — reference, not specification**. Preserve calm premium utility, hierarchy, restrained chrome and functional density. Light is the primary exploration direction; both themes are required.
 
 ## Implementation reality
-The current Phase 1 prototype on `main` includes:
-- Expo SDK 57 / React Native / Expo Router foundation and strict TypeScript;
-- semantic light/dark theme tokens and system theme resolver;
-- Teevee-owned `Channel`, `Programme` and `GuideFixture` domain types;
-- 48 synthetic channels and 49 elapsed hours of deterministic programme data;
-- a runtime fixture aligned to the start of the Amsterdam calendar day at app launch;
-- pure `guideDayStart` calendar logic shared by the fixture and the Guide's next-day navigation;
-- tests for Amsterdam midnight, winter/summer time, 23/25-hour transition days, and year rollover;
-- fixture checks for programme availability after 16:00 on both guide days, determinism, preserved ids/durations/metadata and no source mutation;
-- a continuous timeline spanning the fixture, rather than separate 12-hour windows per day;
-- programme widths based on actual duration, half-hour ticks and compact narrow cells;
-- fixed channel column, synchronised vertical movement, and native boundary bounce;
-- `decelerationRate="normal"` on both horizontal and vertical interactive ScrollViews;
-- live current-time marker and programme progress refreshed every 30 seconds;
-- `Nu` requests animated scrolling to the current time within the same mounted timeline;
-- day buttons request animated scrolling to their calendar-day start; active-day highlighting follows horizontal scroll position;
-- programme selection with a simple bottom-sheet-style detail modal;
-- physical-device testing via Expo Go;
-- GitHub Actions CI for install, typecheck, lint, Vitest and Expo web export.
+- Expo SDK 57 / React Native / Expo Router foundation and strict TypeScript.
+- Semantic light/dark tokens and system theme resolver.
+- Teevee-owned `Channel`, `Programme` and `GuideFixture` types.
+- 48 synthetic channels and 49 elapsed hours of deterministic data, aligned at runtime to Amsterdam midnight at app launch.
+- Shared `guideDayStart` calendar logic with tests for timezones, winter/summer time, 23/25-hour transition days and year rollover.
+- Fixture checks for availability after 16:00 on both days, determinism, preserved ids/durations/metadata and no source mutation.
+- One continuous timeline, duration-based programme widths, half-hour ticks and compact narrow cells.
+- Fixed channel column, synchronised vertical movement, native bounce/directional lock and `normal` deceleration on both interactive axes.
+- Live current-time/progress updates every 30 seconds. `Nu` and day buttons animate within the same timeline; active day follows scroll position.
+- Programme detail is now a separate `ProgrammeDetail` component, alongside a memoized `GuideView`. The small route component owns selection and supplies stable callbacks.
+- Detail open/close no longer invalidates the Guide solely because selection changes. Guide clock/day/theme state remains local and can still update the Guide.
+- Closing hides the native Modal but retains its selected content during dismissal. Backdrop and sheet are siblings; taps on detail text do not dismiss it.
+- Programme cells and close button have pressed-opacity feedback. Activation remains `onPress`, not `onPressIn`, to avoid opening on the start of a scroll.
+- The native detail `animationType="slide"` remains unchanged intentionally. No invented animation duration, artificial timeout or gesture-speed multiplier.
+- CI: install, TypeScript, lint, domain tests, React/jsdom state/render regression tests and Expo web export.
 
-No external EPG provider has been integrated. No production channel logos or programme artwork are used. No new package or native module was added in the latest code increment. The latest acceptance-recording change edits documentation only.
+No external EPG provider, production logos or artwork are integrated. This increment adds only test-time `jsdom` 29.1.1 and React DOM type declarations (`~19.2.0`); no mobile runtime/native dependency or specialised scroll library.
 
 ## Latest device evidence
-On 13 September 2026 the product owner replied **"perfect"** to the requested iPhone retest of standard vertical inertia, continuous browsing beyond 16:00/across midnight, and the animated return from the next day using `Nu`.
+The owner previously answered **"perfect"** after testing standard inertia, the continuous timeline past 16:00/across midnight and animated `Nu`. This is qualitative acceptance of that targeted iPhone scroll baseline, not of every feature or production performance.
 
-Record this as **qualitative acceptance of that targeted change set**, not as an instrumented result or approval of the entire app. The earlier scroll blockers can close for this iPhone baseline. No exact new swipe distance, velocity, frame rate, animation duration or per-check measurement was supplied. The actual local commit SHA, device model, iOS version and Expo Go version remain unreported. The retest was requested against code `b13a7c5` or its documentation-only descendant `0e9be91`.
+The subsequent detail test reports:
+- opening works;
+- both the delay after tapping a programme and the delay after pressing Sluiten feel slow, subjectively and not measured;
+- **Guide position remains preserved**.
 
-Prior evidence remains relevant history: the 48-channel test with faster braking travelled roughly one screen, compared with roughly two in the owner's TVgids.nl comparison. The owner also reported the artificial 16:00 end and a reload-like return to `Nu`. These led to the now-accepted standard-inertia/continuous-timeline changes. See `docs/DEVICE_TEST_REPORT.md` for scope and outstanding checks.
+Functional opening/closing and position retention are confirmed on the pre-fix version. Response time is not accepted. No new device feedback exists yet for the render-isolation change. Local SHA, device model, iOS version and Expo Go version remain unreported. Do not fabricate timings or per-device scores.
 
 ## Verification status
-- Previous CI run **#48 failed**: the runtime-fixture test still asserted the old now-minus-19-hours start while the implementation had moved to midnight.
-- Code commit **`b13a7c5263cd663ed1d7ea35e3cfb46d70a8988a`** is verified by **CI run #49**, job `103675561490`: dependency installation, TypeScript, lint, tests and Expo web export all succeeded.
-- Documentation-only descendant **`0e9be9103ec2ff96ec63e702476b56dfd8669603`** passed **CI run #50**, as verified in the preceding development session.
-- The calendar helper was additionally executed in the agent container against explicit expected timestamps under UTC, Europe/Amsterdam, America/Los_Angeles and Asia/Tokyo process timezones. This is domain verification, not an iPhone gesture test.
-- Targeted iPhone scroll retest: now qualitatively accepted by the owner. This does not validate unrelated flows, Android or release performance.
-- The full mobile runtime was not run in the agent container. CI web export is not a native build, device-performance benchmark or visual acceptance test.
-- This acceptance record changes documentation only; any new documentation CI run has its own result and is not presumed successful.
+- Historical code `b13a7c5` passed CI #49; docs descendant `0e9be91` passed #50. Scroll-acceptance docs commit `4bab4c7` passed #51.
+- The new change is developed in **PR #1**, branch `fix/detail-render-isolation`, before integration into `main`.
+- First PR CI **#52 failed during dependency resolution**: the caret React DOM types range resolved to 19.3, conflicting with the Expo-compatible React 19.2 types. Fixed by restricting the new type package to `~19.2.0`; no force/legacy-peer-deps workaround and no runtime upgrade.
+- **CI #53**, run `34739960655`, job `103677884599`, passed for branch head **`85e3d408cfbbe73c0f7402baadaae22089650f92`**: installation, strict TypeScript, lint, tests and Expo web export.
+- Four reducer cases cover open, close-with-content-retention, repeated close and selecting another programme. Five React/jsdom cases cover repeated open/close, no extra Guide renders, same mounted scroll hosts/offsets, correct subsequent content and absent/blank descriptions.
+- The React integration tests use actual route/Guide/detail components and the 48-channel fixture, with mocked native hosts and clock. They are NOT native layout, gesture, animation, accessibility or response-time benchmarks.
+- Local repository download in the agent container was unavailable (network/DNS). Full checks ran in GitHub Actions, not locally or on a physical device.
+- This documentation revision and any resulting merge have their own CI outcome; verify them before claiming the latest main is green.
+
+## Diagnosis and boundaries
+The previous route stored selection beside the entire Guide rendering loop. Changing selection therefore also traversed the large programme tree. This is a concrete unnecessary render path and a plausible contributor to latency, not an instrumented proof of the entire perceived delay. The memo boundary removes that path; tests guard it. Native presentation and development-mode overhead may still contribute and must be distinguished if the same-device retest remains slow.
+
+Keep native slide unchanged for this comparison. Do not claim an exact latency gain or shorten/disable the animation merely to hide unmeasured render work.
 
 ## Accepted scroll baseline
-Keep platform-standard `normal` on both interactive axes and retain the current native bounce/directional lock and continuous timeline. Do not tune to exactly two screens, multiply finger movement, or reopen the accepted scroll-feel check without a concrete new problem. The earlier assumption that vertical navigation inherently needs faster braking is not a product requirement.
-
-This is the working iPhone interaction baseline, not a claim that the current renderer is proven at production volume or on Android.
+Keep platform-standard `normal` on both axes, current bounce/directional lock, timeline geometry, day navigation and `Nu`. Do not target exactly two screens per swipe or multiply finger movement. This is the accepted working iPhone baseline, not proof of production volume or Android behaviour.
 
 ## Phase 1 objective and exit gate
-Validate the defining UX/technical risk: a high-performance touch-native two-dimensional TV Guide using realistic deterministic fixtures. Do not leave Phase 1 until movement preserves context, Now is predictable, current/progress state is understandable, cells remain useful at practical density, light/dark both work, selection works, domain/layout logic is tested and representative iOS/Android interaction is validated.
+Validate a high-performance touch-native two-dimensional Guide with realistic fixtures. Do not leave Phase 1 until movement preserves context, Now is predictable, progress understandable, cells usable, light/dark and selection work, domain/layout logic is tested and representative iOS/Android interaction is validated.
 
-## Remaining checks and known risks
-- Validate programme detail opening/closing, missing descriptions, narrow cells, larger system text and light/dark on device; record model/OS and findings.
-- Programme progress correctness and accessibility still need explicit checks. The word "perfect" is not evidence for these separate flows.
-- No separately reported measurement of label synchronisation during longer flings/bounce; include it in later performance checks, without requiring another identical scroll-feel retest now.
-- Android validation and native release-like performance measurement remain outstanding.
-- The 49-hour fixture is finite and anchored at launch, not an infinite guide. Long-running sessions, resume after midnight and behaviour after the fixture expires need a lifecycle pass. The final partial day also needs explicit date-label treatment before Phase 1 exit.
-- Standard ScrollViews currently render the fixture without specialised virtualisation. The full 48-channel/multi-day rendering load still needs device measurement; qualitative iPhone acceptance is not proof of production performance.
-- CI still generates its lockfile before `npm ci`; dependency reproducibility needs cleanup. Run #48 reported 15 moderate dependency advisories, not yet triaged. Do not use a forced dependency upgrade as an automatic fix.
-- Production schedule/metadata/logo/artwork rights, supplier reliability, exact subscription price/trial/paywall and final visual design remain later gates.
+## Remaining checks and risks
+- Same-device detail responsiveness retest after this fix, including position retention and repeated open/close. Native slide has not been timed.
+- Missing metadata, short cells, larger system text, light/dark, screen-reader behaviour and progress correctness still need explicit device checks. Detail height/large-text reachability remains open; this increment does not claim to solve that.
+- Label synchronisation during longer flings/bounce needs measurement; do not demand another identical scroll-feel acceptance test without a regression.
+- Android and native release-like performance remain open. Full 48-channel/multi-day load still needs instrumented measurement.
+- Fixture is finite and anchored at launch. Resume after midnight, expiry and final partial-day labels need a lifecycle pass.
+- Guide clock updates still trigger Guide work independently of modal selection; profile and address if device evidence warrants it.
+- CI still generates a lockfile before `npm ci`. Dependency reproducibility and the 15 moderate advisories reported in earlier CI remain untriaged; do not force-upgrade dependencies.
+- Production data/metadata/logo/artwork rights, supplier reliability, subscription price/trial/paywall and final design remain later gates.
 
 ## EXACT NEXT STEP
-**Complete a focused Phase 1 programme-detail and readability validation pass: inspect the current implementation, add or run appropriate automated regression checks where possible, and obtain only the remaining device observations for opening/closing detail, missing metadata, short programme cells, larger system text and light/dark. Record each actual result in `docs/DEVICE_TEST_REPORT.md`; keep the accepted scroll baseline unchanged.**
+**After verifying integration CI, retest programme-detail responsiveness on the same iPhone with the updated checkout: open/close several different programmes, compare delay before movement versus the slide itself, and confirm the Guide retains its time/channel position. Record only actual observations in `docs/DEVICE_TEST_REPORT.md`. If latency persists, profile the JS commit and native presentation separately before tuning animation; otherwise proceed to the remaining readability/accessibility checks. Keep the accepted scroll baseline unchanged.**
 
-The owner's Mac is at `~/projects/teevee`. GitHub changes do not update that checkout automatically. Stop Metro with Control+C, use `git pull --ff-only`, then `npm run start:clean` when new app code is ready. The current acceptance record changes documentation only, so the owner need not reload or reinstall for it.
+The owner's Mac checkout is `~/projects/teevee`. GitHub changes do not update it automatically. Stop Metro with Control+C, `git pull --ff-only`, `npm install` to include the added test tooling, then `npm run start:clean` and reopen through Expo Go. No Expo Go reinstall/native rebuild is required by this source-only runtime change. Do not suggest `npm audit fix --force`.
 
-Do not introduce real EPG, subscriptions, accounts, Tonight, enrichment or specialised virtualisation in this validation pass. Android and the other open Phase 1 gates remain required before Phase 2.
+Do not introduce real EPG, subscriptions, accounts, Tonight, enrichment or specialised virtualisation here. Phase 1 remains open.
 
 ## Resume instruction
-> Read `AGENTS.md` and `docs/PROJECT_STATE.md` from `zuiderwijk/teevee`. Execute the EXACT NEXT STEP autonomously where possible, follow the Definition of Done, and update PROJECT_STATE and the Dutch timestamped DEVLOG with evidence. Ask only when a choice crosses the approval boundaries or when physical-device input is genuinely required. Never substitute CI success for device acceptance.
+> Read `AGENTS.md` and `docs/PROJECT_STATE.md`. Execute EXACT NEXT STEP where possible, respect the Definition of Done, and update PROJECT_STATE and Dutch timestamped DEVLOG with evidence. Ask only for genuine product choices or physical-device input. Never substitute CI success for device acceptance.
