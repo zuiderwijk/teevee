@@ -73,9 +73,14 @@ export default function GuideScreen() {
   }, [nowNextComponent]);
 
   useEffect(() => {
-    if (initialPreferredPresentation === 'now-next') {
+    if (initialPreferredPresentation !== 'now-next') return;
+
+    // A persisted Nu & Straks preference still respects the proven deferred-load
+    // boundary: let the shell complete its first frame before evaluating the module.
+    const frame = requestAnimationFrame(() => {
       void loadAndShowNowNext();
-    }
+    });
+    return () => cancelAnimationFrame(frame);
   }, [initialPreferredPresentation, loadAndShowNowNext]);
 
   const persistPresentationPreference = useCallback((nextPresentation: GuidePresentation) => {
