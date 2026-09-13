@@ -1,5 +1,7 @@
-import { SafeAreaView, StyleSheet, Text, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { StyleSheet, Text, View } from 'react-native';
 
+import { AppScreenHeader } from '@/components/AppScreenHeader';
 import { SettingsButton } from '@/components/SettingsButton';
 import { useTeeveeTheme } from '@/theme/useTeeveeTheme';
 
@@ -7,16 +9,12 @@ export default function TonightScreen() {
   const theme = useTeeveeTheme();
 
   return (
-    <>
-      <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.colors.background }]}>
-        <View style={styles.content}>
-          <SettingsButton />
-          <Text accessible={false} style={[styles.eyebrow, { color: theme.colors.textMuted }]}>TEEVEE</Text>
-          <Text accessibilityRole="header" style={[styles.title, { color: theme.colors.text }]}>Vanavond</Text>
-          <Text style={[styles.body, { color: theme.colors.textSecondary }]}>Deze sectie krijgt later de keuzehulp voor wat er vanavond op televisie is.</Text>
-        </View>
-      </SafeAreaView>
-    </>
+    <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.colors.background }]}>
+      <View style={styles.content}>
+        <AppScreenHeader title="Vanavond" action={<SettingsButton />} />
+        <Text style={[styles.body, { color: theme.colors.textSecondary }]}>Deze sectie krijgt later de keuzehulp voor wat er vanavond op televisie is.</Text>
+      </View>
+    </SafeAreaView>
   );
 }
 
@@ -27,19 +25,6 @@ const styles = StyleSheet.create({
   content: {
     paddingHorizontal: 20,
     paddingTop: 18,
-  },
-  eyebrow: {
-    fontSize: 10,
-    lineHeight: 13,
-    fontWeight: '800',
-    letterSpacing: 2.2,
-  },
-  title: {
-    marginTop: 2,
-    fontSize: 34,
-    lineHeight: 38,
-    fontWeight: '800',
-    letterSpacing: -1.1,
   },
   body: {
     marginTop: 18,
