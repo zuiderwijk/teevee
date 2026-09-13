@@ -1,6 +1,6 @@
 # Teevee Phase 1 — Device Test Report
 
-Bijgewerkt op **13 september 2026, 14:07 CEST — Europe/Amsterdam**. Exacte committijd staat in GitHub. Een groene CI of bundle-export is geen geslaagde toesteltest.
+Bijgewerkt op **13 september 2026, 14:16 CEST — Europe/Amsterdam**. Exacte committijd staat in GitHub. Een groene CI of bundle-export is geen geslaagde toesteltest.
 
 ## Toestel en versies
 - Eigen iPhone van de product owner; wifi; testperiode 11–13 september 2026.
@@ -19,7 +19,7 @@ PR #11 is fysiek geaccepteerd voor de afzonderlijke time-axis clippingcorrectie:
 PR #12 is fysiek geaccepteerd voor sterke forward/reverse beweging: de reverse-scroll titelblanking komt niet terug en de PR #9/PR #11-baselines blijven intact.
 
 ## Dark mode en grotere systeemtekst
-De eerder aangeleverde dark-mode Guide- en detailbeelden zijn beoordeeld; vraag ze niet opnieuw op. Dark mode is visueel bruikbaar, maar formele screenreader-/live-themevalidatie staat nog open.
+De eerder aangeleverde dark-mode Guide- en detailbeelden zijn beoordeeld; vraag ze niet opnieuw op. Dark mode is visueel bruikbaar. PR #13 bewijst technisch dat de system-theme hook live updates ontvangt, maar de echte iOS light↔dark wissel terwijl de app open blijft moet nog fysiek worden gevalideerd.
 
 Bij duidelijk vergrote systeemtekst vond de eerste test clipping in `Gids` en daglabels. PR #4 corrigeerde dit. De hertest om **08:59** bevestigde `Gids`, `Nu`, daglabels en tijdas volledig zichtbaar, zenderrail/programmarijen uitgelijnd en programmadetail plus `Sluiten` bereikbaar. Deze gerichte large-text/chrome-correctie is fysiek geaccepteerd.
 
@@ -90,7 +90,7 @@ Framecontrole van de tijdas:
 Conclusie voor de geïsoleerde PR #11-doelstelling: **de single-mask time-axis correctie is fysiek geaccepteerd.**
 
 ### Tegelijk blootgelegd: reverse-scroll title blanking
-Dezelfde opname laat rond **7,0–7,4 s** een ander probleem zeer duidelijk zien: meerdere zichtbare programmeblokken zijn tijdelijk volledig zonder titeltekst tijdens een snelle scroll terug naar eerdere tijden. Dit bleek een stale `readabilityViewportX` in de oudere PR #5 settled-readabilityberekening.
+Dezelfde opname laat rond **7,0–7,4 s** meerdere zichtbare programmeblokken tijdelijk zonder titeltekst zien tijdens een snelle scroll terug naar eerdere tijden. Dit bleek een stale `readabilityViewportX` in de oudere PR #5 settled-readabilityberekening.
 
 ## PR #12 — reverse-scroll title blanking fix: fysiek geaccepteerd
 PR #12 wijzigt alleen de pure settled-readability helper:
@@ -118,6 +118,28 @@ Frame-voor-frame controle laat zien:
 
 Conclusie: **PR #12 is fysiek geaccepteerd.** De reverse-scroll stale-state correctie wordt samen met PR #9 en PR #11 als Guide-interactiebaseline bevroren.
 
+## PR #13 — VoiceOver-semantiek + live system-theme switching: technisch groen
+PR #13 is een semantische/accessibility-increment en verandert geen Guide-geometrie, scrollphysics of gestures.
+
+Wijzigingen:
+- de visuele vaste zenderrail is uit de accessibility-traversal gehaald om 48 losse, dubbele zenderannouncements vóór programma-inhoud te voorkomen;
+- de visuele halfuurtijdas is uit de accessibility-traversal gehaald omdat ieder programmablok zijn eigen begin/eindtijd aankondigt;
+- het decoratieve `TEEVEE`-eyebrow wordt niet apart aangekondigd; `Gids` blijft een header;
+- ieder programmebutton-label bevat nu zender + titel + begin/eindtijd + `nu bezig` indien actueel;
+- ieder programmebutton heeft de hint `Opent programmadetails`;
+- Programme Detail behoudt `accessibilityViewIsModal`, accessibility escape en de close-label `Programmadetails sluiten`.
+
+Automatische dekking:
+- de Guide-integratietest controleert self-contained programme-labels en dat de visuele rails verborgen zijn voor accessibility;
+- de bestaande detailtest controleert accessibility escape;
+- een nieuwe `useTeeveeTheme` render-test bewijst live **light → dark → light** op dezelfde gemounte component zonder remount en controleert de null→light fallback.
+
+Technische verificatie:
+- PR-head **`766be594f6e8af193e3f9b364c7c6378a7c210df`** passeerde PR CI #158 / **`34756492990`** volledig: install, strict TypeScript, lint, tests en iOS/Android/web Expo exports;
+- PR #13 is gesquasht naar main als **`a8651b26c2521b53d0077bbd499862c3b1b71ed2`**.
+
+Deze technische dekking bewijst niet hoe VoiceOver op het echte toestel focust/spreekt en bewijst niet de native iOS Appearance-transition in Expo Go. Daarvoor resteert één gerichte fysieke gate.
+
 ## Kernstatus Phase 1
 | Onderdeel | Status |
 |---|---|
@@ -126,20 +148,31 @@ Conclusie: **PR #12 is fysiek geaccepteerd.** De reverse-scroll stale-state corr
 | Verticale scroll/inertie/bounce | Kwalitatief akkoord |
 | Detail openen/sluiten/swipe-down | Kwalitatief akkoord |
 | Grote systeemtekst chrome/alignment | **Fysiek bevestigd** |
-| PR #5 settled partial-left readability | **Fysiek bevestigd incl. PR #12 reverse-scroll correctie** |
-| PR #8 live edge readability | **Fysiek afgewezen** |
 | PR #9 native-synced edge readability | **Fysiek geaccepteerd / frozen baseline** |
-| PR #10 time-axis per-tick opacity | **Fysiek afgewezen** |
 | PR #11 single left-edge time-axis mask | **Fysiek geaccepteerd** |
 | PR #12 reverse-scroll title blanking | **Fysiek geaccepteerd** |
 | Vandaag/Morgen/Nu op één regel | **Fysiek bevestigd in PR #7** |
-| VoiceOver/screenreader | Open — volgende Phase 1-gate |
-| Live theme switching | Open — volgende Phase 1-gate |
+| PR #13 VoiceOver semantics | **Technisch groen; fysieke VoiceOver-gate nodig** |
+| PR #13 live theme switching | **Automatisch bewezen; fysieke iOS Appearance-gate nodig** |
 | Progress/current-time nauwkeurigheid | Open |
 | Android/release-achtige performance | Open |
 
-## Volgende validatie
-De volgende technische increment richt zich op VoiceOver/screenreader-semantiek en live system-theme switching. Na technische CI-groen volgt alleen een gerichte toestelcheck van de daadwerkelijk niet automatiseerbare aspecten: VoiceOver focus/volgorde/labels en een light↔dark systeemwissel terwijl Teevee geopend blijft.
+## Volgende fysieke validatie — PR #13
+Gebruik current `main`. Geen scrollretour of brede regressietest nodig.
+
+### VoiceOver
+1. Zet VoiceOver aan en begin bovenaan de Guide.
+2. `Gids`, `Vandaag`, `Morgen` en `Ga naar nu` moeten logisch bereikbaar zijn.
+3. De vaste visuele zenderrail en de losse halfuur-tijdas mogen niet als lange afzonderlijke focusreeksen tussen de controls en programmablokken verschijnen.
+4. Focus meerdere programmablokken. Ze moeten zender, titel en begin/eindtijd spreken; een actueel programma mag bovendien `nu bezig` spreken. De actiehint moet duidelijk maken dat details geopend worden.
+5. Open één Programme Detail. De inhoud en `Programmadetails sluiten` moeten bereikbaar zijn. Sluit één keer met VoiceOver twee-vinger-scrub/accessibility escape.
+
+### Live theme
+1. Laat Teevee geopend.
+2. Schakel iOS Appearance Light → Dark → Light. De Guide moet direct meeschakelen zonder reload/herstart.
+3. Open Programme Detail en wissel nog één keer. Zowel sheet als statusbar moeten direct de nieuwe appearance volgen.
+
+Een korte screen recording is voldoende voor de theme-switch. Voor VoiceOver graag daarnaast één korte geschreven observatie van de uitgesproken volgorde/labels wanneer de opname de VoiceOver-audio niet bruikbaar vastlegt.
 
 ## Samenvatting
-**De 14:04-opname accepteert PR #12 fysiek: ook tijdens een sterke reverse fling blijven programmatitels zichtbaar en PR #9/PR #11 blijven intact. De Guide-scroll/readabilityreeks PR #9 + PR #11 + PR #12 is daarmee fysiek gesloten. De volgende Phase 1-gate is accessibility/VoiceOver plus live theme switching.**
+**De 14:04-opname accepteert PR #12 fysiek en sluit de Guide-scroll/readabilityreeks PR #9 + PR #11 + PR #12. PR #13 is technisch volledig groen en maakt programma-items screenreader-self-contained, verwijdert dubbele rail/tijdas-noise uit accessibility en bewijst live systeemthemawisseling automatisch. Alleen de gerichte native VoiceOver + iOS Appearance-check staat nog open.**
