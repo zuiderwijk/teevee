@@ -1,7 +1,7 @@
 # Teevee — Canonical Project State
 
-Last updated: 2026-09-13 10:08 CEST (Europe/Amsterdam). Exact commit time is in GitHub.
-Status: ACTIVE — Phase 1 Guide prototype; PR #6 startup regression is rolled back and physically recovered; safe one-row controls are reintroduced on main pending one focused iPhone retest
+Last updated: 2026-09-13 10:14 CEST (Europe/Amsterdam). Exact commit time is in GitHub.
+Status: ACTIVE — Phase 1 Guide prototype; PR #6 startup regression is rolled back and physically recovered; safe PR #7 controls are now physically confirmed for startup, one-row layout and selected-state behavior
 Current phase: **Phase 1 — Guide Interaction Prototype**
 Previous phase: **Phase 0 — Project Foundation: COMPLETE**
 
@@ -40,7 +40,7 @@ One Guide destination with a locally remembered presentation preference remains 
 - Optional `Channel.logoUrl` exists. Target treatment is logo first, channel name second, with full accessible textual identity and text fallback.
 - Totaal adapts content geometry to larger system text. The tested iPhone large-text chrome correction is accepted.
 - PR #5 provides a geometry-safe partial-left readability treatment: after horizontal drag/momentum settles, title/start-time content can shift inside the unchanged programme block to the visible remainder. Programme `left` and duration-based `width` stay truthful.
-- Main now again shows **Vandaag · Morgen · Nu** on one row. Only these compact labels cap font scaling at 1.2x; Guide content itself continues to follow larger system text.
+- Main shows **Vandaag · Morgen · Nu** on one row. Only these compact labels cap font scaling at 1.2x; Guide content itself continues to follow larger system text.
 - Explicit Vandaag/Morgen taps update selected state immediately and are guarded against temporary scroll-driven flips during their own animated jump. `Nu` restores today/current time.
 - The continuous during-swipe title movement attempted in PR #6 is **not currently implemented**; it remains an open requirement pending a lower-overhead approach.
 - CI runs install, strict TypeScript, lint, tests and iOS/Android/web Expo bundle exports. Bundle export is not a signed/native device test.
@@ -89,8 +89,16 @@ PR #7 head **`67925d17913f5eac1aa00417f17bbf880e3724a9`** passed CI #104 / run `
 
 Main CI #105 attempt 1 failed before install because npm temporarily reported `ETARGET` for transitive package `@csstools/css-calc@^3.4.0`; no code/test step ran. A rerun of the same exact main SHA, attempt 2, passed install, strict TypeScript, lint, all tests and iOS/Android/web exports. Treat the first failure as an external registry-resolution failure, not a code failure.
 
+### Physical validation at 10:14 CEST
+On the same iPhone and enlarged-system-text setup, the product owner confirmed:
+1. Teevee opens normally;
+2. Vandaag, Morgen and Nu stay on one row;
+3. Morgen/Vandaag selected-state changes immediately as intended and Nu returns to the current time.
+
+The fourth requested observation — whether horizontal scrolling still feels exactly like the previously accepted baseline — was not answered yet and therefore remains unconfirmed for this PR #7 retest.
+
 ## Remaining Phase 1 work
-- physically confirm main `c697c4e7...` still opens normally and that Vandaag/Morgen/Nu behave as intended on the same enlarged-text iPhone setup;
+- obtain only the missing PR #7 confirmation that horizontal scrolling still feels like the accepted baseline;
 - design a lower-overhead continuous partial-left title treatment before rebuilding during-swipe movement;
 - VoiceOver/screen-reader behaviour and live theme switching;
 - explicit progress/current-time accuracy checks;
@@ -101,9 +109,7 @@ Main CI #105 attempt 1 failed before install because npm temporarily reported `E
 - production EPG/logo/artwork rights/reliability, pricing/trial/paywall and final visual design are later gates.
 
 ## EXACT NEXT STEP
-**On the same iPhone and the same enlarged-system-text setting, pull main `c697c4e7b9bb026409962f319d26cebad75a3a56` or newer, restart Metro cleanly and confirm: (1) Teevee still opens normally; (2) Vandaag, Morgen and Nu stay on one row; (3) tapping Morgen makes Morgen immediately selected/black, tapping Vandaag makes Vandaag immediately selected/black, and Nu returns to today/current time; (4) horizontal scrolling still feels like the accepted baseline. Do not retest continuous partial-left title movement yet; that behavior was intentionally left on the safe PR #5 settled-update implementation.**
-
-Owner checkout: `~/projects/teevee`. Test with: stop Metro using Control+C, run `git pull --ff-only`, then `npm run start:clean`, and reopen Expo Go.
+**Ask only whether horizontal scrolling on the current PR #7 main build still feels the same as the previously accepted baseline. If yes, close the PR #7 physical validation and proceed to design a lower-overhead continuous partial-left title treatment. If no, capture the concrete scroll regression before changing anything else.**
 
 ## Resume instruction
 > Read AGENTS.md and PROJECT_STATE. Execute EXACT NEXT STEP where possible, follow the Definition of Done, and update this state plus Dutch timestamped DEVLOG with evidence. Ask only for product choices or genuinely necessary physical-device observations. Never substitute CI or a mock for device acceptance.
