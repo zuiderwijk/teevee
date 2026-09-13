@@ -1,80 +1,134 @@
-import {
-  forwardRef,
-  useCallback,
-  useEffect,
-  useImperativeHandle,
-  useMemo,
-  useRef,
-  useState,
-} from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
+import Animated, {
+  useAnimatedReaction,
+  useAnimatedStyle,
+  type SharedValue,
+} from 'react-native-reanimated';
+import { scheduleOnRN } from 'react-native-worklets';
 
 import type { GuideFixture, Programme } from '@/data/domain/epg';
 import { useTeeveeTheme } from '@/theme/useTeeveeTheme';
 
-import { edgeReadableProgramme, visibleRowRange } from './edgeReadability';
 import {
-  GUIDE_PROGRAMME_TIME_MIN_VISIBLE_WIDTH,
-  programmeContentMode,
-} from './geometry';
+  edgeBoundaryBucket,
+  edgeBoundaryXs,
+  edgeReadableProgramme,
+  type EdgeReadableProgramme,
+} from './edgeReadability';
+import { programmeContentMode } from './geometry';
 import type { GuideLayoutMetrics } from './layout';
 
 const MIN_READABLE_TEXT_WIDTH = 16;
-
-type ViewportState = {
-  x: number;
-  y: number;
-};
-
-export type EdgeReadabilityOverlayHandle = {
-  updateHorizontal: (x: number) => void;
-  updateVertical: (y: number) => void;
-  setViewport: (x: number, y: number) => void;
-};
 
 type EdgeReadabilityOverlayProps = {
   fixture: GuideFixture;
   layout: GuideLayoutMetrics;
   windowStart: number;
   viewportWidth: number;
-  viewportHeight: number;
   nowMs: number;
   nowX: number;
   nowInWindow: boolean;
+  scrollX: SharedValue<number>;
+  scrollY: SharedValue<number>;
 };
 
-function finiteOrZero(value: number) {
-  return Number.isFinite(value) ? value : 0;
+type EdgeRowProps = {
+  edge: EdgeReadableProgramme | null;
+  rowIndex: number;
+  rowHeight: number;
+  viewportWidth: number;
+  largeText: boolean;
+  nowMs: number;
+  scrollX: SharedValue<number>;
+  textColor: string;
+  programmeColor: string;
+  currentProgrammeColor: string;
+};
+
+function EdgeRow({
+  edge,
+  rowIndex,
+  rowHeight,
+  viewportWidth,
+  largeText,
+  nowMs,
+  scrollX,
+  textColor,
+  programmeColor,
+  currentProgrammeColor,
+}: EdgeRowProps) {
+  const startX = edge?.frame.left ?? 0;
+  const endX = edge ? edge.frame.left + edge.frame.width : 0;
+  const hasEdge = edge !== null;
+  const contentMode = edge ? programmeContentMode(edge.frame.width) : 'compact';
+  const horizontalPadding = contentMode === 'compact' ? 5 : 8;
+  const startMs = edge ? Date.parse(edge.programme.startAt) : 0;
+  const endMs = edge ? Date.parse(edge.programme.endAt) : 0;
+  const isCurrent = hasEdge && nowMs >= startMs && nowMs < endMs;
+  const leavesProgressVisible = isCurrent && contentMode !== 'compact';
+  const topInset = leavesProgressVisible ? 14 : 4;
+  const bottomInset = 4;
+
+  const animatedStyle = useAnimatedStyle(() => {
+    if (!hasEdge) return { width: 0, opacity: 0, borderTopRightRadius: 0, borderBottomRightRadius: 0 };
+
+    const x = scrollX.value;
+    const remaining = Math.max(0, endX - x);
+    const width = Math.min(viewportWidth, remaining);
+    const active = x > startX && x < endX;
+    const endVisible = remaining <= viewportWidth;
+
+    return {
+      width,
+      opacity: active && width >= MIN_READABLE_TEXT_WIDTH ? 1 : 0,
+      borderTopRightRadius: endVisible && !leavesProgressVisible ? 8 : 0,
+      borderBottomRightRadius: endVisible ? 8 : 0,
+    };
+  }, [endX, hasEdge, leavesProgressVisible, startX, viewportWidth]);
+
+  return (
+    <Animated.View
+      style={[
+        styles.edgeMask,
+        {
+          top: rowIndex * rowHeight + topInset,
+          height: Math.max(0, rowHeight - topInset - bottomInset),
+          paddingHorizontal: horizontalPadding,
+          paddingVertical: contentMode === 'compact' ? 6 : 7,
+          backgroundColor: isCurrent ? currentProgrammeColor : programmeColor,
+        },
+        animatedStyle,
+      ]}
+    >
+      <Text
+        numberOfLines={1}
+        ellipsizeMode="tail"
+        style={[
+          styles.title,
+          contentMode === 'compact' ? styles.titleCompact : null,
+          largeText ? styles.titleLargeText : null,
+          { color: textColor },
+        ]}
+      >
+        {edge?.programme.title ?? ''}
+      </Text>
+    </Animated.View>
+  );
 }
 
-function formatTime(timeMs: number) {
-  return new Date(timeMs).toLocaleTimeString('nl-NL', {
-    hour: '2-digit',
-    minute: '2-digit',
-    timeZone: 'Europe/Amsterdam',
-  });
-}
-
-export const EdgeReadabilityOverlay = forwardRef<
-  EdgeReadabilityOverlayHandle,
-  EdgeReadabilityOverlayProps
->(function EdgeReadabilityOverlay(
-  {
-    fixture,
-    layout,
-    windowStart,
-    viewportWidth,
-    viewportHeight,
-    nowMs,
-    nowX,
-    nowInWindow,
-  },
-  ref,
-) {
+export function EdgeReadabilityOverlay({
+  fixture,
+  layout,
+  windowStart,
+  viewportWidth,
+  nowMs,
+  nowX,
+  nowInWindow,
+  scrollX,
+  scrollY,
+}: EdgeReadabilityOverlayProps) {
   const theme = useTeeveeTheme();
-  const [viewport, setViewportState] = useState<ViewportState>({ x: 0, y: 0 });
-  const pendingViewportRef = useRef<ViewportState>({ x: 0, y: 0 });
-  const frameRef = useRef<number | null>(null);
 
   const programmesByChannel = useMemo(() => {
     const map = new Map<string, Programme[]>();
@@ -83,119 +137,60 @@ export const EdgeReadabilityOverlay = forwardRef<
     return map;
   }, [fixture]);
 
-  const scheduleViewport = useCallback((next: Partial<ViewportState>) => {
-    pendingViewportRef.current = {
-      x: next.x ?? pendingViewportRef.current.x,
-      y: next.y ?? pendingViewportRef.current.y,
-    };
-
-    if (frameRef.current !== null) return;
-    frameRef.current = requestAnimationFrame(() => {
-      frameRef.current = null;
-      setViewportState({ ...pendingViewportRef.current });
-    });
-  }, []);
-
-  useImperativeHandle(
-    ref,
-    () => ({
-      updateHorizontal: (x) => scheduleViewport({ x: Math.max(0, finiteOrZero(x)) }),
-      updateVertical: (y) => scheduleViewport({ y: finiteOrZero(y) }),
-      setViewport: (x, y) =>
-        scheduleViewport({ x: Math.max(0, finiteOrZero(x)), y: finiteOrZero(y) }),
-    }),
-    [scheduleViewport],
+  const boundaries = useMemo(
+    () => edgeBoundaryXs(fixture.programmes, windowStart, layout.minuteWidth),
+    [fixture.programmes, layout.minuteWidth, windowStart],
   );
 
-  useEffect(
-    () => () => {
-      if (frameRef.current !== null) cancelAnimationFrame(frameRef.current);
+  const buildEdges = useCallback(
+    (viewportX: number) =>
+      fixture.channels.map((channel) =>
+        edgeReadableProgramme(
+          programmesByChannel.get(channel.id) ?? [],
+          viewportX,
+          viewportWidth,
+          windowStart,
+          layout.minuteWidth,
+        ),
+      ),
+    [fixture.channels, layout.minuteWidth, programmesByChannel, viewportWidth, windowStart],
+  );
+
+  const [activeEdges, setActiveEdges] = useState<Array<EdgeReadableProgramme | null>>(() =>
+    buildEdges(0),
+  );
+
+  const syncEdgesForX = useCallback(
+    (viewportX: number) => {
+      setActiveEdges(buildEdges(viewportX));
     },
-    [],
+    [buildEdges],
   );
 
-  const range = visibleRowRange(
-    viewport.y,
-    viewportHeight,
-    layout.rowHeight,
-    fixture.channels.length,
-    1,
+  useEffect(() => {
+    syncEdgesForX(scrollX.value);
+  }, [scrollX, syncEdgesForX]);
+
+  useAnimatedReaction(
+    () => edgeBoundaryBucket(boundaries, scrollX.value),
+    (bucket, previousBucket) => {
+      if (bucket === previousBucket) return;
+      scheduleOnRN(syncEdgesForX, scrollX.value);
+    },
+    [boundaries, syncEdgesForX],
   );
 
-  const masks = [];
-  if (range) {
-    for (let rowIndex = range.first; rowIndex <= range.last; rowIndex += 1) {
-      const channel = fixture.channels[rowIndex];
-      if (!channel) continue;
-      const programmes = programmesByChannel.get(channel.id) ?? [];
-      const edge = edgeReadableProgramme(
-        programmes,
-        viewport.x,
-        viewportWidth,
-        windowStart,
-        layout.minuteWidth,
-      );
-      if (!edge) continue;
+  const gridStyle = useAnimatedStyle(() => ({
+    transform: [{ translateY: -scrollY.value }],
+  }));
 
-      const contentMode = programmeContentMode(Math.min(edge.frame.width, edge.visibleWidth));
-      const horizontalPadding = contentMode === 'compact' ? 5 : 8;
-      if (edge.visibleWidth - horizontalPadding * 2 < MIN_READABLE_TEXT_WIDTH) continue;
-
-      const startMs = Date.parse(edge.programme.startAt);
-      const endMs = Date.parse(edge.programme.endAt);
-      const isCurrent = nowMs >= startMs && nowMs < endMs;
-      const leavesProgressVisible = isCurrent && contentMode !== 'compact';
-      const titleLines = layout.largeText ? 1 : contentMode === 'comfortable' ? 2 : 1;
-      const showProgrammeTime =
-        !layout.largeText &&
-        contentMode !== 'compact' &&
-        edge.visibleWidth >= GUIDE_PROGRAMME_TIME_MIN_VISIBLE_WIDTH;
-      const rowTop = rowIndex * layout.rowHeight - viewport.y;
-      const topInset = leavesProgressVisible ? 14 : 4;
-      const bottomInset = 4;
-
-      masks.push(
-        <View
-          key={`${channel.id}-${edge.programme.id}`}
-          style={[
-            styles.edgeMask,
-            {
-              top: rowTop + topInset,
-              width: edge.visibleWidth,
-              height: Math.max(0, layout.rowHeight - topInset - bottomInset),
-              paddingHorizontal: horizontalPadding,
-              paddingVertical: contentMode === 'compact' ? 6 : 7,
-              justifyContent: layout.largeText || !showProgrammeTime ? 'center' : 'space-between',
-              backgroundColor: isCurrent ? theme.colors.programmeCurrent : theme.colors.programme,
-              borderTopRightRadius: edge.endsInViewport && !leavesProgressVisible ? 8 : 0,
-              borderBottomRightRadius: edge.endsInViewport ? 8 : 0,
-            },
-          ]}
-        >
-          <Text
-            numberOfLines={titleLines}
-            ellipsizeMode="tail"
-            style={[
-              styles.title,
-              contentMode === 'compact' ? styles.titleCompact : null,
-              { color: theme.colors.text },
-            ]}
-          >
-            {edge.programme.title}
-          </Text>
-          {showProgrammeTime ? (
-            <Text numberOfLines={1} style={[styles.time, { color: theme.colors.textMuted }]}>
-              {formatTime(startMs)}
-            </Text>
-          ) : null}
-        </View>,
-      );
-    }
-  }
-
-  const currentTimeLeft = nowX - viewport.x;
-  const showCurrentTimeLine =
-    nowInWindow && currentTimeLeft >= 0 && currentTimeLeft <= viewportWidth;
+  const currentTimeStyle = useAnimatedStyle(() => {
+    const left = nowX - scrollX.value;
+    return {
+      opacity: nowInWindow && left >= 0 && left <= viewportWidth ? 1 : 0,
+      transform: [{ translateX: left }],
+    };
+  }, [nowInWindow, nowX, viewportWidth]);
 
   return (
     <View
@@ -206,18 +201,42 @@ export const EdgeReadabilityOverlay = forwardRef<
       importantForAccessibility="no-hide-descendants"
       style={styles.overlay}
     >
-      {masks}
-      {showCurrentTimeLine ? (
-        <View
+      <Animated.View
+        style={[
+          styles.grid,
+          { height: fixture.channels.length * layout.rowHeight },
+          gridStyle,
+        ]}
+      >
+        {fixture.channels.map((channel, rowIndex) => (
+          <EdgeRow
+            key={channel.id}
+            edge={activeEdges[rowIndex] ?? null}
+            rowIndex={rowIndex}
+            rowHeight={layout.rowHeight}
+            viewportWidth={viewportWidth}
+            largeText={layout.largeText}
+            nowMs={nowMs}
+            scrollX={scrollX}
+            textColor={theme.colors.text}
+            programmeColor={theme.colors.programme}
+            currentProgrammeColor={theme.colors.programmeCurrent}
+          />
+        ))}
+      </Animated.View>
+
+      {nowInWindow ? (
+        <Animated.View
           style={[
             styles.currentTimeLine,
-            { left: currentTimeLeft, backgroundColor: theme.colors.currentTime },
+            { backgroundColor: theme.colors.currentTime },
+            currentTimeStyle,
           ]}
         />
       ) : null}
     </View>
   );
-});
+}
 
 const styles = StyleSheet.create({
   overlay: {
@@ -229,16 +248,24 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
     zIndex: 3,
   },
+  grid: {
+    position: 'absolute',
+    left: 0,
+    top: 0,
+    right: 0,
+  },
   edgeMask: {
     position: 'absolute',
     left: 0,
     overflow: 'hidden',
+    justifyContent: 'center',
   },
   title: { fontSize: 12, fontWeight: '600' },
   titleCompact: { fontSize: 10 },
-  time: { fontSize: 10, marginTop: 4 },
+  titleLargeText: { fontSize: 12 },
   currentTimeLine: {
     position: 'absolute',
+    left: 0,
     top: 0,
     bottom: 0,
     width: 2,
