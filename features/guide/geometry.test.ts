@@ -1,7 +1,14 @@
 import { describe, expect, it } from 'vitest';
 
 import type { Programme } from '@/data/domain/epg';
-import { buildTimeTicks, programmeContentMode, programmeFrame, timeToX, timelineWidth } from './geometry';
+import {
+  buildTimeTicks,
+  programmeContentMode,
+  programmeFrame,
+  programmeVisibleContent,
+  timeToX,
+  timelineWidth,
+} from './geometry';
 
 const start = Date.parse('2026-09-11T18:00:00.000Z');
 
@@ -39,5 +46,34 @@ describe('Guide timeline geometry', () => {
     expect(programmeContentMode(45)).toBe('compact');
     expect(programmeContentMode(90)).toBe('standard');
     expect(programmeContentMode(180)).toBe('comfortable');
+  });
+
+  it('keeps programme geometry fixed while moving text into the visible remainder', () => {
+    const frame = { left: 100, width: 178 };
+
+    expect(programmeVisibleContent(frame, 160)).toEqual({
+      contentTranslateX: 60,
+      visibleWidth: 118,
+      canShowStartTime: true,
+    });
+    expect(frame).toEqual({ left: 100, width: 178 });
+  });
+
+  it('hides the start-time label before it can be shown as a clipped fragment', () => {
+    const frame = { left: 100, width: 178 };
+
+    expect(programmeVisibleContent(frame, 230)).toEqual({
+      contentTranslateX: 130,
+      visibleWidth: 48,
+      canShowStartTime: false,
+    });
+  });
+
+  it('does not shift programme content before the viewport reaches the programme', () => {
+    expect(programmeVisibleContent({ left: 100, width: 178 }, 80)).toEqual({
+      contentTranslateX: 0,
+      visibleWidth: 178,
+      canShowStartTime: true,
+    });
   });
 });

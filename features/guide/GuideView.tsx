@@ -20,6 +20,7 @@ import {
   buildTimeTicks,
   programmeContentMode,
   programmeFrame,
+  programmeVisibleContent,
   timeToX,
   timelineWidth,
 } from './geometry';
@@ -58,6 +59,7 @@ export const GuideView = memo(function GuideView({ onSelectProgramme }: GuideVie
   const [initialNow] = useState(() => Date.now());
   const runtimeFixture = useMemo(() => buildRuntimeGuideFixture(initialNow), [initialNow]);
   const [dayOffset, setDayOffset] = useState(0);
+  const [readabilityViewportX, setReadabilityViewportX] = useState(0);
   const nowMs = useGuideClock();
 
   const windowStart = useMemo(
@@ -77,12 +79,14 @@ export const GuideView = memo(function GuideView({ onSelectProgramme }: GuideVie
 
   useEffect(() => {
     const initialX = Math.max(0, timeToX(initialNow, windowStart, layout.minuteWidth) - 120);
+    setReadabilityViewportX(initialX);
     const frame = requestAnimationFrame(() => horizontalRef.current?.scrollTo({ x: initialX, animated: false }));
     return () => cancelAnimationFrame(frame);
   }, [initialNow, layout.minuteWidth, windowStart]);
 
   const jumpToNow = () => {
     const x = Math.max(0, timeToX(Date.now(), windowStart, layout.minuteWidth) - 120);
+    setReadabilityViewportX(x);
     horizontalRef.current?.scrollTo({ x, animated: true });
   };
 
@@ -90,10 +94,9 @@ export const GuideView = memo(function GuideView({ onSelectProgramme }: GuideVie
 
   const changeDay = (nextOffset: number) => {
     const targetTime = nextOffset === 0 ? windowStart : tomorrowStart;
-    horizontalRef.current?.scrollTo({
-      x: Math.max(0, timeToX(targetTime, windowStart, layout.minuteWidth)),
-      animated: true,
-    });
+    const x = Math.max(0, timeToX(targetTime, windowStart, layout.minuteWidth));
+    setReadabilityViewportX(x);
+    horizontalRef.current?.scrollTo({ x, animated: true });
   };
 
   return (
@@ -201,6 +204,8 @@ export const GuideView = memo(function GuideView({ onSelectProgramme }: GuideVie
             const visibleDay = visibleTime >= tomorrowStart ? 1 : 0;
             if (visibleDay !== dayOffset) setDayOffset(visibleDay);
           }}
+          onScrollEndDrag={(event) => setReadabilityViewportX(Math.max(0, event.nativeEvent.contentOffset.x))}
+          onMomentumScrollEnd={(event) => setReadabilityViewportX(Math.max(0, event.nativeEvent.contentOffset.x))}
         >
           <View style={{ width }}>
             <View
@@ -264,8 +269,12 @@ export const GuideView = memo(function GuideView({ onSelectProgramme }: GuideVie
                       const isCurrent = nowMs >= startMs && nowMs < endMs;
                       const progress = isCurrent ? programmeProgress(programme, new Date(nowMs)) : 0;
                       const contentMode = programmeContentMode(frame.width);
+                      const visibleContent = programmeVisibleContent(frame, readabilityViewportX);
+                      const horizontalPadding = contentMode === 'compact' ? 5 : 8;
+                      const readableTextWidth = Math.max(0, visibleContent.visibleWidth - horizontalPadding * 2);
                       const titleLines = layout.largeText ? 1 : contentMode === 'comfortable' ? 2 : 1;
-                      const showProgrammeTime = !layout.largeText && contentMode !== 'compact';
+                      const showProgrammeTime =
+                        !layout.largeText && contentMode !== 'compact' && visibleContent.canShowStartTime;
 
                       return (
                         <Pressable
@@ -299,22 +308,32 @@ export const GuideView = memo(function GuideView({ onSelectProgramme }: GuideVie
                               />
                             </View>
                           ) : null}
-                          <Text
-                            numberOfLines={titleLines}
-                            ellipsizeMode="tail"
+                          <View
                             style={[
-                              styles.programmeTitle,
-                              contentMode === 'compact' ? styles.programmeTitleCompact : null,
-                              { color: theme.colors.text },
+                              styles.programmeTextContent,
+                              {
+                                width: readableTextWidth,
+                                transform: [{ translateX: visibleContent.contentTranslateX }],
+                              },
                             ]}
                           >
-                            {programme.title}
-                          </Text>
-                          {showProgrammeTime ? (
-                            <Text numberOfLines={1} style={[styles.programmeTime, { color: theme.colors.textMuted }]}>
-                              {formatTime(startMs)}
+                            <Text
+                              numberOfLines={titleLines}
+                              ellipsizeMode="tail"
+                              style={[
+                                styles.programmeTitle,
+                                contentMode === 'compact' ? styles.programmeTitleCompact : null,
+                                { color: theme.colors.text },
+                              ]}
+                            >
+                              {programme.title}
                             </Text>
-                          ) : null}
+                            {showProgrammeTime ? (
+                              <Text numberOfLines={1} style={[styles.programmeTime, { color: theme.colors.textMuted }]}>
+                                {formatTime(startMs)}
+                              </Text>
+                            ) : null}
+                          </View>
                         </Pressable>
                       );
                     })}
@@ -409,6 +428,7 @@ const styles = StyleSheet.create({
   },
   programmeCompact: { paddingHorizontal: 5, paddingVertical: 6, justifyContent: 'center' },
   programmeLargeText: { justifyContent: 'center' },
+  programmeTextContent: { flexShrink: 1 },
   programmeTitle: { fontSize: 12, fontWeight: '600' },
   programmeTitleCompact: { fontSize: 10 },
   programmeTime: { fontSize: 10, marginTop: 4 },
