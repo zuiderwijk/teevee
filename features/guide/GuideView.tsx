@@ -28,7 +28,6 @@ import {
   buildTimeTicks,
   programmeContentMode,
   programmeFrame,
-  programmeVisibleContent,
   timeToX,
   timelineWidth,
 } from './geometry';
@@ -75,7 +74,6 @@ export const GuideView = memo(function GuideView({ onSelectProgramme }: GuideVie
   const [initialNow] = useState(() => Date.now());
   const runtimeFixture = useMemo(() => buildRuntimeGuideFixture(initialNow), [initialNow]);
   const [dayOffset, setDayOffset] = useState<GuideDayOffset>(0);
-  const [readabilityViewportX, setReadabilityViewportX] = useState(0);
   const nowMs = useGuideClock();
 
   const windowStart = useMemo(
@@ -104,13 +102,8 @@ export const GuideView = memo(function GuideView({ onSelectProgramme }: GuideVie
     }
   }, []);
 
-  const handleHorizontalEndDrag = useCallback((viewportX: number) => {
-    setReadabilityViewportX(viewportX);
-  }, []);
-
   const handleHorizontalMomentumEnd = useCallback(
     (viewportX: number) => {
-      setReadabilityViewportX(viewportX);
       syncVisibleDayOffset(guideDayOffsetForViewport(viewportX, tomorrowStartX));
     },
     [syncVisibleDayOffset, tomorrowStartX],
@@ -136,16 +129,12 @@ export const GuideView = memo(function GuideView({ onSelectProgramme }: GuideVie
         // to JS can queue work behind a programme tap immediately after a fling.
         scrollX.value = Math.max(0, event.contentOffset.x);
       },
-      onEndDrag: (event) => {
-        const viewportX = Math.max(0, event.contentOffset.x);
-        scheduleOnRN(handleHorizontalEndDrag, viewportX);
-      },
       onMomentumEnd: (event) => {
         const viewportX = Math.max(0, event.contentOffset.x);
         scheduleOnRN(handleHorizontalMomentumEnd, viewportX);
       },
     },
-    [handleHorizontalEndDrag, handleHorizontalMomentumEnd, scrollX],
+    [handleHorizontalMomentumEnd, scrollX],
   );
 
   const verticalScrollHandler = useAnimatedScrollHandler(
@@ -161,7 +150,6 @@ export const GuideView = memo(function GuideView({ onSelectProgramme }: GuideVie
 
   useEffect(() => {
     const initialX = Math.max(0, timeToX(initialNow, windowStart, layout.minuteWidth) - 120);
-    setReadabilityViewportX(initialX);
     visibleDayOffsetRef.current = 0;
     scrollX.value = initialX;
     scrollY.value = 0;
@@ -175,7 +163,6 @@ export const GuideView = memo(function GuideView({ onSelectProgramme }: GuideVie
     const x = Math.max(0, timeToX(Date.now(), windowStart, layout.minuteWidth) - 120);
     setDayOffset(0);
     visibleDayOffsetRef.current = 0;
-    setReadabilityViewportX(x);
     horizontalRef.current?.scrollTo({ x, animated: true });
   };
 
@@ -184,7 +171,6 @@ export const GuideView = memo(function GuideView({ onSelectProgramme }: GuideVie
     const x = Math.max(0, timeToX(targetTime, windowStart, layout.minuteWidth));
     setDayOffset(nextOffset);
     visibleDayOffsetRef.current = nextOffset;
-    setReadabilityViewportX(x);
     horizontalRef.current?.scrollTo({ x, animated: true });
   };
 
@@ -359,12 +345,10 @@ export const GuideView = memo(function GuideView({ onSelectProgramme }: GuideVie
                       const isCurrent = nowMs >= startMs && nowMs < endMs;
                       const progress = isCurrent ? programmeProgress(programme, new Date(nowMs)) : 0;
                       const contentMode = programmeContentMode(frame.width);
-                      const visibleContent = programmeVisibleContent(frame, readabilityViewportX);
                       const horizontalPadding = contentMode === 'compact' ? 5 : 8;
-                      const readableTextWidth = Math.max(0, visibleContent.visibleWidth - horizontalPadding * 2);
+                      const programmeTextWidth = Math.max(0, frame.width - horizontalPadding * 2);
                       const titleLines = layout.largeText ? 1 : contentMode === 'comfortable' ? 2 : 1;
-                      const showProgrammeTime =
-                        !layout.largeText && contentMode !== 'compact' && visibleContent.canShowStartTime;
+                      const showProgrammeTime = !layout.largeText && contentMode !== 'compact';
                       const accessibilityStatus = isCurrent ? ', nu bezig' : '';
 
                       return (
@@ -403,10 +387,7 @@ export const GuideView = memo(function GuideView({ onSelectProgramme }: GuideVie
                           <View
                             style={[
                               styles.programmeTextContent,
-                              {
-                                width: readableTextWidth,
-                                transform: [{ translateX: visibleContent.contentTranslateX }],
-                              },
+                              { width: programmeTextWidth },
                             ]}
                           >
                             <Text
