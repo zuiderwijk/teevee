@@ -11,6 +11,12 @@ import type {
   ScheduleWindowWriteResult,
 } from './scheduleRepository';
 
+type CoverageSegment = {
+  fromMs: number;
+  toMs: number;
+  generatedAtMs: number;
+};
+
 function timestamp(value: string, label: string): number {
   const parsed = Date.parse(value);
   if (!Number.isFinite(parsed)) throw new Error(`${label} must be a valid timestamp`);
@@ -67,6 +73,79 @@ function validateSchedule(schedule: GuideSchedule): {
   return { generatedAtMs, channelsById, programmesById };
 }
 
+function replaceCoverage(
+  current: CoverageSegment[],
+  fromMs: number,
+  toMs: number,
+  generatedAtMs: number,
+): CoverageSegment[] {
+  const next: CoverageSegment[] = [];
+
+  for (const segment of current) {
+    if (!intersects(segment.fromMs, segment.toMs, fromMs, toMs)) {
+      next.push(segment);
+      continue;
+    }
+    if (segment.fromMs < fromMs) {
+      next.push({ ...segment, toMs: fromMs });
+    }
+    if (segment.toMs > toMs) {
+      next.push({ ...segment, fromMs: toMs });
+    }
+  }
+
+  next.push({ fromMs, toMs, generatedAtMs });
+  next.sort((left, right) => left.fromMs - right.fromMs || left.toMs - right.toMs);
+
+  const merged: CoverageSegment[] = [];
+  for (const segment of next) {
+    const previous = merged[merged.length - 1];
+    if (
+      previous &&
+      previous.toMs === segment.fromMs &&
+      previous.generatedAtMs === segment.generatedAtMs
+    ) {
+      previous.toMs = segment.toMs;
+    } else {
+      merged.push({ ...segment });
+    }
+  }
+  return merged;
+}
+
+function hasNewerCoverage(
+  segments: CoverageSegment[],
+  fromMs: number,
+  toMs: number,
+  generatedAtMs: number,
+): boolean {
+  return segments.some(
+    (segment) =>
+      intersects(segment.fromMs, segment.toMs, fromMs, toMs) &&
+      segment.generatedAtMs > generatedAtMs,
+  );
+}
+
+function coveredFreshness(
+  segments: CoverageSegment[],
+  fromMs: number,
+  toMs: number,
+): number | null {
+  let cursor = fromMs;
+  let oldestGeneratedAtMs = Number.POSITIVE_INFINITY;
+
+  for (const segment of segments) {
+    if (segment.toMs <= cursor) continue;
+    if (segment.fromMs > cursor) return null;
+
+    oldestGeneratedAtMs = Math.min(oldestGeneratedAtMs, segment.generatedAtMs);
+    cursor = Math.max(cursor, segment.toMs);
+    if (cursor >= toMs) return oldestGeneratedAtMs;
+  }
+
+  return null;
+}
+
 /**
  * Deterministic reference implementation for repository semantics and tests.
  * It is intentionally not a production persistence choice.
@@ -74,16 +153,33 @@ function validateSchedule(schedule: GuideSchedule): {
 export class InMemoryScheduleRepository implements ScheduleRepository {
   private readonly channels = new Map<Channel['id'], Channel>();
   private readonly programmes = new Map<Programme['id'], Programme>();
-  private generatedAtMs: number | null = null;
+  private readonly coverageByChannel = new Map<Channel['id'], CoverageSegment[]>();
 
   async replaceWindow(input: ScheduleWindowWrite): Promise<ScheduleWindowWriteResult> {
     const [fromMs, toMs] = windowBounds(input.from, input.to);
     const validated = validateSchedule(input.schedule);
     const replacementChannelIds = new Set(input.channelIds);
+    if (replacementChannelIds.size === 0) {
+      throw new Error('channelIds must contain at least one channel');
+    }
 
     for (const channelId of replacementChannelIds) {
       if (!validated.channelsById.has(channelId)) {
         throw new Error(`Replacement channel ${channelId} is missing from the canonical schedule`);
+      }
+      if (
+        hasNewerCoverage(
+          this.coverageByChannel.get(channelId) ?? [],
+          fromMs,
+          toMs,
+          validated.generatedAtMs,
+        )
+      ) {
+        return {
+          status: 'ignored-stale',
+          removedProgrammeCount: 0,
+          storedProgrammeCount: 0,
+        };
       }
     }
 
@@ -110,32 +206,51 @@ export class InMemoryScheduleRepository implements ScheduleRepository {
       storedProgrammeCount += 1;
     }
 
-    this.generatedAtMs =
-      this.generatedAtMs === null
-        ? validated.generatedAtMs
-        : Math.max(this.generatedAtMs, validated.generatedAtMs);
+    for (const channelId of replacementChannelIds) {
+      this.coverageByChannel.set(
+        channelId,
+        replaceCoverage(
+          this.coverageByChannel.get(channelId) ?? [],
+          fromMs,
+          toMs,
+          validated.generatedAtMs,
+        ),
+      );
+    }
 
-    return { removedProgrammeCount, storedProgrammeCount };
+    return { status: 'stored', removedProgrammeCount, storedProgrammeCount };
   }
 
   async getSchedule(query: GuideScheduleQuery): Promise<GuideSchedule | null> {
     const [fromMs, toMs] = windowBounds(query.from, query.to);
-    if (this.generatedAtMs === null) return null;
+    if (query.channelIds !== undefined && query.channelIds.length === 0) {
+      throw new Error('channelIds must contain at least one channel when provided');
+    }
 
     const selectedChannelIds =
       query.channelIds === undefined
-        ? new Set(this.channels.keys())
-        : new Set(query.channelIds);
+        ? [...this.channels.keys()]
+        : [...new Set(query.channelIds)];
+    if (selectedChannelIds.length === 0) return null;
 
+    let oldestGeneratedAtMs = Number.POSITIVE_INFINITY;
+    for (const channelId of selectedChannelIds) {
+      if (!this.channels.has(channelId)) return null;
+      const freshness = coveredFreshness(this.coverageByChannel.get(channelId) ?? [], fromMs, toMs);
+      if (freshness === null) return null;
+      oldestGeneratedAtMs = Math.min(oldestGeneratedAtMs, freshness);
+    }
+
+    const selectedSet = new Set(selectedChannelIds);
     const channels = [...this.channels.values()]
-      .filter((channel) => selectedChannelIds.has(channel.id))
+      .filter((channel) => selectedSet.has(channel.id))
       .sort((left, right) => left.sortOrder - right.sortOrder || left.id.localeCompare(right.id))
       .map((channel) => ({ ...channel }));
 
     const channelOrder = new Map(channels.map((channel, index) => [channel.id, index]));
     const programmes = [...this.programmes.values()]
       .filter((programme) => {
-        if (!selectedChannelIds.has(programme.channelId)) return false;
+        if (!selectedSet.has(programme.channelId)) return false;
         const [startMs, endMs] = programmeBounds(programme);
         return intersects(startMs, endMs, fromMs, toMs);
       })
@@ -151,7 +266,7 @@ export class InMemoryScheduleRepository implements ScheduleRepository {
       .map((programme) => ({ ...programme }));
 
     return {
-      generatedAt: new Date(this.generatedAtMs).toISOString(),
+      generatedAt: new Date(oldestGeneratedAtMs).toISOString(),
       timezone: 'Europe/Amsterdam',
       channels,
       programmes,
