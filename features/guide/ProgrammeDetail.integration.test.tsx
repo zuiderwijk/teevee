@@ -112,13 +112,15 @@ vi.mock('react-native-gesture-handler', async () => {
 });
 vi.mock('react-native-reanimated', async () => {
   const { useState } = await import('react');
-  const { View } = await import('react-native');
+  const { ScrollView, View } = await import('react-native');
   return {
-    default: { View },
+    default: { View, ScrollView },
     useSharedValue: function useSharedValue<T>(initial: T) {
       const [value] = useState(() => ({ value: initial }));
       return value;
     },
+    useAnimatedScrollHandler: (handlers: unknown) => handlers,
+    useAnimatedReaction: vi.fn(),
     useAnimatedStyle: (callback: NonNullable<typeof motion.readStyle>) => {
       motion.readStyle = callback;
       return callback();
@@ -128,7 +130,10 @@ vi.mock('react-native-reanimated', async () => {
     ReduceMotion: { System: 'system' },
   };
 });
-vi.mock('react-native-worklets', () => ({ scheduleOnRN: (callback: () => void) => queueMicrotask(callback) }));
+vi.mock('react-native-worklets', () => ({
+  scheduleOnRN: (callback: (...args: unknown[]) => void, ...args: unknown[]) =>
+    queueMicrotask(() => callback(...args)),
+}));
 
 let container: HTMLDivElement;
 let root: Root;
