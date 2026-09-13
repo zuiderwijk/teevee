@@ -58,11 +58,14 @@ export function visibleRowRange(
 
   const safeY = Number.isFinite(viewportY) ? Math.max(0, viewportY) : 0;
   const safeOverscan = Math.max(0, Math.floor(overscanRows));
-  const first = Math.max(0, Math.floor(safeY / rowHeight) - safeOverscan);
+  const first = Math.min(
+    rowCount - 1,
+    Math.max(0, Math.floor(safeY / rowHeight) - safeOverscan),
+  );
   const last = Math.min(
     rowCount - 1,
     Math.ceil((safeY + viewportHeight) / rowHeight) + safeOverscan,
   );
 
-  return { first, last };
+  return { first, last: Math.max(first, last) };
 }
