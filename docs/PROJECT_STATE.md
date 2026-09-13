@@ -1,7 +1,7 @@
 # Teevee — Canonical Project State
 
-Last updated: 2026-09-13 (visual/UX baseline synchronized; exact commit time is in GitHub).
-Status: ACTIVE — Phase 1 Guide prototype; PR #8 is physically rejected from screen-recording evidence; PR #9 native-synchronised edge readability is integrated on main and technically green, pending focused iPhone validation. Owner-approved Guide/Programme Detail visual-UX baselines are now documented for subsequent implementation.
+Last updated: 2026-09-13 11:57 CEST.
+Status: ACTIVE — Phase 1 Guide prototype; PR #9 native-synchronised edge readability is physically accepted and frozen as the Guide scroll/readability baseline. The separate PR #10 time-axis left-edge label fix is integrated on main as `b18e0b0e153f17b417dd13dd4a3ff02a45157b45`, technically green on its final implementation head, and awaits one focused iPhone validation.
 Current phase: **Phase 1 — Guide Interaction Prototype**
 Previous phase: **Phase 0 — Project Foundation: COMPLETE**
 
@@ -66,6 +66,7 @@ These documentation commits do not supersede the Phase 1 runtime validation belo
 - Totaal adapts content geometry to larger system text; the tested iPhone large-text correction is accepted.
 - **Vandaag · Morgen · Nu** remain on one row. Only these compact labels cap font scaling at 1.2x; Guide content continues to follow larger system text. Explicit Vandaag/Morgen selection updates immediately; `Nu` restores today/current time.
 - PR #5 settled readability remains the safe fallback: after horizontal movement settles, text inside a partially hidden programme block can re-anchor to the visible remainder without changing the real start position or duration-derived width.
+- PR #9 live partial-left programme readability follows the native horizontal/vertical scroll positions on the UI thread and is physically accepted on iPhone during drag, momentum and programme-boundary transitions.
 - CI runs install, strict TypeScript, lint, tests and iOS/Android/web Expo bundle exports. Bundle export is not a signed/native device test.
 
 No real production EPG, production artwork, account system or subscription/paywall has been introduced.
@@ -78,9 +79,10 @@ Do not retune these without concrete regression evidence:
 - programme-detail response and retained Guide position;
 - close by button and outside tap;
 - deliberate swipe-down dismissal with short/cancelled drag returning to position;
-- PR #7 one-row **Vandaag · Morgen · Nu** controls and immediate selected-day state.
+- PR #7 one-row **Vandaag · Morgen · Nu** controls and immediate selected-day state;
+- PR #9 UI-thread edge-readability synchronisation, programme-boundary disappearance semantics and unchanged programme geometry.
 
-The product owner previously described targeted scroll, detail-response and swipe-dismiss retests as **"perfect"**. PR #7 is physically accepted for startup stability, one-row controls, immediate selected state, `Nu` return behaviour and unchanged horizontal scroll feel. These are qualitative iPhone confirmations, not blanket accessibility/performance approval.
+The product owner previously described targeted scroll, detail-response and swipe-dismiss retests as **"perfect"**. PR #7 is physically accepted for startup stability, one-row controls, immediate selected state, `Nu` return behaviour and unchanged horizontal scroll feel. PR #9 is now additionally physically accepted for live partial-left title behaviour during drag/momentum and safe programme-boundary transitions. These are qualitative iPhone confirmations, not blanket accessibility/performance approval.
 
 ## Larger-text iPhone validation — accepted
 The first materially enlarged system-text test exposed clipped Guide chrome. PR #4 corrected it. A follow-up screenshot at 08:59 showed `Gids`, `Nu`, day labels and time-axis labels fully readable, with channel/programme rows aligned and programme-title typography no longer vertically clipped.
@@ -108,8 +110,8 @@ The product owner supplied an iPhone screen recording at 10:49. Frame-by-frame r
 
 Therefore PR #8 is **physically rejected**. Its green CI is retained as technical history, not acceptance evidence. The recording starts after the app is already open, so it does not independently prove cold-start stability.
 
-## PR #9 — native/UI-thread-synchronised edge readability
-PR #9 replaces only the rejected synchronisation layer for the same product requirement.
+## PR #9 — physically accepted native/UI-thread-synchronised edge readability
+PR #9 replaced only the rejected synchronisation layer for the same product requirement.
 
 Design:
 - horizontal and vertical ScrollViews expose shared UI-thread positions through Reanimated scroll handlers;
@@ -121,15 +123,42 @@ Design:
 - programme `left`, duration-derived `width`, scroll inertia, bounce, directional lock, day controls and detail interactions are not intentionally changed;
 - overlay content remains pointer-transparent and removed from accessibility traversal; underlying programme buttons remain authoritative.
 
-Pure tests cover start/end edge boundaries and exact boundary switching. The existing 48-channel Guide/detail integration path remains present with expanded animation mocks.
+Technical evidence:
+- implementation head **`ff39a16e717e5f89f57509d6b18b54b72e9d1d3a`** passed PR CI #125 / run **`34748926153`**;
+- documented PR head **`8a37cef550e0558a03d0876a356e295ff4ac424b`** passed PR CI #128 / run **`34749068020`**;
+- exact-main push CI #129 / run **`34749225666`** passed all gates.
 
-Implementation head **`ff39a16e717e5f89f57509d6b18b54b72e9d1d3a`** passed PR CI #125 / run **`34748926153`** completely. The final documented PR head **`8a37cef550e0558a03d0876a356e295ff4ac424b`** then passed PR CI #128 / run **`34749068020`** completely: install, strict TypeScript, lint, tests and iOS/Android/web exports.
+Physical evidence from `ScreenRecording_09-13-2026 11-35-40_1.MP4`:
+- Teevee is visibly stable with no white-screen/crash during the tested session;
+- the partial-left programme title follows the visible left edge during horizontal drag without the PR #8 lag;
+- behaviour stays coherent through momentum after release;
+- the old edge stops at the programme's real end and does not remain as an opaque layer over the successor;
+- programme-block geometry remains visually stable and the native horizontal scroll retains the previously accepted feel.
 
-PR #9 is now integrated on main at **`8a37cef550e0558a03d0876a356e295ff4ac424b`**. GitHub recognises PR #9 as merged; exact-main push CI #129 / run **`34749225666`** also passed all gates completely. This is technical evidence only. Because both PR #6 and PR #8 exposed device-only failures after green CI, PR #9 is not physically accepted until the focused iPhone test below.
+**PR #9 is therefore physically accepted. Freeze this scroll/readability mechanism. Do not retune native inertia/bounce/directional lock, programme left/width or the PR #9 UI-thread edge synchronisation without concrete regression evidence.**
+
+The same recording still shows a separate cosmetic/readability issue: a time-axis text label can become a partial fragment at the left viewport edge. That issue is not a PR #9 regression and is handled separately by PR #10.
+
+## PR #10 — time-axis left-edge label readability
+PR #10 is intentionally narrower than the rejected PR #6 architecture:
+- the tick line remains at the exact real time coordinate;
+- only the tick **text** gets a small Reanimated style;
+- the existing PR #9 `scrollX` shared value is reused, so no React state is written on each scroll frame;
+- when the text start crosses the left viewport boundary, its opacity switches atomically to zero instead of leaving `:30`/hour fragments visible;
+- programme positions/widths, native scroll physics and PR #9 programme-edge overlay are unchanged;
+- the number of animated time labels is roughly two per elapsed hour, not >1000 programme cells.
+
+Focused tests cover the exact left-edge boundary and negative iOS bounce offset. The existing 48-channel Guide/detail integration test was also extended only so its Reanimated mock exposes `Animated.Text`.
+
+CI history:
+- PR CI #139 / run **`34750401708`**: install, typecheck, lint and the new pure time-axis tests passed, but the Guide integration test failed because its test-only Reanimated mock did not expose `Animated.Text`; Expo export was therefore skipped. This was a test-harness defect, not a runtime failure.
+- After adding `Animated.Text` to that mock, final implementation head **`efeedc08d3a6c50f3ef3fc9f119e8da5e3860b2b`** passed PR CI #140 / run **`34750478071`** completely: install, strict TypeScript, lint, all **75 tests**, and iOS/Android/web Expo exports.
+- GitHub's merge write timed out at the connector response layer, but the squash write itself landed on `main` as **`b18e0b0e153f17b417dd13dd4a3ff02a45157b45`**. PR metadata still showed open immediately afterwards; this is administrative metadata drift, not missing code.
+
+PR #10 is **technically accepted but not yet physically accepted**. Because the change adds animated text nodes and PR #6 previously exposed a device-only native failure after green CI, one focused iPhone validation remains mandatory.
 
 ## Remaining Phase 1 work
-- physically validate PR #9 startup, title movement during drag/momentum, stale-overlay prevention and unchanged scroll feel;
-- separately address partially clipped time-axis labels at the left viewport edge after the title-motion increment is settled;
+- physically validate PR #10 startup, absence of partial left-edge time labels during drag/momentum, and unchanged frozen PR #9 scroll/readability behaviour;
 - VoiceOver/screen-reader behaviour and live theme switching;
 - explicit progress/current-time accuracy checks;
 - Android gesture/back behaviour and release-like performance;
@@ -139,7 +168,7 @@ PR #9 is now integrated on main at **`8a37cef550e0558a03d0876a356e295ff4ac424b`*
 - production EPG/logo/artwork rights/reliability, pricing/trial/paywall, exact production design tokens/font licensing, and final Tonight composition remain later gates.
 
 ## EXACT NEXT STEP
-**On the same iPhone, pull current main and restart Metro cleanly. Confirm: (1) Teevee opens normally; (2) while horizontally dragging, the partial-left programme title follows the visible left edge without lagging behind the native timeline; (3) the same remains true through momentum after release; (4) an old edge disappears at its real programme end and never covers a successor programme; (5) programme blocks do not jump/change width and horizontal scrolling still feels like the accepted baseline. Prefer one short screen recording similar to the 10:49 recording because drag/momentum synchronisation cannot be proven by a screenshot. Do not re-test already accepted Vandaag/Morgen/Nu or detail behaviour unless a regression is noticed.**
+**On the same iPhone, pull current `main` and restart Metro cleanly. Confirm: (1) Teevee opens normally; (2) horizontally scroll the Guide slowly and with momentum across several half-hour ticks; a time label that leaves the viewport on the left must disappear as a whole and must never remain visible as a partial `:30`/hour fragment; (3) the vertical tick itself remains time-truthful with no visible jump in the timeline; (4) programme blocks do not move/change width; (5) the already accepted PR #9 partial-left programme-title behaviour still follows drag/momentum naturally. Prefer one short screen recording focused on the left side of the time axis. Do not re-test Vandaag/Morgen/Nu or Programme Detail unless a regression appears.**
 
 Owner checkout: `~/projects/teevee`. Test with: stop Metro using Control+C, run `git pull --ff-only`, then `npm run start:clean`, and reopen Expo Go.
 
