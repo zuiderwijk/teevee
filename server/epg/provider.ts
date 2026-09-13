@@ -14,14 +14,15 @@ export type ExternalChannel = {
 
 /**
  * Provider-facing programme shape before channel mapping and canonical validation.
- * Timestamps deliberately remain strings here because adapters may receive multiple formats.
+ * Required Teevee fields are optional here on purpose: malformed external records must
+ * remain representable so the normalisation boundary can diagnose and reject them.
  */
 export type ExternalProgramme = {
   id?: string;
-  channelId: string;
-  startAt: string;
-  endAt: string;
-  title: string;
+  channelId?: string;
+  startAt?: string;
+  endAt?: string;
+  title?: string;
   subtitle?: string;
   description?: string;
   genre?: string;
