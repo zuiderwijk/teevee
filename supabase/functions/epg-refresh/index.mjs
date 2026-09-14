@@ -1,17 +1,42 @@
-import { withSupabase } from 'npm:@supabase/server@1.6.0';
-
 import {
   DEVELOPMENT_CHANNELS,
   IPTV_EPG_NL_CHANNEL_MAPPINGS,
   IPTV_EPG_NL_PROVIDER_CHANNEL_IDS,
 } from '../../../server/epg/developmentChannelCatalog.ts';
-import { parseHostedRefreshRequest, HOSTED_REQUEST_MAX_BODY_BYTES } from '../../../server/epg/hostedTransportPolicy.ts';
+import {
+  HOSTED_REQUEST_MAX_BODY_BYTES,
+  parseHostedRefreshRequest,
+} from '../../../server/epg/hostedTransportPolicy.ts';
 import { ingestProviderSchedule } from '../../../server/epg/ingest.ts';
+import { SupabaseRestRpcClient } from '../../../server/epg/supabaseRestRpcClient.ts';
 import { SupabaseScheduleRepository } from '../../../server/epg/supabaseScheduleRepository.ts';
 import { XmltvEpgProvider } from '../../../server/epg/xmltvProvider.ts';
 
 function errorResponse(message, status) {
   return Response.json({ error: message }, { status });
+}
+
+function defaultSecretKey() {
+  const raw = Deno.env.get('SUPABASE_SECRET_KEYS');
+  if (!raw) throw new Error('SUPABASE_SECRET_KEYS is unavailable');
+  const keys = JSON.parse(raw);
+  if (typeof keys.default !== 'string' || !keys.default) {
+    throw new Error('Default Supabase secret key is unavailable');
+  }
+  return keys.default;
+}
+
+function authorised(req, secretKey) {
+  const supplied = req.headers.get('apikey');
+  return typeof supplied === 'string' && supplied.length > 0 && supplied === secretKey;
+}
+
+function repository(secretKey) {
+  const client = new SupabaseRestRpcClient({
+    baseUrl: Deno.env.get('SUPABASE_URL') ?? '',
+    apiKey: secretKey,
+  });
+  return new SupabaseScheduleRepository(client);
 }
 
 async function parseJsonBody(req) {
@@ -28,8 +53,17 @@ async function parseJsonBody(req) {
 }
 
 export default {
-  fetch: withSupabase({ auth: 'secret' }, async (req, ctx) => {
+  async fetch(req) {
     if (req.method !== 'POST') return errorResponse('Method not allowed', 405);
+
+    let secretKey;
+    try {
+      secretKey = defaultSecretKey();
+    } catch (error) {
+      console.error('Teevee refresh secret configuration is invalid', error);
+      return errorResponse('Refresh service unavailable', 503);
+    }
+    if (!authorised(req, secretKey)) return errorResponse('Unauthorized', 401);
 
     let request;
     try {
@@ -45,7 +79,7 @@ export default {
     try {
       const result = await ingestProviderSchedule({
         provider: new XmltvEpgProvider(),
-        repository: new SupabaseScheduleRepository(ctx.supabaseAdmin),
+        repository: repository(secretKey),
         canonicalChannels: [...DEVELOPMENT_CHANNELS],
         channelMappings: [...IPTV_EPG_NL_CHANNEL_MAPPINGS],
         providerChannelIds: request.providerChannelIds,
@@ -58,7 +92,7 @@ export default {
           counts[diagnostic.severity] += 1;
           return counts;
         },
-        { info: 0, warning: 0, error: 0 },
+        { warning: 0, error: 0 },
       );
 
       return Response.json({
@@ -72,5 +106,5 @@ export default {
       console.error('Teevee EPG refresh failed', error);
       return errorResponse('EPG refresh failed', 502);
     }
-  }),
+  },
 };
