@@ -1,11 +1,10 @@
-import { withSupabase } from 'npm:@supabase/server@1.6.0';
-
 import { DEVELOPMENT_CHANNELS } from '../../../server/epg/developmentChannelCatalog.ts';
 import {
   HOSTED_REQUEST_MAX_BODY_BYTES,
   parseHostedGuideScheduleRequest,
 } from '../../../server/epg/hostedTransportPolicy.ts';
 import { RepositoryGuideScheduleApi } from '../../../server/epg/scheduleService.ts';
+import { SupabaseRestRpcClient } from '../../../server/epg/supabaseRestRpcClient.ts';
 import { SupabaseScheduleRepository } from '../../../server/epg/supabaseScheduleRepository.ts';
 
 const CORS_HEADERS = {
@@ -26,6 +25,24 @@ function json(data, init = {}) {
   });
 }
 
+function defaultSecretKey() {
+  const raw = Deno.env.get('SUPABASE_SECRET_KEYS');
+  if (!raw) throw new Error('SUPABASE_SECRET_KEYS is unavailable');
+  const keys = JSON.parse(raw);
+  if (typeof keys.default !== 'string' || !keys.default) {
+    throw new Error('Default Supabase secret key is unavailable');
+  }
+  return keys.default;
+}
+
+function scheduleApi() {
+  const client = new SupabaseRestRpcClient({
+    baseUrl: Deno.env.get('SUPABASE_URL') ?? '',
+    apiKey: defaultSecretKey(),
+  });
+  return new RepositoryGuideScheduleApi(new SupabaseScheduleRepository(client));
+}
+
 async function parseJsonBody(req) {
   const text = await req.text();
   if (text.length > HOSTED_REQUEST_MAX_BODY_BYTES) {
@@ -40,7 +57,7 @@ async function parseJsonBody(req) {
 }
 
 export default {
-  fetch: withSupabase({ auth: 'none' }, async (req, ctx) => {
+  async fetch(req) {
     if (req.method === 'OPTIONS') {
       return new Response(null, { status: 204, headers: CORS_HEADERS });
     }
@@ -60,13 +77,10 @@ export default {
     }
 
     try {
-      const api = new RepositoryGuideScheduleApi(
-        new SupabaseScheduleRepository(ctx.supabaseAdmin),
-      );
-      return json(await api.getSchedule(request));
+      return json(await scheduleApi().getSchedule(request));
     } catch (error) {
       console.error('Teevee guide schedule read failed', error);
       return json({ status: 'unavailable' }, { status: 503 });
     }
-  }),
+  },
 };
