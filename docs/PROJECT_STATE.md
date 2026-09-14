@@ -1,7 +1,7 @@
 # Teevee — Canonical Project State
 
-Last updated: 2026-09-14 01:25 CEST.
-Status: ACTIVE — **Phase 3 Real Data Vertical Slice**. Phase 1A/1B Guide interaction models and Phase 2 App Shell are closed and physically accepted on the available iPhone. The backend-independent Phase 3 foundation is now implemented through provider normalisation, canonical schedule storage/query semantics, safe ingestion orchestration and a typed schedule-service boundary. The next real vertical slice requires a Teevee hosted backend plus an authorized development EPG source/credentials; those are explicit human cost/credential/rights gates.
+Last updated: 2026-09-14.
+Status: ACTIVE — **Phase 3 Real Data Vertical Slice**.
 Current phase: **Phase 3 — Real Data Vertical Slice**
 Next phase after Phase 3 closure: **Phase 4 — Core Guide MVP hardening**
 
@@ -23,7 +23,7 @@ Next phase after Phase 3 closure: **Phase 4 — Core Guide MVP hardening**
 1. **Phase 1A — Totaal:** complete and physically accepted on iPhone.
 2. **Phase 1B — Per zender / Nu & Straks:** complete and physically accepted on iPhone.
 3. **Phase 2 — App Shell:** complete and physically accepted on iPhone.
-4. **Phase 3 — Real Data Vertical Slice:** active; backend-independent contract foundation complete through PR #39.
+4. **Phase 3 — Real Data Vertical Slice:** active; hosted canonical persistence and a development-only real XMLTV provider adapter are now implemented.
 5. **Phase 4 — Core Guide MVP hardening:** next after Phase 3 exit criteria.
 
 ## Frozen Guide interaction baseline
@@ -66,115 +66,106 @@ Evidence:
 - `docs/PHYSICAL_EVIDENCE_2026-09-13_2310.md`
 - `docs/PHYSICAL_EVIDENCE_2026-09-13_2356.md`
 
-Final iPhone acceptance includes Settings secondary navigation, live/persisted Light/Dark/System, shared safe-area headers, all three Guide presentations at representative 135% iOS text, Programme Detail, Per zender channel identity/select/swipe synchronisation and no broad crash/white-screen/gesture regression.
-
 The compact 24pt Nu & Straks following-programme rows remain explicit non-blocking accessibility debt. Do not solve them with overlapping `hitSlop` or blindly make every row 44pt; revisit density-aware during Phase 4 with physical evidence.
 
-## Phase 3 implementation ledger
-### PR #36 — Phase 2 closure / Phase 3 activation
-- merge: `589ce9110419866439cd0e22e1c761687b48eb04`;
-- exact PR-head CI #255 / `34785599349`: `quality` + `android-native` completed/success.
-
-### PR #37 — provider-independent normalisation core
-- merge: `491bc728adfb4ec70d060833d49d17bca25bbdc9`;
-- exact PR-head `cf3b8c37b1199ee22035a863ab7b1a9f4faf8a8d`;
-- CI #263 / `34786166182`: `quality` + `android-native` completed/success;
-- exact-main CI #265 / `34787285080`: completed/success.
-
-Implemented:
-- provider-independent `GuideSchedule`;
-- server-only neutral `EpgProvider` boundary;
+## Phase 3 implemented foundation
+### Provider-independent contracts — PRs #37–#39
+Implemented and CI-proven:
+- neutral server-only `EpgProvider` trust boundary;
 - explicit provider -> Teevee channel mapping;
-- UTC/canonical normalisation and deterministic Teevee programme IDs;
+- canonical UTC normalisation and deterministic programme identities;
 - record-level data-quality diagnostics;
-- provider ID reuse across broadcasts and timezone-equivalent duplicates handled safely.
-
-### PR #38 — canonical schedule repository semantics
-- merge: `5d997e58cd86de75a7de83367cc0e47b783657a2`;
-- exact PR-head `b2d45175cc98fb7a1530692d76f9b8c715c2f8f9`;
-- CI #272 / `34787934051`: `quality` + `android-native` completed/success;
-- exact-main CI #279 / `34788786630`: completed/success.
-
-Implemented:
 - serialisable `GuideScheduleQuery`;
 - backend-independent `ScheduleRepository`;
-- explicit channel/time replacement scope;
-- `[start,end)` interval-intersection reads;
-- authoritative coverage/freshness per channel/time segment;
-- covered-empty versus unavailable distinction;
-- conservative read freshness;
-- atomic `ignored-stale` protection for older overlapping writes;
-- deterministic in-memory executable reference (not a production persistence choice).
+- explicit `[from,to)` replacement/read scope;
+- authoritative coverage distinct from programme presence;
+- covered-empty versus unavailable semantics;
+- conservative freshness and atomic `ignored-stale` protection;
+- safe complete/partial ingestion orchestration;
+- provider-request-start freshness for race safety;
+- typed provider/database-independent `GuideScheduleApi`.
 
-### PR #39 — safe ingestion + typed schedule service
-- merge: `a39f5e432f0f3dcba946f5e8ca49bdd060ad0928`;
-- exact PR-head `518baf1ee764a9f661afe8435631fc4074f3222b`;
-- CI #280 / `34788836524`: `quality` + `android-native` completed/success;
-- exact-main CI #281 / `34789673546`: **in progress at this document update; do not infer success until both jobs explicitly complete**.
+ADR 0007 is the durable canonical schedule-semantics contract.
+
+### Hosted canonical persistence — PR #40
+PR #40 merged as `da08c10e170ea8fe3843e16b76247eccd6c0502a` after exact PR-head CI #283 completed successfully for both `quality` and `android-native`.
+
+Teevee now has a dedicated hosted Supabase backend:
+- project: `teevee`;
+- project ref: `eokszvpityhtysbwdduy`;
+- organization: `teevee`;
+- plan: Free;
+- region: `eu-west-2`.
+
+Applied/versioned migrations:
+1. `20260914001257_create_canonical_schedule_store`;
+2. `20260914001410_harden_default_rls_helper_permissions`;
+3. `20260914001538_create_schedule_rpc_bridge`.
 
 Implemented:
-- shared conservative channel-mapping/diagnostic logic;
-- provider batch coverage classified `complete` vs `partial`;
-- only authoritative complete batches may destructively replace canonical windows;
-- malformed attributable data blocks only the affected canonical channel; unattributed malformed data blocks destructive replacement;
-- authoritative empty windows may clear stale canonical data;
-- ingest freshness captured at provider-request start;
-- late completion of an older request is proven unable to roll newer data backwards;
-- typed provider/database-independent `GuideScheduleApi`;
-- runtime validation/canonicalisation of serialised schedule queries;
-- provider -> normalisation -> repository -> service deterministic integration/concurrency tests.
+- private `teevee` schema for channels, programmes and authoritative schedule coverage;
+- transactional replacement/stale-write semantics matching ADR 0007;
+- private tables not exposed to `anon`/`authenticated`;
+- service-role-only public RPC bridges for repository access;
+- `SupabaseScheduleRepository` behind the existing `ScheduleRepository` contract;
+- no Supabase/provider secret in the mobile bundle.
 
-No PR #38/#39 change touched Guide layout/scroll/gesture/deferred-import mechanics, mobile runtime data source, dependency graph or native configuration. No additional iPhone interaction pass is required for these backend-independent increments.
+Security advisor WARN/ERROR findings were cleared after hardening. RLS-with-no-policy INFO on the private Teevee tables is intentional because client access is denied entirely.
 
-## Canonical schedule semantics — ADR 0007
-Every future production repository/API implementation must preserve:
-- replacement scope explicit by canonical channels + `[from,to)`;
-- authoritative coverage stored separately from programme presence;
-- covered-empty is valid; partially/uncovered scope is unavailable;
-- query intersection `programme.start < to && programme.end > from`;
-- returned freshness is the oldest freshness contributing to the requested scope;
-- older overlapping writes cannot partly or wholly roll newer canonical state backwards;
-- provider request observation time is taken before remote fetch;
-- provider-specific fields/credentials never leak into the mobile schedule contract.
+### Temporary real development provider — PR #42
+PR #42 merged as `4ea4a73bb38580cc8ab0acf454ccfc5849350bab` after exact head `2af9d6cc6afb8b0618b196eebdc33b1b940d25d9` passed CI #290 (`quality` + `android-native` completed/success).
 
-A future PostgreSQL/Supabase implementation must reproduce these semantics transactionally; the current in-memory implementation is tests/reference only.
+Implemented `XmltvEpgProvider`:
+- server-side only, behind `EpgProvider`;
+- default development URL: `https://iptv-epg.org/files/epg-nl.xml`;
+- parses XMLTV channels, titles, subtitles, descriptions, genres, live/repeat flags;
+- requires explicit timezone offsets and normalises valid XMLTV timestamps to UTC;
+- preserves malformed external timestamps for downstream diagnostics instead of guessing;
+- query output obeys `[from,to)` intersection;
+- reports provider coverage `complete` only when every requested channel continuously covers the requested window; otherwise `partial` prevents destructive ingest;
+- deterministic tests inject `fetch`; normal PR-CI does not depend on the live feed.
 
-## Provider research / rights gate
+A first CI run exposed a real CDATA parsing bug; it was fixed in the parser before merge and the final exact-head run is green.
+
+## Live development-feed evidence
+Temporary inspection PR #43 was deliberately closed without merge after a one-off GitHub Actions fetch of the public feed.
+
+Observed on 2026-09-14:
+- content type: `text/xml; charset=utf-8`;
+- payload size: 30,237,192 bytes;
+- 184 channel records;
+- 33,117 programme records;
+- observed feed range: `20260913000600 +0000` through `20260919235500 +0000`;
+- verified IDs include `NPO1.nl`, `NPO2.nl`, `NPO3.nl`, `RTL4.nl`, `RTL5.nl`, `RTL7.nl`, `RTL8.nl`, `RTLZ.nl`, `SBS6.nl`, `SBS9.nl`, `Net5.nl`, `VeronicaDisneyXD.nl`, `ESPN.nl` and `ZiggoSport.nl`.
+
+The feed itself is the technical evidence source. Public overview counters currently disagree with the fetched payload and therefore must not drive coverage/correctness logic.
+
+## Development-provider rights boundary
+IPTV-EPG.org is **temporary development input only**. Its public availability is not treated as proof of commercial redistribution rights.
+
+Rules:
+- no direct mobile dependency on the external feed;
+- no downloaded XMLTV payload or externally sourced artwork/logo committed to Git;
+- fixtures remain the deterministic CI/offline source;
+- no production-rights claim is inferred from the Phase 3 development integration;
+- production EPG, channel-logo, programme-artwork and SLA rights remain an explicit release gate.
+
+EPG.PW is not the selected development source; its published terms restrict use to personal/non-commercial purposes. Schedules Direct remains rejected for the commercial Teevee path under its published subscriber terms. EPGdata.tv and Gracenote remain possible production candidates if explicit commercial rights are obtained. An authorized Bindinc/TVgids production feed remains preferred when available.
+
 See `docs/PHASE_3_PROVIDER_RESEARCH_2026-09-14.md`.
 
-Current conclusion:
-- **Preferred:** authorized Bindinc/TVgids development feed/API if available.
-- **Rejected:** Schedules Direct under currently published personal/non-commercial terms; do not build Teevee on it without separate written commercial rights.
-- **Candidate:** Gracenote On API; Netherlands (`NLD`) lineup support is documented, but Teevee still needs authorized development/commercial access, credentials and rights confirmation.
-- **Candidate:** EPGdata.tv; Netherlands is listed, but Teevee still needs feed/API specification, credentials, commercial redistribution terms and rights confirmation.
-- Public/scrapeable guide data is not treated as licensed merely because it can technically be fetched.
+## What Phase 3 still needs
+The old backend/provider-human gate is resolved sufficiently for development. The remaining engineering path is now:
+1. define a narrow explicit development channel catalog/mapping using the verified XMLTV IDs — do not guess mappings from the synthetic mobile fixture;
+2. add the thinnest hosted server/Edge execution path that keeps service-role access server-side;
+3. ingest one narrow real schedule window into the canonical Supabase store;
+4. query it back through the typed Teevee schedule boundary and prove `ok`/`unavailable` behaviour end-to-end;
+5. measure provider fetch, parse, canonical payload size and refresh behaviour on the real ~30 MB source;
+6. only then choose the mobile cache/source mechanics;
+7. connect the Guide to the provider-independent API/cache with loading/error/offline fallback while preserving frozen interaction state;
+8. run a focused iPhone real-data smoke when the new data path reaches the Guide.
 
-## Hosted backend gate
-No Teevee hosted backend exists yet.
-
-Connected Supabase context currently exposes only an unrelated `ReelWorthy` project. **Never reuse it for Teevee.**
-
-Creating a Teevee Supabase project is a real cost/organization decision. Before provisioning:
-1. owner selects the intended Supabase organization;
-2. fetch the current project cost for that organization;
-3. state the exact cost and obtain explicit confirmation;
-4. only then create the project.
-
-Provider credentials/URLs that grant privileged access must stay server-side and out of Git/release bundles.
-
-## What Phase 3 still needs after the gate
-Once backend organization/cost and an authorized development provider are resolved:
-1. provision the Teevee backend;
-2. implement production canonical storage/coverage semantics behind `ScheduleRepository`;
-3. implement one authorized provider adapter/parser and explicit channel mappings;
-4. add a thin hosted transport for `GuideScheduleApi`;
-5. ingest/query one real schedule end-to-end;
-6. measure payload/refresh behaviour;
-7. choose and implement the mobile schedule/cache source based on those measurements;
-8. switch Guide to the provider-independent real-data source with loading/error/offline fallback while preserving frozen interaction state;
-9. perform a focused iPhone real-data smoke; Android physical validation remains deferred until hardware is available.
-
-Do not introduce TanStack Query, SQLite, Supabase client code, generalized multi-provider orchestration or broad infrastructure before the concrete hosted slice demonstrates a need.
+Do not introduce TanStack Query, SQLite, generalized multi-provider orchestration or broad infrastructure before measurements demonstrate the need.
 
 ## Android status
 Physical Android interaction acceptance remains OPEN/DEFERRED because no Android device is available. CI proves Android JS/native export, clean prebuild and debug APK compilation, not system Back, nested-gesture feel or device performance.
@@ -184,10 +175,13 @@ Physical Android interaction acceptance remains OPEN/DEFERRED because no Android
 - `quality`: strict TypeScript, lint, tests, iOS/Android/web exports;
 - `android-native`: clean Expo Android prebuild + Gradle debug APK compile;
 - Node 22 project runtime; supported GitHub action runtimes; workflow content permission read-only;
+- live external EPG is not a normal CI dependency;
 - never run `npm audit fix --force`.
 
 ## Repository coordination
-- PR #28 (`docs/multi-agent-workflow`) remains an isolated docs-only workflow change owned by another thread. Do not fold Phase 3 implementation into it.
+- PR #28 (`docs/multi-agent-workflow`) remains isolated docs-only work owned by another thread; do not fold Phase 3 development into it.
+- PR #41 was closed without merge because its immediate EPGdata.tv selection was superseded by the owner's temporary free-development-feed decision.
+- PR #43 was a temporary inspection branch and was closed without merge.
 
 ## Deferred but tracked
 - physical Android validation;
@@ -201,9 +195,9 @@ Physical Android interaction acceptance remains OPEN/DEFERRED because no Android
 - final Tonight composition.
 
 ## EXACT NEXT STEP
-**Human gate reached. Do not invent a backend organization, incur cost, reuse ReelWorthy, scrape a TV-guide site or hard-code an unlicensed provider. The owner must identify the Supabase organization intended for Teevee and whether an authorized Bindinc/TVgids development EPG feed/API is available. If Supabase is selected, fetch and explicitly confirm the current project cost before provisioning. If no internal EPG source is available, obtain authorized development/commercial access to a vetted external candidate (currently Gracenote On API or EPGdata.tv) before building the concrete adapter.**
+**Build the smallest hosted real-data vertical slice from the verified free development XMLTV source into the existing canonical Supabase repository. Start with a narrow explicit real-channel mapping and server-side ingest/query path; measure the real source before adding mobile caching. Do not map provider IDs onto the synthetic fixture by assumption, do not expose service-role credentials, and do not treat the development feed as production-licensed.**
 
 Owner checkout: `~/projects/teevee`.
 
 ## Resume instruction
-> Read `AGENTS.md`, `PROJECT_STATE.md`, ADR 0007 and `PHASE_3_PROVIDER_RESEARCH_2026-09-14.md`. Phase 2 is closed. Phase 3 backend-independent contracts are complete through PR #39. Preserve frozen Guide mechanics and deferred Nu & Straks startup. Do not reuse the ReelWorthy Supabase project. Continue only after the explicit Teevee backend organization/cost and authorized-provider gate is resolved; then implement the smallest hosted end-to-end real-data slice behind the existing `ScheduleRepository` and `GuideScheduleApi` contracts.
+> Read `AGENTS.md`, this file, ADR 0007 and `PHASE_3_PROVIDER_RESEARCH_2026-09-14.md`. Phase 2 is closed. Phase 3 has hosted Supabase canonical persistence through PR #40 and a development-only XMLTV provider through PR #42. Preserve frozen Guide mechanics and deferred Nu & Straks startup. Continue with a narrow explicit development channel mapping and hosted end-to-end ingest/query slice; production EPG rights remain separate.
