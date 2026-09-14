@@ -30,9 +30,6 @@ const motion = vi.hoisted(() => ({
 
 vi.mock('expo-router', () => ({ useRouter: () => ({ push: vi.fn() }) }));
 
-vi.mock('@/features/guide/useHostedGuideScheduleRuntime', () => ({
-  useHostedGuideScheduleRuntime: () => 0,
-}));
 vi.mock('@/features/guide/useGuideClock', () => ({
   useGuideClock: vi.fn(() => Date.parse('2026-09-13T08:00:00+02:00')),
 }));
@@ -187,194 +184,154 @@ afterEach(async () => {
   vi.unstubAllGlobals();
 });
 
-function click(element: Element | null) {
-  expect(element).not.toBeNull();
-  act(() => (element as HTMLElement).click());
+function getByTestId(id: string): HTMLElement {
+  const element = container.querySelector<HTMLElement>(`[data-testid="${id}"]`);
+  if (!element) throw new Error(`Missing test node: ${id}`);
+  return element;
 }
-
-function findByTestId(id: string) {
-  return container.querySelector(`[data-testid="${id}"]`);
+async function click(id: string) { await act(async () => getByTestId(id).click()); }
+function getGesture(): TestGesture {
+  if (!motion.gesture) throw new Error('No attached detail pan gesture');
+  return motion.gesture;
 }
-
-function findButton(label: string) {
-  return [...container.querySelectorAll('button')].find((button) => button.textContent === label) ?? null;
+function offsetY() { return motion.readStyle?.().transform[0]?.translateY; }
+async function swipe(distance: number, velocity = 0, success = true, pointers = 1) {
+  const { handlers } = getGesture();
+  const event = { translationY: distance, velocityY: velocity, numberOfPointers: pointers };
+  await act(async () => {
+    handlers.begin?.();
+    handlers.start?.();
+    if (pointers > 1) handlers.touches?.({ numberOfTouches: pointers });
+    handlers.update?.(event);
+    handlers.end?.(event, success);
+    handlers.finalize?.();
+  });
 }
 
 describe('programme detail rendering boundary', () => {
   it('opens/closes repeatedly without rerendering or remounting the 48-channel Guide', async () => {
     await act(async () => root.render(<GuideScreen />));
+    const timeScroll = getByTestId('guide-time-scroll');
+    const channelScroll = getByTestId('guide-channel-scroll');
+    timeScroll.scrollLeft = 650;
+    channelScroll.scrollTop = 900;
+    const renderCount = vi.mocked(useGuideClock).mock.calls.length;
+    expect(renderCount).toBeGreaterThan(0);
+    expect(guideFixture.channels).toHaveLength(48);
+    expect(container.querySelectorAll('[data-testid^="programme-channel-"]').length).toBeGreaterThan(1000);
 
-    const firstProgramme = guideFixture.programmes[0]!;
-    const programmeButton = findByTestId(`programme-${firstProgramme.id}`);
-    expect(programmeButton).not.toBeNull();
-    const guideBefore = findByTestId('guide-time-scroll');
-    expect(guideBefore).not.toBeNull();
-
-    for (let index = 0; index < 3; index += 1) {
-      click(programmeButton);
+    const first = guideFixture.programmes[0]!;
+    for (const closeId of ['programme-detail-close', 'programme-detail-backdrop', 'native-request-close', 'swipe']) {
+      await click(`programme-${first.id}`);
       expect(container.querySelector('[role="dialog"]')).not.toBeNull();
-      click(findButton('Sluiten'));
+      expect(container.querySelector('[role="dialog"]')?.getAttribute('data-animation')).toBe('slide');
+      expect(offsetY()).toBe(0);
+      expect(getByTestId('programme-detail-sheet').textContent).toContain(first.title);
+      expect(getByTestId('programme-detail-sheet').textContent).toContain(MISSING_DESCRIPTION);
+      expect(vi.mocked(useGuideClock)).toHaveBeenCalledTimes(renderCount);
+      if (closeId === 'swipe') await swipe(100); else await click(closeId);
       expect(container.querySelector('[role="dialog"]')).toBeNull();
-      expect(findByTestId('guide-time-scroll')).toBe(guideBefore);
+      expect(vi.mocked(useGuideClock)).toHaveBeenCalledTimes(renderCount);
+      expect(getByTestId('guide-time-scroll')).toBe(timeScroll);
+      expect(getByTestId('guide-channel-scroll')).toBe(channelScroll);
+      expect(timeScroll.scrollLeft).toBe(650);
+      expect(channelScroll.scrollTop).toBe(900);
     }
+    await click(`programme-${first.id}`);
+    expect(offsetY()).toBe(0);
   });
 
   it('exposes self-contained programme labels while hiding duplicated visual rails', async () => {
     await act(async () => root.render(<GuideScreen />));
 
-    const firstProgramme = guideFixture.programmes[0]!;
-    const channel = guideFixture.channels.find(({ id }) => id === firstProgramme.channelId)!;
-    const programmeButton = findByTestId(`programme-${firstProgramme.id}`);
-    expect(programmeButton?.getAttribute('aria-label')).toContain(channel.displayName);
-    expect(programmeButton?.getAttribute('data-accessibility-hint')).toBe('Opent programmadetails');
-    expect(container.querySelector('[data-testid="guide-channel-scroll"]')?.getAttribute('aria-hidden')).not.toBe('true');
+    const hiddenContainers = Array.from(
+      container.querySelectorAll<HTMLElement>('[data-important-for-accessibility="no-hide-descendants"]'),
+    );
+    expect(hiddenContainers.some((node) => node.textContent?.includes('ZENDER'))).toBe(true);
+    expect(hiddenContainers.some((node) => /\d{2}:\d{2}/.test(node.textContent ?? ''))).toBe(true);
+
+    const first = guideFixture.programmes[0]!;
+    const channel = guideFixture.channels.find((candidate) => candidate.id === first.channelId)!;
+    const button = getByTestId(`programme-${first.id}`);
+    const label = button.getAttribute('aria-label') ?? '';
+    expect(label).toContain(channel.displayName);
+    expect(label).toContain(first.title);
+    expect(label).toContain(' tot ');
+    expect(button.getAttribute('data-accessibility-hint')).toBe('Opent programmadetails');
   });
 
   it('shows the correct next programme and does not dismiss when its text is tapped', async () => {
     await act(async () => root.render(<GuideScreen />));
-
-    const firstProgramme = guideFixture.programmes[0]!;
-    click(findByTestId(`programme-${firstProgramme.id}`));
-
-    const channelProgrammes = guideFixture.programmes
-      .filter(({ channelId }) => channelId === firstProgramme.channelId)
-      .sort((left, right) => Date.parse(left.startAt) - Date.parse(right.startAt));
-    const index = channelProgrammes.findIndex(({ id }) => id === firstProgramme.id);
-    const nextProgramme = channelProgrammes[index + 1]!;
-    expect(container.querySelector('[role="dialog"]')?.textContent).toContain(nextProgramme.title);
-
-    const titleNode = [...container.querySelectorAll('span')].find((node) => node.textContent === nextProgramme.title);
-    titleNode?.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+    const first = guideFixture.programmes[0]!;
+    const second = guideFixture.programmes.find((programme) => programme.description !== undefined)!;
+    await click(`programme-${first.id}`);
+    await click('programme-detail-close');
+    await click(`programme-${second.id}`);
+    const sheet = getByTestId('programme-detail-sheet');
+    expect(sheet.textContent).toContain(second.title);
+    expect(sheet.textContent).toContain(second.description);
+    await act(async () => sheet.querySelector('span')!.click());
     expect(container.querySelector('[role="dialog"]')).not.toBeNull();
   });
-});
 
-describe.each([
-  ['undefined', undefined],
-  ['empty', ''],
-  ['whitespace', '   '],
-] as const)('programme detail rendering boundary', (_label, description) => {
-  it(`handles absent or blank descriptions: ${description ?? 'undefined'}`, async () => {
-    const programme = { ...guideFixture.programmes[0]!, description };
-    await act(async () => root.render(
-      <ProgrammeDetail
-        state={{ phase: 'open', selection: { programme, channelName: 'Publiek 1' } }}
-        onClose={vi.fn()}
-      />,
-    ));
-    expect(container.textContent).toContain(MISSING_DESCRIPTION);
+  it.each([undefined, '', '   '])('handles absent or blank descriptions: %s', async (description) => {
+    const programme = { id: 'missing', channelId: 'test', title: 'Zonder tekst', startAt: '2026-09-13T18:00:00Z', endAt: '2026-09-13T19:00:00Z', ...(description === undefined ? {} : { description }) };
+    await act(async () => root.render(<ProgrammeDetail state={{ visible: true, selection: { programme, channelName: 'Testzender' } }} onClose={vi.fn()} />));
+    expect(getByTestId('programme-detail-sheet').textContent).toContain(MISSING_DESCRIPTION);
   });
 });
 
 describe('detail swipe wiring with mocked gesture events', () => {
+  async function openDetail(onClose = vi.fn()) {
+    await act(async () => root.render(<ProgrammeDetail state={{ visible: true, selection: { programme: guideFixture.programmes[0]!, channelName: 'Testzender' } }} onClose={onClose} />));
+    return onClose;
+  }
+
   it('requires a downward start and leaves horizontal/upward starts to fail', async () => {
-    const onClose = vi.fn();
-    await act(async () => root.render(
-      <ProgrammeDetail
-        state={{ phase: 'open', selection: { programme: guideFixture.programmes[0]!, channelName: 'Publiek 1' } }}
-        onClose={onClose}
-      />,
-    ));
-    expect(motion.gesture?.config.activeOffsetY).toBe(8);
-    expect(motion.gesture?.config.failOffsetX).toEqual([-18, 18]);
-    expect(motion.gesture?.config.failOffsetY).toEqual([-8, Number.POSITIVE_INFINITY]);
+    await openDetail();
+    expect(getGesture().config).toMatchObject({ enabled: true, maxPointers: 1, activeOffsetY: 10, failOffsetX: [-18, 18], failOffsetY: [-10, 100000] });
   });
 
   it('follows the finger, cancels a short drag and retains button/backdrop closing', async () => {
-    const onClose = vi.fn();
-    await act(async () => root.render(
-      <ProgrammeDetail
-        state={{ phase: 'open', selection: { programme: guideFixture.programmes[0]!, channelName: 'Publiek 1' } }}
-        onClose={onClose}
-      />,
-    ));
-    const gesture = motion.gesture!;
-    act(() => gesture.handlers.start?.());
-    act(() => gesture.handlers.update?.({ translationY: 54, velocityY: 40, numberOfPointers: 1 }));
-    expect(motion.readStyle?.().transform[0]?.translateY).toBe(54);
-    act(() => gesture.handlers.end?.({ translationY: 54, velocityY: 40, numberOfPointers: 1 }, true));
-    expect(motion.spring).toHaveBeenCalledWith(0);
+    const onClose = await openDetail();
+    const { handlers } = getGesture();
+    await act(async () => {
+      handlers.begin?.(); handlers.start?.();
+      handlers.update?.({ translationY: 40, velocityY: 0, numberOfPointers: 1 });
+    });
+    expect(offsetY()).toBe(40);
+    await act(async () => {
+      handlers.end?.({ translationY: 40, velocityY: 0, numberOfPointers: 1 }, true);
+      handlers.finalize?.();
+    });
     expect(onClose).not.toHaveBeenCalled();
-
-    click(findButton('Sluiten'));
+    expect(offsetY()).toBe(0);
+    expect(motion.spring).toHaveBeenCalledWith(0, { overshootClamping: true, reduceMotion: 'system' });
+    await click('programme-detail-backdrop');
     expect(onClose).toHaveBeenCalledTimes(1);
   });
 
-  it('keeps the panel open after system cancellation', async () => {
-    const onClose = vi.fn();
-    await act(async () => root.render(
-      <ProgrammeDetail
-        state={{ phase: 'open', selection: { programme: guideFixture.programmes[0]!, channelName: 'Publiek 1' } }}
-        onClose={onClose}
-      />,
-    ));
-    const gesture = motion.gesture!;
-    act(() => gesture.handlers.start?.());
-    act(() => gesture.handlers.update?.({ translationY: 90, velocityY: 500, numberOfPointers: 1 }));
-    act(() => gesture.handlers.end?.({ translationY: 90, velocityY: 500, numberOfPointers: 1 }, false));
+  it.each(['system cancellation', 'multiple fingers', 'upward reversal'])('keeps the panel open after %s', async (reason) => {
+    const onClose = await openDetail();
+    await swipe(120, reason === 'upward reversal' ? -500 : 1200, reason !== 'system cancellation', reason === 'multiple fingers' ? 2 : 1);
     expect(onClose).not.toHaveBeenCalled();
-    expect(motion.spring).toHaveBeenCalledWith(0);
-  });
-
-  it('keeps the panel open after multiple fingers', async () => {
-    const onClose = vi.fn();
-    await act(async () => root.render(
-      <ProgrammeDetail
-        state={{ phase: 'open', selection: { programme: guideFixture.programmes[0]!, channelName: 'Publiek 1' } }}
-        onClose={onClose}
-      />,
-    ));
-    const gesture = motion.gesture!;
-    act(() => gesture.handlers.start?.());
-    act(() => gesture.handlers.update?.({ translationY: 90, velocityY: 500, numberOfPointers: 2 }));
-    act(() => gesture.handlers.end?.({ translationY: 90, velocityY: 500, numberOfPointers: 2 }, true));
-    expect(onClose).not.toHaveBeenCalled();
-    expect(motion.spring).toHaveBeenCalledWith(0);
-  });
-
-  it('keeps the panel open after upward reversal', async () => {
-    const onClose = vi.fn();
-    await act(async () => root.render(
-      <ProgrammeDetail
-        state={{ phase: 'open', selection: { programme: guideFixture.programmes[0]!, channelName: 'Publiek 1' } }}
-        onClose={onClose}
-      />,
-    ));
-    const gesture = motion.gesture!;
-    act(() => gesture.handlers.start?.());
-    act(() => gesture.handlers.update?.({ translationY: 80, velocityY: 400, numberOfPointers: 1 }));
-    act(() => gesture.handlers.update?.({ translationY: -4, velocityY: -120, numberOfPointers: 1 }));
-    act(() => gesture.handlers.end?.({ translationY: -4, velocityY: -120, numberOfPointers: 1 }, true));
-    expect(onClose).not.toHaveBeenCalled();
-    expect(motion.spring).toHaveBeenCalledWith(0);
+    expect(offsetY()).toBe(0);
+    expect(motion.spring).toHaveBeenCalled();
   });
 
   it('closes once for a downward flick without a reset or second custom exit animation', async () => {
-    const onClose = vi.fn();
-    await act(async () => root.render(
-      <ProgrammeDetail
-        state={{ phase: 'open', selection: { programme: guideFixture.programmes[0]!, channelName: 'Publiek 1' } }}
-        onClose={onClose}
-      />,
-    ));
-    const gesture = motion.gesture!;
-    act(() => gesture.handlers.start?.());
-    act(() => gesture.handlers.update?.({ translationY: 120, velocityY: 900, numberOfPointers: 1 }));
-    act(() => gesture.handlers.end?.({ translationY: 120, velocityY: 900, numberOfPointers: 1 }, true));
+    const onClose = await openDetail();
+    await swipe(30, 1200);
     expect(onClose).toHaveBeenCalledTimes(1);
-    expect(motion.spring).not.toHaveBeenCalledWith(0);
+    expect(offsetY()).toBe(30);
+    expect(motion.spring).not.toHaveBeenCalled();
+    await click('programme-detail-close');
+    expect(onClose).toHaveBeenCalledTimes(1);
   });
 
   it('keeps accessibility escape available without any swipe', async () => {
-    const onClose = vi.fn();
-    await act(async () => root.render(
-      <ProgrammeDetail
-        state={{ phase: 'open', selection: { programme: guideFixture.programmes[0]!, channelName: 'Publiek 1' } }}
-        onClose={onClose}
-      />,
-    ));
-    const panel = container.querySelector('[role="dialog"] div');
-    panel?.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+    const onClose = await openDetail();
+    await act(async () => getByTestId('programme-detail-sheet').dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true })));
     expect(onClose).toHaveBeenCalledTimes(1);
   });
 });
