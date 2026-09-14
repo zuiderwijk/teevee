@@ -2,6 +2,7 @@ import { type ComponentType, type ReactNode, useCallback, useEffect, useReducer,
 import { StyleSheet, View } from 'react-native';
 
 import { SettingsButton } from '@/components/SettingsButton';
+import type { GuideSchedule } from '@/data/domain/epg';
 import { detailReducer, initialDetailState, type ProgrammeSelection } from '@/features/guide/detailState';
 import { GuidePresentationSelector } from '@/features/guide/GuidePresentationSelector';
 import {
@@ -12,6 +13,7 @@ import { GuideView } from '@/features/guide/GuideView';
 import { NowNextLoadErrorNotice } from '@/features/guide/NowNextLoadErrorNotice';
 import { PerChannelGuideView } from '@/features/guide/PerChannelGuideView';
 import { ProgrammeDetail } from '@/features/guide/ProgrammeDetail';
+import { useGuideScheduleSource } from '@/features/guide/useGuideScheduleSource';
 import { withGuidePresentation } from '@/features/settings/appPreferences';
 import {
   readAppPreferences,
@@ -21,11 +23,13 @@ import {
 const settingsAction = <SettingsButton />;
 
 type NowNextGuideComponent = ComponentType<{
+  schedule: GuideSchedule;
   headerAction?: ReactNode;
   onSelectProgramme: (selection: ProgrammeSelection) => void;
 }>;
 
 export default function GuideScreen() {
+  const schedule = useGuideScheduleSource();
   const [initialPreferredPresentation] = useState<GuidePresentation>(
     () => readAppPreferences().guidePresentation,
   );
@@ -109,11 +113,23 @@ export default function GuideScreen() {
   return (
     <>
       {showNowNext && NowNextComponent ? (
-        <NowNextComponent onSelectProgramme={openDetail} headerAction={settingsAction} />
+        <NowNextComponent
+          schedule={schedule}
+          onSelectProgramme={openDetail}
+          headerAction={settingsAction}
+        />
       ) : showPerChannel ? (
-        <PerChannelGuideView onSelectProgramme={openDetail} headerAction={settingsAction} />
+        <PerChannelGuideView
+          schedule={schedule}
+          onSelectProgramme={openDetail}
+          headerAction={settingsAction}
+        />
       ) : (
-        <GuideView onSelectProgramme={openDetail} headerAction={settingsAction} />
+        <GuideView
+          schedule={schedule}
+          onSelectProgramme={openDetail}
+          headerAction={settingsAction}
+        />
       )}
 
       {nowNextLoadFailed ? (
