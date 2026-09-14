@@ -1,5 +1,5 @@
-import type { GuideScheduleApiRequest } from '@/services/api/guideScheduleContract';
-import { parseGuideScheduleApiRequest } from '@/services/api/guideScheduleContract';
+import type { GuideScheduleApiRequest } from '../../services/api/guideScheduleContract.ts';
+import { parseGuideScheduleApiRequest } from '../../services/api/guideScheduleContract.ts';
 
 export const HOSTED_SCHEDULE_MAX_WINDOW_MS = 24 * 60 * 60 * 1000;
 export const HOSTED_REQUEST_MAX_BODY_BYTES = 8 * 1024;
