@@ -36,13 +36,12 @@ function programmesEqual(left: Programme, right: Programme): boolean {
 }
 
 /**
- * Canonical schedules are already deterministically ordered by the Teevee service/loader.
- * Comparing their full user-visible content lets app-resume refreshes avoid remounting the
- * Guide when the backend returned the same schedule again.
+ * Compare the complete user-visible canonical schedule content. `generatedAt` is server
+ * freshness metadata, not presentation state, so a freshness-only update must not remount
+ * the Guide and discard the user's scroll/channel context.
  */
-export function guideSchedulesEqual(left: GuideSchedule, right: GuideSchedule): boolean {
+export function guideScheduleContentEqual(left: GuideSchedule, right: GuideSchedule): boolean {
   if (
-    left.generatedAt !== right.generatedAt ||
     left.timezone !== right.timezone ||
     left.channels.length !== right.channels.length ||
     left.programmes.length !== right.programmes.length
