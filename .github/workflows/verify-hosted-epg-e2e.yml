@@ -11,53 +11,96 @@ jobs:
   verify:
     runs-on: ubuntu-latest
     steps:
-      - name: Verify public guide transport is healthy
-        run: |
-          set -euo pipefail
-          code=$(curl --silent --show-error \
-            -X POST \
-            -H 'Content-Type: application/json' \
-            --data '{"from":"2026-09-16T00:00:00Z","to":"2026-09-17T00:00:00Z"}' \
-            -o /tmp/guide-body.json \
-            -w '%{http_code}' \
-            'https://eokszvpityhtysbwdduy.supabase.co/functions/v1/guide-schedule')
-          cat /tmp/guide-body.json
-          test "$code" = "200"
-          python - <<'PY'
-          import json
-          assert json.load(open('/tmp/guide-body.json')) == {'status': 'unavailable'}
-          PY
-
-      - name: Verify protected refresh rejects anonymous callers
+      - name: Prove protected refresh still rejects anonymous callers
         run: |
           set -euo pipefail
           code=$(curl --silent --show-error \
             -X POST \
             -H 'Content-Type: application/json' \
             --data '{"from":"2026-09-14T00:00:00Z","to":"2026-09-15T00:00:00Z"}' \
-            -o /tmp/refresh-body.json \
+            -o /tmp/unauth.json \
             -w '%{http_code}' \
             'https://eokszvpityhtysbwdduy.supabase.co/functions/v1/epg-refresh')
-          cat /tmp/refresh-body.json
           test "$code" = "401"
           python - <<'PY'
           import json
-          assert json.load(open('/tmp/refresh-body.json')) == {'error': 'Unauthorized'}
+          assert json.load(open('/tmp/unauth.json')) == {'error': 'Unauthorized'}
           PY
 
-      - name: Verify direct secret-key database RPC path remains healthy
+      - name: Trigger one fixed protected refresh without exporting the secret
         run: |
           set -euo pipefail
-          code=$(curl --silent --show-error \
+          curl --fail --silent --show-error \
             -X POST \
             -H 'x-teevee-e2e: phase3-canonical-v1' \
-            -o /tmp/rpc-body.json \
-            -w '%{http_code}' \
-            'https://eokszvpityhtysbwdduy.supabase.co/functions/v1/epg-feed-inspect')
-          cat /tmp/rpc-body.json
-          test "$code" = "200"
+            -w '%{time_total}\n' \
+            'https://eokszvpityhtysbwdduy.supabase.co/functions/v1/epg-feed-inspect' \
+            -o /tmp/ingest.json > /tmp/ingest-time.txt
           python - <<'PY'
           import json
-          data = json.load(open('/tmp/rpc-body.json'))
-          assert data == {'httpStatus': 200, 'ok': True, 'payload': None}, data
+          data = json.load(open('/tmp/ingest.json'))
+          write = data.get('write') or {}
+          result = write.get('result') or {}
+          summary = {
+              'status': data.get('status'),
+              'programmeCount': data.get('programmeCount'),
+              'diagnosticCounts': data.get('diagnosticCounts'),
+              'elapsedMs': data.get('elapsedMs'),
+              'httpRoundTripSeconds': open('/tmp/ingest-time.txt').read().strip(),
+              'writeChannelCount': len(write.get('channelIds', [])),
+              'storedProgrammeCount': result.get('storedProgrammeCount'),
+              'removedProgrammeCount': result.get('removedProgrammeCount'),
+          }
+          print(json.dumps(summary, indent=2))
+          assert data['status'] == 'stored', data
+          assert len(write['channelIds']) == 12, data
+          assert result['storedProgrammeCount'] > 0, data
+          assert data['diagnosticCounts']['error'] == 0, data
+          PY
+
+      - name: Read the canonical window through the permanent public transport
+        run: |
+          set -euo pipefail
+          curl --fail --silent --show-error \
+            -X POST \
+            -H 'Content-Type: application/json' \
+            --data '{"from":"2026-09-14T00:00:00Z","to":"2026-09-15T00:00:00Z"}' \
+            -w '%{time_total} %{size_download}\n' \
+            'https://eokszvpityhtysbwdduy.supabase.co/functions/v1/guide-schedule' \
+            -o /tmp/schedule.json > /tmp/read-metrics.txt
+          python - <<'PY'
+          import json
+          data = json.load(open('/tmp/schedule.json'))
+          assert data['status'] == 'ok', data
+          schedule = data['schedule']
+          assert schedule['timezone'] == 'Europe/Amsterdam'
+          assert len(schedule['channels']) == 12
+          assert len(schedule['programmes']) > 0
+          provider_fields = {'providerChannelId', 'providerProgrammeId'}
+          assert not any(provider_fields.intersection(item) for item in schedule['programmes'])
+          metrics = open('/tmp/read-metrics.txt').read().split()
+          print(json.dumps({
+              'status': data['status'],
+              'generatedAt': schedule['generatedAt'],
+              'channels': len(schedule['channels']),
+              'programmes': len(schedule['programmes']),
+              'readSeconds': metrics[0],
+              'responseBytes': int(metrics[1]),
+          }, indent=2))
+          PY
+
+      - name: Prove uncovered canonical coverage remains unavailable
+        run: |
+          set -euo pipefail
+          curl --fail --silent --show-error \
+            -X POST \
+            -H 'Content-Type: application/json' \
+            --data '{"from":"2026-09-16T00:00:00Z","to":"2026-09-17T00:00:00Z"}' \
+            'https://eokszvpityhtysbwdduy.supabase.co/functions/v1/guide-schedule' \
+            -o /tmp/unavailable.json
+          python - <<'PY'
+          import json
+          data = json.load(open('/tmp/unavailable.json'))
+          print(json.dumps(data, indent=2))
+          assert data == {'status': 'unavailable'}, data
           PY
