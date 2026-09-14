@@ -1,0 +1,20 @@
+name: Temporary Edge XMLTV Measure
+
+on:
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  measure:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Invoke temporary Supabase Edge measurement
+        run: |
+          set -euo pipefail
+          curl --fail --silent --show-error \
+            -H 'x-teevee-measure: edge-xmltv-v1' \
+            'https://eokszvpityhtysbwdduy.supabase.co/functions/v1/epg-feed-inspect' \
+            | python -m json.tool
