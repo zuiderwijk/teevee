@@ -1,206 +1,186 @@
-# Teevee testen op een fysiek toestel
+# Teevee Testing
 
-Status: Phase 3 development testpad. Phase 2 iPhone acceptance is closed. Current feature/device gates are governed by `PROJECT_STATE.md`.
+Status: Phase 3 development test path. Phase 2 iPhone acceptance is closed. Current feature/device gates are governed by `PROJECT_STATE.md`.
 
-Doel: echte iOS- en Android-interactie vroeg bewijzen zonder te wachten op TestFlight, Google Play of production-data. CI en server/integration tests blijven technisch bewijs, geen vervanging voor toestelacceptatie wanneer mobiele interaction boundaries worden geraakt.
+CI and server/integration tests are technical proof; they do not replace physical-device acceptance when mobile interaction boundaries are changed.
 
-## Snelste testpad: Expo Go
-
-De huidige app gebruikt alleen Expo-compatible libraries en heeft nog geen custom native modules nodig. Daardoor kan de huidige mobiele app voorlopig via Expo Go worden getest.
-
-### Eenmalig op je telefoon
-1. Installeer **Expo Go** uit de Apple App Store of Google Play Store.
-2. Zorg dat telefoon en developmentcomputer op hetzelfde netwerk zitten.
-
-### Eerste keer op de developmentcomputer
-1. Clone de repository: `git clone https://github.com/zuiderwijk/teevee.git`
-2. `cd teevee`
-3. `npm ci`
-4. `npm run start:device`
-5. Scan de QR-code met de camera/Expo Go.
-
-### Volgende testsessies
-Werk eerst current `main` bij:
+## Local mobile test path
+The current app still uses Expo-compatible libraries and can be run through Expo Go.
 
 ```bash
 cd ~/projects/teevee
 git checkout main
 git pull --ff-only
-```
-
-Normaal starten:
-
-```bash
+npm ci
 npm run start:device
 ```
 
-Bij vreemd cachegedrag of voor een gerichte acceptatiepass:
+For cache-sensitive checks:
 
 ```bash
 npm run start:clean
 ```
 
-## Phase 2 fysieke status — CLOSED
+## Phase 2 physical status — CLOSED
+Evidence:
+- `docs/PHYSICAL_EVIDENCE_2026-09-13_2310.md`;
+- `docs/PHYSICAL_EVIDENCE_2026-09-13_2356.md`.
 
-Broad evidence: `ScreenRecording_09-13-2026 23-10-50_1.MP4` / `docs/PHYSICAL_EVIDENCE_2026-09-13_2310.md`.
-Final remediation evidence: `ScreenRecording_09-13-2026 23-56-18_1.MP4` / `docs/PHYSICAL_EVIDENCE_2026-09-13_2356.md`.
-
-De beschikbare iPhone heeft Phase 2 fysiek geaccepteerd:
-- Settings als secundaire route;
-- live Light/Dark/System;
-- expliciete appearance-persistence na restart;
+Accepted on the available iPhone:
+- Gids / Vanavond / Zoeken + secondary Settings;
+- persisted Light/Dark/System;
 - shared headers/safe areas;
-- Totaal, Per zender en Nu & Straks bij representatieve 135% iOS-tekst;
-- Programme Detail onder grotere tekst;
-- Per zender text-only kanaalidentiteiten blijven na PR #35 onderscheidend;
-- directe zenderselectie en adjacent-channel swipe houden strip en schedule synchroon;
-- geen redbox, wit scherm, crash of brede interaction-regressie.
+- Totaal, Per zender and Nu & Straks at representative larger iOS text;
+- Programme Detail round-trip;
+- Per zender channel identity/select/swipe synchronisation;
+- no broad crash/white-screen/gesture regression.
 
-Deze Phase 2-gates hoeven niet routinematig opnieuw te worden bewezen. Heropen een fysiek geaccepteerde interaction baseline alleen bij concrete regressie-evidence.
+Do not routinely reopen these interaction gates. Revalidate only when concrete changes touch them.
 
-## Phase 3 — deterministic real-data contract tests
+Nu & Straks following-programme rows remain known non-blocking accessibility/density debt at 24pt. Do not solve with overlapping `hitSlop` or blindly enlarge every row to 44pt; later remediation must be density-aware and physically checked.
 
-Phase 3 vervangt de deterministische fixtures **niet**. Real data wordt via aparte provider/repository/API boundaries toegevoegd terwijl fixtures de betrouwbare test- en offline-developmentbasis blijven.
-
-De backend-onafhankelijke Phase 3-kern heeft nu expliciete tests voor de onderstaande lagen.
-
-### Provider / normalisatie
-Bewijs minimaal:
-- provider-channel mappings zijn expliciet;
-- invalid/unknown/duplicate mappings worden conservatief gediagnosticeerd;
-- malformed raw records zijn representabel en worden bij de trust boundary afgewezen, niet in adapters verzonnen;
-- timestamps worden canoniek UTC;
-- provider-ID-hergebruik voor verschillende broadcasts blijft gescheiden;
-- timezone-equivalente duplicate broadcasts worden na timestampnormalisatie gededupliceerd;
-- overlaps blijven bruikbare data maar geven diagnostics;
-- provider-specifieke IDs/velden lekken niet in canonical/mobile output.
-
-### Canonical repository — ADR 0007
-Repositorytests bewaken:
-- query-intersectie `programme.start < to && programme.end > from`;
-- expliciete channel/time replacement scope;
-- een partial-channel refresh raakt programmes én metadata van andere channels niet;
-- corrections verwijderen stale rows alleen binnen het refreshed window;
-- authoritative coverage wordt per channel/time segment bijgehouden;
-- **covered but empty** geeft een geldige lege schedule terug;
-- **uncovered/partly covered** geeft `null`/unavailable terug;
-- gecombineerde query freshness is conservatief: de oudste coverage die bijdraagt;
-- een oudere overlappende write wordt atomair `ignored-stale` en verandert canonical data niet;
-- invalid ranges, lege expliciete scopes en kapotte canonical relations falen hard.
-
-De `InMemoryScheduleRepository` is alleen een executable reference/test implementation. Een latere PostgreSQL/Supabase repository moet dezelfde tests/semantiek reproduceren.
-
-### Ingestion orchestration
-Integratietests bewaken provider -> mapping -> normalisation -> repository:
-- `complete` provider coverage mag een safe canonical window vervangen;
-- `partial` coverage schrijft niet destructief;
-- een complete lege providerbatch mag stale canonical data verwijderen voor veilige channel scope;
-- malformed data die veilig aan één channel toe te wijzen is blokkeert alleen die channel terwijl andere veilige channels kunnen updaten;
-- een malformed record zonder channel attribution blokkeert de destructieve write;
-- repository `ignored-stale` wordt expliciet doorgegeven en niet als stored gerapporteerd.
-
-### Refresh concurrency
-Een dedicated concurrencytest start een ouder providerrequest, schrijft daarna een nieuwere refresh en laat vervolgens het oude request pas terugkomen.
-
-Acceptatie:
-- freshness wordt vastgelegd bij **request start**;
-- de nieuwere canonical schedule blijft bewaard;
-- de late oudere response eindigt als `ignored-stale`.
-
-Dit voorkomt dat netwerk/completion order de chronologische freshness omdraait.
-
-### Typed schedule API
-De repository-backed `GuideScheduleApi` en serialized requestparser bewaken:
-- public output bevat alleen canonical Teevee data;
-- fully covered scope geeft `ok`, ook wanneer programmes leeg zijn;
-- ontbrekende/incomplete canonical coverage geeft `unavailable`;
-- runtime input is een object met geldige `from`/`to` timestamps en `to > from`;
-- timestamps worden gecanoniseerd naar UTC ISO;
-- optionele `channelIds` moeten bij aanwezigheid een niet-lege string-array zijn, worden getrimd en gededupliceerd;
-- TypeScript-types worden niet als vervanging voor transport-runtimevalidatie gebruikt.
-
-## Live provider tests — pas na authorized providerkeuze
-Een concrete live adapter moet aanvullende provider-specifieke contracttests krijgen voor:
-- daadwerkelijke response parsing;
-- pagination/chunking/rate limits indien relevant;
-- requested-scope versus returned-scope behaviour;
-- correct bepalen van `complete` versus `partial`;
-- channel mapping coverage;
-- schedule horizon;
-- provider corrections;
-- freshness/volume diagnostics op realistische data.
-
-Normale PR-CI mag niet van een live externe provider, internetbeschikbaarheid of providercredential afhangen. Gebruik captured/licensed fixtures of adapter-level deterministic samples.
-
-## Hosted repository/API tests — pas na backendkeuze
-Wanneer PostgreSQL/Supabase of een andere backend wordt geïmplementeerd:
-- run dezelfde repository semantics tegen de echte implementation;
-- prove transactional stale-write protection under concurrent refreshes;
-- verify coverage/freshness persistence apart van programme rows;
-- verify provider/service secrets are server-only;
-- verify exposed API/RLS/permissions match the intended public read model;
-- verify typed transport preserves `ok` versus `unavailable` semantics.
-
-## Mobile client
-Wanneer Phase 3 de Guide daadwerkelijk op de Teevee API/cache aansluit, test:
-- loading/error/offline states laten de app gecontroleerd degraderen;
-- fixturemode blijft beschikbaar voor deterministic tests/development;
-- schedule refresh reset de fysiek geaccepteerde Guide-scroll-/channel-/time-context niet onnodig;
-- Totaal, Per zender en Nu & Straks blijven hetzelfde canonical domain consumeren;
-- provider/database details komen niet in mobile code terecht.
-
-## Cache / refresh
-Wanneer mobiele schedule caching wordt toegevoegd, test expliciet:
-- cold load;
-- warm cache;
-- refresh met ongewijzigde data;
-- refresh met schedulecorrectie;
-- netwerkfout met bruikbare cache;
-- stale-data communicatie wanneer relevant;
-- app resume en Amsterdam-dagwissel;
-- incomplete API coverage wordt niet als authoritative empty cache opgeslagen.
-
-## Fysieke device-checks tijdens Phase 3
-Een backend/data-only wijziging vereist niet automatisch een volledige Guide-acceptatiepass. Gebruik risicogestuurde devicechecks:
-- **geen UI/interaction boundary geraakt:** CI + unit/integratietests kunnen voldoende zijn;
-- **Guide krijgt een nieuwe data source/cache/refresh path:** korte iPhone smoke voor startup, actuele data, Nu, channel/time context en Programme Detail;
-- **scroll/gesture/layout code geraakt:** de relevante fysiek bevroren baseline gericht opnieuw samplen;
-- **native dependency/config gewijzigd:** iOS/Android buildpad en geschikt device opnieuw beoordelen.
-
-## Historische Phase 1/1B-baseline
-De volgende interaction models zijn al fysiek geaccepteerd:
-- Totaal: tweedimensionale tijd/zender-guide, native inertia/bounce/directional lock, Vandaag/Morgen/Nu, Programme Detail;
-- Per zender: verticale tijdpositie, horizontale adjacent-channel pager, browsable/direct-tap zenderstrip, contextbehoud;
-- Nu & Straks: live/browse referentietijd, native tijdrail, Nu/Primetime, stabiele verticale context en Programme Detail round-trip.
-
-## Open maar niet-blockerende accessibility debt
-De compacte volgende-programma-rijen in Nu & Straks gebruiken momenteel 24pt minimumhoogte. Fysieke larger-text evidence leverde geen concrete tap failure op. Dit blijft latere Core Guide accessibility-hardening.
-
-Niet oplossen met overlappende `hitSlop` en niet stilzwijgend alle rijen naar 44pt vergroten: beide keuzes kunnen respectievelijk tap-arbitrage of de geaccepteerde informatiedichtheid veranderen. Een latere oplossing moet density-aware zijn en fysiek worden gevalideerd.
-
-## Geautomatiseerde kwaliteitscontrole
-Iedere PR en iedere push naar `main` start GitHub Actions met:
-- dependency-installatie;
-- TypeScript typecheck;
+## Automated quality gate
+Every normal PR/main push runs:
+- `npm ci`;
+- strict TypeScript typecheck;
 - lint;
-- tests;
-- Expo exports voor iOS, Android en web;
-- een schone Android prebuild en Gradle debug-APK compile.
+- Vitest suite;
+- Expo exports for iOS, Android and web;
+- clean Android prebuild + Gradle debug APK compile.
 
-Een groene CI zegt dat de code technisch door de afgesproken checks komt. Het zegt **niet** dat scrollgevoel en mobiele UX goed zijn.
+A green CI run proves those checks only; it does not prove mobile scroll/gesture quality.
+
+Never use `npm audit fix --force`.
+
+## Phase 3 deterministic tests
+Real data does not replace deterministic fixtures. Normal CI must not depend on the internet, external provider availability or provider credentials.
+
+### Provider / normalisation
+Tests cover:
+- explicit provider-channel mappings;
+- invalid/unknown/duplicate mapping diagnostics;
+- malformed external records remain representable;
+- UTC normalisation;
+- provider-ID reuse across broadcasts;
+- timezone-equivalent duplicate handling;
+- overlap diagnostics;
+- no provider-specific leakage into canonical/mobile output.
+
+### XMLTV development adapter — PR #42
+Deterministic sample tests cover:
+- timestamps with explicit numeric offsets;
+- DST-offset examples;
+- rejection of ambiguous offset-less timestamps;
+- XML entities and CDATA;
+- title/subtitle/description/category;
+- live/repeat flags;
+- malformed timestamp pass-through for diagnostics;
+- injected fetch boundary;
+- `[from,to)` schedule intersection;
+- continuous coverage -> `complete`;
+- a schedule gap -> `partial`;
+- upstream HTTP failure does not fabricate authoritative empty data.
+
+The first PR #42 CI run found a real CDATA handling bug. It was fixed before merge; final exact-head CI #290 passed `quality` and `android-native` completely.
+
+### Live feed evidence is separate from normal CI
+Temporary PR #43 ran a one-off GitHub Actions fetch to inspect the public development feed and was closed without merge.
+
+Observed:
+- ~30.2 MB XML;
+- 184 channels;
+- 33,117 programme records;
+- roughly a week of schedule data;
+- real provider IDs including NPO/RTL/SBS/Net5/Veronica/sport channels.
+
+No live external fetch remains in the normal CI workflow.
+
+## Canonical repository — ADR 0007
+Repository tests must preserve:
+- `programme.start < to && programme.end > from`;
+- explicit channel/time replacement scope;
+- metadata/programmes outside refresh scope untouched;
+- corrections remove stale rows only inside scope;
+- coverage per channel/time segment;
+- covered-empty valid;
+- uncovered/partly covered unavailable;
+- conservative combined freshness;
+- older overlapping write atomically `ignored-stale`;
+- invalid ranges/empty explicit scopes/broken canonical relations fail hard.
+
+The in-memory repository is an executable reference, not production storage.
+
+## Hosted Supabase persistence — PR #40
+`SupabaseScheduleRepository` tests cover RPC mapping, stored/ignored-stale results, bounded reads, unavailable reads, malformed payload rejection and RPC errors.
+
+Hosted security expectations:
+- canonical tables stay private;
+- `anon`/`authenticated` cannot access storage/RPC write/read bridges;
+- service role stays server-side;
+- RLS/no-policy on private tables is intentional;
+- transactional stale-write behaviour must remain equivalent to ADR 0007.
+
+Actual service-role end-to-end execution is part of the hosted transport/ingest slice, because the connected SQL inspection role cannot impersonate service role.
+
+## Ingestion orchestration
+Integration tests cover:
+- `complete` provider coverage may replace a safe canonical window;
+- `partial` coverage never destructively writes;
+- complete empty batches may clear stale canonical data;
+- attributable malformed data blocks only affected safe channel scope;
+- unattributed malformed data blocks destructive replacement;
+- repository `ignored-stale` is surfaced explicitly.
+
+## Refresh concurrency
+A dedicated test proves:
+- freshness is captured at provider request start;
+- a newer canonical schedule remains stored;
+- a slow older response finishing later is `ignored-stale`.
+
+## Typed schedule API
+Tests cover:
+- canonical-only output;
+- fully covered scope -> `ok`, including zero programmes;
+- missing/incomplete canonical coverage -> `unavailable`;
+- runtime validation of serialized `from`/`to`;
+- `to > from`;
+- UTC canonicalisation;
+- optional channel IDs must be non-empty strings and are trimmed/deduplicated.
+
+## Next hosted real-data test slice
+Before connecting mobile, prove one bounded server-side path:
+1. explicit verified XMLTV provider IDs -> narrow Teevee canonical channel mapping;
+2. provider fetch/parse for a bounded time window;
+3. normalisation diagnostics;
+4. authoritative safe write to Supabase;
+5. canonical read back;
+6. typed transport response;
+7. measurement of feed fetch, parse, write/read and canonical response size.
+
+Because the external source is ~30 MB, memory/latency and refresh cadence must be measured, not guessed.
+
+## Mobile client gate
+Only when real canonical data reaches the Guide:
+- startup remains stable;
+- loading/error/offline fallback is controlled;
+- fixture mode remains available;
+- refresh does not reset accepted presentation/channel/time context unnecessarily;
+- all three Guide presentations still consume the same provider-independent domain;
+- no provider/database details appear in mobile code;
+- run a focused physical iPhone smoke.
+
+If Guide scroll/layout/gesture code is untouched, do not rerun the entire Phase 1/2 acceptance matrix.
 
 ## Android
-Fysieke Android-validatie is nog open omdat momenteel geen Android-toestel beschikbaar is. CI bewijst Android export/prebuild/compile, niet system Back, nested gestures, device-performance of device-specifieke defects.
+Physical Android validation remains open because no Android device is currently available. CI proves export/prebuild/compile only, not system Back, nested gesture feel or device performance.
 
-Zodra een geschikt toestel beschikbaar is, test op current `main` minimaal:
-1. App opent normaal.
-2. Alle drie Guide-presentaties zijn bruikbaar.
-3. Horizontale en verticale Guide-beweging blijven stabiel.
-4. Programme Detail opent en Android system/hardware Back sluit het precies één keer.
-5. Appearance en grotere tekst vertonen geen device-specifieke regressie.
-6. Een korte gemengde scrollsessie geeft geen crash, wit scherm of duidelijke performance collapse.
+When hardware becomes available, check at minimum:
+1. startup;
+2. all Guide presentations;
+3. mixed horizontal/vertical Guide movement;
+4. Programme Detail + Android system Back;
+5. appearance/larger text;
+6. short stability/performance session.
 
-## Later: development build / TestFlight / Play Internal Testing
-Expo Go is alleen bedoeld als snel development-testpad. Zodra native capabilities, notificaties, subscriptions of productieachtig distributiegedrag belangrijk worden, schakelt Teevee over naar een Expo development build en daarna TestFlight / Google Play Internal Testing.
-
-Dat moment wordt expliciet in `docs/PROJECT_STATE.md` vastgelegd; we introduceren die distributiecomplexiteit niet eerder dan nodig.
+## Later distribution testing
+Stay on Expo Go while current capabilities allow it. Move to Expo development builds, TestFlight and Google Play Internal Testing only when native capabilities or production-like distribution behaviour actually require it.
