@@ -49,16 +49,30 @@ describe('parseHostedGuideScheduleRequest', () => {
     ).toThrow('Unsupported channelIds value');
   });
 
-  it('rejects public queries larger than 24 hours', () => {
-    expect(() =>
+  it('allows a 25-hour Amsterdam winter-time guide day and rejects anything larger', () => {
+    expect(
       parseHostedGuideScheduleRequest(
         {
-          from: '2026-09-14T00:00:00Z',
-          to: '2026-09-15T00:00:01Z',
+          from: '2026-10-24T22:00:00Z',
+          to: '2026-10-25T23:00:00Z',
         },
         canonicalIds,
       ),
-    ).toThrow('limited to 24 hours');
+    ).toEqual({
+      from: '2026-10-24T22:00:00.000Z',
+      to: '2026-10-25T23:00:00.000Z',
+      channelIds: ['nl-npo-1', 'nl-rtl-4'],
+    });
+
+    expect(() =>
+      parseHostedGuideScheduleRequest(
+        {
+          from: '2026-10-24T22:00:00Z',
+          to: '2026-10-25T23:00:01Z',
+        },
+        canonicalIds,
+      ),
+    ).toThrow('limited to 25 hours');
   });
 });
 
@@ -103,7 +117,7 @@ describe('parseHostedRefreshRequest', () => {
     ).toThrow('Unsupported providerChannelIds value');
   });
 
-  it('rejects invalid and oversized refresh windows', () => {
+  it('rejects invalid refresh ranges and allows at most 25 hours', () => {
     expect(() =>
       parseHostedRefreshRequest(
         { from: '2026-09-14T01:00:00Z', to: '2026-09-14T00:00:00Z' },
@@ -111,11 +125,18 @@ describe('parseHostedRefreshRequest', () => {
       ),
     ).toThrow('to must be after from');
 
+    expect(
+      parseHostedRefreshRequest(
+        { from: '2026-10-24T22:00:00Z', to: '2026-10-25T23:00:00Z' },
+        providerIds,
+      ).to,
+    ).toBe('2026-10-25T23:00:00.000Z');
+
     expect(() =>
       parseHostedRefreshRequest(
-        { from: '2026-09-14T00:00:00Z', to: '2026-09-15T00:00:01Z' },
+        { from: '2026-10-24T22:00:00Z', to: '2026-10-25T23:00:01Z' },
         providerIds,
       ),
-    ).toThrow('limited to 24 hours');
+    ).toThrow('limited to 25 hours');
   });
 });
