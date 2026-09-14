@@ -1,7 +1,7 @@
 import type { GuideScheduleApiRequest } from '../../services/api/guideScheduleContract.ts';
 import { parseGuideScheduleApiRequest } from '../../services/api/guideScheduleContract.ts';
 
-export const HOSTED_SCHEDULE_MAX_WINDOW_MS = 24 * 60 * 60 * 1000;
+export const HOSTED_SCHEDULE_MAX_WINDOW_MS = 25 * 60 * 60 * 1000;
 export const HOSTED_REQUEST_MAX_BODY_BYTES = 8 * 1024;
 
 export type HostedRefreshRequest = {
@@ -24,7 +24,7 @@ function allowedIds(ids: readonly string[], label: string): string[] {
 function assertHostedWindow(from: string, to: string): void {
   const duration = Date.parse(to) - Date.parse(from);
   if (duration > HOSTED_SCHEDULE_MAX_WINDOW_MS) {
-    throw new Error('Hosted schedule requests are limited to 24 hours');
+    throw new Error('Hosted schedule requests are limited to 25 hours');
   }
 }
 
