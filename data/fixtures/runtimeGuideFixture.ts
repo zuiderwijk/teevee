@@ -30,11 +30,13 @@ export function buildRuntimeGuideFixture(nowMs = Date.now()): GuideFixture {
 }
 
 /**
- * Runtime Guide days are relative labels: today + tomorrow. Rebuild as soon as
- * the Amsterdam calendar day changes so the finite horizon cannot remain anchored
- * to yesterday after midnight or a long background interval.
+ * Fixture-mode `generatedAt` doubles as its day anchor. Canonical schedules keep
+ * `generatedAt` as server freshness instead, so their installed runtime day is the
+ * authoritative anchor and must not be inferred from freshness.
  */
 export function runtimeGuideFixtureNeedsRefresh(fixture: GuideFixture, nowMs: number): boolean {
+  if (runtimeGuideScheduleFor(nowMs) === fixture) return false;
+
   const generatedAtMs = Date.parse(fixture.generatedAt);
   if (!Number.isFinite(generatedAtMs)) return true;
   return guideDayStart(generatedAtMs) !== guideDayStart(nowMs);
