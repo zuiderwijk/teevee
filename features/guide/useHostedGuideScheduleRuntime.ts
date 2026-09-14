@@ -50,18 +50,26 @@ export function useHostedGuideScheduleRuntime(
   );
 
   useEffect(() => {
-    refresh();
-    const interval = setInterval(() => {
-      const nowMs = Date.now();
-      if (guideDayStart(nowMs) !== activeDayStartRef.current) refresh(nowMs);
-    }, DAY_CHANGE_CHECK_MS);
-    const subscription = AppState.addEventListener('change', (nextState) => {
-      if (nextState === 'active') refresh(Date.now());
+    let interval: ReturnType<typeof setInterval> | null = null;
+    let subscription: ReturnType<typeof AppState.addEventListener> | null = null;
+
+    // Preserve the proven startup path: the first frame always renders immediately from
+    // deterministic local data. Network work and lifecycle subscriptions start afterwards.
+    const frame = requestAnimationFrame(() => {
+      refresh();
+      interval = setInterval(() => {
+        const nowMs = Date.now();
+        if (guideDayStart(nowMs) !== activeDayStartRef.current) refresh(nowMs);
+      }, DAY_CHANGE_CHECK_MS);
+      subscription = AppState.addEventListener('change', (nextState) => {
+        if (nextState === 'active') refresh(Date.now());
+      });
     });
 
     return () => {
-      clearInterval(interval);
-      subscription.remove();
+      cancelAnimationFrame(frame);
+      if (interval !== null) clearInterval(interval);
+      subscription?.remove();
       requestVersionRef.current += 1;
     };
   }, [refresh]);
