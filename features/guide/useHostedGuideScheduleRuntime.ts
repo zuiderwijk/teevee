@@ -17,8 +17,8 @@ const DAY_CHANGE_CHECK_MS = 30_000;
 /**
  * Keep the shared runtime schedule fixture-first and replace it with hosted canonical
  * data when available. The returned version is only used as a React `key` boundary so
- * the existing physically accepted Guide implementations can rebuild when data really
- * changes, without introducing network state into their scroll/gesture logic.
+ * the existing physically accepted Guide implementations can rebuild when user-visible
+ * data really changes, without introducing network state into their scroll/gesture logic.
  */
 export function useHostedGuideScheduleRuntime(
   api: GuideScheduleApi = hostedGuideScheduleApi,
@@ -30,8 +30,7 @@ export function useHostedGuideScheduleRuntime(
   const refresh = useCallback(
     (anchorMs = Date.now()) => {
       const nextDayStart = guideDayStart(anchorMs);
-      const dayChanged = nextDayStart !== activeDayStartRef.current;
-      if (dayChanged) {
+      if (nextDayStart !== activeDayStartRef.current) {
         activeDayStartRef.current = nextDayStart;
         // The previously installed real schedule belongs to yesterday. Remount now;
         // buildRuntimeGuideFixture will deterministically fall back while the network loads.
@@ -46,10 +45,15 @@ export function useHostedGuideScheduleRuntime(
           if (!schedule || schedule.channels.length === 0 || schedule.programmes.length === 0) return;
 
           const currentSchedule = runtimeGuideScheduleFor(anchorMs);
-          const contentChanged =
-            currentSchedule === null || !guideScheduleContentEqual(currentSchedule, schedule);
+          if (currentSchedule && guideScheduleContentEqual(currentSchedule, schedule)) {
+            // `generatedAt` may advance while all user-visible data stays identical.
+            // Keep the same installed object so Guide-local refresh checks also preserve
+            // scroll/channel context instead of picking up a freshness-only replacement.
+            return;
+          }
+
           installRuntimeGuideSchedule(schedule, anchorMs);
-          if (contentChanged) setVersion((current) => current + 1);
+          setVersion((current) => current + 1);
         })
         .catch(() => {
           // Offline/unavailable/invalid hosted data leaves the deterministic fixture usable.
