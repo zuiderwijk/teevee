@@ -1,34 +1,47 @@
 # Teevee Programme Data Strategy
 
-Status: Phase 3 provider-independent data contracts implemented; concrete hosted backend and authorized live development provider remain pending.
+Status: Phase 3 has provider-independent contracts, hosted Supabase canonical persistence and a development-only real XMLTV provider. Hosted ingest/query transport and the mobile real-data/cache path remain active work.
 
 ## Goal
-Teevee must be able to develop and validate the complete core product without depending on one EPG supplier, while remaining able to migrate to Bindinc/TVgids production data later without rewriting the mobile Guide.
+Teevee must validate the complete core product with real schedules without coupling the mobile Guide to one provider. Switching later to an authorized Bindinc/TVgids or other commercial provider must not require a Guide rewrite.
 
 ## Core rule
 The mobile client never consumes an external EPG feed directly.
 
-All providers are translated into a Teevee-owned domain model through a server-side/provider ingestion boundary. Provider-specific identifiers, credentials, XMLTV concepts and payload fields do not leak into Guide components or the public mobile schedule contract.
+External data flows through:
 
-## Development provider strategy
-Deterministic fixtures remain the default source for automated tests and offline core development until an authorized live development source is available.
+`EpgProvider -> explicit channel mapping -> normalisation/diagnostics -> canonical ScheduleRepository -> GuideScheduleApi -> hosted transport -> mobile source/cache`
 
-Do **not** assume that a free, public or technically scrapeable guide is licensed for Teevee. Public accessibility is not a usage-rights decision.
+Provider-specific IDs, raw XMLTV, credentials and storage details stop at the server boundary.
 
-Current provider order:
-1. prefer an authorized Bindinc/TVgids.nl development feed/API when available;
-2. otherwise evaluate a commercial provider with Netherlands coverage and explicit development/redistribution rights;
-3. never adopt a scraper feed merely to complete Phase 3.
+## Deterministic fixtures remain mandatory
+The existing synthetic 48-channel fixture remains the default for:
+- normal CI;
+- repeatable domain/UI tests;
+- offline development;
+- interaction regression testing.
 
-Current research is recorded in `PHASE_3_PROVIDER_RESEARCH_2026-09-14.md`.
+Real schedule data supplements fixtures; it does not replace deterministic tests.
 
-Schedules Direct is explicitly rejected under its currently published personal/non-commercial terms. Gracenote On API and EPGdata.tv are technically relevant candidates, but neither is approved for Teevee until access, commercial rights and Netherlands scope are confirmed.
+Do **not** map real provider IDs onto the synthetic fixture by guessing. The first real vertical slice gets its own explicit narrow canonical channel catalog/mapping.
 
-A development provider is not automatically production-approved by completing Phase 3.
+## Temporary development provider
+PR #42 implements `XmltvEpgProvider` using this default development feed:
+
+`https://iptv-epg.org/files/epg-nl.xml`
+
+This source is development-only. Public availability is not proof of commercial redistribution rights.
+
+Observed real feed evidence on 2026-09-14 via temporary unmerged PR #43:
+- 30,237,192 bytes;
+- 184 channels;
+- 33,117 programmes;
+- observed range `20260913000600 +0000` through `20260919235500 +0000`;
+- verified IDs including `NPO1.nl`, `NPO2.nl`, `NPO3.nl`, `RTL4.nl`, `RTL5.nl`, `RTL7.nl`, `RTL8.nl`, `RTLZ.nl`, `SBS6.nl`, `SBS9.nl`, `Net5.nl` and `VeronicaDisneyXD.nl`.
+
+Website overview counters and the fetched payload disagree in current totals. Teevee therefore uses only parsed feed content and explicit requested scope for technical correctness/coverage decisions.
 
 ## Provider interface
-The implemented server-side provider contract is intentionally neutral:
-
 ```ts
 type ProviderScheduleBatch = {
   coverage: 'complete' | 'partial';
@@ -46,23 +59,37 @@ interface EpgProvider {
 }
 ```
 
-Raw external fields that Teevee requires canonically are allowed to be missing at this boundary. Malformed input must remain representable so normalisation can diagnose/reject it instead of forcing adapters to invent values.
+Raw external required values may be malformed or absent at this boundary. Adapters must preserve diagnosable input instead of inventing canonical values.
 
-`coverage: complete` means the adapter considers the requested time/channel scope authoritative, including a legitimate empty window. `partial` data may be inspected/diagnosed but may not destructively replace canonical storage.
+`complete` means the adapter can prove that the requested provider channel/time scope is continuously covered and authoritative. `partial` may be inspected but cannot destructively replace canonical storage.
+
+## XMLTV adapter rules
+The current development adapter:
+- parses channel IDs/display names and optional icons;
+- parses programme title, subtitle, description, category, live/repeat flags;
+- requires an explicit numeric timezone offset in XMLTV timestamps;
+- normalises valid timestamps to UTC ISO;
+- leaves malformed timestamps representable for downstream diagnostics;
+- filters returned programmes by `[from,to)` intersection;
+- declares `complete` only when every requested channel continuously covers the full requested range;
+- uses an injectable `fetch` boundary so automated tests are deterministic.
+
+Normal PR CI never calls the live feed.
 
 ## Channel mapping
-Provider channel identity is never treated as Teevee channel identity.
+Provider identity is never canonical Teevee identity.
 
-- provider -> canonical channel mappings are explicit;
-- unknown or invalid canonical mappings are diagnosed;
-- repeated provider IDs are treated conservatively as ambiguous and excluded;
-- a partial refresh declares the exact canonical channel scope it may replace;
-- channel metadata outside that scope cannot be overwritten by the refresh.
+Rules:
+- mappings are explicit;
+- unknown/invalid/duplicate mappings are diagnosed conservatively;
+- canonical channel IDs belong to Teevee and may survive provider replacement;
+- provider metadata outside requested replacement scope cannot overwrite unrelated canonical channels;
+- the first hosted development ingest should map only a narrow verified set of real channels rather than all 184 source channels.
 
 ## Canonical domain model
 ### Channel
 Required:
-- `id`: stable Teevee identifier;
+- `id` stable Teevee identity;
 - `name`;
 - `displayName`;
 - `sortOrder`;
@@ -72,11 +99,11 @@ Optional:
 - `logoUrl`;
 - `shortName`.
 
-Provider references belong at the ingestion/mapping boundary, not in Guide presentation contracts.
+No external logo is considered cleared for production merely because the feed references it.
 
 ### Programme
 Required:
-- `id`: stable Teevee identifier;
+- `id` stable Teevee broadcast identity;
 - `channelId`;
 - `startAt`;
 - `endAt`;
@@ -89,121 +116,102 @@ Optional:
 - `isLive`;
 - `isRepeat`.
 
-Future enrichment may add image/cast/episode fields without making them structural requirements for Guide usability.
-
-Derived values such as duration, progress and current/upcoming state should normally be calculated from canonical timestamps rather than persisted redundantly.
+Artwork/cast/episode enrichment remains optional to core Guide usability.
 
 ## Time handling
-- Canonical timestamps use UTC ISO values.
-- Provider timezone information is retained only where ingestion diagnostics need it.
-- Render in Europe/Amsterdam for the Dutch MVP unless user/platform requirements later require another timezone.
-- Explicitly test daylight-saving transitions.
-- Current-programme semantics remain `[start,end)`.
+- Canonical timestamps are UTC ISO.
+- Dutch MVP renders in `Europe/Amsterdam`.
+- XMLTV adapter does not guess timezone when an offset is missing.
+- Current-programme and query semantics are `[start,end)`.
+- DST transitions remain explicit test cases.
 
 ## Stable IDs
-External provider IDs cannot be trusted as permanent Teevee product IDs by themselves.
+External provider IDs are not used as Teevee product IDs by themselves.
 
-The current normalisation layer produces deterministic Teevee programme identities from provider namespace + canonical channel + provider programme identity + broadcast start. This allows a provider to reuse a content/programme ID for multiple broadcasts without collapsing those broadcasts into one programme row.
+Normalisation creates deterministic Teevee programme identities from provider namespace + canonical channel + provider programme identity + broadcast start, with a deterministic composite fallback when provider IDs are absent. This prevents repeated broadcasts from collapsing together.
 
-When a provider has no usable ID, a deterministic composite identity is used. Schedule-window replacement handles later corrections so stale canonical rows can be removed safely.
+## Canonical hosted storage — ADR 0007
+Supabase now implements the backend-independent semantics:
+- explicit canonical channel/time replacement scope;
+- programme intersection `start < to && end > from`;
+- coverage/freshness stored separately from programme rows;
+- covered-empty valid vs uncovered unavailable;
+- conservative read freshness;
+- stale overlapping writes atomically rejected before mutation;
+- request-start freshness prevents slow older requests from winning.
 
-## Canonical storage / query semantics
-ADR 0007 defines the durable backend-independent rules.
+Hosted project:
+- `teevee` / `eokszvpityhtysbwdduy`;
+- organization `teevee`;
+- Free plan;
+- `eu-west-2`.
 
-- Reads use serialisable `GuideScheduleQuery` time/channel scope.
-- A programme intersects a read window when `start < to && end > from`.
-- Replacement writes declare explicit canonical channel IDs and a `[from,to)` window.
-- Authoritative coverage/freshness is tracked per channel/time segment independently from programme rows.
-- A covered empty window is valid schedule data; uncovered/partly covered scope is unavailable.
-- Read freshness is conservative: report the oldest freshness contributing to the requested scope.
-- An older incoming write that overlaps newer authoritative coverage is rejected atomically as `ignored-stale`.
-- Ingest freshness is captured when the provider request starts so response completion order cannot roll data backwards.
+Private `teevee` tables are not client-readable. Service-role-only RPC bridges back `SupabaseScheduleRepository`.
 
-The current in-memory repository is only an executable reference/test implementation. The production persistence engine remains open.
+## Real-data next slice
+1. Define a small real canonical channel catalog and provider mapping from verified XMLTV IDs.
+2. Ingest one bounded real schedule window server-side.
+3. Store only safe `complete` channel scopes.
+4. Read the canonical schedule back through `GuideScheduleApi`.
+5. Measure external fetch/parse time, programme counts, canonical response size and refresh/correction behaviour.
+6. Choose mobile caching only after these measurements.
+
+The current ~30 MB source is evidence that whole-feed parsing/fetch costs must be measured before choosing refresh cadence or server execution strategy.
 
 ## Schedule horizon
-Development target: at least 7 days forward when the selected provider supports it. Preferred production target: 14 days forward. The product must degrade gracefully when a source supplies a shorter horizon.
+Development target is at least the horizon the temporary feed demonstrably supplies; the first observed payload spans roughly one week. Preferred production target remains 14 days forward when the eventual licensed provider supports it.
 
-A concrete provider adapter may choose smaller ingestion chunks for rate limits/API constraints while canonical coverage still represents the actual authoritative range stored.
+The product must degrade gracefully when a provider supplies a shorter horizon.
 
 ## Updates and corrections
-Broadcasters change schedules, so ingestion is replacement/correction-oriented rather than append-only.
+- only `complete` batches may destructively replace canonical windows;
+- `partial` batches never clear existing authoritative coverage;
+- complete empty windows may legitimately clear stale rows;
+- errors attributable to one mapped channel can block that channel without blocking unrelated safe channels;
+- unattributed malformed data blocks destructive replacement;
+- late stale refreshes are rejected;
+- mobile refresh must preserve accepted Guide context where practical.
 
-- complete provider batches can replace stale canonical rows only inside their explicit time/channel scope;
-- partial provider batches never destructively replace canonical windows;
-- malformed records attributed to one canonical channel can block that channel while allowing other safe channels to update;
-- an unattributed malformed record blocks the destructive write because its affected scope cannot be proven;
-- delayed older refreshes are rejected instead of overwriting newer canonical schedule data;
-- mobile refresh must not force the user to lose Guide presentation/channel/time context.
-
-## Data-quality expectations
-Implemented normalisation diagnostics cover:
+## Data-quality diagnostics
+Implemented diagnostics cover:
 - invalid/ambiguous channel mappings;
-- programmes on unmapped provider channels;
-- programme ending before/equal to its start;
-- invalid or missing timestamps;
-- missing required titles;
-- duplicate provider broadcast records;
-- overlapping programmes on one canonical channel.
+- programmes on unmapped channels;
+- invalid/missing timestamps;
+- end <= start;
+- missing titles;
+- duplicate broadcasts;
+- overlapping programmes.
 
-Future provider-specific hardening should additionally define sensible freshness and unexpectedly low/high volume diagnostics once real provider behaviour and requested horizon are known. Thresholds should not be guessed before that evidence exists.
-
-Data-quality warnings do not necessarily block ingestion if usable schedule data remains. Errors block destructive replacement only where the affected canonical scope can be established safely.
+Do not invent freshness/volume thresholds until real-feed measurements justify them.
 
 ## Typed Teevee schedule API
-The public/mobile-facing contract exposes only canonical `GuideSchedule` values.
+Mobile-facing output is canonical only:
+- runtime validated serialized request;
+- UTC canonical timestamps;
+- optional non-empty trimmed/deduplicated channel list;
+- `ok` for fully covered canonical scope, including zero programmes;
+- `unavailable` for missing/incomplete canonical coverage;
+- no provider/database detail in output.
 
-- serialised query input is validated at runtime, not trusted merely because TypeScript types exist;
-- valid timestamps are canonicalised to UTC;
-- provided channel ID lists must be non-empty, are trimmed and deduplicated;
-- a fully covered canonical query returns `ok` even when it contains zero programmes;
-- unavailable canonical coverage returns explicit `unavailable`;
-- provider IDs/raw records/database details are not exposed.
+The hosted HTTP/Edge transport is the next unimplemented boundary.
 
-The HTTP/Edge Function transport itself is intentionally not selected yet.
+## Production rights gate
+Before public paid release, Teevee needs explicit answers to:
+1. production schedule provider;
+2. paid-app redistribution rights;
+3. freshness/SLA;
+4. included metadata;
+5. channel-logo and programme-artwork rights;
+6. provider-failure fallback.
 
-## Fixtures
-A deterministic fixture dataset remains mandatory.
-
-Minimum fixture scope:
-- representative Dutch channels (public, commercial, film/series and sport profiles);
-- at least 48 hours of schedule;
-- short and long programmes;
-- programmes crossing midnight;
-- simultaneous prime-time starts;
-- missing descriptions/artwork;
-- live programmes;
-- gaps and edge cases;
-- realistic title lengths.
-
-Fixtures remain the default source for automated tests and can be used for UI development without internet access.
-
-## Enrichment
-Artwork, cast, series metadata, editorial selections and recommendations are an optional enrichment layer. Core Guide, Search and Programme Detail remain useful when enrichment is absent.
-
-## Channel logos and artwork rights
-Channel-logo and programme-artwork usage rights are separate dependencies from schedule data. No externally sourced logo/artwork is treated as cleared for public commercial use without confirmation.
-
-## Backend / credentials gate
-The connected environment currently has no Teevee backend project. The visible Supabase project belongs to another product (`ReelWorthy`) and must not be reused.
-
-Creating a Teevee hosted backend requires an explicit organization/cost decision. Provider credentials likewise require an authorized source and must never be committed or shipped in the mobile bundle.
-
-## Production gate
-Before a public paid release, the project must have explicit answers to:
-1. Who supplies production schedule data?
-2. What usage rights cover a paid consumer app?
-3. What freshness/SLA is expected?
-4. What programme metadata is included?
-5. What image/logo rights are included?
-6. What is the fallback plan during provider failure?
+An authorized Bindinc/TVgids source remains preferred when available. EPGdata.tv and Gracenote remain candidates. EPG.PW and Schedules Direct are not approved for Teevee production under their published non-commercial/personal terms.
 
 ## Frozen decisions
 - provider independence is mandatory;
-- the client does not parse XMLTV or depend on a provider URL;
-- fixtures are mandatory;
-- public/free/scraped availability is not sufficient evidence of usage rights;
-- authoritative provider coverage must be explicit before destructive schedule replacement;
-- canonical coverage/freshness is distinct from programme rows;
-- stale overlapping refreshes cannot roll newer schedule state backwards;
+- client never parses XMLTV or calls external EPG URLs directly;
+- deterministic fixtures remain mandatory;
+- public/free/scraped accessibility is not licensing evidence;
+- authoritative coverage must be explicit before destructive replacement;
+- coverage/freshness is distinct from programme rows;
+- stale writes cannot roll newer schedule state backwards;
 - enrichment is optional to core Guide functionality.

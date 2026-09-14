@@ -1,9 +1,9 @@
 # Teevee Development Logboek
 
-Doel: chronologisch, begrijpelijk overzicht van substantiële milestones, verificatie en blokkades. `docs/PROJECT_STATE.md` is altijd de canonieke actuele toestand. Granulaire oudere CI/device-details blijven daarnaast terugvindbaar in GitHub PR/commit-history en de timestamped evidence-docs.
+Doel: chronologisch, begrijpelijk overzicht van substantiële milestones, verificatie en blokkades. `docs/PROJECT_STATE.md` is altijd de canonieke actuele toestand. Granulaire CI/device-details blijven terugvindbaar in GitHub PR/commit-history en timestamped evidence-docs.
 
 ## Logboekregels
-- Datum/tijd in Europe/Amsterdam.
+- Datum/tijd in Europe/Amsterdam waar praktisch.
 - Eerst product-/gebruikerseffect, daarna techniek/verificatie.
 - Claim alleen checks die aantoonbaar geslaagd zijn.
 - Benoem regressies/gates expliciet.
@@ -11,160 +11,142 @@ Doel: chronologisch, begrijpelijk overzicht van substantiële milestones, verifi
 
 ---
 
-## 14 september 2026, 01:25 CEST — Canonical storage + veilige ingest/service-keten gemergd; echte backend/providergate bereikt
+## 14 september 2026 — Hosted schedule-store + gratis development-EPG operationeel als Phase 3 foundation
 
-Phase 3 heeft nu de volledige **backend-onafhankelijke** dataketen bewezen zonder een provider, database of mobiel Guide-pad voortijdig vast te zetten.
+Phase 3 is voorbij de oude backend/provider-intakegate. Teevee heeft nu een eigen hosted canonical schedule-store én een vervangbare adapter voor een echte gratis Nederlandse XMLTV-feed.
 
-### PR #38 — canonical schedule repository semantics
-PR #38 is na volledig groene exacte PR-head-CI gesquasht naar `main` als `5d997e58cd86de75a7de83367cc0e47b783657a2`.
+### PR #40 — Supabase canonical persistence
+PR #40 is gemergd als `da08c10e170ea8fe3843e16b76247eccd6c0502a` nadat exact-head CI #283 zowel `quality` als `android-native` volledig groen afrondde.
 
-De belangrijkste correctness-regels zijn nu uitvoerbaar vastgelegd:
-- reads gebruiken canonical `[from,to)` scope en programma-intersectie `start < to && end > from`;
-- replacement writes declareren expliciet channel + tijdvenster;
-- authoritative coverage/freshness bestaat per channel/time segment onafhankelijk van programme rows;
-- een **covered but empty** window is geldige lege schedule; uncovered/partly covered scope is unavailable;
-- samengestelde read-freshness is conservatief: de oudste coverage die aan de query bijdraagt;
-- channel metadata en programmes buiten de replacement scope blijven onaangeraakt;
-- een oudere overlapping wordt vóór mutatie atomair `ignored-stale` en kan nieuwere EPG niet terugrollen;
-- kapotte canonical relaties/ranges falen hard.
+Dedicated backend:
+- Supabase project `teevee` (`eokszvpityhtysbwdduy`);
+- organisatie `teevee`;
+- Free plan;
+- regio `eu-west-2`.
 
-De `InMemoryScheduleRepository` is alleen een executable contract/reference en is uitdrukkelijk geen production persistence-keuze.
+Gebouwd:
+- private `teevee` schema voor channels, programmes en authoritative coverage;
+- transactionele `[from,to)` replacement en stale-write protection conform ADR 0007;
+- covered-empty versus unavailable;
+- conservative freshness;
+- private tables zonder `anon`/`authenticated` toegang;
+- service-role-only public RPC bridges;
+- `SupabaseScheduleRepository` achter het bestaande repositorycontract.
 
-Verificatie:
-- exacte PR-head `b2d45175cc98fb7a1530692d76f9b8c715c2f8f9`;
-- CI #272 / `34787934051`: `quality` en `android-native` volledig `completed/success`;
-- exact-main CI #279 / `34788786630`: volledig `completed/success`.
+Security advisor WARN/ERROR is na hardening leeg. RLS/no-policy INFO voor de private Teevee-tabellen is bewust: clienttoegang is volledig dicht.
 
-### PR #39 — provider ingest + typed Teevee schedule service
-PR #39 is vervolgens bewust opnieuw lineair opgebouwd op de echte #38-main, zodat de uiteindelijke diff één schone commit met alleen de ingest/API-slice bevat. Hij is gesquasht naar `main` als `a39f5e432f0f3dcba946f5e8ca49bdd060ad0928`.
+### PR #42 — development-only XMLTV provider
+De eigenaar koos voor Phase 3 voorlopig een gratis externe EPG. PR #42 is gemergd als `4ea4a73bb38580cc8ab0acf454ccfc5849350bab`.
 
-Gebouwd/bewezen:
-- gedeelde conservatieve provider→Teevee channel-mapping en data-quality diagnostics;
-- provider batches classificeren coverage expliciet als `complete` of `partial`;
-- alleen complete/authoritative batches mogen destructief canonical windows vervangen;
-- partial batches worden wel genormaliseerd/gediagnosticeerd maar niet destructief geschreven;
-- malformed records blokkeren alleen een veilig toe te wijzen affected channel; zonder channel attribution wordt de destructieve write geheel geblokkeerd;
-- een authoritative lege providerbatch mag stale canonical data juist wél verwijderen;
-- freshness wordt gemeten bij **provider request start**, niet bij response completion;
-- een dedicated concurrencytest bewijst dat een ouder traag request dat later terugkomt als `ignored-stale` eindigt en nieuwere data intact laat;
-- serialiseerbare `GuideScheduleApi` geeft alleen canonical Teevee-data of expliciet `unavailable`;
-- transportinput wordt runtime gevalideerd, timestamps gaan naar UTC en channel IDs worden getrimd/gededupliceerd;
-- provider IDs/databasevelden lekken niet naar mobile-facing output.
+`XmltvEpgProvider` gebruikt standaard `https://iptv-epg.org/files/epg-nl.xml` en blijft server-side achter `EpgProvider`.
 
-Verificatie:
-- finale lineaire PR-head `518baf1ee764a9f661afe8435631fc4074f3222b`;
-- CI #280 / `34788836524`: `quality` en `android-native` volledig `completed/success`;
-- exact-main CI #281 / `34789673546` is gestart en liep nog bij deze documentatie-update; daaruit wordt nog geen succesclaim afgeleid.
+Correctnessregels:
+- expliciete XMLTV timezone-offset vereist; geldige tijden gaan naar UTC;
+- malformed tijden blijven diagnosable, geen timezone-guessing;
+- title/subtitle/description/category/live/repeat parsing;
+- `[from,to)` programme filtering;
+- alleen continue coverage over iedere gevraagde provider-channel geeft `complete`;
+- gaps geven `partial`, zodat ingest geen canonical data destructief overschrijft;
+- injected `fetch` houdt tests/CI onafhankelijk van internet.
 
-Geen #38/#39 increment wijzigde Guide-scroll/layout/gestures, deferred Nu & Straks loading, dependencies of native configuratie. Een nieuwe iPhone Guide-pass is daarom niet vereist voor deze backend-onafhankelijke slices.
+De eerste CI-run vond één echte CDATA-parserbug. Die is in de parser hersteld vóór merge. Exact finale head `2af9d6cc6afb8b0618b196eebdc33b1b940d25d9` had CI #290 volledig groen voor `quality` én `android-native`.
 
-### Provider- en backendonderzoek
-De volgende stap is nu echt extern/credential-gebonden, niet een excuus voor meer abstracties.
+### Live feed-inspectie — tijdelijke PR #43, niet gemergd
+Omdat de agent-runtime de raw feed niet direct kon uitlezen, is een tijdelijke GitHub Actions-inspectie gebruikt. PR #43 is na succesvolle inspectie gesloten zonder merge; er staat dus geen live-feed afhankelijkheid in normale CI.
 
-- Er bestaat geen Teevee hosted backend/Supabaseproject.
-- De verbonden Supabase-context bevat alleen een ongerelateerd `ReelWorthy`-project; dat wordt niet hergebruikt.
-- Een nieuw Teevee-project vereist expliciete keuze van Supabase-organisatie, actuele cost lookup en owner-confirmatie vóór provisioning.
-- Een geautoriseerde Bindinc/TVgids development-feed is voorkeursroute als die bestaat.
-- Schedules Direct is afgewezen onder de huidige gepubliceerde personal/non-commercial voorwaarden.
-- Gracenote On API is technisch relevant en documenteert Nederlandse (`NLD`) lineups, maar vereist geautoriseerde API/commerciële toegang.
-- EPGdata.tv noemt Nederland, maar feed/API-specificatie, credentials en commerciële mobiele redistribution moeten eerst worden bevestigd.
-- Scraper/public-guide feeds worden niet als shortcut gebruikt.
+Gemeten op 14 september 2026:
+- 30,237,192 bytes XML;
+- 184 channels;
+- 33,117 programme records;
+- feedrange `20260913000600 +0000` t/m `20260919235500 +0000`;
+- kern-ID's bevestigd: `NPO1.nl`, `NPO2.nl`, `NPO3.nl`, `RTL4.nl`, `RTL5.nl`, `RTL7.nl`, `RTL8.nl`, `RTLZ.nl`, `SBS6.nl`, `SBS9.nl`, `Net5.nl`, `VeronicaDisneyXD.nl` plus sport/internationale zenders.
 
-ADR 0007 legt de duurzame schedule storage/refresh-semantiek vast zonder een database te kiezen. `PHASE_3_PROVIDER_RESEARCH_2026-09-14.md` legt providerresearch/gates vast.
+De publieke overview-teller van IPTV-EPG.org wijkt momenteel af van de werkelijk opgehaalde feed. Daarom worden websitecijfers niet gebruikt voor coverage/correctness.
 
-**Volgende stap:** human gate. Eerst Teevee Supabase-organisatie + expliciete projectkostenbeslissing én een geautoriseerde development-EPG bron/credentials. Daarna de kleinste hosted vertical slice: production repository → één provider adapter → hosted typed API → real schedule → measured mobile cache/source.
+### Rechtenboundary
+Deze gratis feed is **alleen development input**. Publieke bereikbaarheid is geen bewijs van commerciële/publicatierechten. Geen raw XMLTV, logo's of artwork wordt in Git opgenomen en mobile krijgt nooit een directe providerdependency.
+
+Production EPG/logo/artwork/SLA blijft een aparte release-gate. Een geautoriseerde Bindinc/TVgids bron blijft voorkeursroute; EPGdata.tv/Gracenote blijven mogelijke commerciële alternatieven.
+
+**Volgende stap:** een kleine expliciete real-channel catalog/mapping op basis van de bevestigde provider-ID's, daarna één server-side ingest naar Supabase en typed canonical query terug. Meet eerst de echte ~30 MB feed-kosten voordat mobile caching wordt gekozen.
 
 ---
 
-## 14 september 2026, 00:39 CEST — Phase 2 gesloten; Phase 3 normalisatiekern gemergd
+## 14 september 2026 — Canonical repository + veilige ingest/service-keten
 
-De finale Per zender-recheck `ScreenRecording_09-13-2026 23-56-18_1.MP4` sloot de laatste Phase 2-devicegate. Onder de larger-text testcontext blijven `Publiek 1/2/3` onderscheidend, directe channel selection en adjacent paging werken en strip/context/schedule blijven synchroon. Geen redbox, wit scherm, crash of nieuwe gesture-regressie. Bewijs: `docs/PHYSICAL_EVIDENCE_2026-09-13_2356.md`.
+PR #38 (`5d997e58cd86de75a7de83367cc0e47b783657a2`) legde backend-onafhankelijke canonical schedule-semantiek vast:
+- expliciete channel/time replacement scope;
+- `[from,to)` intersection;
+- coverage onafhankelijk van programme presence;
+- covered-empty vs unavailable;
+- conservative freshness;
+- atomair `ignored-stale` vóór mutatie.
 
-PR #36 formaliseerde Phase 2 closure / Phase 3 activation als `589ce9110419866439cd0e22e1c761687b48eb04`; exact PR-head CI #255 was volledig groen.
+PR #39 (`a39f5e432f0f3dcba946f5e8ca49bdd060ad0928`) voegde safe provider ingestion en `GuideScheduleApi` toe:
+- complete vs partial provider coverage;
+- attributable malformed data blokkeert alleen veilige affected channel scope;
+- unattributed malformed data blokkeert destructive replacement;
+- request-start freshness;
+- concurrencytest voor late oudere providerresponse;
+- typed canonical service-output zonder provider/database leakage.
 
-PR #37 introduceerde daarna de provider-onafhankelijke normalisatiekern en is gemergd als `491bc728adfb4ec70d060833d49d17bca25bbdc9`. De slice bracht `GuideSchedule`, server-only `EpgProvider`, expliciete channel mapping, UTC-normalisatie, deterministic programme identities en record-level data-quality diagnostics. Provider-ID-hergebruik voor verschillende broadcasts blijft gescheiden; timezone-equivalente duplicates worden na tijdnormalisatie herkend. Exact PR-head CI #263 en exact-main CI #265 zijn volledig groen.
-
-**Volgende stap destijds:** canonical storage/query-semantiek vóór concrete backend/providercoupling — gerealiseerd in PR #38.
-
----
-
-## 13 september 2026, 23:37 CEST — Phase 2 broad pass groen; large-text channel defect gefixt
-
-De brede iPhone-pass `ScreenRecording_09-13-2026 23-10-50_1.MP4` bewees Settings secondary routing, Light/System/Dark live behaviour + persistence, shared headers/safe areas, alle drie Guide-presentaties en Programme Detail bij representatieve 135% iOS-tekst.
-
-Enige concrete defect: `Publiek 1/2/3` werden bij grotere tekst visueel hetzelfde afgekapt. PR #35 wijzigde alleen de text-only truncatiestrategie naar middle ellipsis; geen strip/pager/gesture/tijdgeometrie veranderde. Exact PR-head CI #252 was volledig groen; merge `f067cf8543921464dba70c3966b1870c1ac2666a`. De 23:56 mini-recheck bevestigde de fix fysiek.
-
-De 24pt Nu & Straks following-programme rows bleven bewust als aparte, niet-blockerende accessibility debt staan.
-
----
-
-## 13 september 2026, 22:41 CEST — Phase 2 resilience/accessibility hardening #30–#34
-
-PR #30 voegde navigator-level themed screen error recovery toe. PR #31 maakte de deferred Nu & Straks-importfout inline recoverable terwijl Totaal/Per zender bruikbaar blijven. PR #32 hardende CI-runtime/permissions. PR #33 maakte error fallback large-text-safe en Guide-presentation selector minimaal 44pt. PR #34 verhoogde veilige compacte Per zender/Nu & Straks controls naar 44pt en maakte de Nu & Straks control-row wrapbaar.
-
-Guide schedule geometry, momentum, nested gestures, persistence en deferred startup-boundary bleven onaangeraakt. Exact PR-head #34 CI #247 en exact-main #33 CI #246 waren volledig groen.
-
-**Volgende stap destijds:** gefocuste Phase 2 iPhone-pass — later groen afgerond.
+**Volgende stap destijds:** echte hosted repository + provider — gerealiseerd in #40/#42.
 
 ---
 
-## 13 september 2026, 19:22–20:47 CEST — Phase 2 app shell/preferences/appearance/header
+## 14 september 2026 — Phase 2 gesloten; Phase 3 geactiveerd
 
-- PR #25 bouwde typed Totaal/Per zender/Nu & Straks presentation state, directe selector en Gids/Vanavond/Zoeken tabs zonder de Nu & Straks deferred boundary te verliezen.
-- PR #26 voegde versioned lokale Guide-presentation persistence toe; fysiek bewezen op iPhone na restart.
-- PR #27 voegde secundaire Settings en System/Light/Dark toe; CI/main technisch groen.
-- PR #29 introduceerde gedeelde `AppScreenHeader` voor Settings/Vanavond/Zoeken en safe-area handling zonder Guide-internals te refactoren.
+De finale Per zender-recheck `docs/PHYSICAL_EVIDENCE_2026-09-13_2356.md` sloot de laatste Phase 2 devicegate. `Publiek 1/2/3` blijven onder larger text onderscheidend; directe zenderselectie, adjacent paging en strip/schedule-synchronisatie zijn fysiek geaccepteerd.
 
-**Volgende stap destijds:** resilience/accessibility hardening — gerealiseerd in #30–#35.
+PR #36 sloot Phase 2 / activeerde Phase 3. PR #37 (`491bc728adfb4ec70d060833d49d17bca25bbdc9`) bouwde daarna de provider-onafhankelijke normalisatiekern: `GuideSchedule`, server-only `EpgProvider`, mapping, UTC-normalisatie, deterministic broadcast identities en record-level diagnostics.
 
 ---
 
-## 13 september 2026, 16:07–17:57 CEST — Phase 1B Guide presentations fysiek bewezen
+## 13 september 2026 — App Shell en Guide interaction baseline fysiek geaccepteerd
 
-Per zender werd gebouwd rond echte tijdgeometrie, verticale schedule-scroll, horizontale adjacent-channel pager, browsable/direct-tap channel strip, Vandaag/Morgen/Nu en Programme Detail. Een iPhone-recording bewees de kern vertical-time/horizontal-channel gesture-architectuur.
+Belangrijkste afgeronde mobiele foundation:
+- Totaal: 2D time/channel Guide, native inertia/bounce/directional lock, Vandaag/Morgen/Nu, Programme Detail;
+- Per zender: verticale wall-clock schedule, horizontal adjacent-channel pager, direct-tap zenderstrip en contextbehoud;
+- Nu & Straks: shared reference time, live/browse, tijdrail, Nu/Primetime en detail round-trip;
+- Nu & Straks startup blijft achter deferred `import()` na een fysiek aangetoonde eerdere startup-regressie;
+- Gids / Vanavond / Zoeken tabs, Settings secundair;
+- versioned preferences en live/persisted Light/Dark/System;
+- navigator-level error recovery;
+- shared headers/safe areas;
+- representative 135% iOS text acceptance;
+- Programme Detail targetacties later: `Herinner mij` + `Bewaar`, geen Share requirement.
 
-Nu & Straks werd gebouwd met één shared reference time, live/browse mode, `Nu`, prototype `Primetime` 20:30, native 30-minuten rail en reference programme + drie volgende programmes. Een startup-regressie door statische module-evaluatie leidde tot de blijvende deferred `import()` boundary; daarna werd startup + Nu & Straks fysiek bewezen.
+Exacte device-evidence:
+- `docs/PHYSICAL_EVIDENCE_2026-09-13_2310.md`;
+- `docs/PHYSICAL_EVIDENCE_2026-09-13_2356.md`.
 
-Residual devicepass bewees contextbehoud, tijdrail, Nu/Primetime en Programme Detail voldoende om Phase 1B te sluiten.
-
----
-
-## 13 september 2026, 13:17–15:38 CEST — Phase 1 Guide quality/performance stabilization
-
-Belangrijkste fysiek bewezen increments:
-- PR #9: UI-thread partial-left programme-title readability;
-- PR #11: whole-label time-axis mask zonder los `30`-fragment;
-- PR #12: reverse-scroll title blanking opgelost;
-- PR #13: VoiceOver/self-contained labels/accessibility escape + live system theme;
-- PR #14/#15: per-frame horizontal JS bridges/settled rerender-bottlenecks verwijderd; detail response na horizontal fling fysiek terug op baseline;
-- PR #16: `[start,end)` current-programme semantics en sub-minute progress;
-- PR #17: Amsterdam calendar/DST fixture lifecycle en app-resume refresh;
-- PR #18: committed lockfile + `npm ci` reproducibility;
-- PR #19: clean Android prebuild + Gradle debug APK compile als technische Android CI-gate.
-
-Een eerdere high-volume per-programme Reanimated-architectuur (PR #6) was CI-groen maar crashte fysiek en werd teruggedraaid; dit blijft expliciet afgewezen.
+De 24pt Nu & Straks following rows blijven niet-blockerende accessibility/density debt.
 
 ---
 
-## 13 september 2026, ochtend — Phase 1 Totaal interaction baseline
+## 11–13 september 2026 — Bootstrap en Phase 1 stabilization
 
-Native scroll inertia/bounce/directional lock, continuous timeline, Vandaag/Morgen/Nu, Programme Detail, larger system text en logo-ready channel identity zijn in gerichte iPhone-rondes opgebouwd en geaccepteerd. Deze kerninteracties zijn sindsdien een frozen regression baseline.
+Projectfoundation, Expo/React Native strict TypeScript, deterministic fixtures, Programme Detail, Amsterdam/DST runtime fixture, CI en device-workflow zijn opgebouwd.
+
+Belangrijke stabilisatie:
+- title/time-axis readability tijdens Guide-scroll;
+- VoiceOver/self-contained labels;
+- performanceverbeteringen door per-frame JS bridges/rerender-bottlenecks te verwijderen;
+- `[start,end)` current-programme semantics;
+- lockfile + `npm ci`;
+- clean Android prebuild + Gradle debug APK in CI.
+
+Een eerdere high-volume per-programme Reanimated-architectuur was CI-groen maar crashte fysiek en blijft expliciet afgewezen.
 
 ---
 
-## 11 september 2026 — Project bootstrap
-
-Projectfoundation, Expo/React Native strict TypeScript, deterministic EPG fixture, eerste Totaal-grid, Programme Detail, current-time/progress, Amsterdam runtime fixture, CI en device-workflow zijn opgezet. Fixture later uitgebreid naar 48 synthetische zenders.
-
----
-
-## Doorlopende open technische/productpunten
-- **Phase 3 hosted vertical slice:** geblokkeerd op expliciete backend organization/cost + authorized provider/credentials gate; backend-independent contracts zijn compleet t/m PR #39.
-- **Provider:** Bindinc/TVgids internal preferred if authorized; Schedules Direct rejected; Gracenote/EPGdata candidates pending rights/access.
-- **Mobile real-data cache/source:** nog niet bouwen vóór echte API payload/refreshmeting; AppPreferences-storage is expliciet een andere laag.
+## Doorlopende open punten
+- **Phase 3 hosted vertical slice:** explicit real-channel mapping -> hosted ingest -> canonical typed read -> measurement -> mobile source/cache.
+- **Production provider/rights:** nog open; gratis XMLTV is development-only.
+- **Mobile cache:** nog niet kiezen vóór echte canonical payload/refreshmeting.
 - **Guide interaction baseline:** fysiek geaccepteerd op iPhone; alleen heropenen met regressie-evidence.
-- **Nu & Straks 24pt following rows:** non-blocking accessibility/density debt; later density-aware fysiek hardenen.
-- **Android:** physical Back/gestures/performance deferred wegens geen Android-device; CI-native compile is geen device acceptance.
+- **Nu & Straks 24pt following rows:** latere density-aware accessibility-hardening.
+- **Android:** fysieke Back/gestures/performance deferred wegens geen Android-device; CI-native compile is geen deviceacceptatie.
 - **Programme Detail:** `Herinner mij` + `Bewaar` nog niet geïmplementeerd.
 - **Release-like performance:** later buiten Expo Go valideren.
 - **Dependencies:** moderate advisories gericht analyseren; nooit `npm audit fix --force`.
