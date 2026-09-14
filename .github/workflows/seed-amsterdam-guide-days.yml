@@ -8,22 +8,10 @@ permissions:
   contents: read
 
 jobs:
-  seed:
+  verify:
     runs-on: ubuntu-latest
     steps:
-      - name: Probe today and tomorrow protected seed
-        run: |
-          set -euo pipefail
-          code=$(curl --silent --show-error \
-            -X POST \
-            -H 'x-teevee-seed: amsterdam-days-v1' \
-            'https://eokszvpityhtysbwdduy.supabase.co/functions/v1/epg-feed-inspect' \
-            -o /tmp/seed.json \
-            -w '%{http_code}')
-          echo "http=$code"
-          cat /tmp/seed.json
-
-      - name: Probe current canonical day availability
+      - name: Verify seeded Amsterdam day reads
         run: |
           set -euo pipefail
           for spec in \
@@ -34,13 +22,31 @@ jobs:
             from=$1
             to=$2
             label=$3
-            code=$(curl --silent --show-error \
+            curl --fail --silent --show-error \
               -X POST \
               -H 'Content-Type: application/json' \
               --data "{\"from\":\"$from\",\"to\":\"$to\"}" \
+              -w '%{time_total} %{size_download}\n' \
               'https://eokszvpityhtysbwdduy.supabase.co/functions/v1/guide-schedule' \
-              -o "/tmp/$label.json" \
-              -w '%{http_code}')
-            echo "$label http=$code"
-            cat "/tmp/$label.json"
+              -o "/tmp/$label.json" > "/tmp/$label.metrics"
           done
+          python - <<'PY'
+          import json
+          summary = {}
+          for label in ('today', 'tomorrow'):
+              data = json.load(open(f'/tmp/{label}.json'))
+              assert data['status'] == 'ok', data
+              schedule = data['schedule']
+              assert schedule['timezone'] == 'Europe/Amsterdam', schedule
+              assert len(schedule['channels']) == 12, schedule
+              assert len(schedule['programmes']) > 0, schedule
+              time_total, size_download = open(f'/tmp/{label}.metrics').read().split()
+              summary[label] = {
+                  'generatedAt': schedule['generatedAt'],
+                  'channels': len(schedule['channels']),
+                  'programmes': len(schedule['programmes']),
+                  'seconds': time_total,
+                  'bytes': int(size_download),
+              }
+          print(json.dumps(summary, indent=2))
+          PY
