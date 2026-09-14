@@ -1,7 +1,7 @@
 import type { Channel, GuideSchedule, Programme } from '@/data/domain/epg';
 
-import { resolveChannelMappings } from './channelMapping';
-import { dataQualityDiagnostic, type DataQualityDiagnostic } from './diagnostics';
+import { resolveChannelMappings } from './channelMapping.ts';
+import { dataQualityDiagnostic, type DataQualityDiagnostic } from './diagnostics.ts';
 import type { ChannelMapping, ExternalProgramme } from './provider';
 
 export type NormaliseProviderScheduleInput = {
@@ -121,10 +121,6 @@ function addOverlapDiagnostics(programmes: Programme[], diagnostics: DataQuality
   }
 }
 
-/**
- * Converts provider output into Teevee's canonical schedule shape while keeping
- * malformed provider records observable but non-fatal to the rest of an ingest.
- */
 export function normaliseProviderSchedule(
   input: NormaliseProviderScheduleInput,
 ): NormaliseProviderScheduleResult {
