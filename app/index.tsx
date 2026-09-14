@@ -12,6 +12,7 @@ import { GuideView } from '@/features/guide/GuideView';
 import { NowNextLoadErrorNotice } from '@/features/guide/NowNextLoadErrorNotice';
 import { PerChannelGuideView } from '@/features/guide/PerChannelGuideView';
 import { ProgrammeDetail } from '@/features/guide/ProgrammeDetail';
+import { useHostedGuideScheduleRuntime } from '@/features/guide/useHostedGuideScheduleRuntime';
 import { withGuidePresentation } from '@/features/settings/appPreferences';
 import {
   readAppPreferences,
@@ -26,6 +27,7 @@ type NowNextGuideComponent = ComponentType<{
 }>;
 
 export default function GuideScreen() {
+  const guideDataVersion = useHostedGuideScheduleRuntime();
   const [initialPreferredPresentation] = useState<GuidePresentation>(
     () => readAppPreferences().guidePresentation,
   );
@@ -106,14 +108,24 @@ export default function GuideScreen() {
     [loadAndShowNowNext, persistPresentationPreference],
   );
 
+  const guideKey = `guide-data-${guideDataVersion}`;
+
   return (
     <>
       {showNowNext && NowNextComponent ? (
-        <NowNextComponent onSelectProgramme={openDetail} headerAction={settingsAction} />
+        <NowNextComponent
+          key={guideKey}
+          onSelectProgramme={openDetail}
+          headerAction={settingsAction}
+        />
       ) : showPerChannel ? (
-        <PerChannelGuideView onSelectProgramme={openDetail} headerAction={settingsAction} />
+        <PerChannelGuideView
+          key={guideKey}
+          onSelectProgramme={openDetail}
+          headerAction={settingsAction}
+        />
       ) : (
-        <GuideView onSelectProgramme={openDetail} headerAction={settingsAction} />
+        <GuideView key={guideKey} onSelectProgramme={openDetail} headerAction={settingsAction} />
       )}
 
       {nowNextLoadFailed ? (
