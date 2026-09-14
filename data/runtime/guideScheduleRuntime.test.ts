@@ -3,7 +3,7 @@ import { afterEach, describe, expect, it } from 'vitest';
 import type { GuideSchedule } from '../domain/epg';
 import {
   clearRuntimeGuideSchedule,
-  guideSchedulesEqual,
+  guideScheduleContentEqual,
   installRuntimeGuideSchedule,
   runtimeGuideScheduleFor,
 } from './guideScheduleRuntime';
@@ -49,7 +49,7 @@ describe('guideScheduleRuntime', () => {
 
   it('treats identical deterministic canonical schedules as unchanged', () => {
     expect(
-      guideSchedulesEqual(schedule, {
+      guideScheduleContentEqual(schedule, {
         ...schedule,
         channels: schedule.channels.map((channel) => ({ ...channel })),
         programmes: schedule.programmes.map((programme) => ({ ...programme })),
@@ -57,15 +57,18 @@ describe('guideScheduleRuntime', () => {
     ).toBe(true);
   });
 
-  it('detects freshness or user-visible programme corrections', () => {
+  it('does not remount for a freshness-only update', () => {
     expect(
-      guideSchedulesEqual(schedule, {
+      guideScheduleContentEqual(schedule, {
         ...schedule,
         generatedAt: '2026-09-14T07:00:00Z',
       }),
-    ).toBe(false);
+    ).toBe(true);
+  });
+
+  it('detects user-visible programme corrections', () => {
     expect(
-      guideSchedulesEqual(schedule, {
+      guideScheduleContentEqual(schedule, {
         ...schedule,
         programmes: [{ ...schedule.programmes[0]!, title: 'Gecorrigeerd nieuws' }],
       }),
