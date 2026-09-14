@@ -1,0 +1,6 @@
+{
+  "imports": {
+    "@/": "../../../"
+  },
+  "unstable": ["sloppy-imports"]
+}
