@@ -1,6 +1,6 @@
 import type { Channel } from '@/data/domain/epg';
 
-import { dataQualityDiagnostic, type DataQualityDiagnostic } from './diagnostics';
+import { dataQualityDiagnostic, type DataQualityDiagnostic } from './diagnostics.ts';
 import type { ChannelMapping } from './provider';
 
 export type ResolvedChannelMappings = {

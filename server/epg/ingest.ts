@@ -1,7 +1,7 @@
 import type { Channel, GuideSchedule } from '@/data/domain/epg';
 
 import type { DataQualityDiagnostic } from './diagnostics';
-import { normaliseProviderSchedule } from './normalise';
+import { normaliseProviderSchedule } from './normalise.ts';
 import type { ChannelMapping, EpgProvider } from './provider';
 import type { ScheduleRepository, ScheduleWindowWriteResult } from './scheduleRepository';
 
@@ -76,9 +76,6 @@ export async function ingestProviderSchedule(
   const providerChannelIds = requestedProviderChannels(input.providerChannelIds);
   const requestedProviderIds = new Set(providerChannelIds);
 
-  // Capture freshness before the remote call starts. If an older request is delayed
-  // and returns after a newer refresh, its earlier observation time lets the repository
-  // reject it instead of allowing completion order to roll canonical data backwards.
   const clock = input.clock ?? (() => new Date());
   const observedAt = clock();
   validDate(observedAt, 'clock result');
@@ -89,8 +86,6 @@ export async function ingestProviderSchedule(
     channelIds: providerChannelIds,
   });
 
-  // Ignore provider rows outside the explicit query, but retain unattributed rows
-  // so normalisation can surface them as a destructive-write safety signal.
   const programmes = batch.programmes.filter((programme) => {
     const providerChannelId = programme.channelId?.trim();
     return !providerChannelId || requestedProviderIds.has(providerChannelId);
