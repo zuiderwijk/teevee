@@ -11,27 +11,53 @@ jobs:
   verify:
     runs-on: ubuntu-latest
     steps:
-      - name: Probe public guide transport runtime
+      - name: Verify public guide transport is healthy
         run: |
           set -euo pipefail
           code=$(curl --silent --show-error \
             -X POST \
             -H 'Content-Type: application/json' \
             --data '{"from":"2026-09-16T00:00:00Z","to":"2026-09-17T00:00:00Z"}' \
-            -o /tmp/guide-body.txt \
+            -o /tmp/guide-body.json \
             -w '%{http_code}' \
             'https://eokszvpityhtysbwdduy.supabase.co/functions/v1/guide-schedule')
-          echo "guide_http=$code"
-          cat /tmp/guide-body.txt
+          cat /tmp/guide-body.json
+          test "$code" = "200"
+          python - <<'PY'
+          import json
+          assert json.load(open('/tmp/guide-body.json')) == {'status': 'unavailable'}
+          PY
 
-      - name: Probe temporary ingest runtime
+      - name: Verify protected refresh rejects anonymous callers
+        run: |
+          set -euo pipefail
+          code=$(curl --silent --show-error \
+            -X POST \
+            -H 'Content-Type: application/json' \
+            --data '{"from":"2026-09-14T00:00:00Z","to":"2026-09-15T00:00:00Z"}' \
+            -o /tmp/refresh-body.json \
+            -w '%{http_code}' \
+            'https://eokszvpityhtysbwdduy.supabase.co/functions/v1/epg-refresh')
+          cat /tmp/refresh-body.json
+          test "$code" = "401"
+          python - <<'PY'
+          import json
+          assert json.load(open('/tmp/refresh-body.json')) == {'error': 'Unauthorized'}
+          PY
+
+      - name: Verify direct secret-key database RPC path remains healthy
         run: |
           set -euo pipefail
           code=$(curl --silent --show-error \
             -X POST \
             -H 'x-teevee-e2e: phase3-canonical-v1' \
-            -o /tmp/ingest-body.txt \
+            -o /tmp/rpc-body.json \
             -w '%{http_code}' \
             'https://eokszvpityhtysbwdduy.supabase.co/functions/v1/epg-feed-inspect')
-          echo "ingest_http=$code"
-          cat /tmp/ingest-body.txt
+          cat /tmp/rpc-body.json
+          test "$code" = "200"
+          python - <<'PY'
+          import json
+          data = json.load(open('/tmp/rpc-body.json'))
+          assert data == {'httpStatus': 200, 'ok': True, 'payload': None}, data
+          PY
