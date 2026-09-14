@@ -1,0 +1,85 @@
+name: Temporary Hosted EPG E2E
+
+on:
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ingest fixed development window
+        run: |
+          set -euo pipefail
+          curl --fail --silent --show-error \
+            -X POST \
+            -H 'x-teevee-e2e: phase3-canonical-v1' \
+            'https://eokszvpityhtysbwdduy.supabase.co/functions/v1/epg-feed-inspect' \
+            -o /tmp/ingest.json
+          python - <<'PY'
+          import json
+          data = json.load(open('/tmp/ingest.json'))
+          summary = {
+              'status': data.get('status'),
+              'channelCount': data.get('channelCount'),
+              'programmeCount': data.get('programmeCount'),
+              'diagnosticCounts': data.get('diagnosticCounts'),
+              'elapsedMs': data.get('elapsedMs'),
+              'storedProgrammeCount': (data.get('write') or {}).get('result', {}).get('storedProgrammeCount'),
+              'writeChannelCount': len((data.get('write') or {}).get('channelIds', [])),
+          }
+          print(json.dumps(summary, indent=2))
+          assert data['status'] == 'stored', data
+          assert data['channelCount'] == 12, data
+          assert len(data['write']['channelIds']) == 12, data
+          assert data['write']['result']['storedProgrammeCount'] > 0, data
+          PY
+
+      - name: Read canonical window through public typed transport
+        run: |
+          set -euo pipefail
+          curl --fail --silent --show-error \
+            -X POST \
+            -H 'Content-Type: application/json' \
+            --data '{"from":"2026-09-14T00:00:00Z","to":"2026-09-15T00:00:00Z"}' \
+            -w '%{time_total} %{size_download}\n' \
+            'https://eokszvpityhtysbwdduy.supabase.co/functions/v1/guide-schedule' \
+            -o /tmp/schedule.json > /tmp/read-metrics.txt
+          python - <<'PY'
+          import json
+          data = json.load(open('/tmp/schedule.json'))
+          assert data['status'] == 'ok', data
+          schedule = data['schedule']
+          assert schedule['timezone'] == 'Europe/Amsterdam', schedule
+          assert len(schedule['channels']) == 12, schedule
+          assert len(schedule['programmes']) > 0, schedule
+          provider_fields = {'providerChannelId', 'providerProgrammeId'}
+          assert not any(provider_fields.intersection(item) for item in schedule['programmes']), 'provider fields leaked'
+          print(json.dumps({
+              'status': data['status'],
+              'generatedAt': schedule['generatedAt'],
+              'channels': len(schedule['channels']),
+              'programmes': len(schedule['programmes']),
+              'curlTimeSeconds': open('/tmp/read-metrics.txt').read().split()[0],
+              'responseBytes': int(open('/tmp/read-metrics.txt').read().split()[1]),
+          }, indent=2))
+          PY
+
+      - name: Prove uncovered window stays unavailable
+        run: |
+          set -euo pipefail
+          curl --fail --silent --show-error \
+            -X POST \
+            -H 'Content-Type: application/json' \
+            --data '{"from":"2026-09-16T00:00:00Z","to":"2026-09-17T00:00:00Z"}' \
+            'https://eokszvpityhtysbwdduy.supabase.co/functions/v1/guide-schedule' \
+            -o /tmp/unavailable.json
+          python - <<'PY'
+          import json
+          data = json.load(open('/tmp/unavailable.json'))
+          print(json.dumps(data, indent=2))
+          assert data == {'status': 'unavailable'}, data
+          PY
