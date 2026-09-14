@@ -11,6 +11,37 @@ Doel: chronologisch, begrijpelijk overzicht van substantiële milestones, verifi
 
 ---
 
+## 14 september 2026 — Mobile Guide aangesloten op canonical hosted EPG met fixture-first fallback
+
+PR #50 is gemergd als `b60e2501ee757a20a080de393f618101b0970f90`. Daarmee accepteert de hosted transportlaag naast normale Amsterdamse kalenderdagen ook de 25-uurs wintertijd-dag. De exacte merge-commit op `main` had CI run #315 volledig groen voor zowel `quality` als `android-native`.
+
+PR #51 is daarna gemergd als `0886cbe61272703323ba30cd2deb9cbc037754a8`. Dit is de eerste wijziging waarbij de mobiele Guide de provider-onafhankelijke canonical hosted schedule daadwerkelijk kan gebruiken.
+
+Gebouwd:
+- dependencyvrije `HostedGuideScheduleClient` naar alleen de publieke Teevee `guide-schedule` Edge Function;
+- runtime-validatie van serialized canonical schedule responses;
+- Amsterdam-correcte today+tomorrow loader, inclusief 23/25-uurs DST-dagen;
+- deduplicatie van programma's die over de daggrens in beide reads voorkomen;
+- kleine provider-onafhankelijke in-memory runtime schedule-store;
+- fixture-first startup: de eerste frame blijft volledig lokaal/deterministisch;
+- automatische hosted refresh na startup, bij app-resume en na Amsterdamse dagwissel;
+- offline, `unavailable`, netwerkfout, invalid response of lege hosted data laat de fixture actief;
+- freshness-only updates remounten de Guide niet, zodat scroll-/zendercontext behouden blijft;
+- alleen user-visible schedulewijzigingen verhogen de app-shell data-version;
+- Totaal, Per zender, Nu & Straks en Programme Detail mechanics zijn inhoudelijk niet gewijzigd;
+- deferred `import()` voor Nu & Straks blijft intact;
+- geen SQLite, TanStack Query, nieuwe dependency of native-config toegevoegd.
+
+Exacte PR #51 head `08497e10ab65803c1ce91ca5b3b060fdfb0166f2` had CI run #323 volledig groen voor `quality` en `android-native` vóór merge.
+
+Live hosted prerequisite is aanwezig: `guide-schedule` Edge Function v5 en `epg-refresh` v3 zijn actief. De publieke Guide-read bevat geen provider-ID's of privileged key; database/RPC en development-providerdetails blijven achter de servergrens.
+
+**Gate:** omdat deze wijziging voor het eerst de mobiele Guide-boundary met real data kruist, is Phase 3 nog niet gesloten. Er is nu een gerichte fysieke iPhone smoke nodig voor Totaal, Per zender, Nu & Straks, Programme Detail, fixture→real transition en contextbehoud bij resume. Android-deviceacceptatie blijft apart deferred.
+
+**Volgende stap:** voer de gerichte iPhone real-data smoke uit en leg bewijs vast. Alleen wanneer die regressievrij is, kan de mobile real-data vertical slice als fysiek bewezen worden beschouwd en kan Phase 3 richting exit/Phase 4 worden gesloten.
+
+---
+
 ## 14 september 2026 — Hosted schedule-store + gratis development-EPG operationeel als Phase 3 foundation
 
 Phase 3 is voorbij de oude backend/provider-intakegate. Teevee heeft nu een eigen hosted canonical schedule-store én een vervangbare adapter voor een echte gratis Nederlandse XMLTV-feed.
@@ -141,9 +172,9 @@ Een eerdere high-volume per-programme Reanimated-architectuur was CI-groen maar 
 ---
 
 ## Doorlopende open punten
-- **Phase 3 hosted vertical slice:** explicit real-channel mapping -> hosted ingest -> canonical typed read -> measurement -> mobile source/cache.
+- **Phase 3 physical real-data gate:** gerichte iPhone smoke na PR #51 is nu de actieve gate.
 - **Production provider/rights:** nog open; gratis XMLTV is development-only.
-- **Mobile cache:** nog niet kiezen vóór echte canonical payload/refreshmeting.
+- **Mobile cache:** nog niet kiezen vóór real-device resume/offline meting; huidige payloads rechtvaardigen nog geen SQLite/TanStack.
 - **Guide interaction baseline:** fysiek geaccepteerd op iPhone; alleen heropenen met regressie-evidence.
 - **Nu & Straks 24pt following rows:** latere density-aware accessibility-hardening.
 - **Android:** fysieke Back/gestures/performance deferred wegens geen Android-device; CI-native compile is geen deviceacceptatie.
