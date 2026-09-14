@@ -1,4 +1,4 @@
-import type { GuideSchedule, GuideScheduleQuery } from '@/data/domain/epg';
+import type { Channel, GuideSchedule, GuideScheduleQuery, Programme } from '@/data/domain/epg';
 
 export type GuideScheduleApiRequest = GuideScheduleQuery;
 
@@ -23,8 +23,132 @@ function validTimestamp(value: unknown): value is string {
   return typeof value === 'string' && value.trim() !== '' && Number.isFinite(Date.parse(value));
 }
 
+function requiredString(value: unknown, field: string): string {
+  if (typeof value !== 'string' || value.trim() === '') {
+    throw new Error(`Schedule response ${field} must be a non-empty string`);
+  }
+  return value.trim();
+}
+
+function optionalString(value: unknown, field: string): string | undefined {
+  if (value === undefined) return undefined;
+  if (typeof value !== 'string' || value.trim() === '') {
+    throw new Error(`Schedule response ${field} must be a non-empty string when provided`);
+  }
+  return value.trim();
+}
+
+function parseChannel(value: unknown): Channel {
+  const input = record(value);
+  if (!input) throw new Error('Schedule response channel must be an object');
+  if (typeof input.sortOrder !== 'number' || !Number.isInteger(input.sortOrder)) {
+    throw new Error('Schedule response channel sortOrder must be an integer');
+  }
+  if (typeof input.isActive !== 'boolean') {
+    throw new Error('Schedule response channel isActive must be a boolean');
+  }
+
+  const shortName = optionalString(input.shortName, 'channel shortName');
+  const logoUrl = optionalString(input.logoUrl, 'channel logoUrl');
+
+  return {
+    id: requiredString(input.id, 'channel id'),
+    name: requiredString(input.name, 'channel name'),
+    displayName: requiredString(input.displayName, 'channel displayName'),
+    sortOrder: input.sortOrder,
+    isActive: input.isActive,
+    ...(shortName ? { shortName } : {}),
+    ...(logoUrl ? { logoUrl } : {}),
+  };
+}
+
+function parseProgramme(value: unknown): Programme {
+  const input = record(value);
+  if (!input) throw new Error('Schedule response programme must be an object');
+
+  if (!validTimestamp(input.startAt) || !validTimestamp(input.endAt)) {
+    throw new Error('Schedule response programme timestamps must be valid');
+  }
+  const startAt = new Date(Date.parse(input.startAt)).toISOString();
+  const endAt = new Date(Date.parse(input.endAt)).toISOString();
+  if (Date.parse(endAt) <= Date.parse(startAt)) {
+    throw new Error('Schedule response programme endAt must be after startAt');
+  }
+
+  const subtitle = optionalString(input.subtitle, 'programme subtitle');
+  const description = optionalString(input.description, 'programme description');
+  const genre = optionalString(input.genre, 'programme genre');
+  if (input.isLive !== undefined && typeof input.isLive !== 'boolean') {
+    throw new Error('Schedule response programme isLive must be a boolean when provided');
+  }
+  if (input.isRepeat !== undefined && typeof input.isRepeat !== 'boolean') {
+    throw new Error('Schedule response programme isRepeat must be a boolean when provided');
+  }
+
+  return {
+    id: requiredString(input.id, 'programme id'),
+    channelId: requiredString(input.channelId, 'programme channelId'),
+    startAt,
+    endAt,
+    title: requiredString(input.title, 'programme title'),
+    ...(subtitle ? { subtitle } : {}),
+    ...(description ? { description } : {}),
+    ...(genre ? { genre } : {}),
+    ...(input.isLive !== undefined ? { isLive: input.isLive } : {}),
+    ...(input.isRepeat !== undefined ? { isRepeat: input.isRepeat } : {}),
+  };
+}
+
+export function parseGuideSchedule(value: unknown): GuideSchedule {
+  const input = record(value);
+  if (!input) throw new Error('Schedule response schedule must be an object');
+  if (!validTimestamp(input.generatedAt)) {
+    throw new Error('Schedule response generatedAt must be a valid timestamp');
+  }
+  if (input.timezone !== 'Europe/Amsterdam') {
+    throw new Error('Schedule response timezone must be Europe/Amsterdam');
+  }
+  if (!Array.isArray(input.channels) || !Array.isArray(input.programmes)) {
+    throw new Error('Schedule response channels and programmes must be arrays');
+  }
+
+  const channels = input.channels.map(parseChannel);
+  const programmes = input.programmes.map(parseProgramme);
+  const channelIds = new Set<string>();
+  for (const channel of channels) {
+    if (channelIds.has(channel.id)) throw new Error('Schedule response contains duplicate channel ids');
+    channelIds.add(channel.id);
+  }
+
+  const programmeIds = new Set<string>();
+  for (const programme of programmes) {
+    if (programmeIds.has(programme.id)) {
+      throw new Error('Schedule response contains duplicate programme ids');
+    }
+    programmeIds.add(programme.id);
+    if (!channelIds.has(programme.channelId)) {
+      throw new Error('Schedule response programme references an unknown channel');
+    }
+  }
+
+  return {
+    generatedAt: new Date(Date.parse(input.generatedAt)).toISOString(),
+    timezone: 'Europe/Amsterdam',
+    channels,
+    programmes,
+  };
+}
+
+export function parseGuideScheduleApiResponse(value: unknown): GuideScheduleApiResponse {
+  const input = record(value);
+  if (!input) throw new Error('Schedule response must be an object');
+  if (input.status === 'unavailable') return { status: 'unavailable' };
+  if (input.status !== 'ok') throw new Error('Schedule response status is invalid');
+  return { status: 'ok', schedule: parseGuideSchedule(input.schedule) };
+}
+
 /**
- * Runtime trust-boundary validation for future HTTP/Edge Function transports.
+ * Runtime trust-boundary validation for HTTP/Edge Function transports.
  * TypeScript alone cannot make serialized client input safe.
  */
 export function parseGuideScheduleApiRequest(value: unknown): GuideScheduleApiRequest {

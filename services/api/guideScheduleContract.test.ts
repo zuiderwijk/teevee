@@ -1,6 +1,32 @@
 import { describe, expect, it } from 'vitest';
 
-import { parseGuideScheduleApiRequest } from './guideScheduleContract';
+import {
+  parseGuideScheduleApiRequest,
+  parseGuideScheduleApiResponse,
+} from './guideScheduleContract';
+
+const schedule = {
+  generatedAt: '2026-09-14T08:00:00+02:00',
+  timezone: 'Europe/Amsterdam',
+  channels: [
+    {
+      id: 'nl-npo-1',
+      name: 'NPO 1',
+      displayName: 'NPO 1',
+      sortOrder: 0,
+      isActive: true,
+    },
+  ],
+  programmes: [
+    {
+      id: 'programme-1',
+      channelId: 'nl-npo-1',
+      startAt: '2026-09-14T18:00:00+02:00',
+      endAt: '2026-09-14T19:00:00+02:00',
+      title: 'Nieuws',
+    },
+  ],
+};
 
 describe('parseGuideScheduleApiRequest', () => {
   it('normalises valid timestamps and channel ids', () => {
@@ -54,5 +80,49 @@ describe('parseGuideScheduleApiRequest', () => {
         channelIds: ['channel-1', '   '],
       }),
     ).toThrow('channelIds must contain non-empty strings');
+  });
+});
+
+describe('parseGuideScheduleApiResponse', () => {
+  it('normalises and validates canonical ok responses', () => {
+    expect(parseGuideScheduleApiResponse({ status: 'ok', schedule })).toEqual({
+      status: 'ok',
+      schedule: {
+        ...schedule,
+        generatedAt: '2026-09-14T06:00:00.000Z',
+        programmes: [
+          {
+            ...schedule.programmes[0],
+            startAt: '2026-09-14T16:00:00.000Z',
+            endAt: '2026-09-14T17:00:00.000Z',
+          },
+        ],
+      },
+    });
+  });
+
+  it('preserves explicit unavailable responses', () => {
+    expect(parseGuideScheduleApiResponse({ status: 'unavailable' })).toEqual({
+      status: 'unavailable',
+    });
+  });
+
+  it('rejects malformed canonical responses', () => {
+    expect(() => parseGuideScheduleApiResponse({ status: 'broken' })).toThrow('status is invalid');
+    expect(() =>
+      parseGuideScheduleApiResponse({
+        status: 'ok',
+        schedule: { ...schedule, timezone: 'UTC' },
+      }),
+    ).toThrow('timezone must be Europe/Amsterdam');
+    expect(() =>
+      parseGuideScheduleApiResponse({
+        status: 'ok',
+        schedule: {
+          ...schedule,
+          programmes: [{ ...schedule.programmes[0], channelId: 'unknown' }],
+        },
+      }),
+    ).toThrow('unknown channel');
   });
 });

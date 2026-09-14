@@ -1,5 +1,6 @@
 import type { GuideFixture } from '../domain/epg';
 import { guideDayStart } from '../domain/guideTime';
+import { runtimeGuideScheduleFor } from '../runtime/guideScheduleRuntime';
 import { guideFixture } from './guideFixture';
 
 const FIXTURE_START_MS = Math.min(
@@ -7,12 +8,14 @@ const FIXTURE_START_MS = Math.min(
 );
 
 /**
- * Align the deterministic fixture to midnight in Europe/Amsterdam.
- * Programme spacing, durations, ids and edge cases remain unchanged.
- * The 49 elapsed hours cover two complete Amsterdam calendar days, including
- * a daylight-saving transition. This is a finite test horizon, not live EPG.
+ * Return installed provider-independent canonical data when available for this
+ * Amsterdam day; otherwise align the deterministic fixture to today + tomorrow.
+ * Programme spacing, durations, ids and edge cases in fixture mode remain unchanged.
  */
 export function buildRuntimeGuideFixture(nowMs = Date.now()): GuideFixture {
+  const installed = runtimeGuideScheduleFor(nowMs);
+  if (installed) return installed;
+
   const shiftMs = guideDayStart(nowMs) - FIXTURE_START_MS;
 
   return {
@@ -27,11 +30,13 @@ export function buildRuntimeGuideFixture(nowMs = Date.now()): GuideFixture {
 }
 
 /**
- * Runtime fixture days are relative labels: today + tomorrow. Rebuild as soon
- * as the Amsterdam calendar day changes so those labels and the finite horizon
- * cannot remain anchored to yesterday after midnight or a long background.
+ * Fixture-mode `generatedAt` doubles as its day anchor. Canonical schedules keep
+ * `generatedAt` as server freshness instead, so their installed runtime day is the
+ * authoritative anchor and must not be inferred from freshness.
  */
 export function runtimeGuideFixtureNeedsRefresh(fixture: GuideFixture, nowMs: number): boolean {
+  if (runtimeGuideScheduleFor(nowMs) === fixture) return false;
+
   const generatedAtMs = Date.parse(fixture.generatedAt);
   if (!Number.isFinite(generatedAtMs)) return true;
   return guideDayStart(generatedAtMs) !== guideDayStart(nowMs);
