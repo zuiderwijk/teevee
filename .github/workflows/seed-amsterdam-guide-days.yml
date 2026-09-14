@@ -1,0 +1,76 @@
+name: Temporary Seed Amsterdam Guide Days
+
+on:
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  seed:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Seed today and tomorrow through protected refresh
+        run: |
+          set -euo pipefail
+          curl --fail --silent --show-error \
+            -X POST \
+            -H 'x-teevee-seed: amsterdam-days-v1' \
+            'https://eokszvpityhtysbwdduy.supabase.co/functions/v1/epg-feed-inspect' \
+            -o /tmp/seed.json
+          python - <<'PY'
+          import json
+          data = json.load(open('/tmp/seed.json'))
+          for key in ('today', 'tomorrow'):
+              item = data[key]
+              assert item['ok'] is True, data
+              assert item['httpStatus'] == 200, data
+              payload = item['payload']
+              assert payload['status'] in ('stored', 'ignored-stale'), payload
+              assert len(payload['write']['channelIds']) == 12, payload
+              assert payload['diagnosticCounts']['error'] == 0, payload
+          print(json.dumps({
+              'today': {
+                  'status': data['today']['payload']['status'],
+                  'programmes': data['today']['payload']['programmeCount'],
+                  'diagnostics': data['today']['payload']['diagnosticCounts'],
+                  'elapsedMs': data['today']['payload']['elapsedMs'],
+              },
+              'tomorrow': {
+                  'status': data['tomorrow']['payload']['status'],
+                  'programmes': data['tomorrow']['payload']['programmeCount'],
+                  'diagnostics': data['tomorrow']['payload']['diagnosticCounts'],
+                  'elapsedMs': data['tomorrow']['payload']['elapsedMs'],
+              },
+          }, indent=2))
+          PY
+
+      - name: Verify Amsterdam day reads through public transport
+        run: |
+          set -euo pipefail
+          for spec in \
+            '2026-09-13T22:00:00.000Z 2026-09-14T22:00:00.000Z today' \
+            '2026-09-14T22:00:00.000Z 2026-09-15T22:00:00.000Z tomorrow'
+          do
+            set -- $spec
+            from=$1
+            to=$2
+            label=$3
+            curl --fail --silent --show-error \
+              -X POST \
+              -H 'Content-Type: application/json' \
+              --data "{\"from\":\"$from\",\"to\":\"$to\"}" \
+              'https://eokszvpityhtysbwdduy.supabase.co/functions/v1/guide-schedule' \
+              -o "/tmp/$label.json"
+          done
+          python - <<'PY'
+          import json
+          for label in ('today', 'tomorrow'):
+              data = json.load(open(f'/tmp/{label}.json'))
+              assert data['status'] == 'ok', data
+              schedule = data['schedule']
+              assert len(schedule['channels']) == 12, schedule
+              assert len(schedule['programmes']) > 0, schedule
+              print(label, len(schedule['programmes']), schedule['generatedAt'])
+          PY
