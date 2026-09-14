@@ -1,9 +1,16 @@
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it } from 'vitest';
 
+import type { GuideSchedule } from '../domain/epg';
+import {
+  clearRuntimeGuideSchedule,
+  installRuntimeGuideSchedule,
+} from '../runtime/guideScheduleRuntime';
 import { guideFixture } from './guideFixture';
 import { buildRuntimeGuideFixture, runtimeGuideFixtureNeedsRefresh } from './runtimeGuideFixture';
 
 const HOUR_MS = 3_600_000;
+
+afterEach(() => clearRuntimeGuideSchedule());
 
 describe('runtime Guide fixture', () => {
   it.each([
@@ -23,6 +30,29 @@ describe('runtime Guide fixture', () => {
     expect(runtime.programmes).toHaveLength(guideFixture.programmes.length);
     expect(Math.min(...starts)).toBe(Date.parse(midnight));
     expect(Math.max(...ends)).toBe(Date.parse(midnight) + 49 * HOUR_MS);
+  });
+
+  it('prefers installed canonical data for the matching Amsterdam day', () => {
+    const anchorMs = Date.parse('2026-09-14T10:00:00Z');
+    const canonical: GuideSchedule = {
+      generatedAt: '2026-09-14T06:00:00Z',
+      timezone: 'Europe/Amsterdam',
+      channels: [
+        {
+          id: 'nl-npo-1',
+          name: 'NPO 1',
+          displayName: 'NPO 1',
+          sortOrder: 0,
+          isActive: true,
+        },
+      ],
+      programmes: [],
+    };
+    installRuntimeGuideSchedule(canonical, anchorMs);
+
+    expect(buildRuntimeGuideFixture(anchorMs)).toBe(canonical);
+    expect(buildRuntimeGuideFixture(Date.parse('2026-09-14T21:00:00Z'))).toBe(canonical);
+    expect(buildRuntimeGuideFixture(Date.parse('2026-09-14T23:00:00Z')).channels).toHaveLength(48);
   });
 
   it('keeps programme data past 16:00 on both complete guide days', () => {
