@@ -52,7 +52,7 @@ function elementText(block: string, name: string): string | undefined {
     new RegExp(`<${escapedName}(?:\\s[^>]*)?>([\\s\\S]*?)<\\/${escapedName}>`, 'i'),
   );
   const value = match?.[1]
-    ? decodeXml(match[1].replace(/<[^>]+>/g, '')).replace(/\s+/g, ' ').trim()
+    ? decodeXml(match[1]).replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').trim()
     : '';
   return value || undefined;
 }
