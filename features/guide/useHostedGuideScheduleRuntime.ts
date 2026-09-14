@@ -2,7 +2,11 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { AppState } from 'react-native';
 
 import { guideDayStart } from '@/data/domain/guideTime';
-import { installRuntimeGuideSchedule } from '@/data/runtime/guideScheduleRuntime';
+import {
+  guideScheduleContentEqual,
+  installRuntimeGuideSchedule,
+  runtimeGuideScheduleFor,
+} from '@/data/runtime/guideScheduleRuntime';
 import type { GuideScheduleApi } from '@/services/api/guideScheduleContract';
 import { HostedGuideScheduleClient } from '@/services/api/hostedGuideScheduleClient';
 import { loadTwoDayGuideSchedule } from '@/services/api/guideScheduleLoader';
@@ -13,8 +17,8 @@ const DAY_CHANGE_CHECK_MS = 30_000;
 /**
  * Keep the shared runtime schedule fixture-first and replace it with hosted canonical
  * data when available. The returned version is only used as a React `key` boundary so
- * the existing physically accepted Guide implementations can rebuild from the new data
- * without introducing network state into their scroll/gesture logic.
+ * the existing physically accepted Guide implementations can rebuild when data really
+ * changes, without introducing network state into their scroll/gesture logic.
  */
 export function useHostedGuideScheduleRuntime(
   api: GuideScheduleApi = hostedGuideScheduleApi,
@@ -26,7 +30,8 @@ export function useHostedGuideScheduleRuntime(
   const refresh = useCallback(
     (anchorMs = Date.now()) => {
       const nextDayStart = guideDayStart(anchorMs);
-      if (nextDayStart !== activeDayStartRef.current) {
+      const dayChanged = nextDayStart !== activeDayStartRef.current;
+      if (dayChanged) {
         activeDayStartRef.current = nextDayStart;
         // The previously installed real schedule belongs to yesterday. Remount now;
         // buildRuntimeGuideFixture will deterministically fall back while the network loads.
@@ -39,8 +44,12 @@ export function useHostedGuideScheduleRuntime(
         .then((schedule) => {
           if (requestVersionRef.current !== requestVersion) return;
           if (!schedule || schedule.channels.length === 0 || schedule.programmes.length === 0) return;
+
+          const currentSchedule = runtimeGuideScheduleFor(anchorMs);
+          const contentChanged =
+            currentSchedule === null || !guideScheduleContentEqual(currentSchedule, schedule);
           installRuntimeGuideSchedule(schedule, anchorMs);
-          setVersion((current) => current + 1);
+          if (contentChanged) setVersion((current) => current + 1);
         })
         .catch(() => {
           // Offline/unavailable/invalid hosted data leaves the deterministic fixture usable.
