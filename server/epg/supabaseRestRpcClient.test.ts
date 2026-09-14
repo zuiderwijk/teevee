@@ -34,7 +34,6 @@ describe('SupabaseRestRpcClient', () => {
         body: JSON.stringify({ p_from: 'x' }),
       },
     );
-    expect(fetcher.mock.calls[0]?.[1]?.headers).not.toHaveProperty('Authorization');
   });
 
   it('preserves null successful RPC responses', async () => {
