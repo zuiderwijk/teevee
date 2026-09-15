@@ -5,7 +5,10 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { GuideSchedule } from '@/data/domain/epg';
 import { guideTelevisionDayStart } from '@/data/domain/guideTime';
-import { clearRuntimeGuideSchedule } from '@/data/runtime/guideScheduleRuntime';
+import {
+  clearRuntimeGuideSchedule,
+  installRuntimeGuideSchedule,
+} from '@/data/runtime/guideScheduleRuntime';
 import type { GuideScheduleApi } from '@/services/api/guideScheduleContract';
 
 import { useSelectedGuideDaySchedule } from './useSelectedGuideDaySchedule';
@@ -128,6 +131,15 @@ async function renderProbe(props: ProbeProps) {
 
 async function resume() {
   await act(async () => {
+    lifecycle.listener?.('active');
+    await Promise.resolve();
+    await Promise.resolve();
+  });
+}
+
+async function backgroundAndResume() {
+  await act(async () => {
+    lifecycle.listener?.('background');
     lifecycle.listener?.('active');
     await Promise.resolve();
     await Promise.resolve();
@@ -338,5 +350,51 @@ describe('useSelectedGuideDaySchedule', () => {
     expect(probe().id).toBe('same');
     expect(probe().generatedAt).toBe('2026-09-15T08:00:00Z');
     expect(probe().unavailable).toBe('false');
+  });
+
+  it('hands an unchanged Totaal window from current runtime ownership to non-current resume revalidation at 06:00', async () => {
+    lifecycle.nowMs = Date.parse('2026-09-15T03:59:00Z'); // 05:59 CEST
+    const selectedDay = guideTelevisionDayStart(lifecycle.nowMs);
+    installRuntimeGuideSchedule(schedule('current-runtime'), lifecycle.nowMs);
+    const api = {
+      getSchedule: vi
+        .fn()
+        .mockResolvedValueOnce({ status: 'ok', schedule: schedule('historical-selected') })
+        .mockResolvedValueOnce({ status: 'ok', schedule: schedule('historical-following') }),
+    } satisfies GuideScheduleApi;
+    const props = { dayStartMs: selectedDay, api, includeFollowingDay: true };
+
+    await renderProbe(props);
+
+    expect(guideTelevisionDayStart(lifecycle.nowMs)).toBe(selectedDay);
+    expect(api.getSchedule).not.toHaveBeenCalled();
+    expect(lifecycle.listener).toBeNull();
+    expect(probe().id).toBe('current-runtime');
+
+    lifecycle.nowMs = Date.parse('2026-09-15T04:00:00Z'); // 06:00 CEST
+    const newCurrentDay = guideTelevisionDayStart(lifecycle.nowMs);
+    expect(newCurrentDay).not.toBe(selectedDay);
+
+    // The selected Totaal window itself is deliberately unchanged. Rerendering represents
+    // the Guide clock/runtime version update that makes its ownership relation non-current.
+    await renderProbe(props);
+
+    expect(props.dayStartMs).toBe(selectedDay);
+    expect(api.getSchedule).not.toHaveBeenCalled();
+    expect(lifecycle.listener).not.toBeNull();
+    expect(probe().id).toBe('current-runtime');
+
+    await backgroundAndResume();
+
+    expect(api.getSchedule).toHaveBeenCalledTimes(2);
+    expect(api.getSchedule).toHaveBeenNthCalledWith(1, {
+      from: new Date(selectedDay).toISOString(),
+      to: new Date(guideTelevisionDayStart(selectedDay, 1)).toISOString(),
+    });
+    expect(api.getSchedule).toHaveBeenNthCalledWith(2, {
+      from: new Date(guideTelevisionDayStart(selectedDay, 1)).toISOString(),
+      to: new Date(guideTelevisionDayStart(selectedDay, 2)).toISOString(),
+    });
+    expect(probe().id).toBe('historical-selected');
   });
 });
