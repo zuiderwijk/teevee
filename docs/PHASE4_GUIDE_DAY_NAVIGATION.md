@@ -42,8 +42,10 @@ Visited non-current windows are retained only in a component-session in-memory M
 
 ## Failure, freshness and race handling
 
-- network errors, `unavailable` responses and empty unusable hosted results do not clear the existing visited-window cache;
-- deterministic fixture fallback remains immediately usable;
+- network errors and `unavailable` responses do not clear an already usable selected-window cache or installed current-day schedule;
+- in accordance with ADR 0007, an authoritative canonical `ok` schedule with a valid channel set and `programmes: []` remains authoritative covered-empty data and is never replaced by synthetic fixture programmes;
+- an `ok` result with `channels: []` is treated separately as structurally unusable for the Guide surface and does not replace usable state;
+- deterministic fixture fallback remains immediately usable only when no authoritative usable canonical schedule is available;
 - returning to a visited window is immediate;
 - selected non-current windows revalidate on app resume;
 - a monotonic request version prevents stale/out-of-order results from a rapid day switch winning;
@@ -76,7 +78,7 @@ The deterministic source fixture remains unchanged. A new shared alignment path 
 
 - bottom-sheet day rows expose complete labels and `accessibilityState.selected`;
 - selected state is also visible with a checkmark and is not colour-only;
-- introduced selector rows/close controls use at least 48 pt touch-height targets;
+- introduced selector rows/close controls and the sibling Totaal `Nu` utility use at least 48 dp-equivalent touch-height targets;
 - semantic theme tokens preserve light/dark/system behaviour;
 - only one Per-zender television day and at most two adjacent Totaal television days are rendered, never all ten horizon days simultaneously.
 
@@ -91,7 +93,9 @@ Focused tests cover:
 - spring/fall DST wall-clock targeting;
 - selected-day bounded query windows including 23/25-hour DST days;
 - one-day Per-zender versus two-independent-day Totaal loading;
-- unavailable/network fallback;
+- authoritative covered-empty schedules for both selected-day and current-day runtime paths;
+- zero-channel `ok` schedules as a separate structurally unusable case;
+- unavailable/network fallback and preservation of previously usable state during forced revalidation;
 - revisit of cached context;
 - rapid stale/out-of-order responses;
 - non-current resume revalidation and freshness-only content equality;
