@@ -1,0 +1,97 @@
+name: Temporary EPG Cron Smoke
+
+on:
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger server-side refresh enqueue
+        run: |
+          set -euo pipefail
+          curl --fail --silent --show-error \
+            -X POST \
+            -H 'x-teevee-e2e: phase3-cron-smoke-20260915' \
+            'https://eokszvpityhtysbwdduy.supabase.co/functions/v1/epg-cron-smoke' \
+            -o /tmp/enqueue.json
+          python - <<'PY'
+          import json
+          data = json.load(open('/tmp/enqueue.json'))
+          assert data['status'] == 'enqueued', data
+          ids = data.get('requestIds')
+          assert isinstance(ids, list) and len(ids) == 2, data
+          print(json.dumps(data, indent=2))
+          PY
+
+      - name: Wait for asynchronous refreshes
+        run: sleep 15
+
+      - name: Verify fresh canonical today and tomorrow
+        run: |
+          set -euo pipefail
+          python - <<'PY' > /tmp/windows.txt
+          from datetime import datetime, timedelta, timezone
+          from zoneinfo import ZoneInfo
+          amsterdam = ZoneInfo('Europe/Amsterdam')
+          local_today = datetime.now(amsterdam).date()
+          starts = []
+          for offset in (0, 1, 2):
+              local = datetime.combine(local_today + timedelta(days=offset), datetime.min.time(), tzinfo=amsterdam)
+              starts.append(local.astimezone(timezone.utc).isoformat().replace('+00:00', 'Z'))
+          print(starts[0], starts[1], 'today')
+          print(starts[1], starts[2], 'tomorrow')
+          PY
+
+          while read -r from to label; do
+            curl --fail --silent --show-error \
+              -X POST \
+              -H 'Content-Type: application/json' \
+              --data "{\"from\":\"$from\",\"to\":\"$to\"}" \
+              'https://eokszvpityhtysbwdduy.supabase.co/functions/v1/guide-schedule' \
+              -o "/tmp/$label.json"
+          done < /tmp/windows.txt
+
+          python - <<'PY'
+          import json
+          from datetime import datetime, timezone, timedelta
+          threshold = datetime.now(timezone.utc) - timedelta(minutes=10)
+          summary = {}
+          for label in ('today', 'tomorrow'):
+              data = json.load(open(f'/tmp/{label}.json'))
+              assert data['status'] == 'ok', data
+              schedule = data['schedule']
+              assert schedule['timezone'] == 'Europe/Amsterdam', schedule
+              assert len(schedule['channels']) == 12, schedule
+              assert len(schedule['programmes']) > 0, schedule
+              generated = datetime.fromisoformat(schedule['generatedAt'].replace('Z', '+00:00'))
+              assert generated >= threshold, (label, schedule['generatedAt'], threshold.isoformat())
+              provider_fields = {'providerChannelId', 'providerProgrammeId'}
+              assert not any(provider_fields.intersection(item) for item in schedule['programmes'])
+              summary[label] = {
+                  'generatedAt': schedule['generatedAt'],
+                  'channels': len(schedule['channels']),
+                  'programmes': len(schedule['programmes']),
+              }
+          print(json.dumps(summary, indent=2))
+          PY
+
+      - name: Verify protected refresh still rejects anonymous callers
+        run: |
+          set -euo pipefail
+          code=$(curl --silent --show-error \
+            -X POST \
+            -H 'Content-Type: application/json' \
+            --data '{"from":"2026-09-15T00:00:00Z","to":"2026-09-16T00:00:00Z"}' \
+            -o /tmp/unauth.json \
+            -w '%{http_code}' \
+            'https://eokszvpityhtysbwdduy.supabase.co/functions/v1/epg-refresh')
+          test "$code" = "401"
+          python - <<'PY'
+          import json
+          assert json.load(open('/tmp/unauth.json')) == {'error': 'Unauthorized'}
+          PY
