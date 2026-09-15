@@ -7,6 +7,11 @@ Teevee should communicate premium utility: calm, precise, contemporary and highl
 
 The design should feel like an open canvas, not a stack of cards. Use hierarchy, whitespace and typography before boxes, fills and decoration.
 
+## Canonical visual references
+This document defines reusable visual-system rules; it does **not** choose which historical mock-up is current. The exact accepted visual references per surface are selected by `docs/VISUAL_BASELINE.md` and the manifests under `design/current/`.
+
+A Design or Development thread changing an existing surface must inspect those canonical references first. Do not infer the baseline from chat history, Library recency, generated-image timestamps or visual similarity. When an otherwise accepted screenshot contains a stale control, newer behaviour in `PROJECT_STATE.md`, `UX.md` or an accepted ADR wins.
+
 ## Brand and visual character
 - premium, modern, quiet and functional;
 - no advertising surfaces;
@@ -134,7 +139,7 @@ Touch targets remain platform-appropriate and safe-area aware.
 
 ## Freeze model
 There are three levels:
-1. **Accepted UX/visual baseline** — owner-approved direction that implementation should follow;
+1. **Accepted UX/visual baseline** — owner-approved direction that implementation should follow; exact current visual references are listed in `docs/VISUAL_BASELINE.md` / `design/current/`;
 2. **Provisional direction** — promising but intentionally open (currently notably Tonight composition and exact production tokens);
 3. **Technically frozen implementation** — implemented and validated on representative devices in light/dark and relevant accessibility settings.
 
