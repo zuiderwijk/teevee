@@ -17,6 +17,7 @@ Next phase after Phase 3 closure: **Phase 4 — Core Guide MVP hardening**
 - Core Guide cannot depend on artwork/enrichment.
 - Accessibility and larger system text are product-quality requirements.
 - `PROJECT_STATE.md` is canonical current state; `DEVLOG.md` is historical context; timestamped evidence docs contain device detail.
+- `docs/VISUAL_BASELINE.md` plus `design/current/` select the exact current accepted visual references; do not infer them from chat history or Library recency.
 - Relevant ADRs: `0001` through `0008` in `docs/decisions/`.
 
 ## Phase status
@@ -25,6 +26,19 @@ Next phase after Phase 3 closure: **Phase 4 — Core Guide MVP hardening**
 3. **Phase 2 — App Shell:** complete and physically accepted on iPhone.
 4. **Phase 3 — Real Data Vertical Slice:** active; real provider -> hosted ingest -> canonical persistence -> public typed read -> mobile canonical datasource is implemented. Physical iPhone real-data smoke remains the active exit gate.
 5. **Phase 4 — Core Guide MVP hardening:** next after Phase 3 exit criteria.
+
+## Canonical visual source of truth
+The accepted visual starting point for existing surfaces is no longer inferred from chat history or historical generated images.
+
+- `docs/VISUAL_BASELINE.md` is the canonical visual index.
+- `design/current/` contains per-surface manifests and the exact persistent Teevee Library asset ids/paths to inspect.
+- Totaal, Per zender and Nu & Straks have accepted current visual manifests.
+- Programme Detail has an accepted direction/reference; Tonight remains explicitly provisional.
+- Behaviour in this file, `PRODUCT.md`, `UX.md` and accepted ADRs overrides any stale control visible in an otherwise accepted screenshot.
+- New visual work is exploration until the owner explicitly approves it and the visual manifest update is merged to `main`.
+- Older visuals stay discoverable through Git/Library history but are never selected by recency, similarity or apparent completeness.
+
+This process change does not alter the current Phase 3 exit gate or accepted Guide interaction mechanics.
 
 ## Frozen television-day and Guide-horizon semantics
 ADR 0008 is the durable product/architecture contract for Guide day grouping and horizon.
@@ -242,7 +256,8 @@ Physical Android interaction acceptance remains OPEN/DEFERRED because no Android
 - never run `npm audit fix --force`.
 
 ## Repository coordination
-- PR #28 (`docs/multi-agent-workflow`) remains isolated docs-only work owned by another thread; do not fold it into development changes.
+- PR #28 (`docs/multi-agent-workflow`) merged as `d295333356ff4d4078d65b3ebff7c6c3d9ffdf1c`; `docs/THREAD_PLAYBOOK.md` is now active repository policy for specialised ChatGPT threads.
+- PR #53 (`docs/tv-day-horizon`) merged as `88315f1b7db468aa75b36a268091f72a8e007272`; ADR 0008 and the D-2..D+7 / 06:00 television-day rules are canonical.
 - temporary evidence PRs #43, #46, #47 and #49 were intentionally closed without merge.
 
 ## Deferred but tracked
@@ -263,4 +278,4 @@ Physical Android interaction acceptance remains OPEN/DEFERRED because no Android
 Owner checkout: `~/projects/teevee`.
 
 ## Resume instruction
-> Read `AGENTS.md`, this file, ADR 0007, ADR 0008 and `PHASE_3_PROVIDER_RESEARCH_2026-09-14.md`. Phase 2 is closed. PR #50 fixed hosted 25-hour windows and PR #51 connected the mobile Guide to the provider-independent canonical hosted schedule with fixture-first safe fallback. ADR 0008 freezes the final television-day semantics (06:00 boundary; D-2..D+7 horizon) but does not expand the current Phase 3 physical gate. The active Phase 3 gate remains the focused physical iPhone real-data smoke; only after that evidence may Phase 3 be closed and Phase 4 begin.
+> Read `AGENTS.md`, this file, `docs/VISUAL_BASELINE.md` when visual work is involved, ADR 0007, ADR 0008 and `PHASE_3_PROVIDER_RESEARCH_2026-09-14.md`. Phase 2 is closed. PR #50 fixed hosted 25-hour windows and PR #51 connected the mobile Guide to the provider-independent canonical hosted schedule with fixture-first safe fallback. ADR 0008 freezes the final television-day semantics (06:00 boundary; D-2..D+7 horizon) but does not expand the current Phase 3 physical gate. The active Phase 3 gate remains the focused physical iPhone real-data smoke; only after that evidence may Phase 3 be closed and Phase 4 begin.
