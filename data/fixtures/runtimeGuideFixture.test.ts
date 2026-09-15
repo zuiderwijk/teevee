@@ -32,7 +32,7 @@ describe('runtime Guide fixture', () => {
     expect(Math.max(...ends)).toBe(Date.parse(midnight) + 49 * HOUR_MS);
   });
 
-  it('prefers installed canonical data for the matching Amsterdam day', () => {
+  it('prefers installed canonical data for the matching television day across midnight', () => {
     const anchorMs = Date.parse('2026-09-14T10:00:00Z');
     const canonical: GuideSchedule = {
       generatedAt: '2026-09-14T06:00:00Z',
@@ -51,8 +51,9 @@ describe('runtime Guide fixture', () => {
     installRuntimeGuideSchedule(canonical, anchorMs);
 
     expect(buildRuntimeGuideFixture(anchorMs)).toBe(canonical);
-    expect(buildRuntimeGuideFixture(Date.parse('2026-09-14T21:00:00Z'))).toBe(canonical);
-    expect(buildRuntimeGuideFixture(Date.parse('2026-09-14T23:00:00Z')).channels).toHaveLength(48);
+    expect(buildRuntimeGuideFixture(Date.parse('2026-09-14T22:00:00Z'))).toBe(canonical); // 00:00 CEST
+    expect(buildRuntimeGuideFixture(Date.parse('2026-09-15T03:59:00Z'))).toBe(canonical); // 05:59 CEST
+    expect(buildRuntimeGuideFixture(Date.parse('2026-09-15T04:00:00Z')).channels).toHaveLength(48);
   });
 
   it('keeps programme data past 16:00 on both complete guide days', () => {
