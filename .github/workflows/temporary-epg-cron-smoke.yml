@@ -24,14 +24,14 @@ jobs:
           data = json.load(open('/tmp/enqueue.json'))
           assert data['status'] == 'enqueued', data
           ids = data.get('requestIds')
-          assert isinstance(ids, list) and len(ids) == 2, data
+          assert isinstance(ids, list) and len(ids) == 3, data
           print(json.dumps(data, indent=2))
           PY
 
       - name: Wait for asynchronous refreshes
         run: sleep 15
 
-      - name: Verify canonical today and fresh tomorrow
+      - name: Verify canonical rolling buffer
         run: |
           set -euo pipefail
           python - <<'PY' > /tmp/windows.txt
@@ -40,11 +40,12 @@ jobs:
           amsterdam = ZoneInfo('Europe/Amsterdam')
           local_today = datetime.now(amsterdam).date()
           starts = []
-          for offset in (0, 1, 2):
+          for offset in (0, 1, 2, 3):
               local = datetime.combine(local_today + timedelta(days=offset), datetime.min.time(), tzinfo=amsterdam)
               starts.append(local.astimezone(timezone.utc).isoformat().replace('+00:00', 'Z'))
           print(starts[0], starts[1], 'today')
           print(starts[1], starts[2], 'tomorrow')
+          print(starts[2], starts[3], 'rollover')
           PY
 
           while read -r from to label; do
@@ -61,7 +62,7 @@ jobs:
           from datetime import datetime, timezone, timedelta
           threshold = datetime.now(timezone.utc) - timedelta(minutes=10)
           summary = {}
-          for label in ('today', 'tomorrow'):
+          for label in ('today', 'tomorrow', 'rollover'):
               data = json.load(open(f'/tmp/{label}.json'))
               assert data['status'] == 'ok', data
               schedule = data['schedule']
@@ -70,7 +71,7 @@ jobs:
               assert len(schedule['programmes']) > 0, schedule
               provider_fields = {'providerChannelId', 'providerProgrammeId'}
               assert not any(provider_fields.intersection(item) for item in schedule['programmes'])
-              if label == 'tomorrow':
+              if label != 'today':
                   generated = datetime.fromisoformat(schedule['generatedAt'].replace('Z', '+00:00'))
                   assert generated >= threshold, (label, schedule['generatedAt'], threshold.isoformat())
               summary[label] = {
