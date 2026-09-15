@@ -1,6 +1,6 @@
 # Teevee Design System Direction
 
-Status: visual-design baseline updated 13 September 2026. Guide and Programme Detail direction below reflects owner-approved design decisions. Exact production token values still require implementation/device validation. Tonight remains provisional.
+Status: visual-design baseline updated 15 September 2026. Guide and Programme Detail direction below reflects owner-approved design decisions. Exact production token values still require implementation/device validation. Tonight remains provisional.
 
 ## Objective
 Teevee should communicate premium utility: calm, precise, contemporary and highly legible. The Guide can contain substantial schedule information without looking dense or cheap.
@@ -80,11 +80,35 @@ Rules:
 All three Guide presentations share one visual shell.
 
 At rest the shell may show brand identity and the Guide-view selector. During vertical scrolling, nonessential brand chrome may condense to return space to schedule content. Essential context is view-specific:
-- Totaal: time axis/context;
-- Per zender: channel-logo strip plus compact channel/date context;
+- Totaal: selected day, `Nu`, and time axis/context;
+- Per zender: channel-logo strip plus compact channel/date context and `Nu`;
 - Nu & Straks: reference-time context/selector.
 
 Bottom navigation remains stable. Avoid making the `tv.` brand mark consume permanent vertical space when it is no longer functionally useful during scroll.
+
+### Shared Guide day selector
+Totaal and Per zender share one accepted visual/interaction component for day navigation.
+
+System rules:
+- visible treatment is primarily typographic (date label + disclosure indicator), not a heavy pill/card;
+- the whole control remains a platform-appropriate touch target despite restrained visible chrome;
+- `Nu` is visually and functionally separate from the date selector;
+- opening the selector uses a bounded bottom sheet rather than an unrestricted calendar;
+- selection uses semantic selected state plus an explicit non-colour indicator;
+- labels may use `Vandaag` / `Morgen` only when semantically correct for the active television day;
+- when larger text requires more space, increase control/header height or wrap before aggressively shrinking labels;
+- light/dark/system use semantic surface, border and text tokens rather than separate interaction variants.
+
+Sticky/condensed rules:
+- condensation removes non-functional chrome; it must not remove essential Guide context;
+- Totaal keeps date + `Nu` + time axis available while the Guide scrolls vertically;
+- Per zender keeps the channel-logo strip and one compact channel/date row available while the schedule scrolls vertically;
+- do not show both a large channel heading and the compact channel/date heading simultaneously in the settled condensed state;
+- prefer whitespace and, only when needed, a subtle hairline/theme surface to separate sticky context from scrolling content;
+- avoid heavy floating cards and shadows;
+- reduced-motion preferences may replace interpolated condensation with a simpler state change.
+
+Exact canonical assets and state semantics are defined by `design/current/guide/GUIDE_DAY_SELECTOR.md`.
 
 ## Guide-specific density
 ### Totaal
@@ -120,12 +144,13 @@ Motion clarifies spatial/time relationships, selection and navigation. Avoid dec
 - boundaries should feel elastic rather than hitting an unnatural hard stop where the platform permits it;
 - directional locking should help distinguish vertical schedule scrolling from horizontal time/channel gestures;
 - selected states may update immediately before a longer animated jump finishes;
+- Guide header condensation should follow vertical scroll naturally rather than use attention-seeking toolbar behaviour;
 - respect reduced-motion settings.
 
 ## Touch ergonomics
 Frequent actions should be reachable without unnecessary hand repositioning. Programme Detail uses contextual sticky bottom actions once the canonical actions leave the viewport, giving one-handed access without permanently adding chrome.
 
-Touch targets remain platform-appropriate and safe-area aware.
+Guide day selection and `Nu` remain reachable while vertically browsing Totaal or Per zender. Touch targets remain platform-appropriate and safe-area aware.
 
 ## Accessibility
 - maintain semantic contrast in light and dark themes;
@@ -134,6 +159,7 @@ Touch targets remain platform-appropriate and safe-area aware.
 - allow row height, wrapping and density to adapt;
 - compact controls may use only narrow, documented scaling caps where necessary;
 - expose full textual channel identity and useful programme/time summaries to screen readers;
+- expose the full selected date and day-selection action for the Guide date control;
 - test representative larger text settings on physical iOS and Android devices;
 - respect reduced motion.
 
