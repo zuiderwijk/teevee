@@ -18,7 +18,7 @@ type GuideDaySelectorProps = {
   nowMs: number;
   loading?: boolean;
   unavailable?: boolean;
-  compactPrefix?: string;
+  compactPrefix?: string | undefined;
   onSelectDay: (dayStartMs: number) => void;
 };
 
@@ -173,7 +173,7 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-end',
   },
   backdrop: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
     backgroundColor: 'rgba(0, 0, 0, 0.42)',
   },
   sheet: {
