@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { AppState } from 'react-native';
 
-import { guideDayStart } from '@/data/domain/guideTime';
+import { guideTelevisionDayStart } from '@/data/domain/guideTime';
 import {
   guideScheduleContentEqual,
   installRuntimeGuideSchedule,
@@ -9,7 +9,7 @@ import {
 } from '@/data/runtime/guideScheduleRuntime';
 import type { GuideScheduleApi } from '@/services/api/guideScheduleContract';
 import { HostedGuideScheduleClient } from '@/services/api/hostedGuideScheduleClient';
-import { loadTwoDayGuideSchedule } from '@/services/api/guideScheduleLoader';
+import { loadTwoTelevisionDayGuideSchedule } from '@/services/api/guideScheduleLoader';
 
 const hostedGuideScheduleApi = new HostedGuideScheduleClient();
 const DAY_CHANGE_CHECK_MS = 30_000;
@@ -24,22 +24,23 @@ export function useHostedGuideScheduleRuntime(
   api: GuideScheduleApi = hostedGuideScheduleApi,
 ): number {
   const [version, setVersion] = useState(0);
-  const activeDayStartRef = useRef(guideDayStart(Date.now()));
+  const activeTelevisionDayStartRef = useRef(guideTelevisionDayStart(Date.now()));
   const requestVersionRef = useRef(0);
 
   const refresh = useCallback(
     (anchorMs = Date.now()) => {
-      const nextDayStart = guideDayStart(anchorMs);
-      if (nextDayStart !== activeDayStartRef.current) {
-        activeDayStartRef.current = nextDayStart;
-        // The previously installed real schedule belongs to yesterday. Remount now;
-        // buildRuntimeGuideFixture will deterministically fall back while the network loads.
+      const nextTelevisionDayStart = guideTelevisionDayStart(anchorMs);
+      if (nextTelevisionDayStart !== activeTelevisionDayStartRef.current) {
+        activeTelevisionDayStartRef.current = nextTelevisionDayStart;
+        // The previously installed real schedule belongs to the preceding television day.
+        // Remount now; buildRuntimeGuideFixture falls back deterministically while the
+        // bounded hosted windows for the new television day load.
         setVersion((current) => current + 1);
       }
 
       const requestVersion = requestVersionRef.current + 1;
       requestVersionRef.current = requestVersion;
-      void loadTwoDayGuideSchedule(api, anchorMs)
+      void loadTwoTelevisionDayGuideSchedule(api, anchorMs)
         .then((schedule) => {
           if (requestVersionRef.current !== requestVersion) return;
           if (!schedule || schedule.channels.length === 0 || schedule.programmes.length === 0) return;
@@ -56,7 +57,8 @@ export function useHostedGuideScheduleRuntime(
           setVersion((current) => current + 1);
         })
         .catch(() => {
-          // Offline/unavailable/invalid hosted data leaves the deterministic fixture usable.
+          // Offline/unavailable/invalid hosted data leaves the deterministic fixture or
+          // already installed usable runtime schedule intact.
         });
     },
     [api],
@@ -72,7 +74,7 @@ export function useHostedGuideScheduleRuntime(
       refresh();
       interval = setInterval(() => {
         const nowMs = Date.now();
-        if (guideDayStart(nowMs) !== activeDayStartRef.current) refresh(nowMs);
+        if (guideTelevisionDayStart(nowMs) !== activeTelevisionDayStartRef.current) refresh(nowMs);
       }, DAY_CHANGE_CHECK_MS);
       subscription = AppState.addEventListener('change', (nextState) => {
         if (nextState === 'active') refresh(Date.now());
