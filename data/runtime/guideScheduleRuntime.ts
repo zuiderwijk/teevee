@@ -1,9 +1,9 @@
 import type { Channel, GuideSchedule, Programme } from '../domain/epg';
-import { guideDayStart } from '../domain/guideTime';
+import { guideTelevisionDayStart } from '../domain/guideTime';
 
 type InstalledGuideSchedule = {
   schedule: GuideSchedule;
-  anchorDayStartMs: number;
+  anchorTelevisionDayStartMs: number;
 };
 
 let installed: InstalledGuideSchedule | null = null;
@@ -58,19 +58,23 @@ export function guideScheduleContentEqual(left: GuideSchedule, right: GuideSched
 }
 
 /**
- * Install provider-independent canonical data for the Amsterdam day containing anchorMs.
- * This small in-memory bridge deliberately owns no network/provider/backend knowledge.
+ * Install provider-independent canonical data for the Teevee television day containing
+ * `anchorMs`. This small in-memory bridge deliberately owns no network/provider/backend
+ * knowledge; it only scopes the installed schedule to the 06:00 Europe/Amsterdam runtime
+ * boundary used by the Guide.
  */
 export function installRuntimeGuideSchedule(schedule: GuideSchedule, anchorMs: number): void {
   installed = {
     schedule,
-    anchorDayStartMs: guideDayStart(anchorMs),
+    anchorTelevisionDayStartMs: guideTelevisionDayStart(anchorMs),
   };
 }
 
 export function runtimeGuideScheduleFor(anchorMs: number): GuideSchedule | null {
   if (!installed) return null;
-  return installed.anchorDayStartMs === guideDayStart(anchorMs) ? installed.schedule : null;
+  return installed.anchorTelevisionDayStartMs === guideTelevisionDayStart(anchorMs)
+    ? installed.schedule
+    : null;
 }
 
 export function clearRuntimeGuideSchedule(): void {
