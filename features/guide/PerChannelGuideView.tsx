@@ -221,6 +221,7 @@ export const PerChannelGuideView = memo(function PerChannelGuideView({
   const [condensed, setCondensed] = useState(false);
   const viewedTimeRef = useRef(Date.now());
   const pendingTargetTimeRef = useRef<number | null>(null);
+  const userHasScrolledRef = useRef(false);
   const channels = fixture.channels;
   const safeSelectedIndex = Math.min(Math.max(0, selectedIndex), Math.max(0, channels.length - 1));
   const selectedChannel = channels[safeSelectedIndex] ?? channels[0];
@@ -295,6 +296,7 @@ export const PerChannelGuideView = memo(function PerChannelGuideView({
       const y = Math.max(0, event.nativeEvent.contentOffset.y);
       const nextViewedTime = dayStartMs + ((y + NOW_TOP_INSET) / PER_CHANNEL_MINUTE_HEIGHT) * 60_000;
       viewedTimeRef.current = clampTime(nextViewedTime, dayStartMs, dayEndMs);
+      if (!userHasScrolledRef.current) return;
       const nextCondensed = y > HEADER_CONDENSE_THRESHOLD;
       setCondensed((current) => (current === nextCondensed ? current : nextCondensed));
     },
@@ -462,6 +464,9 @@ export const PerChannelGuideView = memo(function PerChannelGuideView({
         decelerationRate="normal"
         showsVerticalScrollIndicator
         scrollEventThrottle={32}
+        onScrollBeginDrag={() => {
+          userHasScrolledRef.current = true;
+        }}
         onScroll={handleScheduleScroll}
         contentContainerStyle={{ height: scheduleHeight }}
       >
