@@ -1,5 +1,5 @@
 import type { Channel, GuideSchedule, Programme } from '@/data/domain/epg';
-import { guideDayStart } from '@/data/domain/guideTime';
+import { guideTelevisionDayStart } from '@/data/domain/guideTime';
 
 import type { GuideScheduleApi } from './guideScheduleContract';
 
@@ -86,15 +86,20 @@ export function mergeGuideSchedules(schedules: readonly GuideSchedule[]): GuideS
 }
 
 /**
- * Load the two Amsterdam calendar days used by the current Guide UI.
- * `null` means the hosted canonical source is unavailable/incomplete and the caller
- * should retain its deterministic fixture fallback.
+ * Load the current and following Teevee television days as two independently bounded
+ * hosted reads. A television day is 06:00 Europe/Amsterdam -> 06:00 the next local day,
+ * so each request remains 23, 24 or 25 real hours across DST rather than assuming 24h.
+ *
+ * `null` means at least one required hosted window is unavailable/incomplete. The caller
+ * must retain the already usable runtime schedule or deterministic fixture instead of
+ * partially replacing it with a narrower result. This deliberately avoids duplicating
+ * repository-style partial-window replacement/cache semantics in the mobile client.
  */
-export async function loadTwoDayGuideSchedule(
+export async function loadTwoTelevisionDayGuideSchedule(
   api: GuideScheduleApi,
   anchorMs = Date.now(),
 ): Promise<GuideSchedule | null> {
-  const dayStarts = [0, 1, 2].map((offset) => guideDayStart(anchorMs, offset));
+  const dayStarts = [0, 1, 2].map((offset) => guideTelevisionDayStart(anchorMs, offset));
   const requests = [0, 1].map((index) =>
     api.getSchedule({
       from: new Date(dayStarts[index]!).toISOString(),
