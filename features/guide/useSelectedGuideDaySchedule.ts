@@ -109,12 +109,24 @@ export function useSelectedGuideDaySchedule(
     [api, selectedDayStartMs],
   );
 
+  // Selection/API changes invalidate the previous selected-day request. Runtime-version
+  // changes deliberately do not: a current-day refresh must not cancel an in-flight
+  // non-current selected-day revalidation after app resume.
   useEffect(() => {
     refresh(false);
     return () => {
       requestVersionRef.current += 1;
     };
-  }, [guideDataVersion, refresh]);
+  }, [refresh]);
+
+  useEffect(() => {
+    const runtimeSchedule = runtimeGuideScheduleFor(selectedDayStartMs);
+    if (!runtimeSchedule) return;
+    if (rememberSchedule(cacheRef.current, selectedDayStartMs, runtimeSchedule)) {
+      setCacheVersion((current) => current + 1);
+    }
+    setUnavailableDayStartMs(null);
+  }, [guideDataVersion, selectedDayStartMs]);
 
   useEffect(() => {
     const subscription = AppState.addEventListener('change', (nextState) => {
