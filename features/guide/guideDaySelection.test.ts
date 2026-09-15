@@ -7,6 +7,7 @@ import {
   guideTargetForDaySelection,
   guideTargetForNow,
   guideTargetForPrimetime,
+  guideTotaalDayForViewedAnchor,
   reconcileGuideDaySelection,
 } from './guideDaySelection';
 
@@ -93,6 +94,25 @@ describe('Guide day selection', () => {
 
     expect(target.timeMs).toBe(nowMs);
     expect(target.dayStartMs).toBe(Date.parse('2026-09-14T04:00:00Z'));
+  });
+
+  it('keeps Totaal date context on its stationary viewed anchor through the real 06:00 rollover', () => {
+    const beforeBoundary = Date.parse('2026-09-15T03:59:00Z'); // 05:59 CEST
+    const boundary = Date.parse('2026-09-15T04:00:00Z'); // 06:00 CEST
+    const oldTelevisionDay = guideTotaalDayForViewedAnchor(beforeBoundary);
+    const newCurrentTelevisionDay = guideDayOptions(boundary).find(({ offset }) => offset === 0)!.fromMs;
+
+    // The real clock has rolled to a new D, but a stationary Totaal anchor is still 05:59.
+    expect(newCurrentTelevisionDay).not.toBe(oldTelevisionDay);
+    expect(guideTotaalDayForViewedAnchor(beforeBoundary)).toBe(oldTelevisionDay);
+
+    // The visible date changes only when the Guide anchor itself crosses the boundary.
+    expect(guideTotaalDayForViewedAnchor(boundary)).toBe(newCurrentTelevisionDay);
+
+    // Nu is the explicit exception: it moves the anchor to the real instant/current D.
+    const nowTarget = guideTargetForNow(boundary);
+    expect(guideTotaalDayForViewedAnchor(nowTarget.timeMs)).toBe(nowTarget.dayStartMs);
+    expect(nowTarget.dayStartMs).toBe(newCurrentTelevisionDay);
   });
 
   it('Primetime keeps the selected day and targets 20:30 on its label date, including pre-06:00 context', () => {
