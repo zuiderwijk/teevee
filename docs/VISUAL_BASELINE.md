@@ -33,7 +33,7 @@ If a canonical image contains a control that has since been superseded by a high
 
 ### Shared Guide day selector — Totaal + Per zender
 Status: **ACCEPTED**
-Owner-approved direction: 2026-09-15
+Owner-approved direction: 2026-09-15; Per-zender Primetime amendment 2026-09-15
 Detailed manifest: `design/current/guide/GUIDE_DAY_SELECTOR.md`
 
 Canonical visual assets in the user's Teevee Library:
@@ -52,9 +52,11 @@ Accepted characteristics:
 - between 00:00 and 05:59, show the preceding television-day date without falsely calling it `Vandaag`;
 - vertical scrolling preserves essential day/time context while non-functional brand/header chrome condenses;
 - Totaal keeps date + `Nu` + time axis available;
-- Per zender keeps the channel-logo strip plus one compact channel/date context row available;
+- Per zender keeps the channel-logo strip plus one compact channel/date context row with `Primetime` and `Nu` available;
 - larger text adapts height/wrapping instead of forcing tiny labels;
 - Nu & Straks has no independent day selector.
+
+The sticky/condensed visual was created before the owner-approved Per-zender Primetime amendment. It remains canonical for condensation, stickiness and layout structure, but its Per-zender compact row is **SUPERSEDED only where it omits `Primetime`**. The written rules in `PER_ZENDER.md`, `GUIDE_DAY_SELECTOR.md` and `UX.md` win for that detail.
 
 These assets **supersede only the stale date/day controls** in the earlier Totaal and Per-zender canonical screenshots. They do not replace the accepted schedule composition, gestures, logo treatment, typography or general visual character of those surfaces.
 
@@ -89,7 +91,7 @@ The date/day control in the original 13 September Totaal images is **SUPERSEDED*
 
 ### Per zender
 Status: **ACCEPTED**
-Owner-approved direction: 2026-09-13; day-navigation amendment 2026-09-15
+Owner-approved direction: 2026-09-13; day-navigation and Primetime amendments 2026-09-15
 Detailed manifest: `design/current/guide/PER_ZENDER.md`
 
 Canonical visual assets in the user's Teevee Library:
@@ -111,12 +113,16 @@ Accepted visual characteristics:
 - current programme can receive restrained live/current emphasis;
 - programme rows prioritise time and title;
 - light/dark/system follow the shared Guide shell;
-- `Nu` / Primetime / date navigation are utility controls, not visual hero elements;
+- date navigation, `Primetime` and `Nu` are compact utility controls, not visual hero elements;
+- `Primetime` is **required** and jumps to 20:30 on the currently selected television day without changing that selected day;
+- `Nu` remains distinct and restores the actual current instant/day;
 - accepted day selector follows `GUIDE_DAY_SELECTOR.md`.
 
 The exact date choices in the original 13 September Per-zender image are **SUPERSEDED**. Preserve the rest of the accepted channel-strip/list composition while using the accepted shared day-selector assets.
 
-Superseded examples include earlier Per-zender variants with programme imagery, genre descriptions, card-heavy rows or explicit previous/next channel arrow buttons.
+The `Primetime` button visible in the original Per-zender image is again **canonical in concept and placement priority**. Do not infer from that same historical board that the full `Vanmiddag` / `Vooravond` / `Kies tijd…` sheet is required; that expanded time picker is superseded. The later sticky/condensed board remains valid except that its compact Per-zender row must also include `Primetime` alongside `Nu`.
+
+Superseded examples include earlier Per-zender variants with programme imagery, genre descriptions, card-heavy rows, explicit previous/next channel arrow buttons, or the expanded time-picker treatment.
 
 ### Nu & Straks
 Status: **ACCEPTED**

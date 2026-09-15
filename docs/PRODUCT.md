@@ -1,6 +1,6 @@
 # Teevee Product
 
-Status: product baseline, amended with owner-approved television-day, Guide-horizon and compact Guide day-selector semantics on 15 September 2026. These decisions do not claim that the current runtime already implements them.
+Status: product baseline, amended with owner-approved television-day, Guide-horizon, compact Guide day-selector semantics and Per-zender Primetime shortcut on 15 September 2026. These decisions do not claim that the current runtime already implements them.
 
 ## Product vision
 Teevee is a new premium, ad-free television guide for iOS and Android, developed under supervision of Bindinc/TVgids.nl. It is a new product rather than a redesign of the existing TVgids.nl app.
@@ -27,7 +27,7 @@ Dutch television viewers who want a high-quality guide experience. The MVP targe
 ### Included
 - complete Dutch TV guide for supported channels;
 - Totaal: touch-native timeline with horizontal time navigation and vertical channel navigation;
-- Per zender: one-channel vertical schedule with sticky channel-logo navigation and horizontal swipe to adjacent channels;
+- Per zender: one-channel vertical schedule with sticky channel-logo navigation, horizontal swipe to adjacent channels and a direct Primetime shortcut;
 - Nu & Straks: one active television-day shared time reference across channels, showing the programme at that reference instant plus the next three programmes;
 - Now indicator and jump-to-Now action;
 - compact television-day selection in Totaal and Per zender; no independent date selector in Nu & Straks;
@@ -86,6 +86,8 @@ Totaal and Per zender use one shared compact day selector:
 - essential date/time context remains available during vertical Guide browsing while non-functional header chrome may condense;
 - the exact state/sticky behaviour is defined canonically in `design/current/guide/GUIDE_DAY_SELECTOR.md` and `docs/UX.md`.
 
+Per zender adds one further sibling utility beside this shared day selector: `Primetime`. It is not a second date-navigation model and does not change the selected television day.
+
 ## Guide presentations — accepted UX baseline
 ### Totaal
 Multi-channel time grid. Horizontal movement navigates time; vertical movement navigates channels. Time and channel context remain understandable while moving through the grid. The visual direction prioritises open schedule geometry over card stacking.
@@ -103,7 +105,12 @@ Accepted interaction direction:
 - channel name remains as context while the logo is the primary identifier;
 - programme list prioritises time + title and avoids low-value genre/artwork clutter;
 - D-2 through D+7 television-day navigation uses the accepted shared compact day selector;
-- during vertical schedule browsing, the sticky channel strip plus compact channel/date context preserve orientation without keeping duplicate large header content.
+- `Primetime` is a direct fast-navigation shortcut to **20:30 Europe/Amsterdam on the currently selected television day**;
+- `Primetime` never switches the selected day: after choosing a historical/future day, it goes to 20:30 on that day;
+- between 00:00 and 05:59 it can therefore jump back to 20:30 on the preceding television-day evening;
+- `Nu` remains distinct from Primetime and restores the actual current instant plus its television-day context;
+- during vertical schedule browsing, the sticky channel strip plus compact channel/date/Primetime/Nu context preserve orientation without keeping duplicate large header content;
+- the older expanded time picker (`Vanmiddag`, `Vooravond`, `Kies tijd…`) is not part of the accepted MVP interaction.
 
 ### Nu & Straks
 Compact channel list around one common reference time within the active television day.
@@ -179,6 +186,7 @@ The Phase 1 gate is qualitative and strict: **does the guide itself demonstrably
 - Totaal/Per zender minimum horizon = D-2 through D+7 television days;
 - compact shared Guide day selector for Totaal/Per zender, with bounded D-2..D+7 bottom sheet and separate `Nu` action;
 - changing day preserves viewed wall-clock time where practical;
+- Per zender direct `Primetime` shortcut = 20:30 on the selected television day, without changing that selected day;
 - essential date/time context remains sticky while non-functional Guide header chrome may condense;
 - midnight does not split the evening Guide context;
 - Nu & Straks: active television day, reference programme + three following programmes;
