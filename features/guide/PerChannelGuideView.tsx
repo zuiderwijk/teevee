@@ -12,33 +12,39 @@ import {
 } from 'react-native';
 
 import { isProgrammeCurrent, type Channel, type GuideFixture } from '@/data/domain/epg';
-import { guideDayStart, GUIDE_TIME_ZONE } from '@/data/domain/guideTime';
-import {
-  buildRuntimeGuideFixture,
-  runtimeGuideFixtureNeedsRefresh,
-} from '@/data/fixtures/runtimeGuideFixture';
+import { guideTelevisionDayStart, GUIDE_TIME_ZONE } from '@/data/domain/guideTime';
+import { buildRuntimeGuideFixture } from '@/data/fixtures/runtimeGuideFixture';
 import { useTeeveeTheme } from '@/theme/useTeeveeTheme';
 
 import { ChannelIdentity } from './ChannelIdentity';
 import type { ProgrammeSelection } from './detailState';
+import { GuideDaySelector } from './GuideDaySelector';
+import {
+  guideTargetForDaySelection,
+  guideTargetForNow,
+  guideTargetForPrimetime,
+} from './guideDaySelection';
 import {
   adjacentChannelIndex,
   PER_CHANNEL_MINUTE_HEIGHT,
   programmeVerticalFrame,
   programmesForChannelDay,
   scheduleYForTime,
-  type PerChannelDayOffset,
 } from './perChannel';
 import { useGuideClock } from './useGuideClock';
+import { useGuideDaySelection } from './useGuideDaySelection';
+import { useSelectedGuideDaySchedule } from './useSelectedGuideDaySchedule';
 
 const CONTROL_MAX_FONT_SIZE_MULTIPLIER = 1.2;
 const CHANNEL_ITEM_WIDTH = 84;
 const CHANNEL_STRIP_HEIGHT = 62;
 const TIME_GUTTER_WIDTH = 62;
 const NOW_TOP_INSET = 132;
+const HEADER_CONDENSE_THRESHOLD = 24;
 const HOUR_MS = 60 * 60 * 1000;
 
 type PerChannelGuideViewProps = {
+  guideDataVersion: number;
   headerAction?: ReactNode;
   onSelectProgramme: (selection: ProgrammeSelection) => void;
 };
@@ -61,19 +67,14 @@ function formatTime(timeMs: number) {
   });
 }
 
-function formatDay(timeMs: number) {
-  return new Date(timeMs).toLocaleDateString('nl-NL', {
-    weekday: 'long',
-    day: 'numeric',
-    month: 'long',
-    timeZone: GUIDE_TIME_ZONE,
-  });
-}
-
 function hourTicks(dayStartMs: number, dayEndMs: number) {
   const ticks: number[] = [];
   for (let tick = dayStartMs; tick <= dayEndMs; tick += HOUR_MS) ticks.push(tick);
   return ticks;
+}
+
+function clampTime(timeMs: number, fromMs: number, toMs: number) {
+  return Math.min(toMs - 1, Math.max(fromMs, timeMs));
 }
 
 const SchedulePage = memo(function SchedulePage({
@@ -192,13 +193,15 @@ const SchedulePage = memo(function SchedulePage({
 
 function channelsForPager(channels: Channel[], selectedIndex: number): Channel[] {
   if (channels.length === 0) return [];
-  const previous = channels[adjacentChannelIndex(selectedIndex, -1, channels.length)]!;
-  const current = channels[selectedIndex]!;
-  const next = channels[adjacentChannelIndex(selectedIndex, 1, channels.length)]!;
+  const safeSelectedIndex = Math.min(channels.length - 1, Math.max(0, selectedIndex));
+  const previous = channels[adjacentChannelIndex(safeSelectedIndex, -1, channels.length)]!;
+  const current = channels[safeSelectedIndex]!;
+  const next = channels[adjacentChannelIndex(safeSelectedIndex, 1, channels.length)]!;
   return [previous, current, next];
 }
 
 export const PerChannelGuideView = memo(function PerChannelGuideView({
+  guideDataVersion,
   onSelectProgramme,
   headerAction,
 }: PerChannelGuideViewProps) {
@@ -207,20 +210,34 @@ export const PerChannelGuideView = memo(function PerChannelGuideView({
   const channelStripRef = useRef<ScrollView>(null);
   const pagerRef = useRef<ScrollView>(null);
   const scheduleRef = useRef<ScrollView>(null);
-  const [fixtureAnchorMs, setFixtureAnchorMs] = useState(() => Date.now());
-  const fixture = useMemo(() => buildRuntimeGuideFixture(fixtureAnchorMs), [fixtureAnchorMs]);
   const nowMs = useGuideClock();
-  const [dayOffset, setDayOffset] = useState<PerChannelDayOffset>(0);
+  const { selectedDayStartMs, selectDay } = useGuideDaySelection(nowMs);
+  const selectedDay = useSelectedGuideDaySchedule(selectedDayStartMs, guideDataVersion);
+  const fixture = useMemo(
+    () => selectedDay.schedule ?? buildRuntimeGuideFixture(selectedDayStartMs),
+    [guideDataVersion, selectedDay.schedule, selectedDayStartMs],
+  );
   const [selectedIndex, setSelectedIndex] = useState(0);
+  const [condensed, setCondensed] = useState(false);
+  const viewedTimeRef = useRef(Date.now());
+  const pendingTargetTimeRef = useRef<number | null>(null);
   const channels = fixture.channels;
-  const selectedChannel = channels[selectedIndex] ?? channels[0];
-  const dayStartMs = guideDayStart(fixtureAnchorMs, dayOffset);
-  const dayEndMs = guideDayStart(fixtureAnchorMs, dayOffset + 1);
+  const safeSelectedIndex = Math.min(Math.max(0, selectedIndex), Math.max(0, channels.length - 1));
+  const selectedChannel = channels[safeSelectedIndex] ?? channels[0];
+  const dayStartMs = selectedDayStartMs;
+  const dayEndMs = useMemo(
+    () => guideTelevisionDayStart(selectedDayStartMs, 1),
+    [selectedDayStartMs],
+  );
   const scheduleHeight = ((dayEndMs - dayStartMs) / 60_000) * PER_CHANNEL_MINUTE_HEIGHT;
   const pagerChannels = useMemo(
-    () => channelsForPager(channels, selectedIndex),
-    [channels, selectedIndex],
+    () => channelsForPager(channels, safeSelectedIndex),
+    [channels, safeSelectedIndex],
   );
+
+  useEffect(() => {
+    if (selectedIndex !== safeSelectedIndex) setSelectedIndex(safeSelectedIndex);
+  }, [safeSelectedIndex, selectedIndex]);
 
   const centrePager = useCallback(
     (animated = false) => {
@@ -240,11 +257,11 @@ export const PerChannelGuideView = memo(function PerChannelGuideView({
 
   const selectChannel = useCallback(
     (index: number) => {
-      if (!channels[index] || index === selectedIndex) return;
+      if (!channels[index] || index === safeSelectedIndex) return;
       setSelectedIndex(index);
       centreSelectedChannel(index);
     },
-    [centreSelectedChannel, channels, selectedIndex],
+    [centreSelectedChannel, channels, safeSelectedIndex],
   );
 
   const handlePagerEnd = useCallback(
@@ -253,67 +270,99 @@ export const PerChannelGuideView = memo(function PerChannelGuideView({
       const page = Math.round(event.nativeEvent.contentOffset.x / windowWidth);
       if (page === 1) return;
       const delta: -1 | 1 = page < 1 ? -1 : 1;
-      const nextIndex = adjacentChannelIndex(selectedIndex, delta, channels.length);
-      if (nextIndex !== selectedIndex) {
+      const nextIndex = adjacentChannelIndex(safeSelectedIndex, delta, channels.length);
+      if (nextIndex !== safeSelectedIndex) {
         setSelectedIndex(nextIndex);
         centreSelectedChannel(nextIndex);
       }
       requestAnimationFrame(() => centrePager(false));
     },
-    [centrePager, centreSelectedChannel, channels.length, selectedIndex, windowWidth],
+    [centrePager, centreSelectedChannel, channels.length, safeSelectedIndex, windowWidth],
+  );
+
+  const scrollToTime = useCallback(
+    (timeMs: number, animated: boolean) => {
+      const target = clampTime(timeMs, dayStartMs, dayEndMs);
+      viewedTimeRef.current = target;
+      const y = Math.max(0, scheduleYForTime(target, dayStartMs) - NOW_TOP_INSET);
+      scheduleRef.current?.scrollTo({ y, animated });
+    },
+    [dayEndMs, dayStartMs],
+  );
+
+  const handleScheduleScroll = useCallback(
+    (event: NativeSyntheticEvent<NativeScrollEvent>) => {
+      const y = Math.max(0, event.nativeEvent.contentOffset.y);
+      const nextViewedTime = dayStartMs + ((y + NOW_TOP_INSET) / PER_CHANNEL_MINUTE_HEIGHT) * 60_000;
+      viewedTimeRef.current = clampTime(nextViewedTime, dayStartMs, dayEndMs);
+      const nextCondensed = y > HEADER_CONDENSE_THRESHOLD;
+      setCondensed((current) => (current === nextCondensed ? current : nextCondensed));
+    },
+    [dayEndMs, dayStartMs],
+  );
+
+  const changeDay = useCallback(
+    (nextDayStartMs: number) => {
+      if (nextDayStartMs === selectedDayStartMs) return;
+      const target = guideTargetForDaySelection(viewedTimeRef.current, nextDayStartMs);
+      pendingTargetTimeRef.current = target.timeMs;
+      selectDay(target.dayStartMs);
+    },
+    [selectDay, selectedDayStartMs],
   );
 
   const scrollToNow = useCallback(
     (animated = true) => {
-      const currentNow = Date.now();
-      if (runtimeGuideFixtureNeedsRefresh(fixture, currentNow)) {
-        setDayOffset(0);
-        setFixtureAnchorMs(currentNow);
+      const target = guideTargetForNow(Date.now());
+      if (target.dayStartMs === selectedDayStartMs) {
+        scrollToTime(target.timeMs, animated);
         return;
       }
-      setDayOffset(0);
-      const todayStart = guideDayStart(fixtureAnchorMs, 0);
-      const y = Math.max(0, scheduleYForTime(currentNow, todayStart) - NOW_TOP_INSET);
-      scheduleRef.current?.scrollTo({ y, animated });
+      pendingTargetTimeRef.current = target.timeMs;
+      selectDay(target.dayStartMs);
     },
-    [fixture, fixtureAnchorMs],
+    [scrollToTime, selectDay, selectedDayStartMs],
   );
+
+  const scrollToPrimetime = useCallback(() => {
+    const target = guideTargetForPrimetime(selectedDayStartMs);
+    scrollToTime(target.timeMs, true);
+  }, [scrollToTime, selectedDayStartMs]);
 
   useEffect(() => {
     const frame = requestAnimationFrame(() => centrePager(false));
     return () => cancelAnimationFrame(frame);
-  }, [centrePager, dayOffset, selectedIndex]);
+  }, [centrePager, selectedDayStartMs, safeSelectedIndex]);
 
   useEffect(() => {
-    centreSelectedChannel(selectedIndex, false);
-  }, [centreSelectedChannel, selectedIndex]);
+    centreSelectedChannel(safeSelectedIndex, false);
+  }, [centreSelectedChannel, safeSelectedIndex]);
 
   useEffect(() => {
-    const frame = requestAnimationFrame(() => scrollToNow(false));
+    const target = pendingTargetTimeRef.current ??
+      guideTargetForDaySelection(viewedTimeRef.current, selectedDayStartMs).timeMs;
+    pendingTargetTimeRef.current = null;
+    const frame = requestAnimationFrame(() => scrollToTime(target, false));
     return () => cancelAnimationFrame(frame);
-  }, [fixtureAnchorMs, scrollToNow]);
-
-  useEffect(() => {
-    if (!runtimeGuideFixtureNeedsRefresh(fixture, nowMs)) return;
-    setDayOffset(0);
-    setFixtureAnchorMs(nowMs);
-  }, [fixture, nowMs]);
+  }, [scrollToTime, selectedDayStartMs]);
 
   if (!selectedChannel) return null;
 
   return (
     <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.colors.background }]}>
-      <View style={styles.header}>
-        <View>
-          <Text accessible={false} style={[styles.eyebrow, { color: theme.colors.textMuted }]}>TEEVEE</Text>
-          <Text accessibilityRole="header" style={[styles.title, { color: theme.colors.text }]}>Gids</Text>
+      {!condensed ? (
+        <View style={styles.header}>
+          <View>
+            <Text accessible={false} style={[styles.eyebrow, { color: theme.colors.textMuted }]}>TEEVEE</Text>
+            <Text accessibilityRole="header" style={[styles.title, { color: theme.colors.text }]}>Gids</Text>
+          </View>
+          <View style={styles.presentationLabel}>
+            <View style={[styles.presentationDot, { backgroundColor: theme.colors.currentTime }]} />
+            <Text style={[styles.presentationText, { color: theme.colors.textSecondary }]}>Per zender</Text>
+          </View>
+          {headerAction}
         </View>
-        <View style={styles.presentationLabel}>
-          <View style={[styles.presentationDot, { backgroundColor: theme.colors.currentTime }]} />
-          <Text style={[styles.presentationText, { color: theme.colors.textSecondary }]}>Per zender</Text>
-        </View>
-        {headerAction}
-      </View>
+      ) : null}
 
       <ScrollView
         ref={channelStripRef}
@@ -326,7 +375,7 @@ export const PerChannelGuideView = memo(function PerChannelGuideView({
         contentContainerStyle={styles.channelStripContent}
       >
         {channels.map((channel, index) => {
-          const active = index === selectedIndex;
+          const active = index === safeSelectedIndex;
           return (
             <Pressable
               key={channel.id}
@@ -353,64 +402,54 @@ export const PerChannelGuideView = memo(function PerChannelGuideView({
         })}
       </ScrollView>
 
-      <View style={styles.contextRow}>
-        <View style={styles.dayControls}>
-          {([0, 1] as const).map((offset) => {
-            const active = dayOffset === offset;
-            return (
-              <Pressable
-                key={offset}
-                accessibilityRole="button"
-                accessibilityState={{ selected: active }}
-                onPress={() => setDayOffset(offset)}
-                style={[
-                  styles.dayButton,
-                  {
-                    backgroundColor: active ? theme.colors.accent : theme.colors.surface,
-                    borderColor: theme.colors.border,
-                  },
-                ]}
-              >
-                <Text
-                  numberOfLines={1}
-                  maxFontSizeMultiplier={CONTROL_MAX_FONT_SIZE_MULTIPLIER}
-                  style={[
-                    styles.dayButtonText,
-                    { color: active ? theme.colors.background : theme.colors.textSecondary },
-                  ]}
-                >
-                  {offset === 0 ? 'Vandaag' : 'Morgen'}
-                </Text>
-              </Pressable>
-            );
-          })}
+      {!condensed ? (
+        <View style={styles.channelContext}>
+          <Text style={[styles.channelName, { color: theme.colors.text }]}>{selectedChannel.displayName}</Text>
+        </View>
+      ) : null}
+
+      <View
+        style={[
+          styles.contextRow,
+          condensed ? { borderBottomColor: theme.colors.border, borderBottomWidth: StyleSheet.hairlineWidth } : null,
+        ]}
+      >
+        <GuideDaySelector
+          selectedDayStartMs={selectedDayStartMs}
+          nowMs={nowMs}
+          loading={selectedDay.loading}
+          unavailable={selectedDay.unavailable}
+          compactPrefix={condensed ? selectedChannel.displayName : undefined}
+          onSelectDay={changeDay}
+        />
+        <View style={styles.utilityActions}>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Ga naar primetime om 20:30 op de geselecteerde dag"
+            onPress={scrollToPrimetime}
+            style={[styles.utilityButton, { borderColor: theme.colors.border }]}
+          >
+            <Text
+              maxFontSizeMultiplier={CONTROL_MAX_FONT_SIZE_MULTIPLIER}
+              style={[styles.utilityButtonText, { color: theme.colors.textSecondary }]}
+            >
+              Primetime
+            </Text>
+          </Pressable>
           <Pressable
             accessibilityRole="button"
             accessibilityLabel="Ga naar nu"
             onPress={() => scrollToNow(true)}
-            style={[styles.nowButton, { borderColor: theme.colors.border }]}
+            style={[styles.utilityButton, { borderColor: theme.colors.border }]}
           >
             <Text
-              numberOfLines={1}
               maxFontSizeMultiplier={CONTROL_MAX_FONT_SIZE_MULTIPLIER}
-              style={[styles.nowButtonText, { color: theme.colors.text }]}
+              style={[styles.utilityButtonText, { color: theme.colors.text }]}
             >
               Nu
             </Text>
           </Pressable>
         </View>
-        <Text numberOfLines={1} style={[styles.dateLabel, { color: theme.colors.textMuted }]}>
-          {formatDay(dayStartMs)}
-        </Text>
-      </View>
-
-      <View style={styles.channelContext}>
-        <Text numberOfLines={1} style={[styles.channelName, { color: theme.colors.text }]}>
-          {selectedChannel.displayName}
-        </Text>
-        <Text style={[styles.swipeHint, { color: theme.colors.textMuted }]}>
-          Veeg horizontaal voor een andere zender
-        </Text>
       </View>
 
       <ScrollView
@@ -422,6 +461,8 @@ export const PerChannelGuideView = memo(function PerChannelGuideView({
         nestedScrollEnabled
         decelerationRate="normal"
         showsVerticalScrollIndicator
+        scrollEventThrottle={32}
+        onScroll={handleScheduleScroll}
         contentContainerStyle={{ height: scheduleHeight }}
       >
         <ScrollView
@@ -440,7 +481,7 @@ export const PerChannelGuideView = memo(function PerChannelGuideView({
         >
           {pagerChannels.map((channel, pageIndex) => (
             <SchedulePage
-              key={`${pageIndex}-${channel.id}-${dayOffset}`}
+              key={`${pageIndex}-${channel.id}-${selectedDayStartMs}`}
               channel={channel}
               fixture={fixture}
               dayStartMs={dayStartMs}
@@ -521,49 +562,10 @@ const styles = StyleSheet.create({
     height: 2,
     borderRadius: 1,
   },
-  contextRow: {
-    paddingHorizontal: 14,
-    paddingTop: 12,
-    paddingBottom: 7,
-    gap: 7,
-  },
-  dayControls: {
-    flexDirection: 'row',
-    gap: 7,
-  },
-  dayButton: {
-    minHeight: 44,
-    paddingHorizontal: 13,
-    borderRadius: 22,
-    borderWidth: StyleSheet.hairlineWidth,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  dayButtonText: {
-    fontSize: 13,
-    fontWeight: '700',
-  },
-  nowButton: {
-    minHeight: 44,
-    paddingHorizontal: 13,
-    borderRadius: 22,
-    borderWidth: StyleSheet.hairlineWidth,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  nowButtonText: {
-    fontSize: 13,
-    fontWeight: '800',
-  },
-  dateLabel: {
-    fontSize: 12,
-    fontWeight: '600',
-  },
   channelContext: {
     paddingHorizontal: 18,
-    paddingTop: 9,
-    paddingBottom: 15,
-    gap: 3,
+    paddingTop: 10,
+    paddingBottom: 1,
   },
   channelName: {
     fontSize: 22,
@@ -571,9 +573,36 @@ const styles = StyleSheet.create({
     fontWeight: '800',
     letterSpacing: -0.35,
   },
-  swipeHint: {
-    fontSize: 11,
-    fontWeight: '500',
+  contextRow: {
+    minHeight: 58,
+    paddingHorizontal: 14,
+    paddingVertical: 5,
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    columnGap: 12,
+    rowGap: 4,
+  },
+  utilityActions: {
+    marginLeft: 'auto',
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    alignItems: 'center',
+    justifyContent: 'flex-end',
+    gap: 7,
+  },
+  utilityButton: {
+    minHeight: 48,
+    paddingHorizontal: 12,
+    borderRadius: 12,
+    borderWidth: StyleSheet.hairlineWidth,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  utilityButtonText: {
+    fontSize: 13,
+    fontWeight: '700',
   },
   hourTick: {
     position: 'absolute',
