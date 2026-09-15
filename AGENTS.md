@@ -8,20 +8,23 @@ Teevee is designed for autonomous AI-agent development under human product super
 1. `docs/PROJECT_STATE.md`
 2. `docs/PRODUCT.md`
 3. `docs/UX.md`
-4. `docs/ARCHITECTURE.md`
-5. `docs/DATA.md`
-6. `docs/DESIGN_SYSTEM.md`
-7. `docs/BUILD_SPEC.md`
-8. `docs/decisions/*`
+4. `docs/VISUAL_BASELINE.md`
+5. `docs/ARCHITECTURE.md`
+6. `docs/DATA.md`
+7. `docs/DESIGN_SYSTEM.md`
+8. `docs/BUILD_SPEC.md`
+9. `docs/decisions/*`
 
 `docs/DEVLOG.md` is the human-readable history of substantive development work. It is not a higher source of truth than PROJECT_STATE; when they differ, PROJECT_STATE wins and the DEVLOG should be corrected.
 
 If documents conflict, resolve the conflict before proceeding and update the lower-priority document.
 
+For visual work, `docs/VISUAL_BASELINE.md` plus `design/current/` select the exact accepted current visual references. Do not infer the current design from chat history, Library recency, generated-image timestamps or visual similarity. Behaviour in `PROJECT_STATE.md`, `PRODUCT.md`, `UX.md` and accepted ADRs still overrides a stale control visible in an otherwise accepted screenshot.
+
 ## Specialised ChatGPT threads
 Teevee may use separate Lead, Visual Design / UX, Development and QA / Review threads. These threads do not treat one another's chat history as a source of truth: the repository is their collaboration bus. Role boundaries, handoff rules, parallel-work guidance and reusable start prompts live in `docs/THREAD_PLAYBOOK.md`.
 
-When a conclusion from one thread matters to another, write the durable conclusion to the appropriate repository document, ADR, PR or evidence record before handoff. Avoid concurrent edits to `docs/PROJECT_STATE.md`; the Lead role owns reconciliation of shared project state when multiple threads are active.
+When a conclusion from one thread matters to another, write the durable conclusion to the appropriate repository document, visual manifest, ADR, PR or evidence record before handoff. Avoid concurrent edits to `docs/PROJECT_STATE.md`; the Lead role owns reconciliation of shared project state when multiple threads are active.
 
 ## Working rules
 - Prefer simple explicit code over abstraction.
@@ -29,7 +32,9 @@ When a conclusion from one thread matters to another, write the durable conclusi
 - The mobile client must never depend directly on an external EPG provider.
 - Deterministic fixture data must keep core development and tests independent of external services.
 - Avoid microservices, Kubernetes, speculative infrastructure and premature abstraction.
-- Treat visual references as direction rather than specification unless explicitly frozen.
+- Treat visual references as direction rather than specification unless `docs/VISUAL_BASELINE.md` / `design/current/` explicitly marks them accepted.
+- Never replace an accepted visual baseline with an older Library/chat design because it appears more complete.
+- New visual exploration becomes canonical only after explicit owner approval and a merged update to the visual baseline on `main`.
 - Work in small complete vertical increments.
 - Record long-lived architectural decisions as ADRs.
 - Update `docs/PROJECT_STATE.md` after every substantive milestone with completed work, known issues and exactly one next step.
