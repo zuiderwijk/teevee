@@ -28,20 +28,21 @@ const canonical: GuideSchedule = {
 afterEach(() => clearRuntimeGuideSchedule());
 
 describe('canonical runtime Guide schedule', () => {
-  it('does not treat older canonical freshness as an obsolete UI day', () => {
+  it('does not treat older canonical freshness as an obsolete television day', () => {
     const anchorMs = Date.parse('2026-09-14T10:00:00Z');
     installRuntimeGuideSchedule(canonical, anchorMs);
     const runtime = buildRuntimeGuideFixture(anchorMs);
 
     expect(runtime).toBe(canonical);
-    expect(runtimeGuideFixtureNeedsRefresh(runtime, Date.parse('2026-09-14T20:00:00Z'))).toBe(false);
+    expect(runtimeGuideFixtureNeedsRefresh(runtime, Date.parse('2026-09-14T22:00:00Z'))).toBe(false);
+    expect(runtimeGuideFixtureNeedsRefresh(runtime, Date.parse('2026-09-15T03:59:00Z'))).toBe(false);
   });
 
-  it('still requests a rebuild after the installed Amsterdam day ends', () => {
+  it('requests a rebuild when the installed television day reaches 06:00', () => {
     const anchorMs = Date.parse('2026-09-14T10:00:00Z');
     installRuntimeGuideSchedule(canonical, anchorMs);
     const runtime = buildRuntimeGuideFixture(anchorMs);
 
-    expect(runtimeGuideFixtureNeedsRefresh(runtime, Date.parse('2026-09-14T23:00:00Z'))).toBe(true);
+    expect(runtimeGuideFixtureNeedsRefresh(runtime, Date.parse('2026-09-15T04:00:00Z'))).toBe(true);
   });
 });
