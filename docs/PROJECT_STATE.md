@@ -1,6 +1,6 @@
 # Teevee — Canonical Project State
 
-Last updated: 2026-09-14.
+Last updated: 2026-09-15.
 Status: ACTIVE — **Phase 3 Real Data Vertical Slice**.
 Current phase: **Phase 3 — Real Data Vertical Slice**
 Next phase after Phase 3 closure: **Phase 4 — Core Guide MVP hardening**
@@ -17,7 +17,7 @@ Next phase after Phase 3 closure: **Phase 4 — Core Guide MVP hardening**
 - Core Guide cannot depend on artwork/enrichment.
 - Accessibility and larger system text are product-quality requirements.
 - `PROJECT_STATE.md` is canonical current state; `DEVLOG.md` is historical context; timestamped evidence docs contain device detail.
-- Relevant ADRs: `0001` through `0007` in `docs/decisions/`.
+- Relevant ADRs: `0001` through `0008` in `docs/decisions/`.
 
 ## Phase status
 1. **Phase 1A — Totaal:** complete and physically accepted on iPhone.
@@ -26,13 +26,28 @@ Next phase after Phase 3 closure: **Phase 4 — Core Guide MVP hardening**
 4. **Phase 3 — Real Data Vertical Slice:** active; real provider -> hosted ingest -> canonical persistence -> public typed read -> mobile canonical datasource is implemented. Physical iPhone real-data smoke remains the active exit gate.
 5. **Phase 4 — Core Guide MVP hardening:** next after Phase 3 exit criteria.
 
+## Frozen television-day and Guide-horizon semantics
+ADR 0008 is the durable product/architecture contract for Guide day grouping and horizon.
+
+- A Teevee television day runs **06:00 Europe/Amsterdam -> 06:00 the following calendar day**.
+- Midnight is not a Guide boundary and must not force a day switch.
+- Between 00:00 and 05:59, `Nu` still belongs to the preceding television day.
+- Programme timestamps remain real canonical UTC timestamps; television-day membership is derived rather than encoded by shifting timestamps.
+- Let `D` be the current television day. Totaal and Per zender must support at least **D-2 through D+7**, i.e. ten complete television days.
+- A user opening at 19:00 must be able to navigate backward through the same television day and forward through programmes after midnight without an explicit date change.
+- `Nu` always jumps to the actual current instant and selects the television day containing that instant.
+- Nu & Straks remains a single active-day presentation, but that active day is the current television day rather than the strict calendar day; until 06:00 its `Primetime` context may therefore refer to the preceding evening.
+- Phase 3 owns the data/query semantics and must avoid locking the architecture to midnight or a permanent two-day horizon. The current today+tomorrow loader remains a vertical-slice implementation detail.
+- Phase 4 owns the full product implementation and physical acceptance of D-2..D+7 navigation, midnight continuity, 06:00 rollover, historical access, forward access and context-preserving refresh.
+- Phase 8 production-provider selection must prove sufficient horizon, history/retention, freshness and rights to satisfy this product promise.
+
 ## Frozen Guide interaction baseline
 Do not retune accepted Guide mechanics during real-data work without concrete regression evidence.
 
 ### Totaal
 - two-dimensional horizontal-time / vertical-channel Guide;
 - real schedule-duration geometry;
-- `Vandaag · Morgen · Nu`;
+- prototype controls currently use `Vandaag · Morgen · Nu`; Phase 4 replaces/extends this as required by ADR 0008 without changing the accepted gesture model;
 - native inertia, bounce and directional lock;
 - accepted partial-left-title and time-axis readability behaviour;
 - physically accepted detail response/performance.
@@ -41,7 +56,7 @@ Do not retune accepted Guide mechanics during real-data work without concrete re
 - vertical wall-clock schedule;
 - horizontal schedule swipe changes adjacent channel while preserving time anchor where practical;
 - horizontally browsable/direct-tap channel strip remains available;
-- `Morgen`, `Vandaag`, `Nu` coherent;
+- prototype day controls (`Morgen`, `Vandaag`, `Nu`) remain coherent but are not the final multi-day horizon UI;
 - Programme Detail round-trip preserves relevant context;
 - text-only fallback identities preserve distinguishing suffixes at larger text.
 
@@ -50,7 +65,8 @@ Do not retune accepted Guide mechanics during real-data work without concrete re
 - live/browse modes, `Nu` and `Primetime`;
 - stable vertical channel context while reference time changes;
 - reference programme + three following programmes;
-- accepted time-rail fling/settle and mixed-gesture behaviour.
+- accepted time-rail fling/settle and mixed-gesture behaviour;
+- active-day semantics follow ADR 0008 (06:00 television-day boundary), not strict midnight calendar-day rollover.
 
 ### Nu & Straks startup rule
 `NowNextGuideView` stays behind deferred `import()`. Do **not** restore a static startup import without separate physical evidence. A failed deferred load must leave Totaal/Per zender and the presentation selector usable.
@@ -85,7 +101,7 @@ Implemented and CI-proven:
 - provider-request-start freshness for race safety;
 - typed provider/database-independent `GuideScheduleApi`.
 
-ADR 0007 is the durable canonical schedule-semantics contract.
+ADR 0007 is the durable canonical schedule-semantics contract. ADR 0008 defines the television-day/horizon product semantics layered on top of those timestamp/window primitives.
 
 ### PR #40 — hosted canonical persistence
 Merged as `da08c10e170ea8fe3843e16b76247eccd6c0502a` after exact PR-head CI #283 passed both jobs.
@@ -145,6 +161,8 @@ Temporary PR #49 then seeded the two Amsterdam guide days needed for the current
 - coverage from `2026-09-13T22:00:00Z` through `2026-09-15T22:00:00Z` (Amsterdam Sep 14 + Sep 15);
 - public day reads measured ~193 KB / ~1.32 s for today and ~187 KB / ~1.26 s for tomorrow.
 
+This two-day seed is test evidence only and does not define the final Guide horizon in ADR 0008.
+
 ### PR #50 — DST-correct hosted windows
 Merged as `b60e2501ee757a20a080de393f618101b0970f90`.
 
@@ -167,7 +185,7 @@ Implemented:
 - one shared runtime source feeds Totaal, Per zender and deferred Nu & Straks through the existing fixture boundary;
 - no SQLite, TanStack Query, new dependency or native-config change.
 
-Frozen Guide view implementations and Programme Detail mechanics were not modified by PR #51.
+Frozen Guide view implementations and Programme Detail mechanics were not modified by PR #51. Its midnight/today+tomorrow rollover remains intentionally temporary Phase 3 behaviour to be generalized to ADR 0008 semantics in Phase 4.
 
 ## Hosted transport safety
 - mobile/public callers can only request allow-listed canonical channel IDs;
@@ -183,7 +201,7 @@ Current deployed functions on 2026-09-14:
 - both keep privileged Supabase/provider access server-side.
 
 ## DST correctness
-Teevee calendar days are Europe/Amsterdam days, not fixed 24-hour durations. `guideDayStart` models 23/25-hour DST days and the hosted transport now allows the required 25-hour winter-time bound. Mobile today+tomorrow loading uses those same Amsterdam day boundaries.
+Canonical timestamps and repository query windows remain real instants. `guideDayStart` currently models Europe/Amsterdam calendar-day 23/25-hour DST behaviour for the Phase 3 loader; ADR 0008 requires the final Guide-day derivation to use a 06:00 Europe/Amsterdam television-day boundary and to retain explicit 23/25-hour/DST tests around that boundary. The hosted transport's 25-hour maximum remains sufficient for one television-day request.
 
 ## Development-provider rights boundary
 IPTV-EPG.org is **temporary development input only**. Public availability is not proof of commercial redistribution rights.
@@ -193,7 +211,8 @@ Rules:
 - no downloaded XMLTV payload or external artwork/logo committed to Git;
 - fixtures remain deterministic CI/offline source;
 - no production-rights claim is inferred from Phase 3;
-- production EPG, logo, artwork and SLA rights remain a release gate.
+- production EPG, logo, artwork and SLA rights remain a release gate;
+- final production provider must also satisfy ADR 0008's minimum D-2..D+7 product horizon.
 
 EPG.PW and Schedules Direct are not selected for the commercial path under their published non-commercial/personal terms. EPGdata.tv and Gracenote remain possible production candidates if explicit commercial rights are obtained. An authorized Bindinc/TVgids production feed remains preferred when available.
 
@@ -209,7 +228,7 @@ Required focused iPhone smoke:
 6. app background/resume with unchanged hosted content does not discard user context;
 7. offline/unavailable hosted data remains usable through deterministic fixture fallback.
 
-Do not introduce persistent caching before this smoke and actual resume/offline behaviour justify it.
+Do not introduce persistent caching or the full ADR 0008 multi-day UI before this smoke; Phase 4 implements the complete horizon after the Phase 3 boundary is physically proven.
 
 ## Android status
 Physical Android interaction acceptance remains OPEN/DEFERRED because no Android device is available. CI proves Android JS/native export, clean prebuild and debug APK compilation, not system Back, nested-gesture feel or device performance.
@@ -227,20 +246,21 @@ Physical Android interaction acceptance remains OPEN/DEFERRED because no Android
 - temporary evidence PRs #43, #46, #47 and #49 were intentionally closed without merge.
 
 ## Deferred but tracked
+- full ADR 0008 D-2..D+7 Guide UX and 06:00 rollover implementation (Phase 4);
 - physical Android validation;
 - release-like performance outside Expo Go;
 - Nu & Straks following-row accessibility/density hardening;
 - targeted dependency-advisory review;
-- production EPG/logo/artwork rights/SLA;
+- production EPG/logo/artwork rights/SLA and horizon proof;
 - Programme Detail `Herinner mij` / `Bewaar` implementation;
 - pricing/trial/paywall;
 - production typography licensing;
 - final Tonight composition.
 
 ## EXACT NEXT STEP
-**Perform and document the focused physical iPhone real-data smoke for PR #51 across Totaal, Per zender, deferred Nu & Straks, Programme Detail, fixture→real transition, resume context retention and fallback behaviour. Do not change frozen Guide mechanics or add persistent caching before this evidence exists.**
+**Perform and document the focused physical iPhone real-data smoke for PR #51 across Totaal, Per zender, deferred Nu & Straks, Programme Detail, fixture→real transition, resume context retention and fallback behaviour. Do not change frozen Guide mechanics, add persistent caching or implement the full ADR 0008 multi-day UI before this evidence exists.**
 
 Owner checkout: `~/projects/teevee`.
 
 ## Resume instruction
-> Read `AGENTS.md`, this file, ADR 0007 and `PHASE_3_PROVIDER_RESEARCH_2026-09-14.md`. Phase 2 is closed. PR #50 fixed hosted 25-hour DST windows and PR #51 connected the mobile Guide to the provider-independent canonical hosted schedule with fixture-first safe fallback. The active Phase 3 gate is now a focused physical iPhone real-data smoke; only after that evidence may Phase 3 be closed and Phase 4 begin.
+> Read `AGENTS.md`, this file, ADR 0007, ADR 0008 and `PHASE_3_PROVIDER_RESEARCH_2026-09-14.md`. Phase 2 is closed. PR #50 fixed hosted 25-hour windows and PR #51 connected the mobile Guide to the provider-independent canonical hosted schedule with fixture-first safe fallback. ADR 0008 freezes the final television-day semantics (06:00 boundary; D-2..D+7 horizon) but does not expand the current Phase 3 physical gate. The active Phase 3 gate remains the focused physical iPhone real-data smoke; only after that evidence may Phase 3 be closed and Phase 4 begin.
