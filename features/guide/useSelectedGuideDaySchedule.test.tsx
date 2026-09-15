@@ -51,6 +51,13 @@ function schedule(id: string, generatedAt = '2026-09-15T08:00:00Z'): GuideSchedu
   };
 }
 
+function coveredEmptySchedule(generatedAt = '2026-09-15T08:00:00Z'): GuideSchedule {
+  return {
+    ...schedule('covered-empty', generatedAt),
+    programmes: [],
+  };
+}
+
 function deferred<T>() {
   let resolve!: (value: T) => void;
   let reject!: (reason?: unknown) => void;
@@ -75,6 +82,8 @@ function Probe({ dayStartMs, version = 0, api, includeFollowingDay = false }: Pr
       data-testid="probe"
       data-id={state.schedule?.programmes[0]?.id ?? ''}
       data-count={String(state.schedule?.programmes.length ?? 0)}
+      data-channel-count={String(state.schedule?.channels.length ?? 0)}
+      data-has-schedule={String(state.schedule !== null)}
       data-generated-at={state.schedule?.generatedAt ?? ''}
       data-loading={String(state.loading)}
       data-unavailable={String(state.unavailable)}
@@ -153,6 +162,38 @@ describe('useSelectedGuideDaySchedule', () => {
     expect(probe().id).toBe('selected');
   });
 
+  it('keeps a covered-empty canonical selected day authoritative', async () => {
+    const selectedDay = guideTelevisionDayStart(lifecycle.nowMs, 2);
+    const empty = coveredEmptySchedule();
+    const api = {
+      getSchedule: vi.fn().mockResolvedValue({ status: 'ok', schedule: empty }),
+    } satisfies GuideScheduleApi;
+
+    await renderProbe({ dayStartMs: selectedDay, api });
+    await act(async () => Promise.resolve());
+
+    expect(probe().hasSchedule).toBe('true');
+    expect(probe().channelCount).toBe('1');
+    expect(probe().count).toBe('0');
+    expect(probe().unavailable).toBe('false');
+  });
+
+  it('treats a zero-channel ok result as structurally unusable, separately from covered-empty', async () => {
+    const selectedDay = guideTelevisionDayStart(lifecycle.nowMs, 2);
+    const api = {
+      getSchedule: vi.fn().mockResolvedValue({
+        status: 'ok',
+        schedule: { ...coveredEmptySchedule(), channels: [] },
+      }),
+    } satisfies GuideScheduleApi;
+
+    await renderProbe({ dayStartMs: selectedDay, api });
+    await act(async () => Promise.resolve());
+
+    expect(probe().hasSchedule).toBe('false');
+    expect(probe().unavailable).toBe('true');
+  });
+
   it('loads Totaal as two independent bounded day reads for continuous 06:00 browsing', async () => {
     const selectedDay = guideTelevisionDayStart(lifecycle.nowMs, 2);
     const nextDay = guideTelevisionDayStart(selectedDay, 1);
@@ -178,7 +219,7 @@ describe('useSelectedGuideDaySchedule', () => {
     expect(probe().count).toBe('2');
   });
 
-  it('reports unavailable/network failure without discarding a usable fallback context', async () => {
+  it('reports initial unavailable/network failure without inventing canonical data', async () => {
     const unavailableApi = {
       getSchedule: vi.fn().mockResolvedValue({ status: 'unavailable' }),
     } satisfies GuideScheduleApi;
@@ -187,7 +228,7 @@ describe('useSelectedGuideDaySchedule', () => {
     await renderProbe({ dayStartMs: futureDay, api: unavailableApi });
     await act(async () => Promise.resolve());
     expect(unavailableApi.getSchedule).toHaveBeenCalledTimes(1);
-    expect(probe().id).toBe('');
+    expect(probe().hasSchedule).toBe('false');
     expect(probe().unavailable).toBe('true');
 
     const failingApi = {
@@ -195,7 +236,33 @@ describe('useSelectedGuideDaySchedule', () => {
     } satisfies GuideScheduleApi;
     await renderProbe({ dayStartMs: guideTelevisionDayStart(lifecycle.nowMs, 3), api: failingApi });
     await act(async () => Promise.resolve());
-    expect(probe().id).toBe('');
+    expect(probe().hasSchedule).toBe('false');
+    expect(probe().unavailable).toBe('true');
+  });
+
+  it('keeps cached selected data when forced revalidation becomes unavailable or fails', async () => {
+    const selectedDay = guideTelevisionDayStart(lifecycle.nowMs, 2);
+    const first = schedule('cached');
+    const api = {
+      getSchedule: vi
+        .fn()
+        .mockResolvedValueOnce({ status: 'ok', schedule: first })
+        .mockResolvedValueOnce({ status: 'unavailable' })
+        .mockRejectedValueOnce(new Error('offline')),
+    } satisfies GuideScheduleApi;
+
+    await renderProbe({ dayStartMs: selectedDay, api });
+    await act(async () => Promise.resolve());
+    expect(probe().id).toBe('cached');
+    expect(probe().unavailable).toBe('false');
+
+    await resume();
+    expect(probe().id).toBe('cached');
+    expect(probe().unavailable).toBe('true');
+
+    await resume();
+    expect(api.getSchedule).toHaveBeenCalledTimes(3);
+    expect(probe().id).toBe('cached');
     expect(probe().unavailable).toBe('true');
   });
 
