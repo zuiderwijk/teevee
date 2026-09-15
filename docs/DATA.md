@@ -171,7 +171,7 @@ The Phase-3 hosted transport is implemented and physically proven.
 - exposes no provider/database implementation detail;
 - is deliberately bounded to narrow windows suitable for a public no-login Guide.
 
-Those bounded windows are compatible with individual television-day requests. Phase 4 should compose the required horizon from bounded windows rather than exposing one huge unbounded ten-day payload.
+Those bounded windows are compatible with individual television-day requests. Phase 4 composes the required horizon from bounded windows rather than exposing one huge unbounded ten-day payload.
 
 ### Protected refresh
 `epg-refresh` remains server-only:
@@ -185,7 +185,7 @@ A server-side `pg_cron` + `pg_net` job runs every six hours and refreshes a roll
 
 The dedicated cron token is generated/stored encrypted in Supabase Vault; the real Supabase secret key stays inside the Edge Function environment.
 
-This three-day buffer exists to keep the current development path usable. It does **not** define the final product horizon and does not prove that the temporary feed can satisfy D+7 or historical D-2 in production.
+The buffer currently supports the development runtime's bounded D + D+1 television-day reads around midnight/06:00. It does **not** define the final product horizon and does not prove that the temporary feed can satisfy D+7 or historical D-2 in production.
 
 ## Mobile runtime source
 The mobile boundary currently provides:
@@ -194,11 +194,16 @@ The mobile boundary currently provides:
 - runtime validation of serialized responses;
 - provider-independent merge/deduplication;
 - one in-memory runtime schedule source shared across Totaal, Per zender and deferred Nu & Straks;
-- refresh on startup, resume and current temporary rollover;
+- independently bounded D and D+1 television-day reads derived from the 06:00 Europe/Amsterdam domain primitive;
+- runtime schedule anchoring and lifecycle rollover at 06:00 rather than midnight;
+- refresh on startup and app resume;
 - freshness-only updates that do not remount the Guide;
+- request-version protection against stale/out-of-order hosted responses;
 - fallback/preservation when hosted data is unavailable, invalid or a network refresh fails.
 
-The current loader still reads Amsterdam calendar `today + tomorrow`. That is a deliberate Phase-3 vertical-slice implementation detail and is **not** the ADR 0008 product model. Phase 4 replaces this strict-calendar-day assumption with television-day-aware queries/selection.
+PR #64 replaced the former Phase-3 strict-calendar today+tomorrow runtime assumption. Its deterministic tests cover 00:00, 05:59, exact 06:00, both Amsterdam DST transitions, bounded 23/25-hour reads, unavailable required windows, lifecycle refresh and stale response races. Independent exact-head QA found no code blocker, and focused iPhone evidence proved fixture-first -> hosted replacement plus same-television-day context retention after background/resume.
+
+The next Phase-4 mobile boundary is user-selected D-2..D+7 access for Totaal and Per zender using bounded per-day reads. Nu & Straks remains a single active-television-day presentation.
 
 ## Phase ownership for horizon/retention
 ### Phase 3 — complete
@@ -210,12 +215,12 @@ Proved:
 - deterministic fixture fallback;
 - physical fixture -> hosted transition and context retention on iPhone.
 
-The two-calendar-day mobile loader and three-calendar-day development refresh buffer are retained only as temporary compatibility until Phase 4 migration.
+The historical two-calendar-day mobile loader has been superseded by PR #64. The rolling three-calendar-day development refresh buffer remains temporary operational support only.
 
 ### Phase 4 — active
 Owns:
-- shared 06:00 television-day primitives and cache/query keys;
-- D-2..D+7 day selection/navigation in Totaal and Per zender;
+- shared 06:00 television-day primitives and query keys — implemented for the current runtime boundary;
+- D-2..D+7 day selection/navigation in Totaal and Per zender — next;
 - bounded hosted loading strategy for selected/needed television days;
 - preservation of historical D-2/D-1 data while inside the guaranteed window;
 - uninterrupted evening browsing through midnight;
