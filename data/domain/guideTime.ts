@@ -33,17 +33,26 @@ function assertIntegerDayOffset(dayOffset: number): void {
   if (!Number.isInteger(dayOffset)) throw new RangeError('Day offset must be an integer');
 }
 
+function wallClockField(instantMs: number, name: Intl.DateTimeFormatPartTypes): number {
+  const value = formatter.formatToParts(instantMs).find((part) => part.type === name)?.value;
+  if (value === undefined) throw new RangeError(`Missing date field: ${name}`);
+  return Number(value);
+}
+
 /** Encode Amsterdam wall-clock fields as UTC for offset arithmetic only. */
 function wallClockMs(instantMs: number): number {
-  const parts = formatter.formatToParts(instantMs);
-  const field = (name: string): number => {
-    const value = parts.find((part) => part.type === name)?.value;
-    if (value === undefined) throw new RangeError(`Missing date field: ${name}`);
-    return Number(value);
-  };
   const wallClock = new Date(0);
-  wallClock.setUTCFullYear(field('year'), field('month') - 1, field('day'));
-  wallClock.setUTCHours(field('hour'), field('minute'), field('second'), 0);
+  wallClock.setUTCFullYear(
+    wallClockField(instantMs, 'year'),
+    wallClockField(instantMs, 'month') - 1,
+    wallClockField(instantMs, 'day'),
+  );
+  wallClock.setUTCHours(
+    wallClockField(instantMs, 'hour'),
+    wallClockField(instantMs, 'minute'),
+    wallClockField(instantMs, 'second'),
+    0,
+  );
   return wallClock.getTime();
 }
 
@@ -63,9 +72,8 @@ function resolveAmsterdamWallClock(targetWallClockMs: number, boundaryName: stri
 /**
  * Start of an Amsterdam calendar day, independent of the device timezone.
  *
- * This remains the strict-midnight primitive used by the temporary Phase-3
- * calendar-day transport/runtime path. Product Guide grouping must use
- * `guideTelevisionDayStart` instead.
+ * This remains the strict-midnight primitive used by legacy fixture alignment.
+ * Product Guide grouping must use `guideTelevisionDayStart` instead.
  *
  * Calendar offsets must not be implemented as multiples of 24 hours: the
  * daylight-saving transition days are 23 and 25 hours long.
@@ -105,6 +113,59 @@ export function guideTelevisionDayStart(instantMs: number, dayOffset = 0): numbe
   target.setUTCDate(target.getUTCDate() + dayOffset);
 
   return resolveAmsterdamWallClock(target.getTime(), 'television-day boundary');
+}
+
+/**
+ * Resolve one Amsterdam wall-clock time inside a specific television day.
+ * Hours before 06:00 intentionally resolve on the following calendar date,
+ * while 06:00-23:59 resolve on the television-day label date.
+ */
+export function guideTelevisionDayTime(
+  televisionDayStartMs: number,
+  hour: number,
+  minute = 0,
+  second = 0,
+): number {
+  assertValidInstant(televisionDayStartMs);
+  if (!Number.isInteger(hour) || hour < 0 || hour > 23) throw new RangeError('Hour must be 0-23');
+  if (!Number.isInteger(minute) || minute < 0 || minute > 59) {
+    throw new RangeError('Minute must be 0-59');
+  }
+  if (!Number.isInteger(second) || second < 0 || second > 59) {
+    throw new RangeError('Second must be 0-59');
+  }
+
+  const normalizedStart = guideTelevisionDayStart(televisionDayStartMs);
+  const target = new Date(wallClockMs(normalizedStart));
+  if (hour < GUIDE_TELEVISION_DAY_START_HOUR) target.setUTCDate(target.getUTCDate() + 1);
+  target.setUTCHours(hour, minute, second, 0);
+
+  return resolveAmsterdamWallClock(target.getTime(), 'television-day wall-clock time');
+}
+
+/**
+ * Preserve the Amsterdam wall-clock time while moving to another television day.
+ * A spring-DST nonexistent time is advanced by the DST gap, which is the nearest
+ * practical equivalent rather than silently switching to a different day.
+ */
+export function guideTelevisionDayMatchingWallClock(
+  sourceInstantMs: number,
+  televisionDayStartMs: number,
+): number {
+  assertValidInstant(sourceInstantMs);
+  const hour = wallClockField(sourceInstantMs, 'hour');
+  const minute = wallClockField(sourceInstantMs, 'minute');
+  const second = wallClockField(sourceInstantMs, 'second');
+
+  try {
+    return guideTelevisionDayTime(televisionDayStartMs, hour, minute, second);
+  } catch (error) {
+    if (!(error instanceof RangeError)) throw error;
+    const target = new Date(wallClockMs(guideTelevisionDayStart(televisionDayStartMs)));
+    if (hour < GUIDE_TELEVISION_DAY_START_HOUR) target.setUTCDate(target.getUTCDate() + 1);
+    target.setUTCHours(hour, minute + 60, second, 0);
+    return resolveAmsterdamWallClock(target.getTime(), 'DST-adjusted television-day wall-clock time');
+  }
 }
 
 /**
