@@ -70,6 +70,15 @@ export function guideTargetForNow(nowMs: number): GuideDayNavigationTarget {
   };
 }
 
+/**
+ * Totaal's visible date context is a projection of its stable viewed-time anchor.
+ * Real-clock rollover is intentionally not an input: the label changes only when the
+ * Guide anchor itself crosses 06:00, or when an explicit action such as `Nu` moves it.
+ */
+export function guideTotaalDayForViewedAnchor(viewedTimeMs: number): number {
+  return guideTelevisionDayStart(viewedTimeMs);
+}
+
 export function guideTargetForPrimetime(selectedDayStartMs: number): GuideDayNavigationTarget {
   return {
     dayStartMs: guideTelevisionDayStart(selectedDayStartMs),
@@ -81,6 +90,8 @@ export function guideTargetForPrimetime(selectedDayStartMs: number): GuideDayNav
  * Reconcile a mounted Guide when the real current television day rolls at 06:00.
  * A view that was still on the previous current day follows the rollover; an explicit
  * historical/future selection is retained while it remains inside the new horizon.
+ * Totaal deliberately does not use this current-day-following path: its visible day is
+ * derived from the stable viewed-time anchor via `guideTotaalDayForViewedAnchor`.
  */
 export function reconcileGuideDaySelection(
   selectedDayStartMs: number,
