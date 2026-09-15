@@ -16,6 +16,7 @@ Accepted: 2026-09-13; day-selector behaviour accepted 2026-09-15
   - file id: `file_00000000314481f69f6a34d18ece1c21`
 
 Detailed shared day-selector contract: `design/current/guide/GUIDE_DAY_SELECTOR.md`.
+Development visual-convergence handoff: `docs/TOTAAL_VISUAL_CONVERGENCE.md`.
 
 ## Preserve
 - Söhne visual direction.
