@@ -47,6 +47,7 @@ describe('Amsterdam guide calendar', () => {
 
 describe('Teevee television day', () => {
   it.each([
+    ['2026-09-14T22:00:00Z', 0, '2026-09-14T04:00:00Z'], // exactly 00:00 CEST on Sep 15
     ['2026-09-15T03:59:59Z', 0, '2026-09-14T04:00:00Z'], // 05:59:59 CEST
     ['2026-09-15T04:00:00Z', 0, '2026-09-15T04:00:00Z'], // 06:00 CEST
     ['2026-09-14T22:30:00Z', 0, '2026-09-14T04:00:00Z'], // 00:30 CEST next calendar date
@@ -104,6 +105,45 @@ describe('Teevee television day', () => {
     }
   });
 
+  it.each([
+    [
+      'spring',
+      '2026-03-29T12:00:00Z',
+      23,
+      '2026-03-28T05:00:00Z',
+      '2026-03-29T04:00:00Z',
+    ],
+    [
+      'fall',
+      '2026-10-25T12:00:00Z',
+      25,
+      '2026-10-24T04:00:00Z',
+      '2026-10-25T05:00:00Z',
+    ],
+  ] as const)(
+    'keeps the D-2 through D+7 horizon contiguous across the %s DST transition',
+    (_season, input, variableHours, expectedFrom, expectedTo) => {
+      const horizon = guideTelevisionDayHorizon(Date.parse(input));
+
+      expect(horizon).toHaveLength(10);
+      expect(horizon.map((window) => window.offset)).toEqual(GUIDE_TELEVISION_DAY_OFFSETS);
+
+      for (let index = 0; index < horizon.length; index += 1) {
+        const window = horizon[index]!;
+        expect(window.toMs).toBeGreaterThan(window.fromMs);
+        if (index > 0) expect(horizon[index - 1]!.toMs).toBe(window.fromMs);
+      }
+
+      const dstWindow = horizon.find((window) => window.offset === -1);
+      expect(dstWindow).toEqual({
+        offset: -1,
+        fromMs: Date.parse(expectedFrom),
+        toMs: Date.parse(expectedTo),
+      });
+      expect(dstWindow!.toMs - dstWindow!.fromMs).toBe(variableHours * HOUR_MS);
+    },
+  );
+
   it('anchors the whole horizon to the preceding television day before 06:00', () => {
     const anchor = Date.parse('2026-09-15T03:30:00Z'); // 05:30 Amsterdam, still D = Sep 14
     const currentDay = guideTelevisionDayHorizon(anchor).find((window) => window.offset === 0);
@@ -115,10 +155,13 @@ describe('Teevee television day', () => {
     });
   });
 
-  it('rejects invalid timestamps and fractional television-day offsets', () => {
+  it('rejects invalid timestamps and invalid television-day offsets', () => {
     expect(() => guideTelevisionDayStart(Number.NaN)).toThrow(RangeError);
     expect(() => guideTelevisionDayStart(Number.POSITIVE_INFINITY)).toThrow(RangeError);
     expect(() => guideTelevisionDayStart(0, 0.5)).toThrow(RangeError);
+    expect(() => guideTelevisionDayStart(0, Number.MAX_SAFE_INTEGER)).toThrow(
+      'Day offset is out of range',
+    );
     expect(() => guideTelevisionDayHorizon(Number.NaN)).toThrow(RangeError);
   });
 });
