@@ -11,6 +11,34 @@ Doel: chronologisch, begrijpelijk overzicht van substantiële milestones, verifi
 
 ---
 
+## 15 september 2026 — Televisiedag en minimale Guide-horizon frozen
+
+De productowner heeft de definitieve dagsemantiek en minimale Guide-horizon vastgesteld. De Guide volgt voortaan niet een harde kalenderdaggrens om 00:00, maar een **televisiedag van 06:00 Europe/Amsterdam tot 06:00 de volgende kalenderdag**.
+
+Producteffect:
+- een gebruiker die om 00:05 opent blijft inhoudelijk in de televisieavond van de voorafgaande datum;
+- iemand die om 21:00 bladert kan zonder expliciete datumwissel door naar programma's na 00:00;
+- `Nu` blijft de echte actuele tijd, maar hoort tussen 00:00 en 05:59 bij de voorafgaande televisiedag;
+- Totaal en Per zender moeten minimaal **D-2 t/m D+7** volledige televisiedagen ondersteunen;
+- Nu & Straks blijft één actieve-dagpresentatie, maar gebruikt dezelfde 06:00-grens;
+- gebruikers zien gewone datums/labels; `televisiedag` is een intern product- en architectuurbegrip.
+
+Architectuur:
+- canonical programme timestamps blijven echte UTC-instants; niets wordt verschoven om de televisiedag te simuleren;
+- ADR 0008 legt de 06:00-grens, midnight continuity en D-2..D+7 vast;
+- Phase 3 bewaakt dat de datalaag/query-contracten niet aan midnight of een permanente today+tomorrow-horizon worden gekoppeld;
+- de huidige twee-daagse Phase 3 mobile loader blijft bewust slechts vertical-slice scope;
+- Phase 4 implementeert en valideert de volledige multi-day UX, 06:00-rollover, historische/future navigatie, cache/refresh en contextbehoud;
+- Phase 8 moet bewijzen dat de uiteindelijke productie-EPG de minimale horizon, historie, freshness en rechten kan leveren.
+
+Documentatie bijgewerkt: `PROJECT_STATE.md`, `PRODUCT.md`, `UX.md`, `DATA.md`, `BUILD_SPEC.md` en ADR 0008.
+
+**Verificatie:** documentatie-only wijziging; er is nog geen runtimegedrag gewijzigd of fysiek gevalideerd. De bestaande Phase 3 physical real-data smoke blijft ongewijzigd de actieve exitgate.
+
+**Volgende stap:** eerst de bestaande Phase 3 iPhone real-data smoke afronden; daarna in Phase 4 de television-day-aware D-2..D+7 Guide implementeren.
+
+---
+
 ## 14 september 2026 — Mobile Guide aangesloten op canonical hosted EPG met fixture-first fallback
 
 PR #50 is gemergd als `b60e2501ee757a20a080de393f618101b0970f90`. Daarmee accepteert de hosted transportlaag naast normale Amsterdamse kalenderdagen ook de 25-uurs wintertijd-dag. De exacte merge-commit op `main` had CI run #315 volledig groen voor zowel `quality` als `android-native`.
@@ -173,7 +201,8 @@ Een eerdere high-volume per-programme Reanimated-architectuur was CI-groen maar 
 
 ## Doorlopende open punten
 - **Phase 3 physical real-data gate:** gerichte iPhone smoke na PR #51 is nu de actieve gate.
-- **Production provider/rights:** nog open; gratis XMLTV is development-only.
+- **Televisiedag/Guide-horizon:** frozen in ADR 0008; volledige D-2..D+7 + 06:00 implementatie hoort in Phase 4.
+- **Production provider/rights:** nog open; gratis XMLTV is development-only en uiteindelijke provider moet ook de minimale historische/future horizon bewijzen.
 - **Mobile cache:** nog niet kiezen vóór real-device resume/offline meting; huidige payloads rechtvaardigen nog geen SQLite/TanStack.
 - **Guide interaction baseline:** fysiek geaccepteerd op iPhone; alleen heropenen met regressie-evidence.
 - **Nu & Straks 24pt following rows:** latere density-aware accessibility-hardening.
