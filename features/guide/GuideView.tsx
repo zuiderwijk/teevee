@@ -29,6 +29,7 @@ import { EdgeReadabilityOverlay } from './EdgeReadabilityOverlay';
 import { GuideDaySelector } from './GuideDaySelector';
 import {
   guideDayIsSelectable,
+  guideDayOptions,
   guideTargetForDaySelection,
   guideTargetForNow,
 } from './guideDaySelection';
@@ -239,14 +240,19 @@ export const GuideView = memo(function GuideView({
   useEffect(() => {
     if (guideDayIsSelectable(windowStartDayMs, nowMs)) return;
 
-    const replacementDayStartMs = guideDayIsSelectable(visibleDayStartMs, nowMs)
-      ? visibleDayStartMs
-      : guideTelevisionDayStart(nowMs);
+    const options = guideDayOptions(nowMs);
+    const firstDayStartMs = options[0]!.fromMs;
+    const lastDayStartMs = options.at(-1)!.fromMs;
+    const replacementDayStartMs = windowStartDayMs < firstDayStartMs
+      ? firstDayStartMs
+      : windowStartDayMs > lastDayStartMs
+        ? lastDayStartMs
+        : guideTelevisionDayStart(nowMs);
     const target = guideTargetForDaySelection(viewedTimeRef.current, replacementDayStartMs);
     pendingTargetTimeRef.current = target.timeMs;
     setWindowStartDayMs(replacementDayStartMs);
     selectVisibleDay(replacementDayStartMs);
-  }, [nowMs, selectVisibleDay, visibleDayStartMs, windowStartDayMs]);
+  }, [nowMs, selectVisibleDay, windowStartDayMs]);
 
   useEffect(() => {
     const target = pendingTargetTimeRef.current ??
