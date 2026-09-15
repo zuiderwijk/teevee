@@ -21,26 +21,32 @@ function alignDeterministicGuideFixture(anchorMs: number, alignedStartMs: number
 }
 
 /**
- * Return installed provider-independent canonical data when available for this
- * Amsterdam day; otherwise align the deterministic fixture to today + tomorrow.
- * Programme spacing, durations, ids and edge cases in fixture mode remain unchanged.
+ * Return installed provider-independent canonical data when available; otherwise align
+ * the deterministic fixture to the caller's requested Guide anchor.
  *
- * This legacy/current-runtime fallback intentionally keeps its proven strict-midnight
- * alignment. Selected Phase 4 television-day views use the dedicated helper below.
+ * Normal runtime callers pass a real instant and retain the proven strict-midnight
+ * fixture alignment. Phase 4 selected-day views pass the exact 06:00 television-day
+ * boundary; an explicit boundary is therefore preserved as the fixture start. This keeps
+ * one deterministic fixture source while giving selected views complete early-morning
+ * coverage without changing ids, programme spacing, durations or metadata.
  */
 export function buildRuntimeGuideFixture(nowMs = Date.now()): GuideFixture {
   const installed = runtimeGuideScheduleFor(nowMs);
   if (installed) return installed;
-  return alignDeterministicGuideFixture(nowMs, guideDayStart(nowMs));
+
+  const televisionDayStartMs = guideTelevisionDayStart(nowMs);
+  const alignedStartMs = nowMs === televisionDayStartMs
+    ? televisionDayStartMs
+    : guideDayStart(nowMs);
+  return alignDeterministicGuideFixture(nowMs, alignedStartMs);
 }
 
 /**
  * Align the same deterministic 49-hour source fixture to a selected television day.
  *
  * The source's 49 real hours cover two complete adjacent television-day windows even
- * across the 25-hour fall-DST day. This gives Totaal a continuous bounded fallback
- * across the next 06:00 boundary while Per zender consumes only the selected-day slice.
- * No synthetic programme metadata, ids, spacing or durations are changed.
+ * across the 25-hour fall-DST day. This is also useful to make the selected-day fallback
+ * contract explicit in focused tests without constructing synthetic programme data again.
  */
 export function buildTelevisionDayGuideFixture(televisionDayAnchorMs: number): GuideFixture {
   const televisionDayStartMs = guideTelevisionDayStart(televisionDayAnchorMs);
