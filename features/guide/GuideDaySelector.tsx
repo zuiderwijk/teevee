@@ -233,7 +233,7 @@ const styles = StyleSheet.create({
     flexShrink: 1,
     fontSize: 15,
     lineHeight: 21,
-    fontWeight: '650',
+    fontWeight: '600',
   },
   selectedMark: {
     fontSize: 18,
