@@ -28,6 +28,7 @@ import type { ProgrammeSelection } from './detailState';
 import { EdgeReadabilityOverlay } from './EdgeReadabilityOverlay';
 import { GuideDaySelector } from './GuideDaySelector';
 import {
+  guideDayIsSelectable,
   guideTargetForDaySelection,
   guideTargetForNow,
 } from './guideDaySelection';
@@ -83,20 +84,31 @@ export const GuideView = memo(function GuideView({
   const scrollX = useSharedValue(0);
   const scrollY = useSharedValue(0);
   const nowMs = useGuideClock();
-  const { selectedDayStartMs, selectDay } = useGuideDaySelection(nowMs);
-  const selectedDay = useSelectedGuideDaySchedule(selectedDayStartMs, guideDataVersion);
+  const {
+    selectedDayStartMs: visibleDayStartMs,
+    selectDay: selectVisibleDay,
+  } = useGuideDaySelection(nowMs);
+  const [windowStartDayMs, setWindowStartDayMs] = useState(visibleDayStartMs);
+  const followingDayStartMs = guideTelevisionDayStart(windowStartDayMs, 1);
+  const includeFollowingDay = guideDayIsSelectable(followingDayStartMs, nowMs);
+  const selectedWindow = useSelectedGuideDaySchedule(
+    windowStartDayMs,
+    guideDataVersion,
+    undefined,
+    includeFollowingDay,
+  );
   const runtimeFixture = useMemo(
-    () => selectedDay.schedule ?? buildRuntimeGuideFixture(selectedDayStartMs),
-    [guideDataVersion, selectedDay.schedule, selectedDayStartMs],
+    () => selectedWindow.schedule ?? buildRuntimeGuideFixture(windowStartDayMs),
+    [guideDataVersion, selectedWindow.schedule, windowStartDayMs],
   );
   const viewedTimeRef = useRef(Date.now());
   const pendingTargetTimeRef = useRef<number | null>(null);
   const [condensed, setCondensed] = useState(false);
 
-  const windowStart = selectedDayStartMs;
+  const windowStart = windowStartDayMs;
   const windowEnd = useMemo(
-    () => guideTelevisionDayStart(selectedDayStartMs, 1),
-    [selectedDayStartMs],
+    () => guideTelevisionDayStart(windowStartDayMs, includeFollowingDay ? 2 : 1),
+    [includeFollowingDay, windowStartDayMs],
   );
   const width = timelineWidth(windowStart, windowEnd, layout.minuteWidth);
   const ticks = useMemo(() => buildTimeTicks(windowStart, windowEnd), [windowStart, windowEnd]);
@@ -134,11 +146,19 @@ export const GuideView = memo(function GuideView({
     [layout.minuteWidth, windowEnd, windowStart],
   );
 
-  const handleHorizontalMomentumEnd = useCallback(
+  const syncHorizontalAnchor = useCallback(
     (viewportX: number) => {
-      viewedTimeRef.current = viewedTimeForX(viewportX);
+      const viewedTimeMs = viewedTimeForX(viewportX);
+      viewedTimeRef.current = viewedTimeMs;
+      const anchorDayStartMs = guideTelevisionDayStart(viewedTimeMs);
+      if (
+        anchorDayStartMs !== visibleDayStartMs &&
+        guideDayIsSelectable(anchorDayStartMs, nowMs)
+      ) {
+        selectVisibleDay(anchorDayStartMs);
+      }
     },
-    [viewedTimeForX],
+    [nowMs, selectVisibleDay, viewedTimeForX, visibleDayStartMs],
   );
 
   const horizontalScrollHandler = useAnimatedScrollHandler(
@@ -148,12 +168,16 @@ export const GuideView = memo(function GuideView({
         // to JS can queue work behind a programme tap immediately after a fling.
         scrollX.value = Math.max(0, event.contentOffset.x);
       },
+      onEndDrag: (event) => {
+        const viewportX = Math.max(0, event.contentOffset.x);
+        scheduleOnRN(syncHorizontalAnchor, viewportX);
+      },
       onMomentumEnd: (event) => {
         const viewportX = Math.max(0, event.contentOffset.x);
-        scheduleOnRN(handleHorizontalMomentumEnd, viewportX);
+        scheduleOnRN(syncHorizontalAnchor, viewportX);
       },
     },
-    [handleHorizontalMomentumEnd, scrollX],
+    [scrollX, syncHorizontalAnchor],
   );
 
   const verticalScrollHandler = useAnimatedScrollHandler(
@@ -183,31 +207,34 @@ export const GuideView = memo(function GuideView({
 
   useEffect(() => {
     const target = pendingTargetTimeRef.current ??
-      guideTargetForDaySelection(viewedTimeRef.current, selectedDayStartMs).timeMs;
+      guideTargetForDaySelection(viewedTimeRef.current, windowStartDayMs).timeMs;
     pendingTargetTimeRef.current = null;
     const frame = requestAnimationFrame(() => scrollToTime(target, false));
     return () => cancelAnimationFrame(frame);
-  }, [scrollToTime, selectedDayStartMs]);
+  }, [scrollToTime, windowStartDayMs]);
 
   const changeDay = useCallback(
     (nextDayStartMs: number) => {
-      if (nextDayStartMs === selectedDayStartMs) return;
+      if (nextDayStartMs === visibleDayStartMs && nextDayStartMs === windowStartDayMs) return;
       const target = guideTargetForDaySelection(viewedTimeRef.current, nextDayStartMs);
       pendingTargetTimeRef.current = target.timeMs;
-      selectDay(target.dayStartMs);
+      setWindowStartDayMs(target.dayStartMs);
+      selectVisibleDay(target.dayStartMs);
     },
-    [selectDay, selectedDayStartMs],
+    [selectVisibleDay, visibleDayStartMs, windowStartDayMs],
   );
 
   const jumpToNow = useCallback(() => {
     const target = guideTargetForNow(Date.now());
-    if (target.dayStartMs === selectedDayStartMs) {
+    if (target.timeMs >= windowStart && target.timeMs < windowEnd) {
+      selectVisibleDay(target.dayStartMs);
       scrollToTime(target.timeMs, true);
       return;
     }
     pendingTargetTimeRef.current = target.timeMs;
-    selectDay(target.dayStartMs);
-  }, [scrollToTime, selectDay, selectedDayStartMs]);
+    setWindowStartDayMs(target.dayStartMs);
+    selectVisibleDay(target.dayStartMs);
+  }, [scrollToTime, selectVisibleDay, windowEnd, windowStart]);
 
   return (
     <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.colors.background }]}>
@@ -228,10 +255,10 @@ export const GuideView = memo(function GuideView({
         ]}
       >
         <GuideDaySelector
-          selectedDayStartMs={selectedDayStartMs}
+          selectedDayStartMs={visibleDayStartMs}
           nowMs={nowMs}
-          loading={selectedDay.loading}
-          unavailable={selectedDay.unavailable}
+          loading={selectedWindow.loading}
+          unavailable={selectedWindow.unavailable}
           onSelectDay={changeDay}
         />
         <Pressable
