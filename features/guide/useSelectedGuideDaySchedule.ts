@@ -110,7 +110,9 @@ export function useSelectedGuideDaySchedule(
         .then((schedule) => {
           if (requestVersionRef.current !== requestVersion) return;
           setLoadingKey(null);
-          if (!schedule || schedule.channels.length === 0 || schedule.programmes.length === 0) {
+          if (!schedule || schedule.channels.length === 0) {
+            // ADR 0007 makes a covered canonical window with zero programmes authoritative.
+            // A zero-channel result is handled separately as structurally unusable for Guide UI.
             setUnavailableKey(key);
             return;
           }
