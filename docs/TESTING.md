@@ -1,6 +1,6 @@
 # Teevee Testing
 
-Status: Phase 3 development test path. Phase 2 iPhone acceptance is closed. Current feature/device gates are governed by `PROJECT_STATE.md`.
+Status: Phase 4 development test path. Phase 1A, 1B, 2 and 3 iPhone acceptance are closed. Current feature/device gates are governed by `PROJECT_STATE.md` and `ENGINEERING_QUALITY_POLICY.md`.
 
 CI and server/integration tests are technical proof; they do not replace physical-device acceptance when mobile interaction boundaries are changed.
 
@@ -21,38 +21,70 @@ For cache-sensitive checks:
 npm run start:clean
 ```
 
-## Phase 2 physical status — CLOSED
-Evidence:
+## Closed physical acceptance
+Phase 2 evidence:
 - `docs/PHYSICAL_EVIDENCE_2026-09-13_2310.md`;
 - `docs/PHYSICAL_EVIDENCE_2026-09-13_2356.md`.
 
-Accepted on the available iPhone:
-- Gids / Vanavond / Zoeken + secondary Settings;
-- persisted Light/Dark/System;
-- shared headers/safe areas;
-- Totaal, Per zender and Nu & Straks at representative larger iOS text;
-- Programme Detail round-trip;
-- Per zender channel identity/select/swipe synchronisation;
-- no broad crash/white-screen/gesture regression.
+Phase 3 evidence:
+- `docs/PHYSICAL_EVIDENCE_2026-09-15_PHASE3.md`.
 
-Do not routinely reopen these interaction gates. Revalidate only when concrete changes touch them.
+Accepted on the available iPhone includes:
+- app shell and appearance persistence;
+- Totaal, Per zender and deferred Nu & Straks;
+- Programme Detail round-trips;
+- Per zender channel identity/select/adjacent-swipe synchronisation;
+- Nu & Straks mixed horizontal/vertical interaction;
+- fixture-first startup and fixture -> hosted canonical transition;
+- controlled fallback when hosted data is unavailable;
+- background/resume context retention;
+- runtime network-loss degradation without destroying Guide state.
 
-Nu & Straks following-programme rows remain known non-blocking accessibility/density debt at 24pt. Do not solve with overlapping `hitSlop` or blindly enlarge every row to 44pt; later remediation must be density-aware and physically checked.
+Do not routinely reopen these interaction gates. Revalidate only when concrete changes touch them or a regression gives evidence to do so.
+
+Nu & Straks following-programme rows remain known non-blocking accessibility/density debt at 24pt. Do not solve with overlapping `hitSlop` or blindly enlarge every row to 44pt; Phase 4 remediation must be density-aware and physically checked.
 
 ## Automated quality gate
-Every normal PR/main push runs:
-- `npm ci`;
+The `quality` job runs on every pull request and push to `main`:
+- `npm ci` from the committed lockfile;
 - strict TypeScript typecheck;
 - lint;
 - Vitest suite;
-- Expo exports for iOS, Android and web;
-- clean Android prebuild + Gradle debug APK compile.
+- Expo exports for iOS, Android and web.
 
-A green CI run proves those checks only; it does not prove mobile scroll/gesture quality.
+The separate `android-native` job is risk-scoped:
+- documentation/design-only PRs (`docs/**`, `design/**` and root Markdown files) run native-scope detection but skip Java/Gradle setup, the second `npm ci`, Expo Android prebuild and APK compilation;
+- PRs that touch runtime/configuration code build a clean Android debug APK for `arm64-v8a` only;
+- pushes to `main` run the full Android debug build across the repository's normal ABI set as the release-like safety net;
+- an unexpected empty PR diff falls back conservatively to the arm64 build.
+
+PR scope uses the merge-base/three-dot Git diff (`base...head`), so a docs-only branch remains docs-only even when `main` advances with unrelated runtime changes after the branch point.
+
+Deterministic regression coverage for this policy lives in `scripts/ci/android-native-scope.test.mjs` and proves:
+- docs/design-only -> native compile skipped;
+- runtime/config -> arm64 native compile required;
+- stale docs-only branch after base advancement -> still docs-only;
+- unexpected empty diff -> conservative arm64.
+
+A PR is not CI-green until every required job for the exact PR head SHA is `completed` with conclusion `success`. After merge, exact-`main` CI is separate evidence and must be checked independently.
+
+A green CI run proves these automated checks only; it does not prove mobile scroll/gesture quality, native accessibility or real-device performance.
 
 Never use `npm audit fix --force`.
 
-## Phase 3 deterministic tests
+## Engineering Quality Policy
+`docs/ENGINEERING_QUALITY_POLICY.md` is the binding quality policy once merged to `main`.
+
+Important test rules:
+- risk classification is Low / Medium / High;
+- automated evidence must protect product/domain behaviour rather than implementation trivia;
+- reproducible bugs should normally gain regression coverage;
+- high-risk changes require independent QA/review where practical;
+- physical device evidence is required when CI cannot credibly prove gestures, lifecycle, accessibility, visual fidelity or performance;
+- do not weaken types, lint rules or assertions merely to make a change green;
+- critical domain/data/runtime/server coverage targets are introduced only when CI coverage reporting is enabled; do not manufacture low-value UI tests to hit a percentage.
+
+## Deterministic data tests
 Real data does not replace deterministic fixtures. Normal CI must not depend on the internet, external provider availability or provider credentials.
 
 ### Provider / normalisation
@@ -86,17 +118,17 @@ The first PR #42 CI run found a real CDATA handling bug. It was fixed before mer
 ### Live feed evidence is separate from normal CI
 Temporary PR #43 ran a one-off GitHub Actions fetch to inspect the public development feed and was closed without merge.
 
-Observed:
+Observed at the time:
 - ~30.2 MB XML;
 - 184 channels;
 - 33,117 programme records;
 - roughly a week of schedule data;
 - real provider IDs including NPO/RTL/SBS/Net5/Veronica/sport channels.
 
-No live external fetch remains in the normal CI workflow.
+No live external fetch belongs in the normal deterministic CI suite.
 
 ## Canonical repository — ADR 0007
-Repository tests must preserve:
+Repository tests preserve:
 - `programme.start < to && programme.end > from`;
 - explicit channel/time replacement scope;
 - metadata/programmes outside refresh scope untouched;
@@ -110,7 +142,7 @@ Repository tests must preserve:
 
 The in-memory repository is an executable reference, not production storage.
 
-## Hosted Supabase persistence — PR #40
+## Hosted Supabase persistence and transport
 `SupabaseScheduleRepository` tests cover RPC mapping, stored/ignored-stale results, bounded reads, unavailable reads, malformed payload rejection and RPC errors.
 
 Hosted security expectations:
@@ -118,9 +150,11 @@ Hosted security expectations:
 - `anon`/`authenticated` cannot access storage/RPC write/read bridges;
 - service role stays server-side;
 - RLS/no-policy on private tables is intentional;
-- transactional stale-write behaviour must remain equivalent to ADR 0007.
+- transactional stale-write behaviour remains equivalent to ADR 0007;
+- public mobile transport exposes canonical data only;
+- refresh/write remains protected server-side.
 
-Actual service-role end-to-end execution is part of the hosted transport/ingest slice, because the connected SQL inspection role cannot impersonate service role.
+The Phase 3 hosted path is already proven end-to-end; do not reintroduce live external-provider dependency into normal CI.
 
 ## Ingestion orchestration
 Integration tests cover:
@@ -147,29 +181,31 @@ Tests cover:
 - UTC canonicalisation;
 - optional channel IDs must be non-empty strings and are trimmed/deduplicated.
 
-## Next hosted real-data test slice
-Before connecting mobile, prove one bounded server-side path:
-1. explicit verified XMLTV provider IDs -> narrow Teevee canonical channel mapping;
-2. provider fetch/parse for a bounded time window;
-3. normalisation diagnostics;
-4. authoritative safe write to Supabase;
-5. canonical read back;
-6. typed transport response;
-7. measurement of feed fetch, parse, write/read and canonical response size.
+## Phase 4 television-day and horizon gate
+ADR 0008 is high-risk domain behaviour. Phase 4 tests must deterministically cover, before physical acceptance where relevant:
+- the 06:00 Europe/Amsterdam television-day boundary;
+- 00:00–05:59 belonging to the preceding television day;
+- `Nu` selecting the television day containing the actual current instant;
+- D-2 through D+7 day selection;
+- midnight continuity within one television day;
+- both Europe/Amsterdam DST transitions, including 23-hour and 25-hour civil-time effects;
+- historical and forward schedule windows;
+- context-preserving refresh/day change behaviour;
+- fixture fallback remaining deterministic when hosted windows are unavailable.
 
-Because the external source is ~30 MB, memory/latency and refresh cadence must be measured, not guessed.
+For Guide UI changes, keep the physically accepted interaction mechanics frozen unless regression evidence justifies retuning them.
 
 ## Mobile client gate
-Only when real canonical data reaches the Guide:
+When runtime schedule/day-selection behaviour changes:
 - startup remains stable;
 - loading/error/offline fallback is controlled;
 - fixture mode remains available;
 - refresh does not reset accepted presentation/channel/time context unnecessarily;
 - all three Guide presentations still consume the same provider-independent domain;
 - no provider/database details appear in mobile code;
-- run a focused physical iPhone smoke.
+- run focused physical iPhone acceptance for behaviour CI cannot prove.
 
-If Guide scroll/layout/gesture code is untouched, do not rerun the entire Phase 1/2 acceptance matrix.
+If Guide scroll/layout/gesture code is untouched, do not rerun the entire historical Phase 1/2/3 acceptance matrix.
 
 ## Android
 Physical Android validation remains open because no Android device is currently available. CI proves export/prebuild/compile only, not system Back, nested gesture feel or device performance.
