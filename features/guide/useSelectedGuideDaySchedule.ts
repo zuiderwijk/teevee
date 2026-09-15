@@ -53,12 +53,17 @@ function rememberSchedule(
  * Previously visited windows live in a small component-session Map capped at ten entries;
  * there is no persistent cache, eager ten-day payload or provider knowledge. The current
  * television day remains owned by the proven fixture-first shared runtime.
+ *
+ * `currentTelevisionDayStartMs` is the lifecycle ownership source of truth. Keeping this
+ * relationship explicit means an unchanged selected day can hand off from current-day
+ * runtime ownership to selected-window ownership when the real clock crosses 06:00.
  */
 export function useSelectedGuideDaySchedule(
   selectedDayStartMs: number,
   guideDataVersion: number,
   api: GuideScheduleApi = hostedGuideScheduleApi,
   includeFollowingDay = false,
+  currentTelevisionDayStartMs = guideTelevisionDayStart(Date.now()),
 ): SelectedGuideDayScheduleState {
   const cacheRef = useRef(new Map<string, GuideSchedule>());
   const requestVersionRef = useRef(0);
@@ -66,6 +71,7 @@ export function useSelectedGuideDaySchedule(
   const [loadingKey, setLoadingKey] = useState<string | null>(null);
   const [unavailableKey, setUnavailableKey] = useState<string | null>(null);
   const selectedKey = cacheKey(selectedDayStartMs, includeFollowingDay);
+  const selectedDayIsCurrent = selectedDayStartMs === currentTelevisionDayStartMs;
 
   const refresh = useCallback(
     (force: boolean) => {
@@ -73,9 +79,8 @@ export function useSelectedGuideDaySchedule(
       requestVersionRef.current = requestVersion;
       const key = cacheKey(selectedDayStartMs, includeFollowingDay);
 
-      const currentDayStartMs = guideTelevisionDayStart(Date.now());
       const runtimeSchedule = runtimeGuideScheduleFor(selectedDayStartMs);
-      if (runtimeSchedule && selectedDayStartMs === currentDayStartMs) {
+      if (runtimeSchedule && selectedDayIsCurrent) {
         // The shared current-day runtime already contains D + D+1. It is valid for both
         // the one-day Per-zender view and the bounded two-day Totaal view.
         if (rememberSchedule(cacheRef.current, key, runtimeSchedule)) {
@@ -88,7 +93,7 @@ export function useSelectedGuideDaySchedule(
 
       // The fixture-first shared runtime owns current-day network loading. Starting a
       // second request here would duplicate work and could race the proven runtime path.
-      if (selectedDayStartMs === currentDayStartMs) {
+      if (selectedDayIsCurrent) {
         setLoadingKey(null);
         setUnavailableKey(null);
         return;
@@ -127,12 +132,12 @@ export function useSelectedGuideDaySchedule(
           setUnavailableKey(key);
         });
     },
-    [api, includeFollowingDay, selectedDayStartMs],
+    [api, includeFollowingDay, selectedDayIsCurrent, selectedDayStartMs],
   );
 
-  // Selection/API/window-width changes invalidate the previous selected-window request.
-  // Runtime-version changes deliberately do not: a current-day refresh must not cancel an
-  // in-flight non-current selected-day revalidation after app resume.
+  // Selection/API/window-width/ownership changes invalidate the previous selected-window
+  // request. Runtime-version changes deliberately do not: a current-day refresh must not
+  // cancel an in-flight non-current selected-day revalidation after app resume.
   useEffect(() => {
     refresh(false);
     return () => {
@@ -141,8 +146,7 @@ export function useSelectedGuideDaySchedule(
   }, [refresh]);
 
   useEffect(() => {
-    const currentDayStartMs = guideTelevisionDayStart(Date.now());
-    if (selectedDayStartMs !== currentDayStartMs) return;
+    if (!selectedDayIsCurrent) return;
     const runtimeSchedule = runtimeGuideScheduleFor(selectedDayStartMs);
     if (!runtimeSchedule) return;
     const key = cacheKey(selectedDayStartMs, includeFollowingDay);
@@ -150,26 +154,27 @@ export function useSelectedGuideDaySchedule(
       setCacheVersion((current) => current + 1);
     }
     setUnavailableKey(null);
-  }, [guideDataVersion, includeFollowingDay, selectedDayStartMs]);
+  }, [guideDataVersion, includeFollowingDay, selectedDayIsCurrent, selectedDayStartMs]);
 
   useEffect(() => {
-    // Current-day resume is already owned by the shared fixture-first runtime. Avoid a
-    // duplicate AppState listener/request there; only a manually selected non-current
-    // window needs its own bounded lifecycle revalidation.
-    if (selectedDayStartMs === guideTelevisionDayStart(Date.now())) return;
+    // Current-day resume is already owned by the shared fixture-first runtime. Once the
+    // same selected day becomes non-current at 06:00, `selectedDayIsCurrent` flips even
+    // though `selectedDayStartMs` is unchanged, so this effect installs bounded lifecycle
+    // revalidation for the now-historical visible window.
+    if (selectedDayIsCurrent) return;
 
     const subscription = AppState.addEventListener('change', (nextState) => {
       if (nextState === 'active') refresh(true);
     });
     return () => subscription.remove();
-  }, [refresh, selectedDayStartMs]);
+  }, [refresh, selectedDayIsCurrent]);
 
   // cacheVersion intentionally participates in this render even though the Map itself is
   // held in a ref. It keeps successful content changes reactive without remounting Guide UI.
   void cacheVersion;
-  const currentDayStartMs = guideTelevisionDayStart(Date.now());
-  const runtimeSchedule =
-    selectedDayStartMs === currentDayStartMs ? runtimeGuideScheduleFor(selectedDayStartMs) : null;
+  const runtimeSchedule = selectedDayIsCurrent
+    ? runtimeGuideScheduleFor(selectedDayStartMs)
+    : null;
   const schedule = runtimeSchedule ?? cacheRef.current.get(selectedKey) ?? null;
 
   return {
