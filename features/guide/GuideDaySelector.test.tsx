@@ -20,9 +20,8 @@ type MockProps = {
 };
 
 vi.mock('react-native', () => {
-  const element = (tag: string, props: MockProps) => {
-    const style = typeof props.style === 'function' ? props.style({ pressed: false }) : props.style;
-    return createElement(
+  const element = (tag: string, props: MockProps) =>
+    createElement(
       tag,
       {
         'data-testid': props.testID,
@@ -30,11 +29,9 @@ vi.mock('react-native', () => {
         'aria-selected': props.accessibilityState?.selected,
         'aria-busy': props.accessibilityState?.busy,
         onClick: props.onPress,
-        style,
       },
       props.children,
     );
-  };
 
   return {
     Modal: ({ children, visible }: MockProps) => (visible ? createElement('div', { 'data-modal': 'true' }, children) : null),
