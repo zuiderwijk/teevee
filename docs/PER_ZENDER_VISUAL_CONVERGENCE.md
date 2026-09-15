@@ -22,7 +22,11 @@ Accepted day selector and sticky state:
 - `/Teevee/Teevee Guide day selector - sticky scroll behavior.png`
   - file id: `file_00000000314481f69f6a34d18ece1c21`
 
-The historic Per-zender reference contains controls from an earlier exploration. Exact date choices are superseded by `GUIDE_DAY_SELECTOR.md`. The old `Primetime` / separate time-picker treatment is not required by the current written Per-zender product/UX contract and must not be introduced merely to match the old board during this convergence task.
+Authority notes:
+- exact historical date choices are superseded by `GUIDE_DAY_SELECTOR.md`;
+- the direct `Primetime` utility visible in the original Per-zender reference is owner-approved and remains part of the target;
+- the older expanded time-picker (`Vanmiddag`, `Vooravond`, `Kies tijd…`) is **not** accepted;
+- the sticky/condensed board predates the Primetime amendment, so its Per-zender compact row is stale only where it omits `Primetime`; written rules below win for that detail.
 
 ## Current implementation: preserve versus converge
 
@@ -49,14 +53,14 @@ At rest, Per zender should read in this order:
 2. shared Guide presentation selector, with `Per zender` selected;
 3. horizontal channel-logo strip;
 4. selected channel name;
-5. compact Guide day selector + separate `Nu` action;
+5. compact Guide day selector with separate `Primetime` and `Nu` utilities;
 6. open vertical schedule with time gutter + programme titles;
 7. quiet stable bottom navigation.
 
 When vertically scrolled, the persistent functional stack becomes:
 
 1. channel-logo strip;
-2. one compact selected-channel + date context row with `Nu`;
+2. one compact selected-channel + date context row with `Primetime` and `Nu`;
 3. schedule.
 
 Do not keep a duplicate large channel heading in the condensed state.
@@ -105,30 +109,51 @@ If physical testing later shows discoverability is inadequate, treat that as sep
 
 Replace prototype permanent `Vandaag` / `Morgen` buttons with the accepted `GUIDE_DAY_SELECTOR.md` pattern:
 - one compact typographic date control;
-- separate `Nu` action;
 - bounded D-2..D+7 bottom sheet;
 - changing day preserves the viewed wall-clock time where practical;
-- `Nu` restores both the actual current instant and corresponding television day;
 - between 00:00 and 05:59 show the preceding television-day date without misleading `Vandaag` copy;
 - no unrestricted calendar, horizontal ten-day rail or previous/next-day arrows.
 
-### 5. Rest and condensed channel/date context
+`Primetime` and `Nu` are sibling utilities beside the date selector; neither is part of the bottom-sheet day selection itself.
+
+### 5. Primetime and Nu utilities
+
+Per zender has two deliberately different fast-navigation actions.
+
+#### Primetime
+- keeps the **currently selected television day**;
+- jumps the vertical schedule to **20:30 Europe/Amsterdam** on that selected television day;
+- does not switch back to the actual current date;
+- between 00:00 and 05:59, when the active television day is still the preceding date, it jumps back to 20:30 on that preceding television-day evening;
+- use a compact secondary treatment, preferably a small moon icon plus `Primetime` text where room permits;
+- it remains available in both rest and condensed/sticky states.
+
+#### Nu
+- restores the **actual current instant**;
+- also restores the television day containing that instant;
+- remains visually compact and clearly distinct from Primetime.
+
+Do not reintroduce the historical expanded time-picker with `Vanmiddag`, `Vooravond` or arbitrary `Kies tijd…` navigation as part of this decision.
+
+### 6. Rest and condensed channel/date context
 
 At rest:
 - selected channel name can use the larger accepted heading treatment;
-- date selector and `Nu` sit directly beneath / alongside it as secondary functional context;
+- date selector, `Primetime` and `Nu` form the secondary functional row directly beneath / alongside it;
 - retain deliberate breathing room between the channel strip and schedule.
 
 After vertical scroll:
 - non-functional brand/header and large channel heading condense away;
 - channel strip remains sticky at the top safe area;
-- immediately beneath it, show one compact row such as `NPO 1 · ma 15 sep⌄` with `Nu` available;
+- immediately beneath it, show one compact row such as `NPO 1 · ma 15 sep⌄` with `Primetime` and `Nu` available;
 - no duplicate large `NPO 1` heading remains;
 - condensation follows scroll position naturally and does not hide/show based merely on scroll direction;
 - returning to the top restores the rest state naturally;
 - reduced-motion may use a simpler discrete transition.
 
-### 6. Open vertical schedule
+The condensed row may grow or wrap at larger text sizes; do not solve space pressure by shrinking substantive text below legibility.
+
+### 7. Open vertical schedule
 
 The schedule remains time-based, but its visual treatment should converge toward the canonical calm typographic list.
 
@@ -143,7 +168,7 @@ Target:
 
 The implementation may retain subtle hour/reference cues where useful for orientation, but they must not dominate the programme hierarchy.
 
-### 7. Current programme treatment
+### 8. Current programme treatment
 
 Per zender may use a restrained row-local progress treatment because the accepted Per-zender visual explicitly uses one. This is presentation-specific; it must not be copied back into Totaal or Nu & Straks.
 
@@ -162,7 +187,7 @@ Recommendation for convergence:
 
 For short current programmes where a progress bar or description would crowd the title, title wins and secondary enrichment disappears first.
 
-### 8. Programme information hierarchy
+### 9. Programme information hierarchy
 
 For non-current programmes:
 - left gutter: start time;
@@ -179,7 +204,7 @@ For the current programme:
 
 Historical and future programmes share the same neutral typographic treatment; do not introduce separate decorative past/future card states.
 
-### 9. Light / dark / system surfaces
+### 10. Light / dark / system surfaces
 
 Light mode:
 - near-white neutral canvas;
@@ -204,6 +229,7 @@ At larger text sizes:
 - descriptions/subtitles disappear before titles are clipped;
 - very short programmes may use title-only treatment;
 - channel strip and sticky context may grow in height where needed;
+- date / `Primetime` / `Nu` utilities may wrap or use an adaptive two-row layout before labels are excessively shrunk;
 - text-only channel fallback remains distinguishable;
 - do not shrink substantive programme text merely to preserve screenshot density.
 
@@ -216,7 +242,7 @@ Do not reopen accepted mechanics:
 - horizontal gesture over schedule -> adjacent channel;
 - horizontal gesture over channel strip -> browse channels;
 - tap logo -> direct channel selection;
-- date selector is tap-driven and must not introduce another horizontal gesture zone;
+- date selector, `Primetime` and `Nu` are tap-driven and must not introduce another horizontal gesture zone;
 - bottom-sheet gestures must not cause the mounted Guide to lose schedule/channel context;
 - directional lock remains active to prevent accidental diagonal channel switches.
 
@@ -245,9 +271,10 @@ Minimum requirements:
 - channel buttons expose full channel names and selected state;
 - every programme exposes channel, title, start/end time and current status where relevant;
 - date selector exposes selected date and `Dag kiezen` semantics;
+- `Primetime` exposes `Ga naar primetime, 20:30 op geselecteerde dag` or equivalent semantics;
 - `Nu` exposes `Ga naar nu` semantics;
 - current state is not colour-only;
-- touch targets remain platform-appropriate;
+- date, Primetime and Nu retain platform-appropriate touch targets;
 - sticky header never covers programme content or system safe areas;
 - light/dark/system maintain sufficient contrast;
 - reduced-motion is respected for header condensation and animated scroll/jump transitions.
@@ -259,7 +286,7 @@ Do not use this work to:
 - replace the time-based vertical schedule with an equal-row list;
 - add decorative channel arrows;
 - add thumbnails or genre chips;
-- reintroduce a separate historic time-picker/Primetime control merely because it appears in the old visual board;
+- reintroduce the expanded historical time-picker (`Vanmiddag`, `Vooravond`, `Kies tijd…`);
 - change television-day boundary/horizon;
 - change Programme Detail scope;
 - change bottom navigation;
@@ -272,13 +299,14 @@ Recommended sequence:
 
 1. reuse the shared upper Guide presentation selector from the Totaal convergence work;
 2. convert the channel strip to the accepted logo-led treatment without changing strip/pager mechanics;
-3. integrate the accepted shared Guide day selector;
-4. remove redundant persistent swipe-help copy and align the rest-state channel/date hierarchy;
-5. implement the approved sticky/condensed channel-strip + compact channel/date context state;
+3. integrate the accepted shared Guide day selector plus separate `Primetime` / `Nu` utilities;
+4. remove redundant persistent swipe-help copy and align the rest-state channel/date/utility hierarchy;
+5. implement the approved sticky/condensed channel-strip + compact channel/date/Primetime/Nu context state;
 6. simplify the schedule toward programme-aligned time/title rows while retaining real time geometry;
 7. converge current-programme treatment to one restrained local progress/current state and remove duplicate live signals;
-8. validate light/dark/system and representative larger text;
-9. run existing tests/checks and perform focused physical iPhone acceptance; Android remains a separate physical gate when a device is available.
+8. validate Primetime semantics for current, historical, future and 00:00–05:59 television-day contexts;
+9. validate light/dark/system and representative larger text;
+10. run existing tests/checks and perform focused physical iPhone acceptance; Android remains a separate physical gate when a device is available.
 
 ## Acceptance criteria
 
@@ -289,18 +317,20 @@ Per-zender visual convergence is complete only when all of the following are tru
 3. The channel strip is logo-led; successful logos are not forced to carry redundant tiny captions.
 4. Selected channel state is clear without decorative previous/next arrows or excessive accent treatment.
 5. Permanent swipe-instruction copy is gone.
-6. The accepted date selector + separate `Nu` pattern is used with D-2..D+7 behaviour.
-7. Vertical scrolling leaves the channel strip plus one compact channel/date/`Nu` context sticky while non-functional chrome condenses.
-8. No duplicate large channel heading remains in condensed state.
-9. Programme rows remain open and typographic, with start time in a left gutter and title primary.
-10. Real wall-clock geometry, schedule gaps and channel/time-anchor preservation remain correct.
-11. Current programme uses one restrained local current/progress treatment rather than multiple competing live indicators.
-12. No artwork or genre labels are introduced.
-13. Horizontal schedule swipe, channel-strip browsing/tap, direction lock and vertical scrolling remain at least as good as the physically accepted interaction baseline.
-14. Programme Detail opens/returns without losing selected channel/day/time context.
-15. Larger system text remains usable without globally disabling scaling or flattening time geometry.
-16. Fixture-first, hosted real-data and fallback paths share the same visual treatment.
-17. Existing automated checks pass; physical iPhone validation shows no interaction/performance regression.
+6. The accepted date selector + separate `Primetime` + `Nu` pattern is used with D-2..D+7 behaviour.
+7. `Primetime` keeps the selected television day and jumps to 20:30 on that day; `Nu` restores the actual current day and instant.
+8. Between 00:00 and 05:59, Primetime returns to the preceding television-day evening rather than the following calendar evening.
+9. Vertical scrolling leaves the channel strip plus one compact channel/date/Primetime/Nu context sticky while non-functional chrome condenses.
+10. No duplicate large channel heading remains in condensed state.
+11. Programme rows remain open and typographic, with start time in a left gutter and title primary.
+12. Real wall-clock geometry, schedule gaps and channel/time-anchor preservation remain correct.
+13. Current programme uses one restrained local current/progress treatment rather than multiple competing live indicators.
+14. No artwork or genre labels are introduced.
+15. Horizontal schedule swipe, channel-strip browsing/tap, direction lock and vertical scrolling remain at least as good as the physically accepted interaction baseline.
+16. Programme Detail opens/returns without losing selected channel/day/time context.
+17. Larger system text remains usable without globally disabling scaling or flattening time geometry.
+18. Fixture-first, hosted real-data and fallback paths share the same visual treatment.
+19. Existing automated checks pass; physical iPhone validation shows no interaction/performance regression.
 
 ## Current known code deltas (15 September 2026)
 
@@ -309,6 +339,7 @@ These are observations, not alternative design choices:
 - the channel strip currently uses shared `ChannelIdentity`, which renders a tiny channel-name caption under successful logos;
 - active strip selection currently adds a prominent underline in addition to opacity changes;
 - prototype `Vandaag` / `Morgen` buttons remain in the context row;
+- the accepted direct `Primetime` shortcut is not yet implemented;
 - a permanent `Veeg horizontaal voor een andere zender` hint is rendered under the selected channel;
 - the schedule currently combines hour-grid lines, filled current surface, red left current border and a schedule-wide horizontal now marker;
 - programme description/subtitle is not currently used in Per zender even though the canonical domain supports it;
