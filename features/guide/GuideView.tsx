@@ -237,6 +237,18 @@ export const GuideView = memo(function GuideView({
   );
 
   useEffect(() => {
+    if (guideDayIsSelectable(windowStartDayMs, nowMs)) return;
+
+    const replacementDayStartMs = guideDayIsSelectable(visibleDayStartMs, nowMs)
+      ? visibleDayStartMs
+      : guideTelevisionDayStart(nowMs);
+    const target = guideTargetForDaySelection(viewedTimeRef.current, replacementDayStartMs);
+    pendingTargetTimeRef.current = target.timeMs;
+    setWindowStartDayMs(replacementDayStartMs);
+    selectVisibleDay(replacementDayStartMs);
+  }, [nowMs, selectVisibleDay, visibleDayStartMs, windowStartDayMs]);
+
+  useEffect(() => {
     const target = pendingTargetTimeRef.current ??
       guideTargetForDaySelection(viewedTimeRef.current, windowStartDayMs).timeMs;
     pendingTargetTimeRef.current = null;
