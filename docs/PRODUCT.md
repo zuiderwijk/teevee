@@ -1,6 +1,6 @@
 # Teevee Product
 
-Status: product baseline, amended with owner-approved Guide and Programme Detail UX direction on 13 September 2026. These decisions do not claim that the current runtime already implements them.
+Status: product baseline, amended with owner-approved television-day and Guide-horizon semantics on 15 September 2026. These decisions do not claim that the current runtime already implements them.
 
 ## Product vision
 Teevee is a new premium, ad-free television guide for iOS and Android, developed under supervision of Bindinc/TVgids.nl. It is a new product rather than a redesign of the existing TVgids.nl app.
@@ -21,15 +21,19 @@ Dutch television viewers who want a high-quality guide experience. The MVP targe
 5. **Premium execution, not feature bloat.** Polish, performance and clarity matter more than feature count.
 6. **No mandatory account for core use.** Identity must not block the guide.
 7. **Data-provider independence.** The user experience is not coupled to a specific EPG supplier.
+8. **Television time, not calendar bureaucracy.** The Guide follows viewing behaviour across midnight rather than forcing a calendar-day break.
 
 ## MVP scope
 ### Included
 - complete Dutch TV guide for supported channels;
 - Totaal: touch-native timeline with horizontal time navigation and vertical channel navigation;
-- Per zender: one-channel vertical day schedule with sticky channel-logo navigation and horizontal swipe to adjacent channels;
-- Nu & Straks: today-only shared time reference across channels, showing the programme at that reference instant plus the next three programmes;
+- Per zender: one-channel vertical schedule with sticky channel-logo navigation and horizontal swipe to adjacent channels;
+- Nu & Straks: one active television-day shared time reference across channels, showing the programme at that reference instant plus the next three programmes;
 - Now indicator and jump-to-Now action;
-- day selection in Totaal and Per zender; no date selector in Nu & Straks;
+- television-day selection in Totaal and Per zender; no independent date selector in Nu & Straks;
+- minimum Guide horizon of **D-2 through D+7 television days** in Totaal and Per zender;
+- television day defined as **06:00 Europe/Amsterdam through 06:00 the following calendar day**;
+- seamless evening browsing through midnight without an explicit day switch;
 - direct Programme Detail from Guide;
 - search for programmes and channels;
 - channel selection, ordering and persistence;
@@ -61,12 +65,24 @@ Dutch television viewers who want a high-quality guide experience. The MVP targe
 
 The working primary navigation baseline is Guide / Tonight / Search. Saved programmes/reminders do not require a permanent primary tab unless testing demonstrates a clear need.
 
-## Guide presentations — accepted UX baseline, 13 September 2026
+## Guide day and horizon
+Teevee uses a television-day model because television evenings routinely continue after midnight.
+
+- The television day starts at **06:00 Europe/Amsterdam** and ends at 06:00 the next calendar day.
+- Between 00:00 and 05:59, `Nu` still belongs to the preceding television day.
+- Midnight never requires the user to switch dates simply to see what follows later that night.
+- Let `D` be the current television day. Totaal and Per zender must expose at least D-2, D-1, D and D+1 through D+7.
+- Users see ordinary dates/relative labels; `television day` is an internal product concept.
+- `Nu` always restores the actual current instant and the television-day context containing that instant.
+
+## Guide presentations — accepted UX baseline
 ### Totaal
 Multi-channel time grid. Horizontal movement navigates time; vertical movement navigates channels. Time and channel context remain understandable while moving through the grid. The visual direction prioritises open schedule geometry over card stacking.
 
+The timeline may run continuously through midnight and across the 06:00 grouping boundary; date context updates without fabricating or shifting programme times.
+
 ### Per zender
-One channel's scrollable day schedule, initially around the current programme. Channel navigation is primary and date navigation secondary.
+One channel's scrollable television-day schedule, initially around the current programme. Channel navigation is primary and date navigation secondary.
 
 Accepted interaction direction:
 - horizontal channel-logo strip remains available while scrolling;
@@ -74,22 +90,24 @@ Accepted interaction direction:
 - horizontal swipe across the schedule moves to previous/next channel;
 - changing channel preserves the viewed time anchor where practical;
 - channel name remains as context while the logo is the primary identifier;
-- programme list prioritises time + title and avoids low-value genre/artwork clutter.
+- programme list prioritises time + title and avoids low-value genre/artwork clutter;
+- D-2 through D+7 television-day navigation is part of the Core Guide MVP.
 
 ### Nu & Straks
-Today-only compact channel list around one common reference time.
+Compact channel list around one common reference time within the active television day.
 
 Accepted interaction direction:
-- no date selector;
-- horizontal time selector moves the shared reference time through today;
+- no independent date selector;
+- horizontal time selector moves the shared reference time through the active television day;
 - `Nu` restores the actual current time;
-- `Primetime` provides a direct television-specific jump from live mode to the key evening block;
+- before 06:00, active-day context remains the preceding evening/date;
+- `Primetime` provides a direct television-specific jump to the key evening block and may therefore refer to the preceding evening after midnight until 06:00;
 - each channel shows the programme airing at the reference instant plus **three following programmes**;
 - live/current mode uses concise end-time context; future/past reference mode must not look live;
 - no progress bars, genres, artwork, chevrons or repeated `Daarna` labels in this view;
 - channel order and vertical position stay stable while the reference time changes.
 
-These decisions supersede the earlier open question about one versus two following programmes.
+These decisions supersede the earlier strict calendar-day interpretation of Nu & Straks.
 
 ## Programme Detail — accepted UX baseline
 Tap a Guide programme to open Programme Detail directly; no intermediate preview sheet is required.
@@ -145,13 +163,17 @@ The Phase 1 gate is qualitative and strict: **does the guide itself demonstrably
 - provider-independent programme-data architecture;
 - autonomous-agent development model;
 - three Guide presentations and their interaction roles as described above;
-- Nu & Straks: reference programme + three following programmes;
+- television day = 06:00 Europe/Amsterdam to 06:00 next day;
+- Totaal/Per zender minimum horizon = D-2 through D+7 television days;
+- midnight does not split the evening Guide context;
+- Nu & Straks: active television day, reference programme + three following programmes;
 - Programme Detail direct-open hierarchy and current two-action scope.
 
 ### Open
 - final product/brand name;
 - exact production design-token values and font licensing/delivery;
 - initial default Guide presentation and long-term preference/restoration details where not yet proven;
+- exact compact date-selector interaction for the D-2..D+7 horizon;
 - pricing and trial/paywall model;
 - final production backend/data supplier;
 - metadata enrichment source;
