@@ -12,10 +12,15 @@
 - Behaviour defined by `docs/UX.md`, `docs/PROJECT_STATE.md` or an accepted ADR overrides a stale control visible in an otherwise accepted screenshot.
 - If canonical pixels cannot be opened, do not substitute another historical image. Use the written baseline and report the missing asset access.
 
-## Current Guide surfaces
+## Current manifests
 
+Guide:
 - `guide/TOTAAL.md`
 - `guide/PER_ZENDER.md`
 - `guide/NU_EN_STRAKS.md`
+
+Other surfaces:
+- `PROGRAMME_DETAIL.md`
+- `TONIGHT.md` — explicitly provisional, not frozen.
 
 The exact approved visual pixels are currently stored in the user's persistent `/Teevee` Library; their stable file ids are recorded in these manifests and in `docs/VISUAL_BASELINE.md`.
