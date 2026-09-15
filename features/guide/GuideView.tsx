@@ -588,7 +588,7 @@ const styles = StyleSheet.create({
   },
   nowBadge: {
     minWidth: 52,
-    minHeight: 44,
+    minHeight: 48,
     paddingHorizontal: 14,
     paddingVertical: 8,
     borderRadius: 12,
