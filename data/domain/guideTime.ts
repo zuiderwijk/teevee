@@ -10,6 +10,15 @@ export type GuideTelevisionDayWindow = {
   toMs: number;
 };
 
+type AmsterdamWallClockParts = {
+  year: number;
+  month: number;
+  day: number;
+  hour: number;
+  minute: number;
+  second: number;
+};
+
 const formatter = new Intl.DateTimeFormat('en-GB', {
   timeZone: GUIDE_TIME_ZONE,
   calendar: 'gregory',
@@ -33,27 +42,63 @@ function assertIntegerDayOffset(dayOffset: number): void {
   if (!Number.isInteger(dayOffset)) throw new RangeError('Day offset must be an integer');
 }
 
-function wallClockField(instantMs: number, name: Intl.DateTimeFormatPartTypes): number {
-  const value = formatter.formatToParts(instantMs).find((part) => part.type === name)?.value;
-  if (value === undefined) throw new RangeError(`Missing date field: ${name}`);
-  return Number(value);
+function amsterdamWallClockParts(instantMs: number): AmsterdamWallClockParts {
+  let year: number | undefined;
+  let month: number | undefined;
+  let day: number | undefined;
+  let hour: number | undefined;
+  let minute: number | undefined;
+  let second: number | undefined;
+
+  for (const part of formatter.formatToParts(instantMs)) {
+    switch (part.type) {
+      case 'year':
+        year = Number(part.value);
+        break;
+      case 'month':
+        month = Number(part.value);
+        break;
+      case 'day':
+        day = Number(part.value);
+        break;
+      case 'hour':
+        hour = Number(part.value);
+        break;
+      case 'minute':
+        minute = Number(part.value);
+        break;
+      case 'second':
+        second = Number(part.value);
+        break;
+      default:
+        break;
+    }
+  }
+
+  if (
+    year === undefined ||
+    month === undefined ||
+    day === undefined ||
+    hour === undefined ||
+    minute === undefined ||
+    second === undefined
+  ) {
+    throw new RangeError('Missing Amsterdam wall-clock date field');
+  }
+
+  return { year, month, day, hour, minute, second };
 }
 
 /** Encode Amsterdam wall-clock fields as UTC for offset arithmetic only. */
-function wallClockMs(instantMs: number): number {
+function wallClockMsFromParts(parts: AmsterdamWallClockParts): number {
   const wallClock = new Date(0);
-  wallClock.setUTCFullYear(
-    wallClockField(instantMs, 'year'),
-    wallClockField(instantMs, 'month') - 1,
-    wallClockField(instantMs, 'day'),
-  );
-  wallClock.setUTCHours(
-    wallClockField(instantMs, 'hour'),
-    wallClockField(instantMs, 'minute'),
-    wallClockField(instantMs, 'second'),
-    0,
-  );
+  wallClock.setUTCFullYear(parts.year, parts.month - 1, parts.day);
+  wallClock.setUTCHours(parts.hour, parts.minute, parts.second, 0);
   return wallClock.getTime();
+}
+
+function wallClockMs(instantMs: number): number {
+  return wallClockMsFromParts(amsterdamWallClockParts(instantMs));
 }
 
 /** Resolve Amsterdam wall-clock fields back to their real UTC instant. */
@@ -153,9 +198,7 @@ export function guideTelevisionDayMatchingWallClock(
   televisionDayStartMs: number,
 ): number {
   assertValidInstant(sourceInstantMs);
-  const hour = wallClockField(sourceInstantMs, 'hour');
-  const minute = wallClockField(sourceInstantMs, 'minute');
-  const second = wallClockField(sourceInstantMs, 'second');
+  const { hour, minute, second } = amsterdamWallClockParts(sourceInstantMs);
 
   try {
     return guideTelevisionDayTime(televisionDayStartMs, hour, minute, second);
