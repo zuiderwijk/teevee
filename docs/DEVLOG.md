@@ -11,6 +11,35 @@ Doel: chronologisch, begrijpelijk overzicht van substantiële milestones, verifi
 
 ---
 
+## 15 september 2026 — Phase 3 fysiek gesloten; automatische development-EPG freshness
+
+De volledige mobiele real-data boundary is op een fysieke iPhone geaccepteerd. De app toont eerst direct de deterministische fixture en schakelt daarna zonder crash of layoutbreuk over op canonical hosted EPG-data. Totaal, Per zender en deferred Nu & Straks blijven op echte data bruikbaar; Programme Detail opent en keert vanuit alle drie correct terug.
+
+Aanvullende fysieke checks:
+- Per zender adjacent-channel navigatie heen en terug blijft intact;
+- Nu & Straks reference-time rail en verticale mixed gestures blijven coherent;
+- background/resume behoudt reference time en zichtbare Guide-context;
+- ontbrekende hosted coverage houdt de deterministische fixture actief;
+- runtime netwerkuitval vernietigt de bestaande Guide-state niet.
+
+Een echte no-network cold start is via Expo Go niet valide te testen omdat Expo Go na force-quit zelf Metro/netwerk nodig heeft. Dat blijft deferred naar een standalone/dev build en is geen Phase 3 blocker. Volledige evidence staat in `docs/PHYSICAL_EVIDENCE_2026-09-15_PHASE3.md`.
+
+Om de tijdelijke development-EPG niet opnieuw handmatig te hoeven seeden, voegt PR #59 server-side automatische refresh toe:
+- `pg_cron` + `pg_net` iedere zes uur;
+- rolling Amsterdam-buffer voor vandaag, morgen en één rollover-dag;
+- dedicated random cron-token encrypted in Supabase Vault;
+- Supabase secret key blijft uitsluitend in de Edge Function omgeving;
+- `epg-refresh` blijft voor `anon`/`authenticated` ontoegankelijk;
+- partial current-day provider coverage wordt veilig overgeslagen in plaats van canonical coverage te beschadigen.
+
+Live end-to-end smoke bewees de Vault-tokenroute tot en met canonical public read: 12 channels / 498 programma's vandaag, 12 / 485 morgen en 12 / 489 rollover. Anonymous direct refresh bleef 401. De tijdelijke smoke-helper is na verificatie weer inert (410) en JWT-protected.
+
+**Verificatie:** fysieke iPhone Phase 3 gate volledig PASS. De PR moet nog exact-head CI groen hebben voordat hij mag mergen; daarna is Phase 4 de actieve fase. Physical Android blijft apart deferred.
+
+**Volgende stap:** start Phase 4 met de shared television-day-aware D-2..D+7 schedule/day-selection foundation en wire die in Totaal en Per zender zonder de fysiek bewezen Guide gestures te retunen.
+
+---
+
 ## 15 september 2026 — Televisiedag en minimale Guide-horizon frozen
 
 De productowner heeft de definitieve dagsemantiek en minimale Guide-horizon vastgesteld. De Guide volgt voortaan niet een harde kalenderdaggrens om 00:00, maar een **televisiedag van 06:00 Europe/Amsterdam tot 06:00 de volgende kalenderdag**.
@@ -200,12 +229,11 @@ Een eerdere high-volume per-programme Reanimated-architectuur was CI-groen maar 
 ---
 
 ## Doorlopende open punten
-- **Phase 3 physical real-data gate:** gerichte iPhone smoke na PR #51 is nu de actieve gate.
-- **Televisiedag/Guide-horizon:** frozen in ADR 0008; volledige D-2..D+7 + 06:00 implementatie hoort in Phase 4.
+- **Phase 4 active:** implementatie van ADR 0008 D-2..D+7 + 06:00 television-day semantics, accepted date navigation en context-preserving refresh.
 - **Production provider/rights:** nog open; gratis XMLTV is development-only en uiteindelijke provider moet ook de minimale historische/future horizon bewijzen.
-- **Mobile cache:** nog niet kiezen vóór real-device resume/offline meting; huidige payloads rechtvaardigen nog geen SQLite/TanStack.
+- **Offline cold start:** echte no-network cold start later in standalone/dev build; Expo Go kan die test niet zelfstandig dragen.
 - **Guide interaction baseline:** fysiek geaccepteerd op iPhone; alleen heropenen met regressie-evidence.
-- **Nu & Straks 24pt following rows:** latere density-aware accessibility-hardening.
+- **Nu & Straks 24pt following rows:** Phase 4 density-aware accessibility-hardening.
 - **Android:** fysieke Back/gestures/performance deferred wegens geen Android-device; CI-native compile is geen deviceacceptatie.
 - **Programme Detail:** `Herinner mij` + `Bewaar` nog niet geïmplementeerd.
 - **Release-like performance:** later buiten Expo Go valideren.
