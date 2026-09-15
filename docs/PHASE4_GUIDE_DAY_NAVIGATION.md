@@ -38,7 +38,7 @@ No ten-day hosted payload is introduced.
 
 **Totaal** renders a bounded selected window plus the following television day when that following day is still inside D-2..D+7. These are two independent bounded day reads composed through the existing loader. The second day is not speculative prefetch: it is required by the accepted Totaal interaction contract so horizontal browsing can remain continuous when the stable time anchor crosses 06:00. D+7 therefore has no out-of-horizon following window.
 
-The already proven shared current-day runtime remains owner of current-day fixture-first startup and D+D1 hosted refresh; the selected-day hook does not start a duplicate current-day request.
+The already proven shared current-day runtime remains owner of current-day fixture-first startup and D+D1 hosted refresh; the selected-day hook does not start a duplicate current-day request. Lifecycle ownership is derived from one explicit relationship: **selected television day equals current television day**. When that relation is true, resume refresh remains owned by the shared runtime. When the real clock crosses 06:00 and an unchanged selected/window day becomes historical, the relation flips to non-current and the selected-day hook takes over bounded resume revalidation for that same visible window.
 
 Visited non-current windows are retained only in a component-session in-memory Map, capped at ten entries. There is no persistence, SQLite, TanStack Query or new dependency.
 
@@ -49,7 +49,8 @@ Visited non-current windows are retained only in a component-session in-memory M
 - an `ok` result with `channels: []` is treated separately as structurally unusable for the Guide surface and does not replace usable state;
 - deterministic fixture fallback remains immediately usable only when no authoritative usable canonical schedule is available;
 - returning to a visited window is immediate;
-- selected non-current windows revalidate on app resume;
+- selected non-current windows revalidate on app resume, including a window whose `selectedDayStartMs` did not change but whose current/non-current ownership changed at the 06:00 real-clock boundary;
+- current-day windows never install the selected-day resume listener, avoiding duplicate current-day refresh ownership;
 - a monotonic request version prevents stale/out-of-order results from a rapid day switch winning;
 - freshness-only responses preserve equal cached content and therefore do not reset Guide context;
 - current-day runtime refreshes do not cancel an in-flight non-current selected-day revalidation.
@@ -96,6 +97,8 @@ Focused tests cover:
 - pre-06:00 labels, midnight continuity and exact 06:00 rollover;
 - stationary Totaal viewed-time/date context across a real-clock 05:59 → 06:00 rollover, followed by date change only when the viewed anchor itself crosses 06:00;
 - `Nu` explicitly resetting the Totaal anchor/date context to the real current instant and television day;
+- current-day Totaal ownership before 06:00 with no duplicate selected-day network request or selected-day resume listener;
+- an unchanged Totaal `selectedDayStartMs` becoming non-current at 06:00, causing selected-day lifecycle ownership to install and a later background → resume to revalidate that historical two-day window;
 - wall-clock preservation and Per-zender `Primetime` semantics;
 - spring/fall DST wall-clock targeting;
 - selected-day bounded query windows including 23/25-hour DST days;
@@ -122,7 +125,7 @@ The exact PR head must have the repository-required typecheck, lint, test, Expo 
 - no persistent schedule cache or new dependency;
 - no unrestricted calendar, horizontal ten-day date rail or eager ten-day loading;
 - no retuning of frozen Totaal or Per-zender gesture physics;
-- no Per-zender rollover-semantics change as part of the Totaal-specific viewed-anchor correction;
+- no Per-zender UX/gesture change as part of the Totaal lifecycle-ownership correction;
 - no change to accepted visual design beyond wiring its documented states.
 
 ## Acceptance gates still open
