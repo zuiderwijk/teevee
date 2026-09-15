@@ -32,18 +32,50 @@ jobs:
       EXPO_NO_TELEMETRY: 1
     steps:
       - uses: actions/checkout@v7
+        with:
+          # PR scope detection needs the merge base even when main advanced after branching.
+          fetch-depth: 0
+
       - uses: actions/setup-node@v7
         with:
           node-version: 22
           cache: npm
+
+      - name: Determine Android native build scope
+        id: native-scope
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          # main remains the release-like safety net: build the complete ABI set.
+          if [[ "${GITHUB_EVENT_NAME}" != "pull_request" ]]; then
+            echo "run=true" >> "$GITHUB_OUTPUT"
+            echo "scope=all" >> "$GITHUB_OUTPUT"
+            echo "Full Android native build required on ${GITHUB_EVENT_NAME}."
+            exit 0
+          fi
+
+          node scripts/ci/android-native-scope.mjs \
+            "${{ github.event.pull_request.base.sha }}" \
+            "${{ github.event.pull_request.head.sha }}"
+
       - uses: actions/setup-java@v4
+        if: steps.native-scope.outputs.run == 'true'
         with:
           distribution: temurin
           java-version: 17
       - uses: gradle/actions/setup-gradle@v4
+        if: steps.native-scope.outputs.run == 'true'
       - run: npm ci
+        if: steps.native-scope.outputs.run == 'true'
       - name: Generate Android native project
+        if: steps.native-scope.outputs.run == 'true'
         run: npx expo prebuild --platform android --clean
-      - name: Compile Android debug APK
+      - name: Compile Android debug APK (PR arm64)
+        if: steps.native-scope.outputs.run == 'true' && github.event_name == 'pull_request'
+        working-directory: android
+        run: ./gradlew :app:assembleDebug -PreactNativeArchitectures=arm64-v8a --no-daemon
+      - name: Compile Android debug APK (main full ABI set)
+        if: steps.native-scope.outputs.run == 'true' && github.event_name != 'pull_request'
         working-directory: android
         run: ./gradlew :app:assembleDebug --no-daemon
