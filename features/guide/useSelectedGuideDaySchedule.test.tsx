@@ -395,6 +395,7 @@ describe('useSelectedGuideDaySchedule', () => {
       from: new Date(guideTelevisionDayStart(selectedDay, 1)).toISOString(),
       to: new Date(guideTelevisionDayStart(selectedDay, 2)).toISOString(),
     });
-    expect(probe().id).toBe('historical-selected');
+    expect(probe().hasSchedule).toBe('true');
+    expect(probe().count).toBe('2');
   });
 });
