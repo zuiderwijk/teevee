@@ -18,6 +18,11 @@ Teevee is designed for autonomous AI-agent development under human product super
 
 If documents conflict, resolve the conflict before proceeding and update the lower-priority document.
 
+## Specialised ChatGPT threads
+Teevee may use separate Lead, Visual Design / UX, Development and QA / Review threads. These threads do not treat one another's chat history as a source of truth: the repository is their collaboration bus. Role boundaries, handoff rules, parallel-work guidance and reusable start prompts live in `docs/THREAD_PLAYBOOK.md`.
+
+When a conclusion from one thread matters to another, write the durable conclusion to the appropriate repository document, ADR, PR or evidence record before handoff. Avoid concurrent edits to `docs/PROJECT_STATE.md`; the Lead role owns reconciliation of shared project state when multiple threads are active.
+
 ## Working rules
 - Prefer simple explicit code over abstraction.
 - Keep all EPG providers behind typed adapters.
