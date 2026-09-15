@@ -65,14 +65,16 @@ type ProbeProps = {
   dayStartMs: number;
   version?: number;
   api: GuideScheduleApi;
+  includeFollowingDay?: boolean;
 };
 
-function Probe({ dayStartMs, version = 0, api }: ProbeProps) {
-  const state = useSelectedGuideDaySchedule(dayStartMs, version, api);
+function Probe({ dayStartMs, version = 0, api, includeFollowingDay = false }: ProbeProps) {
+  const state = useSelectedGuideDaySchedule(dayStartMs, version, api, includeFollowingDay);
   return (
     <div
       data-testid="probe"
       data-id={state.schedule?.programmes[0]?.id ?? ''}
+      data-count={String(state.schedule?.programmes.length ?? 0)}
       data-generated-at={state.schedule?.generatedAt ?? ''}
       data-loading={String(state.loading)}
       data-unavailable={String(state.unavailable)}
@@ -134,7 +136,49 @@ describe('useSelectedGuideDaySchedule', () => {
     expect(probe().loading).toBe('false');
   });
 
-  it('loads only the selected non-current day and reports unavailable/network failure without discarding context', async () => {
+  it('loads only the selected non-current day for Per zender', async () => {
+    const selectedDay = guideTelevisionDayStart(lifecycle.nowMs, 2);
+    const api = {
+      getSchedule: vi.fn().mockResolvedValue({ status: 'ok', schedule: schedule('selected') }),
+    } satisfies GuideScheduleApi;
+
+    await renderProbe({ dayStartMs: selectedDay, api });
+    await act(async () => Promise.resolve());
+
+    expect(api.getSchedule).toHaveBeenCalledTimes(1);
+    expect(api.getSchedule).toHaveBeenCalledWith({
+      from: new Date(selectedDay).toISOString(),
+      to: new Date(guideTelevisionDayStart(selectedDay, 1)).toISOString(),
+    });
+    expect(probe().id).toBe('selected');
+  });
+
+  it('loads Totaal as two independent bounded day reads for continuous 06:00 browsing', async () => {
+    const selectedDay = guideTelevisionDayStart(lifecycle.nowMs, 2);
+    const nextDay = guideTelevisionDayStart(selectedDay, 1);
+    const api = {
+      getSchedule: vi
+        .fn()
+        .mockResolvedValueOnce({ status: 'ok', schedule: schedule('selected') })
+        .mockResolvedValueOnce({ status: 'ok', schedule: schedule('following', '2026-09-15T09:00:00Z') }),
+    } satisfies GuideScheduleApi;
+
+    await renderProbe({ dayStartMs: selectedDay, api, includeFollowingDay: true });
+    await act(async () => Promise.resolve());
+
+    expect(api.getSchedule).toHaveBeenCalledTimes(2);
+    expect(api.getSchedule).toHaveBeenNthCalledWith(1, {
+      from: new Date(selectedDay).toISOString(),
+      to: new Date(nextDay).toISOString(),
+    });
+    expect(api.getSchedule).toHaveBeenNthCalledWith(2, {
+      from: new Date(nextDay).toISOString(),
+      to: new Date(guideTelevisionDayStart(nextDay, 1)).toISOString(),
+    });
+    expect(probe().count).toBe('2');
+  });
+
+  it('reports unavailable/network failure without discarding a usable fallback context', async () => {
     const unavailableApi = {
       getSchedule: vi.fn().mockResolvedValue({ status: 'unavailable' }),
     } satisfies GuideScheduleApi;
