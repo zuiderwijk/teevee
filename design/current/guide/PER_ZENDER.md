@@ -14,6 +14,7 @@ Accepted: 2026-09-13; day-selector behaviour accepted 2026-09-15
   - file id: `file_00000000314481f69f6a34d18ece1c21`
 
 Detailed shared day-selector contract: `design/current/guide/GUIDE_DAY_SELECTOR.md`.
+Development-ready visual-convergence handoff: `docs/PER_ZENDER_VISUAL_CONVERGENCE.md`.
 
 ## Preserve
 - Open vertical typographic schedule, not cards.
@@ -40,6 +41,8 @@ Detailed shared day-selector contract: `design/current/guide/GUIDE_DAY_SELECTOR.
 
 ## Screenshot authority note
 The exact historical date choices shown in the original 13 September image are **SUPERSEDED** by `GUIDE_DAY_SELECTOR.md` and the two accepted day-selector assets above. The rest of the Per-zender list/strip composition remains canonical.
+
+The historic visual also shows a separate time-picker/`Primetime` exploration. That control is not required by the current written Per-zender product/UX contract and is outside the scope of visual convergence unless it is separately approved in a future interaction decision.
 
 ## Superseded
 Earlier Per-zender mock-ups with programme imagery, genre descriptions, card-heavy programme rows or explicit previous/next channel arrows are not current and must not be used as a starting point.
