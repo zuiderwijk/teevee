@@ -1,6 +1,6 @@
 # Teevee Phased Build Specification
 
-Status: phased baseline, amended 13 September 2026 to incorporate the accepted Guide/Programme Detail UX direction and the owner-approved Phase 1B Guide-presentation validation. Implementation status remains governed by `docs/PROJECT_STATE.md`.
+Status: phased baseline, amended 15 September 2026 with frozen television-day and Guide-horizon semantics. Implementation status remains governed by `docs/PROJECT_STATE.md`.
 
 ## Build philosophy
 Build risk-first, not screen-count-first. The Guide interaction is the defining product and largest technical/UX risk, so its distinct interaction models are validated before broad shell and production-data development.
@@ -54,7 +54,7 @@ Goal: prove the two Guide interaction models that were defined during Phase 1 be
 
 Build in this order on the same deterministic fixture domain and existing Programme Detail path:
 1. **Per zender** — one channel's vertically time-based schedule, persistent/browsable horizontal channel strip, direct logo/channel selection, horizontal adjacent-channel paging that preserves the viewed time anchor, secondary day controls and Nu.
-2. **Nu & Straks** — today-only shared reference-time selector, live/browse states, `Nu` and `Primetime`, and reference programme plus three following programmes per channel.
+2. **Nu & Straks** — shared reference-time selector for the active day, live/browse states, `Nu` and `Primetime`, and reference programme plus three following programmes per channel.
 
 Acceptance gate:
 - both presentations have interaction semantics that work on a physical available iPhone rather than only in tests;
@@ -93,7 +93,11 @@ Deliver:
 - data-quality diagnostics;
 - typed client API;
 - cache/refresh strategy;
-- Guide consuming real data without provider-specific knowledge.
+- Guide consuming real data without provider-specific knowledge;
+- durable data/query semantics that do not assume midnight is the Guide boundary or that the final product horizon is only today + tomorrow;
+- ADR 0008 television-day/horizon semantics frozen before Phase 4 implementation.
+
+Phase 3 does **not** need to implement the complete D-2..D+7 UX before its current physical real-data smoke closes. The existing two-day hosted/mobile slice is acceptable as validation evidence as long as the architecture remains compatible with the frozen final semantics.
 
 The free provider is not declared production-safe by completing this phase.
 
@@ -102,14 +106,23 @@ Deliver and harden the accepted Guide UX from `docs/UX.md` on production-quality
 - robust multi-day Totaal schedule;
 - production-quality Per zender using the Phase 1B interaction baseline;
 - production-quality Nu & Straks using the Phase 1B interaction baseline;
+- implement ADR 0008 television-day grouping: **06:00 Europe/Amsterdam -> 06:00 next day**;
+- guarantee Totaal and Per zender navigation across **D-2 through D+7** television days;
+- allow evening browsing to continue through midnight without an explicit date switch;
+- treat 00:00–05:59 as part of the preceding television day for Guide context;
+- update the active television day at 06:00 without requiring a hard visual scroll break;
+- make `Nu` restore the actual instant and correct television-day context from any historical/future day;
+- define final compact date-navigation UX without ten permanent date buttons;
 - channel selection and ordering;
-- reliable Nu behaviour;
-- Programme Detail direct-open flow;
+- Programme Detail direct-open flow for historical/current/future broadcasts;
 - `Herinner mij` + `Bewaar` primary actions and contextual sticky bottom copies after the canonical actions scroll away;
-- offline/stale-cache handling;
-- schedule refresh preserving context;
-- production-level guide performance;
+- offline/stale-cache handling across the required multi-day window;
+- schedule refresh preserving date/channel/time context;
+- production-level guide performance at the required horizon and realistic channel count;
+- explicit 00:00, 05:59, 06:00 and Europe/Amsterdam 23/25-hour DST validation;
 - light/dark/system and representative larger-text validation.
+
+Phase 4 exit requires physical validation of the D-2..D+7 horizon and television-day rollover behaviour, not merely unit-test coverage.
 
 Do not reintroduce card-heavy programme presentation, redundant metadata or low-value controls merely to fill visual space. The accepted design target is premium utility with restrained chrome.
 
@@ -124,6 +137,14 @@ Deliver App Store/Play subscription integration, preferred through RevenueCat; r
 
 ## Phase 8 — Production Data Decision
 Validate and integrate the production EPG source, potentially Bindinc/TVgids data. Confirm schedule, metadata, logo and artwork rights. Maintain provider abstraction.
+
+Production provider acceptance must additionally prove:
+- reliable support for at least D-2 historical and D+7 future television-day coverage;
+- freshness/correction behaviour that can keep that window continuously usable;
+- explicit paid-app redistribution rights for the supplied schedule/metadata;
+- separately understood rights for logos/artwork where used.
+
+The preferred production target remains broader than the minimum product window (e.g. 14 days forward) when commercially and technically available.
 
 ## Phase 9 — Production Hardening
 Performance profiling, accessibility audit, offline/failure scenarios, observability, privacy/security review, analytics validation, device matrix, notification reliability and store-policy checks.
