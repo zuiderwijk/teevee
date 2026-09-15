@@ -1,9 +1,9 @@
 # Teevee — Canonical Project State
 
 Last updated: 2026-09-15.
-Status: ACTIVE — **Phase 3 Real Data Vertical Slice**.
-Current phase: **Phase 3 — Real Data Vertical Slice**
-Next phase after Phase 3 closure: **Phase 4 — Core Guide MVP hardening**
+Status: ACTIVE — **Phase 4 Core Guide MVP hardening**.
+Current phase: **Phase 4 — Core Guide MVP hardening**
+Previous phase: **Phase 3 — Real Data Vertical Slice — CLOSED**
 
 > Mandatory start point for every development-agent session. Read `AGENTS.md` and this file before changing the repository.
 
@@ -24,8 +24,8 @@ Next phase after Phase 3 closure: **Phase 4 — Core Guide MVP hardening**
 1. **Phase 1A — Totaal:** complete and physically accepted on iPhone.
 2. **Phase 1B — Per zender / Nu & Straks:** complete and physically accepted on iPhone.
 3. **Phase 2 — App Shell:** complete and physically accepted on iPhone.
-4. **Phase 3 — Real Data Vertical Slice:** active; real provider -> hosted ingest -> canonical persistence -> public typed read -> mobile canonical datasource is implemented. Physical iPhone real-data smoke remains the active exit gate.
-5. **Phase 4 — Core Guide MVP hardening:** next after Phase 3 exit criteria.
+4. **Phase 3 — Real Data Vertical Slice:** **complete and physically accepted on iPhone**; real provider -> hosted ingest -> canonical persistence -> public typed read -> mobile canonical datasource is proven, including fixture-first startup, real-data transition, fallback and context retention.
+5. **Phase 4 — Core Guide MVP hardening:** **active**; implement the frozen television-day/multi-day product semantics and harden the accepted Guide for MVP without retuning proven interaction mechanics without evidence.
 
 ## Canonical visual source of truth
 The accepted visual starting point for existing surfaces is no longer inferred from chat history or historical generated images.
@@ -38,8 +38,6 @@ The accepted visual starting point for existing surfaces is no longer inferred f
 - New visual work is exploration until the owner explicitly approves it and the visual manifest update is merged to `main`.
 - Older visuals stay discoverable through Git/Library history but are never selected by recency, similarity or apparent completeness.
 
-This process change does not alter the current Phase 3 exit gate or accepted Guide interaction mechanics.
-
 ## Frozen television-day and Guide-horizon semantics
 ADR 0008 is the durable product/architecture contract for Guide day grouping and horizon.
 
@@ -51,17 +49,17 @@ ADR 0008 is the durable product/architecture contract for Guide day grouping and
 - A user opening at 19:00 must be able to navigate backward through the same television day and forward through programmes after midnight without an explicit date change.
 - `Nu` always jumps to the actual current instant and selects the television day containing that instant.
 - Nu & Straks remains a single active-day presentation, but that active day is the current television day rather than the strict calendar day; until 06:00 its `Primetime` context may therefore refer to the preceding evening.
-- Phase 3 owns the data/query semantics and must avoid locking the architecture to midnight or a permanent two-day horizon. The current today+tomorrow loader remains a vertical-slice implementation detail.
+- Phase 3 proved that the data/query architecture is not locked to one provider and that canonical hosted schedule data can safely cross the mobile boundary.
 - Phase 4 owns the full product implementation and physical acceptance of D-2..D+7 navigation, midnight continuity, 06:00 rollover, historical access, forward access and context-preserving refresh.
 - Phase 8 production-provider selection must prove sufficient horizon, history/retention, freshness and rights to satisfy this product promise.
 
 ## Frozen Guide interaction baseline
-Do not retune accepted Guide mechanics during real-data work without concrete regression evidence.
+Do not retune accepted Guide mechanics during Phase 4 without concrete regression evidence.
 
 ### Totaal
 - two-dimensional horizontal-time / vertical-channel Guide;
 - real schedule-duration geometry;
-- prototype controls currently use `Vandaag · Morgen · Nu`; Phase 4 replaces/extends this as required by ADR 0008 without changing the accepted gesture model;
+- current prototype controls use `Vandaag · Morgen · Nu`; Phase 4 replaces/extends this as required by ADR 0008 without changing the accepted gesture model;
 - native inertia, bounce and directional lock;
 - accepted partial-left-title and time-axis readability behaviour;
 - physically accepted detail response/performance.
@@ -70,7 +68,8 @@ Do not retune accepted Guide mechanics during real-data work without concrete re
 - vertical wall-clock schedule;
 - horizontal schedule swipe changes adjacent channel while preserving time anchor where practical;
 - horizontally browsable/direct-tap channel strip remains available;
-- prototype day controls (`Morgen`, `Vandaag`, `Nu`) remain coherent but are not the final multi-day horizon UI;
+- the accepted design direction uses explicit date context plus sibling `Primetime` and `Nu` utility actions; the old expanded Per-zender time picker is superseded;
+- `Primetime` jumps the selected television day to 20:30; between 00:00 and 05:59 that means the preceding television-day evening;
 - Programme Detail round-trip preserves relevant context;
 - text-only fallback identities preserve distinguishing suffixes at larger text.
 
@@ -97,6 +96,23 @@ Evidence:
 - `docs/PHYSICAL_EVIDENCE_2026-09-13_2356.md`
 
 The compact 24pt Nu & Straks following-programme rows remain explicit non-blocking accessibility debt. Do not solve them with overlapping `hitSlop` or blindly make every row 44pt; revisit density-aware during Phase 4 with physical evidence.
+
+## Phase 3 physical acceptance — CLOSED
+Evidence:
+- `docs/PHYSICAL_EVIDENCE_2026-09-15_PHASE3.md`
+
+Physical iPhone evidence proved:
+- stable fixture-first startup;
+- deterministic fixture fallback when hosted coverage is unavailable;
+- fixture -> real canonical hosted transition on-device;
+- Totaal, Per zender and deferred Nu & Straks remain usable with real data;
+- Programme Detail round-trips from all three presentations;
+- adjacent-channel navigation in Per zender;
+- Nu & Straks horizontal reference-time movement plus vertical mixed-gesture behaviour;
+- background/resume preserves selected reference time and visible Guide context;
+- runtime network loss leaves the existing Guide usable.
+
+A true no-network cold start remains deferred to a standalone/dev build because Expo Go itself needs Metro/network access after a force-quit. This is an environment limitation rather than a failed Teevee fallback test and is not a Phase 3 blocker.
 
 ## Phase 3 implementation ledger
 ### PRs #37–#39 — provider-independent contracts
@@ -131,7 +147,7 @@ Dedicated Teevee Supabase backend:
 - `SupabaseScheduleRepository` behind `ScheduleRepository`;
 - no privileged Supabase/provider secret in the mobile bundle.
 
-Security Advisor has no Teevee WARN/ERROR findings. RLS-with-no-policy INFO on the private Teevee tables is intentional.
+RLS-with-no-policy INFO on the private Teevee tables is intentional.
 
 ### PR #42 — temporary real development provider
 Merged as `4ea4a73bb38580cc8ab0acf454ccfc5849350bab`; exact head CI #290 passed `quality` + `android-native`.
@@ -168,19 +184,19 @@ Live infrastructure evidence from temporary verification PRs #46/#47 (closed wit
 - an uncovered range returned exactly `unavailable`;
 - anonymous refresh callers receive 401.
 
-Temporary PR #49 then seeded the two Amsterdam guide days needed for the current vertical slice and closed without merge. Current live database verification on 2026-09-14:
+Temporary PR #49 then seeded the two Amsterdam guide days needed for the vertical slice and closed without merge. Historical verification on 2026-09-14:
 - 12 channels;
 - 1,011 programme rows;
 - 24 authoritative coverage rows;
 - coverage from `2026-09-13T22:00:00Z` through `2026-09-15T22:00:00Z` (Amsterdam Sep 14 + Sep 15);
 - public day reads measured ~193 KB / ~1.32 s for today and ~187 KB / ~1.26 s for tomorrow.
 
-This two-day seed is test evidence only and does not define the final Guide horizon in ADR 0008.
+This two-day seed was test evidence only and does not define the final Guide horizon in ADR 0008.
 
 ### PR #50 — DST-correct hosted windows
 Merged as `b60e2501ee757a20a080de393f618101b0970f90`.
 
-The hosted read/refresh policy now allows an exact maximum of 25 hours, which matches Europe/Amsterdam winter-time calendar days while still rejecting broader requests. Exact merge-commit CI run #315 passed both `quality` and `android-native`.
+The hosted read/refresh policy allows an exact maximum of 25 hours, which matches Europe/Amsterdam winter-time calendar days while still rejecting broader requests. Exact merge-commit CI run #315 passed both `quality` and `android-native`.
 
 ### PR #51 — mobile canonical hosted schedule
 Merged as `0886cbe61272703323ba30cd2deb9cbc037754a8` after exact feature head `08497e10ab65803c1ce91ca5b3b060fdfb0166f2` passed CI run #323 for both `quality` and `android-native`.
@@ -201,18 +217,34 @@ Implemented:
 
 Frozen Guide view implementations and Programme Detail mechanics were not modified by PR #51. Its midnight/today+tomorrow rollover remains intentionally temporary Phase 3 behaviour to be generalized to ADR 0008 semantics in Phase 4.
 
+### PR #59 — automatic development-EPG freshness
+PR #59 adds server-side automatic refresh for the temporary development feed without changing the mobile trust boundary:
+- `pg_cron` + `pg_net` refresh a rolling three-calendar-day Amsterdam buffer every six hours;
+- current day, tomorrow and one rollover day are enqueued so midnight does not create a temporary today+tomorrow coverage gap;
+- a dedicated random cron token is generated inside Postgres and stored encrypted in Supabase Vault;
+- the real Supabase secret key remains only inside the Edge Function environment;
+- `epg-refresh` accepts the existing trusted secret-key route or the dedicated validated cron token;
+- `anon` / `authenticated` cannot enqueue or invoke the protected refresh;
+- a service-role-only enqueue RPC supports trusted operations/testing;
+- partial current-day provider coverage is conservatively skipped rather than overwriting authoritative stored coverage.
+
+Live end-to-end verification on 2026-09-15 proved Vault token -> `pg_net` enqueue -> protected refresh -> canonical persistence -> public `guide-schedule`: 12 channels / 498 programmes for the current day, 12 / 485 for tomorrow and 12 / 489 for the rollover day. Anonymous direct refresh remained 401. The temporary smoke helper was then made inert (410) and JWT-protected again.
+
+Supabase Security Advisor currently reports the generic `extension_in_public` WARN for `pg_net`; the hosted extension is non-relocatable and Supabase's official setup uses `create extension pg_net`, while its operational HTTP API lives in schema `net`. Treat this as a known platform-extension advisor note rather than a Teevee table/RLS exposure.
+
 ## Hosted transport safety
 - mobile/public callers can only request allow-listed canonical channel IDs;
 - provider IDs remain server-side;
 - refresh/write is protected and is not a public client capability;
 - public schedule transport is intentionally read-only and exposes no database schema/RPC detail;
 - service/secret keys never belong in Expo public configuration;
-- temporary inspection functions are inert (410) and JWT-protected.
+- temporary inspection/smoke functions are inert and JWT-protected after use.
 
-Current deployed functions on 2026-09-14:
+Current deployed functions on 2026-09-15:
 - `guide-schedule` v5, public read (`verify_jwt=false`) by design;
-- `epg-refresh` v3, protected by its own explicit secret/auth contract;
-- both keep privileged Supabase/provider access server-side.
+- `epg-refresh` v4, protected by explicit secret-key / dedicated cron-token auth;
+- temporary `epg-cron-smoke` is inert (410) and `verify_jwt=true`;
+- privileged Supabase/provider access remains server-side.
 
 ## DST correctness
 Canonical timestamps and repository query windows remain real instants. `guideDayStart` currently models Europe/Amsterdam calendar-day 23/25-hour DST behaviour for the Phase 3 loader; ADR 0008 requires the final Guide-day derivation to use a 06:00 Europe/Amsterdam television-day boundary and to retain explicit 23/25-hour/DST tests around that boundary. The hosted transport's 25-hour maximum remains sufficient for one television-day request.
@@ -230,19 +262,17 @@ Rules:
 
 EPG.PW and Schedules Direct are not selected for the commercial path under their published non-commercial/personal terms. EPGdata.tv and Gracenote remain possible production candidates if explicit commercial rights are obtained. An authorized Bindinc/TVgids production feed remains preferred when available.
 
-## Current Phase 3 exit gate
-The hosted path and mobile integration are implemented and CI-proven. Phase 3 is **not yet physically closed** because PR #51 crosses the mobile Guide data boundary for the first time.
+## Phase 4 active scope
+Phase 3's mobile real-data boundary is closed. Phase 4 may now harden the Guide MVP against the frozen product semantics.
 
-Required focused iPhone smoke:
-1. launch remains stable and first frame appears immediately from local data;
-2. Totaal transitions to real canonical data without gesture/readability regression;
-3. Per zender retains direct channel strip, adjacent swipe and time/context behaviour;
-4. deferred Nu & Straks still loads and retains accepted rail/mixed-gesture behaviour;
-5. Programme Detail opens/returns correctly from all three presentations;
-6. app background/resume with unchanged hosted content does not discard user context;
-7. offline/unavailable hosted data remains usable through deterministic fixture fallback.
-
-Do not introduce persistent caching or the full ADR 0008 multi-day UI before this smoke; Phase 4 implements the complete horizon after the Phase 3 boundary is physically proven.
+Primary Phase 4 responsibilities:
+- implement television-day-aware D-2..D+7 schedule access and day navigation for Totaal and Per zender;
+- replace temporary calendar-day/today+tomorrow assumptions with the ADR 0008 06:00 television-day model;
+- preserve accepted Totaal, Per zender and Nu & Straks gesture behaviour while multi-day navigation is introduced;
+- implement the accepted date-selector/date-context behaviour, including the Per zender `Primetime` + `Nu` utility actions;
+- validate midnight continuity, 06:00 rollover, history/future navigation and refresh context physically;
+- revisit known Nu & Straks density/accessibility debt without creating overlapping touch targets;
+- decide and implement appropriate local persistence/cache behaviour only as needed for the hardened MVP, keeping deterministic fixtures as the development/offline baseline.
 
 ## Android status
 Physical Android interaction acceptance remains OPEN/DEFERRED because no Android device is available. CI proves Android JS/native export, clean prebuild and debug APK compilation, not system Back, nested-gesture feel or device performance.
@@ -256,26 +286,25 @@ Physical Android interaction acceptance remains OPEN/DEFERRED because no Android
 - never run `npm audit fix --force`.
 
 ## Repository coordination
-- PR #28 (`docs/multi-agent-workflow`) merged as `d295333356ff4d4078d65b3ebff7c6c3d9ffdf1c`; `docs/THREAD_PLAYBOOK.md` is now active repository policy for specialised ChatGPT threads.
+- PR #28 (`docs/multi-agent-workflow`) merged as `d295333356ff4d4078d65b3ebff7c6c3d9ffdf1c`; `docs/THREAD_PLAYBOOK.md` is active repository policy for specialised ChatGPT threads.
 - PR #53 (`docs/tv-day-horizon`) merged as `88315f1b7db468aa75b36a268091f72a8e007272`; ADR 0008 and the D-2..D+7 / 06:00 television-day rules are canonical.
 - temporary evidence PRs #43, #46, #47 and #49 were intentionally closed without merge.
+- `docs/PHYSICAL_EVIDENCE_2026-09-15_PHASE3.md` is the canonical Phase 3 physical iPhone acceptance record.
 
 ## Deferred but tracked
-- full ADR 0008 D-2..D+7 Guide UX and 06:00 rollover implementation (Phase 4);
 - physical Android validation;
+- true offline cold-start validation in a standalone/dev build rather than Expo Go;
 - release-like performance outside Expo Go;
-- Nu & Straks following-row accessibility/density hardening;
-- targeted dependency-advisory review;
-- production EPG/logo/artwork rights/SLA and horizon proof;
+- production EPG/logo/artwork rights/SLA and D-2..D+7 horizon proof;
 - Programme Detail `Herinner mij` / `Bewaar` implementation;
 - pricing/trial/paywall;
 - production typography licensing;
 - final Tonight composition.
 
 ## EXACT NEXT STEP
-**Perform and document the focused physical iPhone real-data smoke for PR #51 across Totaal, Per zender, deferred Nu & Straks, Programme Detail, fixture→real transition, resume context retention and fallback behaviour. Do not change frozen Guide mechanics, add persistent caching or implement the full ADR 0008 multi-day UI before this evidence exists.**
+**Start Phase 4 by implementing the shared television-day-aware D-2..D+7 schedule/day-selection foundation and wiring it into the accepted Totaal and Per zender date context without retuning frozen Guide gestures. Keep `NowNextGuideView` deferred and preserve deterministic fixtures.**
 
 Owner checkout: `~/projects/teevee`.
 
 ## Resume instruction
-> Read `AGENTS.md`, this file, `docs/VISUAL_BASELINE.md` when visual work is involved, ADR 0007, ADR 0008 and `PHASE_3_PROVIDER_RESEARCH_2026-09-14.md`. Phase 2 is closed. PR #50 fixed hosted 25-hour windows and PR #51 connected the mobile Guide to the provider-independent canonical hosted schedule with fixture-first safe fallback. ADR 0008 freezes the final television-day semantics (06:00 boundary; D-2..D+7 horizon) but does not expand the current Phase 3 physical gate. The active Phase 3 gate remains the focused physical iPhone real-data smoke; only after that evidence may Phase 3 be closed and Phase 4 begin.
+> Read `AGENTS.md`, this file, `docs/VISUAL_BASELINE.md` when visual work is involved, ADR 0007, ADR 0008 and `docs/PHYSICAL_EVIDENCE_2026-09-15_PHASE3.md`. Phase 1A, Phase 1B, Phase 2 and Phase 3 are closed on iPhone. The provider-independent real-data path is physically proven and the temporary development EPG is kept fresh server-side. Phase 4 is active: implement the 06:00 television-day semantics, D-2..D+7 Guide horizon and accepted date/navigation behaviour while preserving the already accepted Guide interaction baseline. Physical Android validation remains deferred.

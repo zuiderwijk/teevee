@@ -26,17 +26,38 @@ function defaultSecretKey() {
   return keys.default;
 }
 
-function authorised(req, secretKey) {
-  const supplied = req.headers.get('apikey');
-  return typeof supplied === 'string' && supplied.length > 0 && supplied === secretKey;
-}
-
-function repository(secretKey) {
-  const client = new SupabaseRestRpcClient({
+function rpcClient(secretKey) {
+  return new SupabaseRestRpcClient({
     baseUrl: Deno.env.get('SUPABASE_URL') ?? '',
     apiKey: secretKey,
   });
-  return new SupabaseScheduleRepository(client);
+}
+
+async function authorised(req, secretKey) {
+  const suppliedSecret = req.headers.get('apikey');
+  if (
+    typeof suppliedSecret === 'string' &&
+    suppliedSecret.length > 0 &&
+    suppliedSecret === secretKey
+  ) {
+    return true;
+  }
+
+  const cronToken = req.headers.get('x-teevee-cron-token');
+  if (!cronToken || cronToken.length > 256) return false;
+
+  const validation = await rpcClient(secretKey).rpc('teevee_validate_epg_refresh_cron_token', {
+    p_token: cronToken,
+  });
+  if (validation.error) {
+    console.error('Teevee cron token validation failed', validation.error.message);
+    return false;
+  }
+  return validation.data === true;
+}
+
+function repository(secretKey) {
+  return new SupabaseScheduleRepository(rpcClient(secretKey));
 }
 
 async function parseJsonBody(req) {
@@ -63,7 +84,13 @@ export default {
       console.error('Teevee refresh secret configuration is invalid', error);
       return errorResponse('Refresh service unavailable', 503);
     }
-    if (!authorised(req, secretKey)) return errorResponse('Unauthorized', 401);
+
+    try {
+      if (!(await authorised(req, secretKey))) return errorResponse('Unauthorized', 401);
+    } catch (error) {
+      console.error('Teevee refresh authorization failed', error);
+      return errorResponse('Unauthorized', 401);
+    }
 
     let request;
     try {
