@@ -129,10 +129,13 @@ export function useSelectedGuideDaySchedule(
   }, [guideDataVersion, selectedDayStartMs]);
 
   useEffect(() => {
+    // Current-day resume is already owned by the shared fixture-first runtime. Avoid a
+    // duplicate AppState listener/request there; only a manually selected non-current day
+    // needs its own bounded lifecycle revalidation.
+    if (selectedDayStartMs === guideTelevisionDayStart(Date.now())) return;
+
     const subscription = AppState.addEventListener('change', (nextState) => {
-      if (nextState !== 'active') return;
-      if (selectedDayStartMs === guideTelevisionDayStart(Date.now())) return;
-      refresh(true);
+      if (nextState === 'active') refresh(true);
     });
     return () => subscription.remove();
   }, [refresh, selectedDayStartMs]);
