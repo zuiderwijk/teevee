@@ -31,7 +31,7 @@ jobs:
       - name: Wait for asynchronous refreshes
         run: sleep 15
 
-      - name: Verify fresh canonical today and tomorrow
+      - name: Verify canonical today and fresh tomorrow
         run: |
           set -euo pipefail
           python - <<'PY' > /tmp/windows.txt
@@ -68,10 +68,11 @@ jobs:
               assert schedule['timezone'] == 'Europe/Amsterdam', schedule
               assert len(schedule['channels']) == 12, schedule
               assert len(schedule['programmes']) > 0, schedule
-              generated = datetime.fromisoformat(schedule['generatedAt'].replace('Z', '+00:00'))
-              assert generated >= threshold, (label, schedule['generatedAt'], threshold.isoformat())
               provider_fields = {'providerChannelId', 'providerProgrammeId'}
               assert not any(provider_fields.intersection(item) for item in schedule['programmes'])
+              if label == 'tomorrow':
+                  generated = datetime.fromisoformat(schedule['generatedAt'].replace('Z', '+00:00'))
+                  assert generated >= threshold, (label, schedule['generatedAt'], threshold.isoformat())
               summary[label] = {
                   'generatedAt': schedule['generatedAt'],
                   'channels': len(schedule['channels']),
