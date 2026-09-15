@@ -69,7 +69,7 @@ Programme timestamps remain real UTC instants. Guide grouping/navigation derives
 - Totaal and Per zender must expose at least D-2 through D+7, ten complete television days;
 - Nu & Straks remains a single active-television-day presentation.
 
-Phase 4 must implement this without shifting stored programme timestamps and without retuning the physically accepted Guide gesture model. The existing Phase-3 calendar-today/tomorrow loader is temporary compatibility code until this migration is complete.
+Phase 4 must implement this without shifting stored programme timestamps and without retuning the physically accepted Guide gesture model. PR #62 established the shared 06:00/horizon primitives and PR #64 migrated the current mobile hosted runtime to D + D+1 television-day loading/anchoring with a 06:00 rollover. User-facing D-2..D+7 selection/navigation remains the next boundary.
 
 ## Hosted backend
 Teevee has a dedicated Supabase project:
@@ -100,7 +100,7 @@ Public/mobile read transport:
 - uses privileged storage access only inside the Edge runtime;
 - exposes no database/RPC/provider identifiers or write capability.
 
-The bounded window is intentionally compatible with requesting individual television days. Phase 4 should compose the multi-day product horizon from bounded day windows rather than inventing one unbounded ten-day public payload.
+The bounded window is intentionally compatible with requesting individual television days. Phase 4 composes the product horizon from bounded day windows rather than inventing one unbounded ten-day public payload.
 
 ### `epg-refresh`
 Protected server-side refresh:
@@ -110,7 +110,7 @@ Protected server-side refresh:
 - partial provider coverage cannot destructively replace canonical stored coverage.
 
 ### Automatic development freshness
-`pg_cron` + `pg_net` enqueue the temporary development refresh every six hours. A rolling three-calendar-day Amsterdam buffer covers current day, tomorrow and one rollover day so the current Phase-3-derived today+tomorrow mobile loader does not immediately lose coverage at midnight.
+`pg_cron` + `pg_net` enqueue the temporary development refresh every six hours. A rolling three-calendar-day Amsterdam buffer covers current day, tomorrow and one rollover day. That buffer is sufficient for the current development runtime's bounded D + D+1 television-day reads around midnight/06:00, but it is not the final multi-day product strategy.
 
 A dedicated random cron token is generated/stored encrypted in Supabase Vault. The real Supabase secret key remains inside the Edge Function environment.
 
@@ -123,29 +123,32 @@ The mobile app currently uses:
 - runtime validation before accepting serialized hosted data;
 - provider-independent merge/deduplication;
 - a small in-memory runtime schedule bridge shared by Totaal, Per zender and deferred Nu & Straks;
-- refresh after startup, app resume and the current temporary day rollover;
+- D and D+1 television-day hosted reads derived with the shared 06:00 Europe/Amsterdam primitive;
+- independently bounded one-day requests, including 23/25-hour DST television days;
+- refresh after startup, app resume and 06:00 television-day rollover;
 - content equality that ignores freshness-only metadata so harmless refreshes do not remount the Guide;
+- request-version protection so late older hosted responses cannot replace newer state;
 - deterministic fixture preservation when hosted data is unavailable, invalid, empty in the wrong way or the network fails.
 
-The current mobile loader still composes Amsterdam calendar `today + tomorrow`. Its midnight rollover and calendar-day anchor are explicitly temporary Phase-3 implementation details and must be replaced with ADR 0008 television-day semantics during Phase 4.
+PR #64 replaced the former strict calendar today+tomorrow/midnight semantics. Its exact reviewed head was automation-proven and physically accepted on iPhone for fixture-first -> hosted replacement and same-television-day background/resume context retention. The next runtime/UI boundary is selected-day D-2..D+7 access for Totaal and Per zender; Nu & Straks remains single-active-day.
 
 ## Caching/offline
 Persistent mobile schedule caching is **not selected or implemented yet**. The current robust fallback is deterministic fixture-first + preservation of usable runtime state across failed refreshes.
 
-Do not add SQLite, TanStack Query or another cache/server-state framework speculatively. Phase 4 should first define the multi-day query/cache-key semantics and measure realistic D-2..D+7 payload/access patterns.
+Do not add SQLite, TanStack Query or another cache/server-state framework speculatively. Phase 4 should first implement/measure realistic bounded selected-day D-2..D+7 access and payload patterns before choosing persistent cache technology or eager horizon loading.
 
 A true no-network cold start cannot be validated through Expo Go after force-quit because Expo Go itself needs Metro/network to load the development bundle. Release-like offline cold-start validation remains deferred until a standalone/dev build is available.
 
 ## Phase 4 architecture increment
-The next architecture work follows `PROJECT_STATE.md` exactly:
-1. create shared 06:00 `Europe/Amsterdam` television-day primitives and D-2..D+7 horizon semantics;
-2. migrate schedule/day-selection boundaries away from the temporary strict-calendar-day assumption;
-3. wire the accepted compact date context into Totaal and Per zender while preserving their frozen gesture mechanics;
+The architecture sequence follows `PROJECT_STATE.md` exactly:
+1. **DONE** — create shared 06:00 `Europe/Amsterdam` television-day primitives and D-2..D+7 horizon semantics (PR #62);
+2. **DONE for current runtime boundary** — migrate hosted runtime anchoring/loading away from strict calendar-day assumptions to D + D+1 television-day semantics (PR #64);
+3. **NEXT** — wire the accepted compact date context/day selector into Totaal and Per zender, with functional D-2..D+7 selection backed by bounded per-day reads while preserving frozen gesture mechanics;
 4. keep Nu & Straks deferred and single-active-day;
 5. retain deterministic fixtures and controlled hosted fallback;
 6. evaluate realistic full-horizon payload/render performance before introducing persistent caching or eager ten-day rendering.
 
-Because television-day/date/horizon code is high risk under `ENGINEERING_QUALITY_POLICY.md`, the implementation requires deterministic boundary/DST tests and independent QA before merge. Physical iPhone evidence is required once user-facing Guide day navigation/scroll context changes; pure domain-foundation increments do not need to pretend CI is physical evidence.
+Because television-day/date/horizon code is high risk under `ENGINEERING_QUALITY_POLICY.md`, the implementation requires deterministic boundary/DST/selection tests and independent QA before merge. Physical iPhone evidence is required when user-facing Guide day navigation/scroll context changes.
 
 ## Data refresh invariants
 - corrections replace only explicit refreshed channel/time scope;
