@@ -23,7 +23,7 @@ Next phase after Phase 3 closure: **Phase 4 — Core Guide MVP hardening**
 1. **Phase 1A — Totaal:** complete and physically accepted on iPhone.
 2. **Phase 1B — Per zender / Nu & Straks:** complete and physically accepted on iPhone.
 3. **Phase 2 — App Shell:** complete and physically accepted on iPhone.
-4. **Phase 3 — Real Data Vertical Slice:** active; real provider -> hosted ingest -> canonical persistence -> public typed read is proven end-to-end. Mobile still consumes deterministic fixtures.
+4. **Phase 3 — Real Data Vertical Slice:** active; real provider -> hosted ingest -> canonical persistence -> public typed read -> mobile canonical datasource is implemented. Physical iPhone real-data smoke remains the active exit gate.
 5. **Phase 4 — Core Guide MVP hardening:** next after Phase 3 exit criteria.
 
 ## Frozen Guide interaction baseline
@@ -145,6 +145,30 @@ Temporary PR #49 then seeded the two Amsterdam guide days needed for the current
 - coverage from `2026-09-13T22:00:00Z` through `2026-09-15T22:00:00Z` (Amsterdam Sep 14 + Sep 15);
 - public day reads measured ~193 KB / ~1.32 s for today and ~187 KB / ~1.26 s for tomorrow.
 
+### PR #50 — DST-correct hosted windows
+Merged as `b60e2501ee757a20a080de393f618101b0970f90`.
+
+The hosted read/refresh policy now allows an exact maximum of 25 hours, which matches Europe/Amsterdam winter-time calendar days while still rejecting broader requests. Exact merge-commit CI run #315 passed both `quality` and `android-native`.
+
+### PR #51 — mobile canonical hosted schedule
+Merged as `0886cbe61272703323ba30cd2deb9cbc037754a8` after exact feature head `08497e10ab65803c1ce91ca5b3b060fdfb0166f2` passed CI run #323 for both `quality` and `android-native`.
+
+Implemented:
+- runtime validation of serialized public schedule responses;
+- dependency-free `HostedGuideScheduleClient` using only public `guide-schedule`;
+- Amsterdam-correct today + tomorrow loading and merge;
+- boundary-programme deduplication;
+- provider-independent in-memory runtime schedule store;
+- first-frame fixture-first rendering;
+- fallback to deterministic fixtures on unavailable/network/invalid/empty hosted data;
+- refresh after startup, on app resume and on Amsterdam day rollover;
+- freshness-only updates do not remount accepted Guide presentations;
+- only user-visible schedule changes bump the app-shell data version;
+- one shared runtime source feeds Totaal, Per zender and deferred Nu & Straks through the existing fixture boundary;
+- no SQLite, TanStack Query, new dependency or native-config change.
+
+Frozen Guide view implementations and Programme Detail mechanics were not modified by PR #51.
+
 ## Hosted transport safety
 - mobile/public callers can only request allow-listed canonical channel IDs;
 - provider IDs remain server-side;
@@ -153,8 +177,13 @@ Temporary PR #49 then seeded the two Amsterdam guide days needed for the current
 - service/secret keys never belong in Expo public configuration;
 - temporary inspection functions are inert (410) and JWT-protected.
 
+Current deployed functions on 2026-09-14:
+- `guide-schedule` v5, public read (`verify_jwt=false`) by design;
+- `epg-refresh` v3, protected by its own explicit secret/auth contract;
+- both keep privileged Supabase/provider access server-side.
+
 ## DST correctness
-Teevee calendar days are Europe/Amsterdam days, not fixed 24-hour durations. `guideDayStart` already models 23/25-hour DST days. PR #50 is currently fixing the hosted transport window bound from 24h to 25h so the winter-time day can be read/refreshed without weakening the narrow transport policy. Do not connect the mobile real-data source before this contract is green/merged.
+Teevee calendar days are Europe/Amsterdam days, not fixed 24-hour durations. `guideDayStart` models 23/25-hour DST days and the hosted transport now allows the required 25-hour winter-time bound. Mobile today+tomorrow loading uses those same Amsterdam day boundaries.
 
 ## Development-provider rights boundary
 IPTV-EPG.org is **temporary development input only**. Public availability is not proof of commercial redistribution rights.
@@ -168,16 +197,19 @@ Rules:
 
 EPG.PW and Schedules Direct are not selected for the commercial path under their published non-commercial/personal terms. EPGdata.tv and Gracenote remain possible production candidates if explicit commercial rights are obtained. An authorized Bindinc/TVgids production feed remains preferred when available.
 
-## Next engineering slice
-After PR #50 is green/merged:
-1. add a provider-independent **mobile Teevee schedule datasource** that calls only the public `guide-schedule` contract;
-2. load today + tomorrow using Amsterdam day boundaries and combine them into one canonical `GuideSchedule`;
-3. render fixtures immediately and fall back to fixtures on unavailable/network/invalid responses;
-4. share one schedule source across Totaal, Per zender and deferred Nu & Straks without changing their accepted interaction mechanics;
-5. do **not** add SQLite or TanStack Query yet: measured payloads are only ~187–193 KB/day and no requirement currently justifies that complexity;
-6. run automated tests and then a focused iPhone real-data smoke because the data source will finally cross the mobile Guide boundary.
+## Current Phase 3 exit gate
+The hosted path and mobile integration are implemented and CI-proven. Phase 3 is **not yet physically closed** because PR #51 crosses the mobile Guide data boundary for the first time.
 
-A persistent schedule cache may be evaluated after the first real-device smoke and measured resume/offline behaviour. Deterministic fixtures remain available regardless.
+Required focused iPhone smoke:
+1. launch remains stable and first frame appears immediately from local data;
+2. Totaal transitions to real canonical data without gesture/readability regression;
+3. Per zender retains direct channel strip, adjacent swipe and time/context behaviour;
+4. deferred Nu & Straks still loads and retains accepted rail/mixed-gesture behaviour;
+5. Programme Detail opens/returns correctly from all three presentations;
+6. app background/resume with unchanged hosted content does not discard user context;
+7. offline/unavailable hosted data remains usable through deterministic fixture fallback.
+
+Do not introduce persistent caching before this smoke and actual resume/offline behaviour justify it.
 
 ## Android status
 Physical Android interaction acceptance remains OPEN/DEFERRED because no Android device is available. CI proves Android JS/native export, clean prebuild and debug APK compilation, not system Back, nested-gesture feel or device performance.
@@ -206,9 +238,9 @@ Physical Android interaction acceptance remains OPEN/DEFERRED because no Android
 - final Tonight composition.
 
 ## EXACT NEXT STEP
-**Finish and merge PR #50 (25-hour Amsterdam DST hosted-window correctness), then connect the mobile Guide to the public provider-independent Teevee schedule API with immediate deterministic-fixture fallback. Preserve all frozen Guide mechanics and the deferred Nu & Straks import. Do not introduce SQLite/TanStack yet.**
+**Perform and document the focused physical iPhone real-data smoke for PR #51 across Totaal, Per zender, deferred Nu & Straks, Programme Detail, fixture→real transition, resume context retention and fallback behaviour. Do not change frozen Guide mechanics or add persistent caching before this evidence exists.**
 
 Owner checkout: `~/projects/teevee`.
 
 ## Resume instruction
-> Read `AGENTS.md`, this file, ADR 0007 and `PHASE_3_PROVIDER_RESEARCH_2026-09-14.md`. Phase 2 is closed. Phase 3 has a proven hosted real-data path through PR #48 and current live canonical data for Amsterdam today + tomorrow. Finish PR #50, then implement the smallest shared mobile schedule datasource over `guide-schedule`, fixture-first with safe fallback, without changing accepted Guide interactions.
+> Read `AGENTS.md`, this file, ADR 0007 and `PHASE_3_PROVIDER_RESEARCH_2026-09-14.md`. Phase 2 is closed. PR #50 fixed hosted 25-hour DST windows and PR #51 connected the mobile Guide to the provider-independent canonical hosted schedule with fixture-first safe fallback. The active Phase 3 gate is now a focused physical iPhone real-data smoke; only after that evidence may Phase 3 be closed and Phase 4 begin.
