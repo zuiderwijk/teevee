@@ -118,6 +118,11 @@ export const GuideView = memo(function GuideView({
   const nowInWindow = nowMs >= windowStart && nowMs < windowEnd;
   const guideHeight = runtimeFixture.channels.length * layout.rowHeight;
   const programmeViewportWidth = Math.max(0, windowWidth - layout.channelWidth);
+  const followingDayBoundaryX = timeToX(
+    followingDayStartMs,
+    windowStart,
+    layout.minuteWidth,
+  );
 
   const syncVerticalScroll = useCallback((y: number) => {
     channelRef.current?.scrollTo({ y, animated: false });
@@ -127,6 +132,13 @@ export const GuideView = memo(function GuideView({
     setCondensed((current) => (current === nextCondensed ? current : nextCondensed));
   }, []);
 
+  const syncVisibleDayForAnchor = useCallback(
+    (dayStartMs: number) => {
+      if (dayStartMs !== visibleDayStartMs) selectVisibleDay(dayStartMs);
+    },
+    [selectVisibleDay, visibleDayStartMs],
+  );
+
   useAnimatedReaction(
     () => scrollY.value > HEADER_CONDENSE_THRESHOLD,
     (nextCondensed, previousCondensed) => {
@@ -134,6 +146,25 @@ export const GuideView = memo(function GuideView({
       scheduleOnRN(syncCondensed, nextCondensed);
     },
     [scrollY, syncCondensed],
+  );
+
+  useAnimatedReaction(
+    () =>
+      includeFollowingDay && scrollX.value + TIME_ANCHOR_INSET >= followingDayBoundaryX
+        ? followingDayStartMs
+        : windowStartDayMs,
+    (nextDayStartMs, previousDayStartMs) => {
+      if (nextDayStartMs === previousDayStartMs) return;
+      scheduleOnRN(syncVisibleDayForAnchor, nextDayStartMs);
+    },
+    [
+      followingDayBoundaryX,
+      followingDayStartMs,
+      includeFollowingDay,
+      scrollX,
+      syncVisibleDayForAnchor,
+      windowStartDayMs,
+    ],
   );
 
   const viewedTimeForX = useCallback(
@@ -164,8 +195,8 @@ export const GuideView = memo(function GuideView({
   const horizontalScrollHandler = useAnimatedScrollHandler(
     {
       onScroll: (event) => {
-        // Keep every scroll frame on the UI thread. Bridging every x-position
-        // to JS can queue work behind a programme tap immediately after a fling.
+        // Keep every scroll frame on the UI thread. Date context crosses the 06:00
+        // threshold via a UI-thread reaction above, so JS is still not bridged per frame.
         scrollX.value = Math.max(0, event.contentOffset.x);
       },
       onEndDrag: (event) => {
