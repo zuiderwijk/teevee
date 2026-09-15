@@ -119,11 +119,21 @@ Optional:
 Artwork/cast/episode enrichment remains optional to core Guide usability.
 
 ## Time handling
-- Canonical timestamps are UTC ISO.
+- Canonical programme timestamps are UTC ISO and never shifted to emulate a television day.
 - Dutch MVP renders in `Europe/Amsterdam`.
 - XMLTV adapter does not guess timezone when an offset is missing.
 - Current-programme and query semantics are `[start,end)`.
 - DST transitions remain explicit test cases.
+
+### Television-day semantics — ADR 0008
+Guide grouping/navigation uses a **television day** rather than a strict midnight calendar day:
+- television day starts at **06:00 Europe/Amsterdam** and ends at 06:00 the next calendar day;
+- between 00:00 and 05:59, the active television day is still the preceding date/evening;
+- midnight is not a Guide boundary;
+- membership in a television day is derived from the real instant and timezone; storage timestamps remain unchanged;
+- continuous Guide surfaces may cross both midnight and the 06:00 semantic boundary without fabricating programme times.
+
+Let `D` be the current television day. The Core Guide product guarantee is at least **D-2 through D+7** for Totaal and Per zender: ten complete television days. Nu & Straks remains a single active-day view using the same television-day definition.
 
 ## Stable IDs
 External provider IDs are not used as Teevee product IDs by themselves.
@@ -148,20 +158,37 @@ Hosted project:
 
 Private `teevee` tables are not client-readable. Service-role-only RPC bridges back `SupabaseScheduleRepository`.
 
-## Real-data next slice
-1. Define a small real canonical channel catalog and provider mapping from verified XMLTV IDs.
-2. Ingest one bounded real schedule window server-side.
-3. Store only safe `complete` channel scopes.
-4. Read the canonical schedule back through `GuideScheduleApi`.
-5. Measure external fetch/parse time, programme counts, canonical response size and refresh/correction behaviour.
-6. Choose mobile caching only after these measurements.
+## Phase ownership for horizon/retention
+### Phase 3
+- preserve provider-independent instant/window semantics;
+- ensure backend contracts do not assume a permanent midnight boundary or permanent two-day horizon;
+- treat the current today+tomorrow mobile loader as vertical-slice scope only;
+- do not expand the current physical real-data smoke merely to implement the final multi-day UX.
 
-The current ~30 MB source is evidence that whole-feed parsing/fetch costs must be measured before choosing refresh cadence or server execution strategy.
+### Phase 4
+- implement television-day-aware loaders/cache keys and D-2..D+7 Guide navigation;
+- preserve historical D-2/D-1 data while inside the guaranteed product window;
+- support uninterrupted evening browsing through midnight;
+- support the 06:00 television-day rollover and `Nu` behaviour;
+- define/verify offline and stale-cache behaviour for the multi-day window.
+
+### Phase 8
+The production EPG provider must prove:
+- sufficient future horizon to guarantee D+7;
+- sufficient historical retention/availability to guarantee D-2;
+- freshness/correction behaviour compatible with the product;
+- explicit paid-app redistribution rights for schedule/metadata and separately licensed logo/artwork where used.
+
+A provider that cannot meet the minimum horizon is not sufficient for Teevee's production product promise.
 
 ## Schedule horizon
-Development target is at least the horizon the temporary feed demonstrably supplies; the first observed payload spans roughly one week. Preferred production target remains 14 days forward when the eventual licensed provider supports it.
+Minimum product guarantee for Totaal and Per zender is **D-2 through D+7 television days**, where D is derived with the 06:00 Europe/Amsterdam boundary.
 
-The product must degrade gracefully when a provider supplies a shorter horizon.
+Backend storage/cache should retain a safety buffer beyond the visible guarantee where practical (for example D-3 through D+8), or simply retain the broader authoritative provider horizon when operationally cheap.
+
+Preferred production target remains **14 days forward** when the eventual licensed provider supports it; the 14-day preference is additional headroom, not a replacement for the minimum D-2 historical guarantee.
+
+The temporary development feed was observed to provide roughly one week on 2026-09-14. That observation is development evidence only and does not prove the final production horizon requirement.
 
 ## Updates and corrections
 - only `complete` batches may destructively replace canonical windows;
@@ -170,7 +197,9 @@ The product must degrade gracefully when a provider supplies a shorter horizon.
 - errors attributable to one mapped channel can block that channel without blocking unrelated safe channels;
 - unattributed malformed data blocks destructive replacement;
 - late stale refreshes are rejected;
-- mobile refresh must preserve accepted Guide context where practical.
+- mobile refresh must preserve accepted Guide context where practical;
+- refresh/retention policy must not evict historical television days while they remain inside D-2..D+7;
+- future automatic ingest should keep the guaranteed horizon continuously covered rather than only loading from the current instant forward.
 
 ## Data-quality diagnostics
 Implemented diagnostics cover:
@@ -193,16 +222,17 @@ Mobile-facing output is canonical only:
 - `unavailable` for missing/incomplete canonical coverage;
 - no provider/database detail in output.
 
-The hosted HTTP/Edge transport is the next unimplemented boundary.
+The existing hosted API's bounded windows are compatible with requesting individual television days; Phase 4 should compose the required multi-day range rather than exposing one huge unbounded payload.
 
 ## Production rights gate
 Before public paid release, Teevee needs explicit answers to:
 1. production schedule provider;
 2. paid-app redistribution rights;
 3. freshness/SLA;
-4. included metadata;
-5. channel-logo and programme-artwork rights;
-6. provider-failure fallback.
+4. minimum D-2 historical and D+7 future horizon;
+5. included metadata;
+6. channel-logo and programme-artwork rights;
+7. provider-failure fallback.
 
 An authorized Bindinc/TVgids source remains preferred when available. EPGdata.tv and Gracenote remain candidates. EPG.PW and Schedules Direct are not approved for Teevee production under their published non-commercial/personal terms.
 
@@ -214,4 +244,7 @@ An authorized Bindinc/TVgids source remains preferred when available. EPGdata.tv
 - authoritative coverage must be explicit before destructive replacement;
 - coverage/freshness is distinct from programme rows;
 - stale writes cannot roll newer schedule state backwards;
+- canonical programme timestamps remain real instants;
+- Guide day grouping follows ADR 0008's 06:00 television-day boundary;
+- Totaal and Per zender must support at least D-2..D+7 television days;
 - enrichment is optional to core Guide functionality.
