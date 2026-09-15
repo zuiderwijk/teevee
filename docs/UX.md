@@ -1,6 +1,6 @@
 # Teevee UX and Information Architecture
 
-Status: accepted visual/UX baseline, amended 15 September 2026 with frozen television-day and Guide-horizon semantics. The repository remains the technical source of truth. This document records the owner-approved UX direction; implementation status may lag behind it.
+Status: accepted visual/UX baseline, amended 15 September 2026 with frozen television-day, Guide-horizon and Guide day-selector behaviour. The repository remains the technical source of truth. This document records the owner-approved UX direction; implementation status may lag behind it.
 
 ## Experience objective
 Teevee is a premium, advertising-free TV guide for iOS and Android. The Guide is the primary product. It should feel calm, modern, precise and purpose-built for television schedules: not a content portal, not a streaming catalogue, and not a desktop EPG compressed onto a phone.
@@ -44,6 +44,34 @@ Guide navigation follows a television day rather than a strict midnight calendar
 - The UI uses normal human-readable dates and relative labels; users are not required to understand the internal term `television day`.
 - 06:00 is a semantic grouping boundary, not necessarily a hard visual scroll stop on continuous Guide surfaces.
 
+### Guide day selector — accepted interaction baseline
+Totaal and Per zender share one compact day-navigation model. Nu & Straks has no independent date selector.
+
+- show one primarily typographic date selector rather than ten permanent date buttons;
+- tapping the selector opens a bounded bottom sheet containing exactly the available D-2..D+7 television days in chronological order;
+- do not expose an unrestricted calendar, disabled out-of-range dates or technical D-offset notation;
+- use human-readable labels such as `Vandaag · ma 15 sep`, `Morgen · di 16 sep` or `Do 18 sep` as space permits;
+- between 00:00 and 05:59, when the active television day is the preceding calendar date, prefer that actual date label rather than falsely calling it `Vandaag`;
+- `Nu` remains a separate, persistent action rather than being folded into the date selector;
+- changing day preserves the currently viewed wall-clock time where practical (for example 20:35 -> another day around 20:35);
+- `Nu` is the explicit reset that restores both the actual current instant and its television-day context;
+- day selection must not introduce a competing horizontal gesture zone.
+
+Sticky behaviour:
+- essential day/time context remains available during vertical Guide scrolling while non-functional brand/header chrome may condense away;
+- in Totaal, the date selector, `Nu` and time axis remain available;
+- in Per zender, the horizontal channel-logo strip remains sticky and is followed by one compact sticky channel/date context row with `Nu` available;
+- the condensed Per-zender state must not duplicate the large channel heading;
+- scrolling back to the top restores the full rest-state hierarchy naturally;
+- reduced-motion mode may use a simpler non-interpolated transition.
+
+Totaal date-context behaviour:
+- horizontal time browsing remains continuous across midnight and the 06:00 grouping boundary;
+- the visible date context updates when the Guide's stable time-navigation anchor crosses 06:00, not merely when a small sliver of the next television day enters the viewport;
+- the label change should be visually quiet and must not interrupt native scrolling.
+
+Canonical visual/interaction details live in `design/current/guide/GUIDE_DAY_SELECTOR.md`.
+
 ### Shared channel identity
 Use the channel logo as the primary visual identifier when licensed/readable artwork exists. Channel name is secondary/contextual and remains available to accessibility APIs. Provide an intentional text fallback when artwork is unavailable. Never distort channel marks merely to fit the UI.
 
@@ -59,7 +87,7 @@ Purpose: compare multiple channels across time.
 - current programme information prioritises the useful end time; avoid duplicating a start time that is already spatially evident;
 - future programmes prioritise start time; end time is normally unnecessary in the grid;
 - avoid genres and other low-value metadata inside compact schedule cells;
-- Phase 1 prototype navigation used `Vandaag · Morgen · Nu`; Phase 4 must evolve date navigation to cover D-2..D+7 without turning the header into ten permanent date buttons;
+- use the accepted shared Guide day selector for D-2..D+7 navigation;
 - `Nu` returns to the actual current instant and corresponding television day;
 - browsing through midnight is continuous and does not require selecting the next calendar day;
 - when crossing 06:00, date context updates to the next television day while the timeline may remain continuous;
@@ -81,7 +109,8 @@ Purpose: inspect the schedule of one channel while making adjacent-channel compa
 - active channel remains visible and may be centred automatically after a channel change;
 - channel logo is primary; channel name is contextual/secondary;
 - changing channel preserves the viewed time anchor rather than blindly preserving a pixel offset;
-- date remains available as secondary context/navigation across D-2..D+7;
+- use the accepted shared Guide day selector for D-2..D+7 navigation;
+- date remains secondary to channel context;
 - the schedule continues naturally through midnight within the same television-day context;
 - give deliberate visual breathing room between the channel selector and schedule content;
 - programme rows remain open and typographic rather than stacked cards;
@@ -182,13 +211,22 @@ Accessibility is a core quality requirement.
 - respect reduced-motion preferences;
 - validate representative larger text sizes on physical devices.
 
+For the Guide day selector specifically:
+- the visible label may wrap or increase sticky-header height rather than shrinking to illegibility;
+- the complete date control and `Nu` remain platform-appropriate touch targets;
+- screen readers receive the full selected date and `Dag kiezen`/equivalent action semantics;
+- selected day in the bottom sheet has a non-colour selected indicator/state.
+
 ## Phase 4 television-day acceptance
 The Core Guide MVP is not complete until physical validation confirms at least:
 - opening around 19:00 lands around `Nu` while the same television day remains navigable backward;
 - a user can browse continuously from evening through midnight into the early morning;
-- opening at 00:05 still uses the preceding television-day context;
+- opening at 00:05 still uses the preceding television-day context and does not misleadingly label that preceding date as `Vandaag`;
 - 05:59 remains in the preceding television day and 06:00 enters the new television day;
-- Totaal and Per zender can navigate D-2, D-1, D and D+1..D+7;
+- Totaal and Per zender can navigate D-2, D-1, D and D+1..D+7 through the accepted day selector;
+- changing day preserves the viewed wall-clock anchor where practical;
+- Totaal date context updates coherently when the stable time-navigation anchor crosses 06:00;
+- vertical scrolling preserves the accepted sticky day/time context in Totaal and channel/date context in Per zender;
 - `Nu` correctly restores the actual instant from any selected historical/future day;
 - Programme Detail opens/returns correctly for historical and future broadcasts;
 - refresh/day rollover preserves meaningful channel/time/date context;

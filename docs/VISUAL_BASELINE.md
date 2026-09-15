@@ -31,9 +31,36 @@ If a canonical image contains a control that has since been superseded by a high
 
 ## Canonical Guide baseline
 
+### Shared Guide day selector — Totaal + Per zender
+Status: **ACCEPTED**
+Owner-approved direction: 2026-09-15
+Detailed manifest: `design/current/guide/GUIDE_DAY_SELECTOR.md`
+
+Canonical visual assets in the user's Teevee Library:
+- states / bounded bottom sheet:
+  - `/Teevee/Teevee Guide day selector - states and bottom sheet.png`
+  - Library file id: `file_00000000390c8210b76256621721592b`
+- sticky / condensed scroll behaviour:
+  - `/Teevee/Teevee Guide day selector - sticky scroll behavior.png`
+  - Library file id: `file_00000000314481f69f6a34d18ece1c21`
+
+Accepted characteristics:
+- one compact primarily typographic date selector, not ten permanent day buttons;
+- tapping opens the bounded D-2..D+7 list; no unrestricted calendar;
+- `Nu` remains a separate persistent action;
+- changing day preserves the viewed wall-clock time where practical;
+- between 00:00 and 05:59, show the preceding television-day date without falsely calling it `Vandaag`;
+- vertical scrolling preserves essential day/time context while non-functional brand/header chrome condenses;
+- Totaal keeps date + `Nu` + time axis available;
+- Per zender keeps the channel-logo strip plus one compact channel/date context row available;
+- larger text adapts height/wrapping instead of forcing tiny labels;
+- Nu & Straks has no independent day selector.
+
+These assets **supersede only the stale date/day controls** in the earlier Totaal and Per-zender canonical screenshots. They do not replace the accepted schedule composition, gestures, logo treatment, typography or general visual character of those surfaces.
+
 ### Totaal
 Status: **ACCEPTED**
-Owner-approved direction: 2026-09-13
+Owner-approved direction: 2026-09-13; day-navigation amendment 2026-09-15
 Detailed manifest: `design/current/guide/TOTAAL.md`
 
 Canonical visual assets in the user's Teevee Library:
@@ -41,6 +68,10 @@ Canonical visual assets in the user's Teevee Library:
   - Library file id: `file_0000000015ac81f4ab067e5473ed692d`
 - dark: `/Teevee/Donkere Nederlandse tv-gidsinterface.png`
   - Library file id: `file_000000008448821095d8432693d09bd8`
+- day-navigation states / bottom sheet: `/Teevee/Teevee Guide day selector - states and bottom sheet.png`
+  - Library file id: `file_00000000390c8210b76256621721592b`
+- sticky day-navigation behaviour: `/Teevee/Teevee Guide day selector - sticky scroll behavior.png`
+  - Library file id: `file_00000000314481f69f6a34d18ece1c21`
 
 Accepted visual characteristics:
 - Söhne visual direction;
@@ -51,18 +82,23 @@ Accepted visual characteristics:
 - restrained separators and generous whitespace;
 - compact red current-time marker; **no full-height red time line**;
 - programme titles dominate; low-value metadata is absent;
-- current cells may prioritise useful end-time context.
+- current cells may prioritise useful end-time context;
+- accepted day selector follows `GUIDE_DAY_SELECTOR.md`.
 
-**Known stale area in the accepted image:** the exact date/day control shown in the 13 September mock-up predates ADR 0008. The visual hierarchy remains accepted, but day navigation must follow the current television-day semantics and D-2..D+7 requirement. Do not copy the old date-control behaviour as specification.
+The date/day control in the original 13 September Totaal images is **SUPERSEDED**. Preserve the rest of their visual hierarchy and use the accepted shared day-selector assets for date navigation.
 
 ### Per zender
 Status: **ACCEPTED**
-Owner-approved direction: 2026-09-13
+Owner-approved direction: 2026-09-13; day-navigation amendment 2026-09-15
 Detailed manifest: `design/current/guide/PER_ZENDER.md`
 
-Canonical visual asset in the user's Teevee Library:
+Canonical visual assets in the user's Teevee Library:
 - light + dark reference: `/Teevee/TV-gids app in licht en donker thema.png`
   - Library file id: `file_000000008b2481f4ad34bb1547fc813e`
+- day-navigation states / bottom sheet: `/Teevee/Teevee Guide day selector - states and bottom sheet.png`
+  - Library file id: `file_00000000390c8210b76256621721592b`
+- sticky day-navigation behaviour: `/Teevee/Teevee Guide day selector - sticky scroll behavior.png`
+  - Library file id: `file_00000000314481f69f6a34d18ece1c21`
 
 Accepted visual characteristics:
 - open vertical typographic schedule;
@@ -75,9 +111,10 @@ Accepted visual characteristics:
 - current programme can receive restrained live/current emphasis;
 - programme rows prioritise time and title;
 - light/dark/system follow the shared Guide shell;
-- `Nu` / Primetime / date navigation are utility controls, not visual hero elements.
+- `Nu` / Primetime / date navigation are utility controls, not visual hero elements;
+- accepted day selector follows `GUIDE_DAY_SELECTOR.md`.
 
-**Known stale area in the accepted image:** exact date choices predate ADR 0008. Totaal and Per zender must ultimately support the current television-day range D-2 through D+7. Preserve the accepted list/strip composition while redesigning the date-navigation control in Phase 4.
+The exact date choices in the original 13 September Per-zender image are **SUPERSEDED**. Preserve the rest of the accepted channel-strip/list composition while using the accepted shared day-selector assets.
 
 Superseded examples include earlier Per-zender variants with programme imagery, genre descriptions, card-heavy rows or explicit previous/next channel arrow buttons.
 
@@ -103,7 +140,7 @@ Accepted visual characteristics:
 - horizontal movement changes reference time, vertical movement changes channel context;
 - channel order/vertical position remains stable while reference time changes.
 
-ADR 0008 changes the meaning of the active day around midnight: 00:00–05:59 remains part of the preceding television day. Nu & Straks still has no independent date selector. The canonical visual hierarchy remains accepted.
+ADR 0008 changes the meaning of the active day around midnight: 00:00–05:59 remains part of the preceding television day. Nu & Straks still has no independent date selector.
 
 Tracked non-blocking debt: compact following-programme rows at larger text sizes require density-aware Phase 4 hardening; do not solve this by reintroducing cards or low-value chrome.
 
@@ -116,7 +153,7 @@ Current visual reference in the user's Teevee Library:
 
 Canonical behavioural/visual rules remain those in `docs/UX.md` and `docs/DESIGN_SYSTEM.md`: title first, channel/time second, `Herinner mij` + `Bewaar`, optional artwork only, calm information surface, and contextual sticky bottom copies only after the canonical actions scroll away.
 
-If this Library image conflicts with those written rules, the written accepted rules win until the visual reference is explicitly re-approved and this manifest is updated.
+If this Library image conflicts with those written rules, the written accepted rules win until a new visual is explicitly approved and this manifest is updated.
 
 ## Tonight / Vanavond
 Status: **PROVISIONAL — NOT FROZEN**
