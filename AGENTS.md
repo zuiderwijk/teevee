@@ -10,10 +10,11 @@ Teevee is designed for autonomous AI-agent development under human product super
 3. `docs/UX.md`
 4. `docs/VISUAL_BASELINE.md`
 5. `docs/ARCHITECTURE.md`
-6. `docs/DATA.md`
-7. `docs/DESIGN_SYSTEM.md`
-8. `docs/BUILD_SPEC.md`
-9. `docs/decisions/*`
+6. `docs/ENGINEERING_QUALITY_POLICY.md`
+7. `docs/DATA.md`
+8. `docs/DESIGN_SYSTEM.md`
+9. `docs/BUILD_SPEC.md`
+10. `docs/decisions/*`
 
 `docs/DEVLOG.md` is the human-readable history of substantive development work. It is not a higher source of truth than PROJECT_STATE; when they differ, PROJECT_STATE wins and the DEVLOG should be corrected.
 
@@ -24,6 +25,8 @@ For visual work, `docs/VISUAL_BASELINE.md` plus `design/current/` select the exa
 ## Specialised ChatGPT threads
 Teevee may use separate Lead, Visual Design / UX, Development and QA / Review threads. These threads do not treat one another's chat history as a source of truth: the repository is their collaboration bus. Role boundaries, handoff rules, parallel-work guidance and reusable start prompts live in `docs/THREAD_PLAYBOOK.md`.
 
+Development and QA / Review work must also follow `docs/ENGINEERING_QUALITY_POLICY.md`, including its risk classification, test expectations, independent-review requirements and physical-device gates.
+
 When a conclusion from one thread matters to another, write the durable conclusion to the appropriate repository document, visual manifest, ADR, PR or evidence record before handoff. Avoid concurrent edits to `docs/PROJECT_STATE.md`; the Lead role owns reconciliation of shared project state when multiple threads are active.
 
 ## Working rules
@@ -31,6 +34,7 @@ When a conclusion from one thread matters to another, write the durable conclusi
 - Keep all EPG providers behind typed adapters.
 - The mobile client must never depend directly on an external EPG provider.
 - Deterministic fixture data must keep core development and tests independent of external services.
+- Apply the Engineering Quality Policy to every substantive code change; risk level determines the required evidence, not author confidence.
 - Avoid microservices, Kubernetes, speculative infrastructure and premature abstraction.
 - Treat visual references as direction rather than specification unless `docs/VISUAL_BASELINE.md` / `design/current/` explicitly marks them accepted.
 - Never replace an accepted visual baseline with an older Library/chat design because it appears more complete.
@@ -49,12 +53,12 @@ Always verify in this order:
 3. Fetch the jobs for that workflow run and inspect the actual job conclusions/steps.
 4. Treat CI as green only when every required job is explicitly `completed` with conclusion `success`.
 5. If all required checks are green, the PR is mergeable, and there is no explicit physical-device or human-product gate that must happen before merge, merge it immediately rather than reporting a stale "still running" status.
-6. After merge, distinguish clearly between PR-head CI and exact-`main` CI. Do not claim the merge commit is green until the exact-`main` workflow has actually completed successfully.
+6. After merge, distinguish clearly between PR-head CI and exact-main CI. Do not claim the merge commit is green until the exact-main workflow has actually completed successfully.
 
 A 404 or missing result from a job lookup is not evidence that CI is still running or failed. Recover by resolving the current workflow run and its job IDs, then inspect those jobs directly.
 
 ## Definition of Done
-A feature is DONE only when acceptance criteria are met; relevant loading, empty, error and offline states are handled; light and dark themes work; accessibility is acceptable; strict TypeScript, lint and tests pass; critical flows have automated coverage; performance is acceptable at realistic EPG volume; required observability exists; no secrets are committed; and documentation reflects reality.
+A feature is DONE only when acceptance criteria are met; the applicable `docs/ENGINEERING_QUALITY_POLICY.md` gates are satisfied; relevant loading, empty, error and offline states are handled; light and dark themes work; accessibility is acceptable; strict TypeScript, lint and tests pass; critical flows have automated coverage; performance is acceptable at realistic EPG volume; required observability exists; no secrets are committed; and documentation reflects reality.
 
 ## Product restraint
 Teevee is guide-first. Do not introduce advertising, news feeds, social mechanics, engagement loops, AI recommendations, streaming-catalogue complexity or mandatory accounts unless product scope is explicitly changed.
