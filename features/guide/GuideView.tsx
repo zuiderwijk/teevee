@@ -32,6 +32,7 @@ import {
   guideDayOptions,
   guideTargetForDaySelection,
   guideTargetForNow,
+  guideTotaalDayForViewedAnchor,
 } from './guideDaySelection';
 import {
   buildTimeTicks,
@@ -45,7 +46,6 @@ import { GUIDE_TIME_TICK_INTERVAL_MINUTES } from './timeAxis';
 import { TimeAxisLeftMask } from './TimeAxisLeftMask';
 import { TimeAxisTick } from './TimeAxisTick';
 import { useGuideClock } from './useGuideClock';
-import { useGuideDaySelection } from './useGuideDaySelection';
 import { useSelectedGuideDaySchedule } from './useSelectedGuideDaySchedule';
 
 const GUIDE_CONTROL_MAX_FONT_SIZE_MULTIPLIER = 1.2;
@@ -85,10 +85,10 @@ export const GuideView = memo(function GuideView({
   const scrollX = useSharedValue(0);
   const scrollY = useSharedValue(0);
   const nowMs = useGuideClock();
-  const {
-    selectedDayStartMs: visibleDayStartMs,
-    selectDay: selectVisibleDay,
-  } = useGuideDaySelection(nowMs);
+  const viewedTimeRef = useRef(nowMs);
+  const [visibleDayStartMs, setVisibleDayStartMs] = useState(() =>
+    guideTotaalDayForViewedAnchor(nowMs),
+  );
   const [windowStartDayMs, setWindowStartDayMs] = useState(visibleDayStartMs);
   const followingDayStartMs = guideTelevisionDayStart(windowStartDayMs, 1);
   const includeFollowingDay = guideDayIsSelectable(followingDayStartMs, nowMs);
@@ -102,7 +102,6 @@ export const GuideView = memo(function GuideView({
     () => selectedWindow.schedule ?? buildRuntimeGuideFixture(windowStartDayMs),
     [guideDataVersion, selectedWindow.schedule, windowStartDayMs],
   );
-  const viewedTimeRef = useRef(Date.now());
   const pendingTargetTimeRef = useRef<number | null>(null);
   const [condensed, setCondensed] = useState(false);
 
@@ -133,12 +132,13 @@ export const GuideView = memo(function GuideView({
     setCondensed((current) => (current === nextCondensed ? current : nextCondensed));
   }, []);
 
-  const syncVisibleDayForAnchor = useCallback(
-    (dayStartMs: number) => {
-      if (dayStartMs !== visibleDayStartMs) selectVisibleDay(dayStartMs);
-    },
-    [selectVisibleDay, visibleDayStartMs],
-  );
+  const commitViewedTime = useCallback((viewedTimeMs: number) => {
+    viewedTimeRef.current = viewedTimeMs;
+    const nextVisibleDayStartMs = guideTotaalDayForViewedAnchor(viewedTimeMs);
+    setVisibleDayStartMs((current) =>
+      current === nextVisibleDayStartMs ? current : nextVisibleDayStartMs,
+    );
+  }, []);
 
   useAnimatedReaction(
     () => scrollY.value > HEADER_CONDENSE_THRESHOLD,
@@ -147,25 +147,6 @@ export const GuideView = memo(function GuideView({
       scheduleOnRN(syncCondensed, nextCondensed);
     },
     [scrollY, syncCondensed],
-  );
-
-  useAnimatedReaction(
-    () =>
-      includeFollowingDay && scrollX.value + TIME_ANCHOR_INSET >= followingDayBoundaryX
-        ? followingDayStartMs
-        : windowStartDayMs,
-    (nextDayStartMs, previousDayStartMs) => {
-      if (nextDayStartMs === previousDayStartMs) return;
-      scheduleOnRN(syncVisibleDayForAnchor, nextDayStartMs);
-    },
-    [
-      followingDayBoundaryX,
-      followingDayStartMs,
-      includeFollowingDay,
-      scrollX,
-      syncVisibleDayForAnchor,
-      windowStartDayMs,
-    ],
   );
 
   const viewedTimeForX = useCallback(
@@ -180,24 +161,27 @@ export const GuideView = memo(function GuideView({
 
   const syncHorizontalAnchor = useCallback(
     (viewportX: number) => {
-      const viewedTimeMs = viewedTimeForX(viewportX);
-      viewedTimeRef.current = viewedTimeMs;
-      const anchorDayStartMs = guideTelevisionDayStart(viewedTimeMs);
-      if (
-        anchorDayStartMs !== visibleDayStartMs &&
-        guideDayIsSelectable(anchorDayStartMs, nowMs)
-      ) {
-        selectVisibleDay(anchorDayStartMs);
-      }
+      commitViewedTime(viewedTimeForX(viewportX));
     },
-    [nowMs, selectVisibleDay, viewedTimeForX, visibleDayStartMs],
+    [commitViewedTime, viewedTimeForX],
+  );
+
+  useAnimatedReaction(
+    () => includeFollowingDay && scrollX.value + TIME_ANCHOR_INSET >= followingDayBoundaryX,
+    (inFollowingDay, previouslyInFollowingDay) => {
+      if (previouslyInFollowingDay === null || inFollowingDay === previouslyInFollowingDay) return;
+      // The date context and exact viewed-time ref are updated through the same anchor path.
+      // This bridge only runs when the stable anchor crosses the 06:00 day boundary.
+      scheduleOnRN(syncHorizontalAnchor, scrollX.value);
+    },
+    [followingDayBoundaryX, includeFollowingDay, scrollX, syncHorizontalAnchor],
   );
 
   const horizontalScrollHandler = useAnimatedScrollHandler(
     {
       onScroll: (event) => {
         // Keep every scroll frame on the UI thread. Date context crosses the 06:00
-        // threshold via a UI-thread reaction above, so JS is still not bridged per frame.
+        // threshold via the boundary reaction above, so JS is still not bridged per frame.
         scrollX.value = Math.max(0, event.contentOffset.x);
       },
       onEndDrag: (event) => {
@@ -226,7 +210,7 @@ export const GuideView = memo(function GuideView({
   const scrollToTime = useCallback(
     (timeMs: number, animated: boolean) => {
       const target = clampTime(timeMs, windowStart, windowEnd);
-      viewedTimeRef.current = target;
+      commitViewedTime(target);
       const x = Math.max(
         0,
         timeToX(target, windowStart, layout.minuteWidth) - TIME_ANCHOR_INSET,
@@ -234,7 +218,7 @@ export const GuideView = memo(function GuideView({
       scrollX.value = x;
       horizontalRef.current?.scrollTo({ x, animated });
     },
-    [layout.minuteWidth, scrollX, windowEnd, windowStart],
+    [commitViewedTime, layout.minuteWidth, scrollX, windowEnd, windowStart],
   );
 
   useEffect(() => {
@@ -250,9 +234,9 @@ export const GuideView = memo(function GuideView({
         : guideTelevisionDayStart(nowMs);
     const target = guideTargetForDaySelection(viewedTimeRef.current, replacementDayStartMs);
     pendingTargetTimeRef.current = target.timeMs;
+    commitViewedTime(target.timeMs);
     setWindowStartDayMs(replacementDayStartMs);
-    selectVisibleDay(replacementDayStartMs);
-  }, [nowMs, selectVisibleDay, windowStartDayMs]);
+  }, [commitViewedTime, nowMs, windowStartDayMs]);
 
   useEffect(() => {
     const target = pendingTargetTimeRef.current ??
@@ -267,23 +251,22 @@ export const GuideView = memo(function GuideView({
       if (nextDayStartMs === visibleDayStartMs && nextDayStartMs === windowStartDayMs) return;
       const target = guideTargetForDaySelection(viewedTimeRef.current, nextDayStartMs);
       pendingTargetTimeRef.current = target.timeMs;
+      commitViewedTime(target.timeMs);
       setWindowStartDayMs(target.dayStartMs);
-      selectVisibleDay(target.dayStartMs);
     },
-    [selectVisibleDay, visibleDayStartMs, windowStartDayMs],
+    [commitViewedTime, visibleDayStartMs, windowStartDayMs],
   );
 
   const jumpToNow = useCallback(() => {
     const target = guideTargetForNow(Date.now());
     if (target.timeMs >= windowStart && target.timeMs < windowEnd) {
-      selectVisibleDay(target.dayStartMs);
       scrollToTime(target.timeMs, true);
       return;
     }
     pendingTargetTimeRef.current = target.timeMs;
+    commitViewedTime(target.timeMs);
     setWindowStartDayMs(target.dayStartMs);
-    selectVisibleDay(target.dayStartMs);
-  }, [scrollToTime, selectVisibleDay, windowEnd, windowStart]);
+  }, [commitViewedTime, scrollToTime, windowEnd, windowStart]);
 
   return (
     <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.colors.background }]}>
