@@ -28,6 +28,8 @@ The selected date is represented by the **absolute UTC instant of the television
 
 Day changes preserve the viewed Amsterdam wall-clock time where practical. The shared domain resolver handles spring/fall DST without fixed-24-hour arithmetic. A nonexistent spring-forward wall-clock target advances by the DST gap to the nearest practical equivalent.
 
+Totaal has one additional source-of-truth rule: its visible date context is a projection of the **stable viewed-time anchor**, not of the real current clock. A real-clock 05:59 → 06:00 rollover therefore does not change a stationary Totaal date context. The date changes when the viewed-time anchor itself crosses 06:00. `Nu` is the explicit exception because it moves that anchor to the real current instant and therefore also to the current television day.
+
 ## Loading strategy
 
 No ten-day hosted payload is introduced.
@@ -60,8 +62,11 @@ The deterministic source fixture remains unchanged. A new shared alignment path 
 - `Nu` remains separate;
 - existing 2D horizontal-time / vertical-channel gesture parameters are retained;
 - programmes after midnight remain in the same television day;
-- horizontal browsing can cross the next 06:00 boundary continuously and the visible date context follows the stable time anchor;
+- horizontal browsing can cross the next 06:00 boundary continuously and the visible date context follows the stable viewed-time anchor;
+- the real clock crossing 06:00 alone never advances a stationary Totaal date context;
+- horizontal anchor movement, explicit day selection, horizon clamping and `Nu` all update the viewed-time anchor and its derived date context through the same commit path, preventing independent date/time state from drifting apart;
 - selecting another day shifts the bounded base window while preserving the viewed wall-clock anchor;
+- if D-2..D+7 shifts so the base window falls outside the horizon, the base window and viewed-time/date anchor are reconciled together to the nearest valid edge;
 - vertical browsing may condense non-functional header chrome while date, `Nu` and the time axis remain available.
 
 ## Per-zender behaviour
@@ -89,7 +94,9 @@ Larger-text layout, VoiceOver interaction and physical gesture coexistence remai
 Focused tests cover:
 - exact D-2 and D+7 availability and no outside selection;
 - pre-06:00 labels, midnight continuity and exact 06:00 rollover;
-- wall-clock preservation, `Nu` and `Primetime` semantics;
+- stationary Totaal viewed-time/date context across a real-clock 05:59 → 06:00 rollover, followed by date change only when the viewed anchor itself crosses 06:00;
+- `Nu` explicitly resetting the Totaal anchor/date context to the real current instant and television day;
+- wall-clock preservation and Per-zender `Primetime` semantics;
 - spring/fall DST wall-clock targeting;
 - selected-day bounded query windows including 23/25-hour DST days;
 - one-day Per-zender versus two-independent-day Totaal loading;
@@ -115,6 +122,7 @@ The exact PR head must have the repository-required typecheck, lint, test, Expo 
 - no persistent schedule cache or new dependency;
 - no unrestricted calendar, horizontal ten-day date rail or eager ten-day loading;
 - no retuning of frozen Totaal or Per-zender gesture physics;
+- no Per-zender rollover-semantics change as part of the Totaal-specific viewed-anchor correction;
 - no change to accepted visual design beyond wiring its documented states.
 
 ## Acceptance gates still open
