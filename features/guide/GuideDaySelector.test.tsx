@@ -45,7 +45,7 @@ vi.mock('react-native', () => {
     Text: (props: MockProps) => element('span', props),
     StyleSheet: {
       hairlineWidth: 1,
-      absoluteFillObject: {},
+      absoluteFill: {},
       create: <T,>(value: T) => value,
     },
   };
