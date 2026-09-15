@@ -33,8 +33,13 @@ jobs:
     steps:
       - uses: actions/checkout@v7
         with:
-          # PR scope detection compares the exact base/head commits.
+          # PR scope detection needs the merge base even when main advanced after branching.
           fetch-depth: 0
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
 
       - name: Determine Android native build scope
         id: native-scope
@@ -50,40 +55,10 @@ jobs:
             exit 0
           fi
 
-          base_sha="${{ github.event.pull_request.base.sha }}"
-          head_sha="${{ github.event.pull_request.head.sha }}"
-          changed_files="$(git diff --name-only "$base_sha" "$head_sha")"
+          node scripts/ci/android-native-scope.mjs \
+            "${{ github.event.pull_request.base.sha }}" \
+            "${{ github.event.pull_request.head.sha }}"
 
-          echo "Changed files:"
-          printf '%s\n' "$changed_files"
-
-          # Be conservative if GitHub ever yields an unexpected empty diff.
-          if [[ -z "$changed_files" ]]; then
-            echo "run=true" >> "$GITHUB_OUTPUT"
-            echo "scope=arm64" >> "$GITHUB_OUTPUT"
-            echo "Empty PR diff detected; running arm64 native build conservatively."
-            exit 0
-          fi
-
-          # Documentation/design-source-only PRs cannot alter the runtime/native graph.
-          # Root Markdown files (for example AGENTS.md) are documentation as well.
-          runtime_files="$(printf '%s\n' "$changed_files" | grep -Ev '^(docs/|design/|[^/]+\.md$)' || true)"
-          if [[ -z "$runtime_files" ]]; then
-            echo "run=false" >> "$GITHUB_OUTPUT"
-            echo "scope=docs-only" >> "$GITHUB_OUTPUT"
-            echo "Documentation/design-only PR; skipping Android native compilation."
-            exit 0
-          fi
-
-          echo "run=true" >> "$GITHUB_OUTPUT"
-          echo "scope=arm64" >> "$GITHUB_OUTPUT"
-          echo "Runtime/config change detected; building arm64-v8a for PR validation."
-
-      - uses: actions/setup-node@v7
-        if: steps.native-scope.outputs.run == 'true'
-        with:
-          node-version: 22
-          cache: npm
       - uses: actions/setup-java@v4
         if: steps.native-scope.outputs.run == 'true'
         with:
