@@ -1,5 +1,9 @@
 import type { GuideFixture } from '../domain/epg';
 import { guideDayStart, guideTelevisionDayStart } from '../domain/guideTime';
+import {
+  guidePerfNowMs,
+  markGuideFixtureAlignment,
+} from '../runtime/guideDaySwitchDiagnostics';
 import { runtimeGuideScheduleFor } from '../runtime/guideScheduleRuntime';
 import { guideFixture } from './guideFixture';
 
@@ -8,8 +12,9 @@ const FIXTURE_START_MS = Math.min(
 );
 
 function alignDeterministicGuideFixture(anchorMs: number, alignedStartMs: number): GuideFixture {
+  const startedAtMs = guidePerfNowMs();
   const shiftMs = alignedStartMs - FIXTURE_START_MS;
-  return {
+  const alignedFixture = {
     ...guideFixture,
     generatedAt: new Date(anchorMs).toISOString(),
     programmes: guideFixture.programmes.map((programme) => ({
@@ -18,6 +23,13 @@ function alignDeterministicGuideFixture(anchorMs: number, alignedStartMs: number
       endAt: new Date(Date.parse(programme.endAt) + shiftMs).toISOString(),
     })),
   };
+  markGuideFixtureAlignment(
+    alignedStartMs,
+    guidePerfNowMs() - startedAtMs,
+    alignedFixture.channels.length,
+    alignedFixture.programmes.length,
+  );
+  return alignedFixture;
 }
 
 /**

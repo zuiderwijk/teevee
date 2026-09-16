@@ -14,6 +14,20 @@ import {
   loadTwoTelevisionDayGuideSchedule,
 } from '@/services/api/guideScheduleLoader';
 
+import {
+  createGuideDayCacheInstanceId,
+  type GuideDaySwitchSurface,
+  markGuideDayCacheMounted,
+  markGuideDayCacheUnmounted,
+  markGuideDayFirstFrame,
+  markGuideDaySelectionCommitted,
+  markGuideDaySwitchSurfaceMounted,
+  markGuideDaySwitchSurfaceUnmounted,
+  markGuideDayWindowNetworkFinished,
+  markGuideDayWindowNetworkStarted,
+  markGuideDayWindowResolution,
+} from './guideDaySwitchDiagnostics';
+
 const hostedGuideScheduleApi = new HostedGuideScheduleClient();
 const MAX_VISITED_DAY_WINDOWS = 10;
 
@@ -57,6 +71,11 @@ function rememberSchedule(
  * `currentTelevisionDayStartMs` is the lifecycle ownership source of truth. Keeping this
  * relationship explicit means an unchanged selected day can hand off from current-day
  * runtime ownership to selected-window ownership when the real clock crosses 06:00.
+ *
+ * Issue #67 instrumentation observes this existing path only. Totaal mounts on current D
+ * with its in-horizon following day enabled; Per zender never requests that second day.
+ * The derived measurement surface is kept stable for the lifetime of this hook instance,
+ * including Totaal at D+7 where the following-day read becomes disabled.
  */
 export function useSelectedGuideDaySchedule(
   selectedDayStartMs: number,
@@ -67,11 +86,30 @@ export function useSelectedGuideDaySchedule(
 ): SelectedGuideDayScheduleState {
   const cacheRef = useRef(new Map<string, GuideSchedule>());
   const requestVersionRef = useRef(0);
+  const diagnosticsSurfaceRef = useRef<GuideDaySwitchSurface | null>(null);
+  if (diagnosticsSurfaceRef.current === null) {
+    diagnosticsSurfaceRef.current = includeFollowingDay ? 'totaal' : 'per-zender';
+  }
+  const diagnosticsSurface = diagnosticsSurfaceRef.current;
+  const diagnosticsCacheInstanceIdRef = useRef<string | null>(null);
+  if (diagnosticsCacheInstanceIdRef.current === null) {
+    diagnosticsCacheInstanceIdRef.current = createGuideDayCacheInstanceId(diagnosticsSurface);
+  }
+  const diagnosticsCacheInstanceId = diagnosticsCacheInstanceIdRef.current;
   const [cacheVersion, setCacheVersion] = useState(0);
   const [loadingKey, setLoadingKey] = useState<string | null>(null);
   const [unavailableKey, setUnavailableKey] = useState<string | null>(null);
   const selectedKey = cacheKey(selectedDayStartMs, includeFollowingDay);
   const selectedDayIsCurrent = selectedDayStartMs === currentTelevisionDayStartMs;
+
+  useEffect(() => {
+    markGuideDaySwitchSurfaceMounted(diagnosticsSurface);
+    markGuideDayCacheMounted(diagnosticsSurface, diagnosticsCacheInstanceId);
+    return () => {
+      markGuideDayCacheUnmounted(diagnosticsSurface, diagnosticsCacheInstanceId);
+      markGuideDaySwitchSurfaceUnmounted(diagnosticsSurface);
+    };
+  }, [diagnosticsCacheInstanceId, diagnosticsSurface]);
 
   const refresh = useCallback(
     (force: boolean) => {
@@ -86,6 +124,15 @@ export function useSelectedGuideDaySchedule(
         if (rememberSchedule(cacheRef.current, key, runtimeSchedule)) {
           setCacheVersion((current) => current + 1);
         }
+        markGuideDayWindowResolution(
+          diagnosticsSurface,
+          selectedDayStartMs,
+          diagnosticsCacheInstanceId,
+          'current-runtime',
+          force,
+          runtimeSchedule.channels.length,
+          runtimeSchedule.programmes.length,
+        );
         setLoadingKey(null);
         setUnavailableKey(null);
         return;
@@ -99,7 +146,17 @@ export function useSelectedGuideDaySchedule(
         return;
       }
 
-      if (!force && cacheRef.current.has(key)) {
+      const cachedSchedule = cacheRef.current.get(key);
+      if (!force && cachedSchedule) {
+        markGuideDayWindowResolution(
+          diagnosticsSurface,
+          selectedDayStartMs,
+          diagnosticsCacheInstanceId,
+          'session-cache',
+          false,
+          cachedSchedule.channels.length,
+          cachedSchedule.programmes.length,
+        );
         setLoadingKey(null);
         setUnavailableKey(null);
         return;
@@ -107,6 +164,13 @@ export function useSelectedGuideDaySchedule(
 
       setLoadingKey(key);
       setUnavailableKey(null);
+      const networkStartedAtMs = markGuideDayWindowNetworkStarted(
+        diagnosticsSurface,
+        selectedDayStartMs,
+        diagnosticsCacheInstanceId,
+        includeFollowingDay ? 2 : 1,
+        force,
+      );
       const request = includeFollowingDay
         ? loadTwoTelevisionDayGuideSchedule(api, selectedDayStartMs)
         : loadTelevisionDayGuideSchedule(api, selectedDayStartMs);
@@ -116,11 +180,48 @@ export function useSelectedGuideDaySchedule(
           if (requestVersionRef.current !== requestVersion) return;
           setLoadingKey(null);
           if (!schedule || schedule.channels.length === 0) {
+            markGuideDayWindowNetworkFinished(
+              diagnosticsSurface,
+              selectedDayStartMs,
+              diagnosticsCacheInstanceId,
+              networkStartedAtMs,
+              'unavailable',
+              schedule?.channels.length,
+              schedule?.programmes.length,
+            );
+            markGuideDayWindowResolution(
+              diagnosticsSurface,
+              selectedDayStartMs,
+              diagnosticsCacheInstanceId,
+              'unavailable',
+              force,
+              schedule?.channels.length,
+              schedule?.programmes.length,
+            );
             // ADR 0007 makes a covered canonical window with zero programmes authoritative.
             // A zero-channel result is handled separately as structurally unusable for Guide UI.
             setUnavailableKey(key);
             return;
           }
+
+          markGuideDayWindowNetworkFinished(
+            diagnosticsSurface,
+            selectedDayStartMs,
+            diagnosticsCacheInstanceId,
+            networkStartedAtMs,
+            'network',
+            schedule.channels.length,
+            schedule.programmes.length,
+          );
+          markGuideDayWindowResolution(
+            diagnosticsSurface,
+            selectedDayStartMs,
+            diagnosticsCacheInstanceId,
+            'network',
+            force,
+            schedule.channels.length,
+            schedule.programmes.length,
+          );
 
           if (rememberSchedule(cacheRef.current, key, schedule)) {
             setCacheVersion((current) => current + 1);
@@ -128,11 +229,32 @@ export function useSelectedGuideDaySchedule(
         })
         .catch(() => {
           if (requestVersionRef.current !== requestVersion) return;
+          markGuideDayWindowNetworkFinished(
+            diagnosticsSurface,
+            selectedDayStartMs,
+            diagnosticsCacheInstanceId,
+            networkStartedAtMs,
+            'network-error',
+          );
+          markGuideDayWindowResolution(
+            diagnosticsSurface,
+            selectedDayStartMs,
+            diagnosticsCacheInstanceId,
+            'network-error',
+            force,
+          );
           setLoadingKey(null);
           setUnavailableKey(key);
         });
     },
-    [api, includeFollowingDay, selectedDayIsCurrent, selectedDayStartMs],
+    [
+      api,
+      diagnosticsCacheInstanceId,
+      diagnosticsSurface,
+      includeFollowingDay,
+      selectedDayIsCurrent,
+      selectedDayStartMs,
+    ],
   );
 
   // Selection/API/window-width/ownership changes invalidate the previous selected-window
@@ -176,6 +298,31 @@ export function useSelectedGuideDaySchedule(
     ? runtimeGuideScheduleFor(selectedDayStartMs)
     : null;
   const schedule = runtimeSchedule ?? cacheRef.current.get(selectedKey) ?? null;
+
+  useEffect(() => {
+    markGuideDaySelectionCommitted(diagnosticsSurface, selectedDayStartMs);
+    const source = schedule ? 'schedule' : 'fixture';
+    if (typeof requestAnimationFrame !== 'function') {
+      markGuideDayFirstFrame(
+        diagnosticsSurface,
+        selectedDayStartMs,
+        source,
+        schedule?.channels.length,
+        schedule?.programmes.length,
+      );
+      return;
+    }
+    const frame = requestAnimationFrame(() => {
+      markGuideDayFirstFrame(
+        diagnosticsSurface,
+        selectedDayStartMs,
+        source,
+        schedule?.channels.length,
+        schedule?.programmes.length,
+      );
+    });
+    return () => cancelAnimationFrame(frame);
+  }, [diagnosticsSurface, schedule, selectedDayStartMs]);
 
   return {
     schedule,
