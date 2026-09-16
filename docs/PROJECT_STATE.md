@@ -1,6 +1,6 @@
 # Teevee — Canonical Project State
 
-Last updated: 2026-09-15.
+Last updated: 2026-09-16.
 Status: ACTIVE — **Phase 4 Core Guide MVP hardening**.
 Current phase: **Phase 4 — Core Guide MVP hardening**
 Previous phase: **Phase 3 — Real Data Vertical Slice — CLOSED**
@@ -25,7 +25,7 @@ Previous phase: **Phase 3 — Real Data Vertical Slice — CLOSED**
 2. **Phase 1B — Per zender / Nu & Straks:** complete and physically accepted on iPhone.
 3. **Phase 2 — App Shell:** complete and physically accepted on iPhone.
 4. **Phase 3 — Real Data Vertical Slice:** **complete and physically accepted on iPhone**; real provider -> hosted ingest -> canonical persistence -> public typed read -> mobile canonical datasource is proven, including fixture-first startup, real-data transition, fallback and context retention.
-5. **Phase 4 — Core Guide MVP hardening:** **active**; the shared 06:00 television-day / D-2..D+7 domain foundation and the mobile runtime migration to television-day-aware D + D+1 bounded loading/anchoring are merged. The runtime boundary is independently QA-reviewed and physically accepted on iPhone. The next boundary is user-facing D-2..D+7 day selection/date context for Totaal and Per zender using the already accepted Guide day-selector design.
+5. **Phase 4 — Core Guide MVP hardening:** **active**; the 06:00 television-day foundation, television-day-aware mobile runtime boundary and user-facing D-2..D+7 day navigation/date context for Totaal + Per zender are merged, independently QA-reviewed and physically accepted on iPhone. The current hardening focus is the non-blocking cold first-switch responsiveness observation from physical acceptance; measure it before selecting any cache/prefetch optimisation.
 
 ## Canonical visual source of truth
 The accepted visual starting point for existing surfaces is no longer inferred from chat history or historical generated images.
@@ -45,12 +45,12 @@ ADR 0008 is the durable product/architecture contract for Guide day grouping and
 - Midnight is not a Guide boundary and must not force a day switch.
 - Between 00:00 and 05:59, `Nu` still belongs to the preceding television day.
 - Programme timestamps remain real canonical UTC timestamps; television-day membership is derived rather than encoded by shifting timestamps.
-- Let `D` be the current television day. Totaal and Per zender must support at least **D-2 through D+7**, i.e. ten complete television days.
-- A user opening at 19:00 must be able to navigate backward through the same television day and forward through programmes after midnight without an explicit date change.
+- Let `D` be the current television day. Totaal and Per zender support **D-2 through D+7**, i.e. ten complete television days.
+- A user opening at 19:00 can navigate backward through the same television day and forward through programmes after midnight without an explicit date change.
 - `Nu` always jumps to the actual current instant and selects the television day containing that instant.
 - Nu & Straks remains a single active-day presentation, but that active day is the current television day rather than the strict calendar day; until 06:00 its `Primetime` context may therefore refer to the preceding evening.
 - Phase 3 proved that the data/query architecture is not locked to one provider and that canonical hosted schedule data can safely cross the mobile boundary.
-- Phase 4 owns the full product implementation and physical acceptance of D-2..D+7 navigation, midnight continuity, 06:00 rollover, historical access, forward access and context-preserving refresh.
+- Phase 4 has implemented and physically accepted the D-2..D+7 day-navigation/date-context layer for Totaal and Per zender while preserving bounded per-day loading, midnight continuity and 06:00 semantics.
 - Phase 8 production-provider selection must prove sufficient horizon, history/retention, freshness and rights to satisfy this product promise.
 
 ## Frozen Guide interaction baseline
@@ -59,7 +59,8 @@ Do not retune accepted Guide mechanics during Phase 4 without concrete regressio
 ### Totaal
 - two-dimensional horizontal-time / vertical-channel Guide;
 - real schedule-duration geometry;
-- current prototype controls use `Vandaag · Morgen · Nu`; Phase 4 replaces/extends this as required by ADR 0008 without changing the accepted gesture model;
+- accepted compact shared day selector supports D-2..D+7; `Nu` remains a separate utility action;
+- visible date context derives from the stable viewed-time/scroll anchor, so real-clock 06:00 alone does not move a stationary Guide context;
 - native inertia, bounce and directional lock;
 - accepted partial-left-title and time-axis readability behaviour;
 - physically accepted detail response/performance.
@@ -68,7 +69,7 @@ Do not retune accepted Guide mechanics during Phase 4 without concrete regressio
 - vertical wall-clock schedule;
 - horizontal schedule swipe changes adjacent channel while preserving time anchor where practical;
 - horizontally browsable/direct-tap channel strip remains available;
-- the accepted design direction uses explicit date context plus sibling `Primetime` and `Nu` utility actions; the old expanded Per-zender time picker is superseded;
+- accepted shared date context plus sibling `Primetime` and `Nu` utility actions; the old expanded Per-zender time picker is superseded;
 - `Primetime` jumps the selected television day to 20:30; between 00:00 and 05:59 that means the preceding television-day evening;
 - Programme Detail round-trip preserves relevant context;
 - text-only fallback identities preserve distinguishing suffixes at larger text.
@@ -123,7 +124,15 @@ On exact PR #64 head `5356877fd1effb05e7ed5ce1a87c36544ac1dcf7`, iPhone 13 / iOS
 - fixture -> hosted canonical replacement without blank/stuck/crash behaviour;
 - same-television-day background/resume preserving a non-default Nu & Straks `23:00` reference time and visible programme context.
 
-The tester explicitly confirmed the checkout SHA with `git rev-parse HEAD`. Exact 00:00/05:59/06:00 and DST branches remain automation-proven rather than device-clock-manipulated. This closes the physical lifecycle gate for PR #64 only; future user-facing multi-day navigation still requires its own focused physical acceptance.
+The tester explicitly confirmed the checkout SHA with `git rev-parse HEAD`. Exact 00:00/05:59/06:00 and DST branches remain automation-proven rather than device-clock-manipulated. This closes the physical lifecycle gate for PR #64 only.
+
+## Phase 4 day-navigation physical acceptance — CLOSED FOR PR #66 SCOPE
+Evidence:
+- `docs/PHYSICAL_EVIDENCE_2026-09-16_PHASE4_DAY_NAVIGATION.md`
+
+On exact PR #66 head `87bc533139223734f2a2fa51fad5fd3b237e861b`, iPhone 13 / iOS 26.6 physical acceptance found no functional failures across the D-2..D+7 selector, Totaal/Per-zender day switching, `Nu`, Per-zender `Primetime`, channel navigation, background/resume, Programme Detail round-trip, appearance/accessibility checks and frozen Guide gestures. The tester explicitly confirmed the exact checkout SHA after the pass.
+
+One non-blocking physical observation remains: a very quick first follow-up date interaction after a cold day switch or overview switch can feel briefly less responsive once, after which repeated switching feels normal. This is tracked as issue #67. Do not infer a cache/prefetch architecture from the observation alone; measure first.
 
 ## Phase 3 implementation ledger
 ### PRs #37–#39 — provider-independent contracts
@@ -258,7 +267,7 @@ Current deployed functions on 2026-09-15:
 - privileged Supabase/provider access remains server-side.
 
 ## DST correctness
-Canonical programme timestamps and repository query windows remain real instants. `guideDayStart` remains the strict Europe/Amsterdam calendar-day primitive for calendar-specific code, while `guideTelevisionDayStart` and `guideTelevisionDayHorizon` are the Guide product-domain primitives. PR #62 introduced the 06:00 boundary and exact D-2..D+7 ten-window horizon with deterministic 00:00/05:59/06:00, 23-hour spring-DST and 25-hour fall-DST coverage. PR #64 migrated the mobile hosted loader/runtime to independently bounded D + D+1 television-day reads, television-day runtime anchoring and 06:00 lifecycle rollover while preserving midnight continuity. The hosted transport's 25-hour maximum remains sufficient for one television-day request.
+Canonical programme timestamps and repository query windows remain real instants. `guideDayStart` remains the strict Europe/Amsterdam calendar-day primitive for calendar-specific code, while `guideTelevisionDayStart` and `guideTelevisionDayHorizon` are the Guide product-domain primitives. PR #62 introduced the 06:00 boundary and exact D-2..D+7 ten-window horizon with deterministic 00:00/05:59/06:00, 23-hour spring-DST and 25-hour fall-DST coverage. PR #64 migrated the mobile hosted loader/runtime to independently bounded D + D+1 television-day reads, television-day runtime anchoring and 06:00 lifecycle rollover while preserving midnight continuity. PR #66 then wired the accepted D-2..D+7 selector/date-context layer into Totaal and Per zender without changing the canonical timestamp model. The hosted transport's 25-hour maximum remains sufficient for one television-day request.
 
 ## Development-provider rights boundary
 IPTV-EPG.org is **temporary development input only**. Public availability is not proof of commercial redistribution rights.
@@ -297,18 +306,33 @@ Implemented without changing Guide visuals/gestures:
 - fixture-first startup, deterministic fallback, content equality, request-version protection, resume refresh and provider-independent merge/deduplication are preserved;
 - no day selector, persistent cache, new dependency or static `NowNextGuideView` startup import was introduced.
 
-Exact-head CI run #366 passed `quality` and `android-native` with 230 tests across 41 files plus Expo iOS/Android/web export and clean Android PR arm64 compilation. Independent QA found no blocking code issue and required only the focused physical lifecycle gate. That gate passed on exact head on iPhone 13 / iOS 26.6; evidence is in `docs/PHYSICAL_EVIDENCE_2026-09-15_PHASE4_RUNTIME.md`. Post-merge `main` CI run #367 is the separate exact-main safety gate and must be green before the Lead closes the merge cycle.
+Exact-head CI run #366 passed `quality` and `android-native` with 230 tests across 41 files plus Expo iOS/Android/web export and clean Android PR arm64 compilation. Independent QA found no blocking code issue and required only the focused physical lifecycle gate. That gate passed on exact head on iPhone 13 / iOS 26.6; evidence is in `docs/PHYSICAL_EVIDENCE_2026-09-15_PHASE4_RUNTIME.md`. Post-merge exact-main CI #367 passed both required jobs.
+
+### PR #66 — D-2..D+7 Guide day navigation
+Merged to `main` as `823d3f6335eeec1abe4403f0ef2b1b324f16c35f` from exact independently approved and physically tested head `87bc533139223734f2a2fa51fad5fd3b237e861b`.
+
+Implemented:
+- shared compact bounded D-2..D+7 day selector/date context in Totaal and Per zender;
+- selected days represented by absolute 06:00 Europe/Amsterdam television-day start instants;
+- Totaal uses the stable viewed-time anchor as its date-context source of truth and can browse continuously across midnight/the next 06:00 boundary;
+- Per zender preserves adjacent-channel/time behaviour, with `Primetime` staying on the selected day at 20:30 and `Nu` returning to actual current day/time;
+- non-current day loading remains bounded: one television day for Per zender and at most two independently bounded adjacent days for Totaal;
+- a component-session Map caches at most ten visited windows; no persistent cache/new dependency or eager ten-day payload was introduced;
+- authoritative covered-empty schedules, unavailable/network fallback, request-version race protection, content equality and current/non-current lifecycle ownership are preserved;
+- `NowNextGuideView` remains deferred and Nu & Straks receives no independent date selector.
+
+Independent QA found and Development corrected covered-empty handling, a DateTimeFormat hot-path regression, Totaal touch-target sizing, Totaal 06:00 visible-date/anchor desynchronisation and current-to-non-current resume ownership. Final exact-head CI #401 passed strict TypeScript, lint, 44 test files / 265 tests, Expo iOS/Android/web export and Android PR arm64 compilation. Final QA re-review reported no blocking or non-blocking findings. Focused iPhone 13 / iOS 26.6 acceptance passed on that exact head; evidence is in `docs/PHYSICAL_EVIDENCE_2026-09-16_PHASE4_DAY_NAVIGATION.md`. Post-merge exact-main CI #402 passed `quality` plus full-ABI `android-native`.
 
 ## Phase 4 active scope
-Phase 3's mobile real-data boundary is closed. The 06:00 Guide domain foundation and current-day runtime boundary are now implemented. Phase 4 may continue with user-facing multi-day navigation against the frozen product semantics.
+Phase 3's mobile real-data boundary is closed. The 06:00 Guide domain foundation, current-day runtime boundary and D-2..D+7 user-facing day navigation are implemented and physically accepted on iPhone.
 
-Primary Phase 4 responsibilities:
-- implement television-day-aware D-2..D+7 schedule access and day navigation for Totaal and Per zender;
-- preserve accepted Totaal, Per zender and Nu & Straks gesture behaviour while multi-day navigation is introduced;
-- implement the accepted date-selector/date-context behaviour, including the Per zender `Primetime` + `Nu` utility actions;
-- validate midnight continuity, 06:00 rollover, history/future navigation and refresh context physically;
+Current Phase 4 hardening responsibilities:
+- measure and, only if evidence justifies it, optimise the cold first date-switch responsiveness tracked in issue #67;
+- preserve accepted Totaal, Per zender and Nu & Straks gesture behaviour while hardening performance;
 - revisit known Nu & Straks density/accessibility debt without creating overlapping touch targets;
-- decide and implement appropriate local persistence/cache behaviour only as needed for the hardened MVP, keeping deterministic fixtures as the development/offline baseline.
+- decide and implement local persistence/cache behaviour only if measured MVP requirements justify it, keeping deterministic fixtures as the development/offline baseline;
+- continue Programme Detail/personal-action work only through separately selected coherent increments;
+- keep physical Android interaction acceptance open until an Android device is available.
 
 ## Android status
 Physical Android interaction acceptance remains OPEN/DEFERRED because no Android device is available. CI proves Android JS/native export, clean prebuild and debug APK compilation, not system Back, nested-gesture feel or device performance.
@@ -324,11 +348,14 @@ Physical Android interaction acceptance remains OPEN/DEFERRED because no Android
 ## Repository coordination
 - PR #28 (`docs/multi-agent-workflow`) merged as `d295333356ff4d4078d65b3ebff7c6c3d9ffdf1c`; `docs/THREAD_PLAYBOOK.md` is active repository policy for specialised ChatGPT threads.
 - PR #53 (`docs/tv-day-horizon`) merged as `88315f1b7db468aa75b36a268091f72a8e007272`; ADR 0008 and the D-2..D+7 / 06:00 television-day rules are canonical.
-- PR #62 (`feat/phase4-television-day-foundation`) merged as `36468ed19eca7411079d2845763ca8de36c8d10f`; exact final head QA/CI are complete and the domain foundation is now on `main`.
-- PR #64 (`feat/phase4-television-day-runtime`) merged as `ad71bcbb569affcaa9b9b4be12ed583489018b94`; exact final head QA/CI and focused iPhone lifecycle acceptance are complete.
+- PR #62 (`feat/phase4-television-day-foundation`) merged as `36468ed19eca7411079d2845763ca8de36c8d10f`; exact final head QA/CI are complete and the domain foundation is on `main`.
+- PR #64 (`feat/phase4-television-day-runtime`) merged as `ad71bcbb569affcaa9b9b4be12ed583489018b94`; exact final head QA/CI, focused iPhone lifecycle acceptance and post-merge CI are complete.
+- PR #66 (`feat/phase4-guide-day-navigation`) merged as `823d3f6335eeec1abe4403f0ef2b1b324f16c35f`; exact final head QA/CI, focused iPhone day-navigation acceptance and post-merge CI are complete.
+- issue #67 tracks the non-blocking cold Guide day-switch responsiveness observation and requires measurement before optimisation.
 - temporary evidence PRs #43, #46, #47 and #49 were intentionally closed without merge.
 - `docs/PHYSICAL_EVIDENCE_2026-09-15_PHASE3.md` is the canonical Phase 3 physical iPhone acceptance record.
 - `docs/PHYSICAL_EVIDENCE_2026-09-15_PHASE4_RUNTIME.md` is the focused PR #64 lifecycle acceptance record.
+- `docs/PHYSICAL_EVIDENCE_2026-09-16_PHASE4_DAY_NAVIGATION.md` is the focused PR #66 day-navigation acceptance record.
 
 ## Deferred but tracked
 - physical Android validation;
@@ -341,9 +368,9 @@ Physical Android interaction acceptance remains OPEN/DEFERRED because no Android
 - final Tonight composition.
 
 ## EXACT NEXT STEP
-**Wire the accepted shared Guide day selector/date context into Totaal and Per zender and make television-day selection functional across exactly D-2..D+7 using bounded per-day hosted reads and the merged 06:00 primitives. Preserve the viewed wall-clock time when changing day where practical; `Nu` must restore the actual instant and its containing television day; Per zender `Primetime` must keep the selected television day and jump to 20:30. Keep Nu & Straks single-active-day with no date selector. Do not eagerly fetch one unbounded ten-day payload or introduce persistent cache/dependencies without measurement. Treat this user-facing day-navigation increment as HIGH risk with deterministic horizon/selection/lifecycle tests, independent exact-head QA and focused physical iPhone acceptance while preserving all frozen Guide gesture mechanics.**
+**Measure the cold Guide day-switch responsiveness reported during PR #66 physical acceptance (issue #67) before making any optimisation. Instrument enough to distinguish tap -> selection-state commit, selection commit -> first meaningful Guide paint, bounded selected-window network duration, JS/UI frame stalls and whether switching Guide overview remounts/resets the component-session selected-day cache. Reproduce on the current accepted Guide implementation, record baseline evidence, and identify the dominant cause. Do not introduce eager D-2..D+7 prefetch, persistent cache, new dependencies or gesture changes in this measurement increment. If the evidence identifies a code-level bottleneck, propose the smallest follow-up fix as a separate increment rather than combining measurement and speculative architecture changes.**
 
 Owner checkout: `~/projects/teevee`.
 
 ## Resume instruction
-> Read `AGENTS.md`, this file, `docs/ENGINEERING_QUALITY_POLICY.md`, ADR 0007, ADR 0008, `design/current/guide/GUIDE_DAY_SELECTOR.md` and the relevant Guide/runtime/loader tests before changing the repository. Phase 1A, Phase 1B, Phase 2 and Phase 3 are closed on iPhone. Phase 4 is active. PR #62 merged the 06:00 television-day / D-2..D+7 domain foundation and PR #64 migrated the mobile hosted runtime to D + D+1 television-day boundaries with exact-head QA plus focused iPhone lifecycle acceptance. The next increment is the accepted D-2..D+7 day selector/date-context implementation for Totaal and Per zender with bounded day loading; preserve deterministic fixtures, frozen Guide gestures and deferred `NowNextGuideView`. Physical Android validation remains deferred.
+> Read `AGENTS.md`, this file, `docs/ENGINEERING_QUALITY_POLICY.md`, ADR 0007, ADR 0008, `docs/PHASE4_GUIDE_DAY_NAVIGATION.md`, issue #67 and the relevant Guide/runtime/loader tests before changing the repository. Phase 1A, Phase 1B, Phase 2 and Phase 3 are closed on iPhone. Phase 4 is active. PR #62 merged the 06:00 television-day / D-2..D+7 domain foundation, PR #64 migrated the mobile hosted runtime to television-day boundaries, and PR #66 merged/physically accepted the D-2..D+7 date-selector/date-context layer for Totaal and Per zender. The next increment is measurement-only investigation of the cold first-switch responsiveness observation; preserve deterministic fixtures, bounded day loading, frozen Guide gestures and deferred `NowNextGuideView`. Physical Android validation remains deferred.
