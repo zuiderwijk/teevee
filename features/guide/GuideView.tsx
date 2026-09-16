@@ -16,11 +16,8 @@ import Animated, {
 import { scheduleOnRN } from 'react-native-worklets';
 
 import { isProgrammeCurrent, programmeProgress } from '@/data/domain/epg';
-import { guideTelevisionDayStart, GUIDE_TIME_ZONE } from '@/data/domain/guideTime';
-import {
-  buildRuntimeGuideFixture,
-  programmesForRuntimeChannel,
-} from '@/data/fixtures/runtimeGuideFixture';
+import { guideTelevisionDayStart } from '@/data/domain/guideTime';
+import { buildRuntimeGuideFixture } from '@/data/fixtures/runtimeGuideFixture';
 import { useTeeveeTheme } from '@/theme/useTeeveeTheme';
 
 import { ChannelIdentity } from './ChannelIdentity';
@@ -34,6 +31,10 @@ import {
   guideTargetForNow,
   guideTotaalDayForViewedAnchor,
 } from './guideDaySelection';
+import {
+  formatGuideTime,
+  indexGuideProgrammesByChannel,
+} from './guideRenderData';
 import {
   buildTimeTicks,
   programmeContentMode,
@@ -57,14 +58,6 @@ type GuideViewProps = {
   headerAction?: ReactNode;
   onSelectProgramme: (selection: ProgrammeSelection) => void;
 };
-
-function formatTime(timeMs: number) {
-  return new Date(timeMs).toLocaleTimeString('nl-NL', {
-    hour: '2-digit',
-    minute: '2-digit',
-    timeZone: GUIDE_TIME_ZONE,
-  });
-}
 
 function clampTime(timeMs: number, fromMs: number, toMs: number) {
   return Math.min(toMs - 1, Math.max(fromMs, timeMs));
@@ -101,6 +94,10 @@ export const GuideView = memo(function GuideView({
   const runtimeFixture = useMemo(
     () => selectedWindow.schedule ?? buildRuntimeGuideFixture(windowStartDayMs),
     [guideDataVersion, selectedWindow.schedule, windowStartDayMs],
+  );
+  const programmesByChannel = useMemo(
+    () => indexGuideProgrammesByChannel(runtimeFixture),
+    [runtimeFixture],
   );
   const pendingTargetTimeRef = useRef<number | null>(null);
   const [condensed, setCondensed] = useState(false);
@@ -380,7 +377,7 @@ export const GuideView = memo(function GuideView({
                   <TimeAxisTick
                     key={tick}
                     left={left}
-                    label={formatTime(tick)}
+                    label={formatGuideTime(tick)}
                     labelWidth={layout.tickLabelWidth}
                     labelColor={theme.colors.textMuted}
                     borderColor={theme.colors.border}
@@ -413,7 +410,7 @@ export const GuideView = memo(function GuideView({
                       },
                     ]}
                   >
-                    {programmesForRuntimeChannel(runtimeFixture, channel.id).map((programme) => {
+                    {(programmesByChannel.get(channel.id) ?? []).map((programme) => {
                       const frame = programmeFrame(programme, windowStart, layout.minuteWidth);
                       const end = frame.left + frame.width;
                       if (end < 0 || frame.left > width) return null;
@@ -433,7 +430,7 @@ export const GuideView = memo(function GuideView({
                           key={programme.id}
                           testID={`programme-${programme.id}`}
                           accessibilityRole="button"
-                          accessibilityLabel={`${channel.displayName}, ${programme.title}, ${formatTime(startMs)} tot ${formatTime(endMs)}${accessibilityStatus}`}
+                          accessibilityLabel={`${channel.displayName}, ${programme.title}, ${formatGuideTime(startMs)} tot ${formatGuideTime(endMs)}${accessibilityStatus}`}
                           accessibilityHint="Opent programmadetails"
                           onPress={() => onSelectProgramme({ programme, channelName: channel.displayName })}
                           style={({ pressed }) => [
@@ -481,7 +478,7 @@ export const GuideView = memo(function GuideView({
                             {showProgrammeTime ? (
                               <Text numberOfLines={1} style={[styles.programmeTime, { color: theme.colors.textMuted }]}
                               >
-                                {formatTime(startMs)}
+                                {formatGuideTime(startMs)}
                               </Text>
                             ) : null}
                           </View>
