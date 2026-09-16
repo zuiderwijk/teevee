@@ -11,7 +11,12 @@ import {
 
 import { useTeeveeTheme } from '@/theme/useTeeveeTheme';
 
-import { beginMountedGuideDaySwitchTrace } from './guideDaySwitchDiagnostics';
+import {
+  beginMountedGuideDaySwitchTrace,
+  markMountedGuideDaySelectorModalDismissed,
+  markMountedGuideDaySelectorModalShown,
+  markMountedGuideDaySelectorOpenPress,
+} from './guideDaySwitchDiagnostics';
 import { guideDayLabel, guideDayOptions } from './guideDaySelection';
 
 type GuideDaySelectorProps = {
@@ -37,6 +42,11 @@ export const GuideDaySelector = memo(function GuideDaySelector({
   const selectedLabel = guideDayLabel(selectedDayStartMs, nowMs);
   const visibleLabel = compactPrefix ? `${compactPrefix} · ${selectedLabel}` : selectedLabel;
 
+  const openSelector = () => {
+    markMountedGuideDaySelectorOpenPress();
+    setOpen(true);
+  };
+
   const selectDay = (dayStartMs: number) => {
     beginMountedGuideDaySwitchTrace(selectedDayStartMs, dayStartMs);
     setOpen(false);
@@ -55,7 +65,7 @@ export const GuideDaySelector = memo(function GuideDaySelector({
             : 'Opent de beschikbare gidsdagen.'
         }
         accessibilityState={{ busy: loading }}
-        onPress={() => setOpen(true)}
+        onPress={openSelector}
         style={({ pressed }) => [styles.inlineControl, { opacity: pressed ? 0.55 : 1 }]}
       >
         <Text style={[styles.inlineLabel, { color: theme.colors.text }]}>{visibleLabel}</Text>
@@ -66,6 +76,8 @@ export const GuideDaySelector = memo(function GuideDaySelector({
         animationType="slide"
         transparent
         visible={open}
+        onShow={markMountedGuideDaySelectorModalShown}
+        onDismiss={markMountedGuideDaySelectorModalDismissed}
         onRequestClose={() => setOpen(false)}
       >
         <View style={styles.modalRoot}>
@@ -131,7 +143,12 @@ export const GuideDaySelector = memo(function GuideDaySelector({
                       {label}
                     </Text>
                     {selected ? (
-                      <Text accessible={false} style={[styles.selectedMark, { color: theme.colors.currentTime }]}>✓</Text>
+                      <Text
+                        accessible={false}
+                        style={[styles.selectedMark, { color: theme.colors.currentTime }]}
+                      >
+                        ✓
+                      </Text>
                     ) : null}
                   </Pressable>
                 );
@@ -145,19 +162,96 @@ export const GuideDaySelector = memo(function GuideDaySelector({
 });
 
 const styles = StyleSheet.create({
-  inlineControl: { minHeight: 48, minWidth: 44, flexShrink: 1, flexDirection: 'row', alignItems: 'center', gap: 5, paddingVertical: 8, paddingHorizontal: 2 },
-  inlineLabel: { flexShrink: 1, fontSize: 14, lineHeight: 19, fontWeight: '700' },
-  disclosure: { fontSize: 15, fontWeight: '700' },
-  modalRoot: { flex: 1, justifyContent: 'flex-end' },
-  backdrop: { ...StyleSheet.absoluteFill, backgroundColor: 'rgba(0, 0, 0, 0.42)' },
-  sheet: { maxHeight: '82%', borderTopLeftRadius: 20, borderTopRightRadius: 20, borderWidth: StyleSheet.hairlineWidth, overflow: 'hidden' },
-  handle: { width: 38, height: 4, borderRadius: 2, alignSelf: 'center', marginTop: 8 },
-  sheetHeader: { minHeight: 60, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12, paddingHorizontal: 18 },
-  sheetTitle: { flexShrink: 1, fontSize: 18, lineHeight: 24, fontWeight: '800' },
-  closeButton: { width: 48, height: 48, alignItems: 'center', justifyContent: 'center' },
-  closeText: { fontSize: 28, lineHeight: 30, fontWeight: '400' },
-  optionList: { paddingHorizontal: 12, paddingBottom: 10 },
-  option: { minHeight: 52, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12, paddingHorizontal: 12, paddingVertical: 10, borderBottomWidth: StyleSheet.hairlineWidth },
-  optionLabel: { flexShrink: 1, fontSize: 15, lineHeight: 21, fontWeight: '600' },
-  selectedMark: { fontSize: 18, lineHeight: 22, fontWeight: '800' },
+  inlineControl: {
+    minHeight: 48,
+    minWidth: 44,
+    flexShrink: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    paddingVertical: 8,
+    paddingHorizontal: 2,
+  },
+  inlineLabel: {
+    flexShrink: 1,
+    fontSize: 14,
+    lineHeight: 19,
+    fontWeight: '700',
+  },
+  disclosure: {
+    fontSize: 15,
+    fontWeight: '700',
+  },
+  modalRoot: {
+    flex: 1,
+    justifyContent: 'flex-end',
+  },
+  backdrop: {
+    ...StyleSheet.absoluteFill,
+    backgroundColor: 'rgba(0, 0, 0, 0.42)',
+  },
+  sheet: {
+    maxHeight: '82%',
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    borderWidth: StyleSheet.hairlineWidth,
+    overflow: 'hidden',
+  },
+  handle: {
+    width: 38,
+    height: 4,
+    borderRadius: 2,
+    alignSelf: 'center',
+    marginTop: 8,
+  },
+  sheetHeader: {
+    minHeight: 60,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 12,
+    paddingHorizontal: 18,
+  },
+  sheetTitle: {
+    flexShrink: 1,
+    fontSize: 18,
+    lineHeight: 24,
+    fontWeight: '800',
+  },
+  closeButton: {
+    width: 48,
+    height: 48,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  closeText: {
+    fontSize: 28,
+    lineHeight: 30,
+    fontWeight: '400',
+  },
+  optionList: {
+    paddingHorizontal: 12,
+    paddingBottom: 10,
+  },
+  option: {
+    minHeight: 52,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 12,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+  },
+  optionLabel: {
+    flexShrink: 1,
+    fontSize: 15,
+    lineHeight: 21,
+    fontWeight: '600',
+  },
+  selectedMark: {
+    fontSize: 18,
+    lineHeight: 22,
+    fontWeight: '800',
+  },
 });
