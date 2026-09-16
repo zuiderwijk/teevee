@@ -16,18 +16,24 @@ import Animated, {
 import { scheduleOnRN } from 'react-native-worklets';
 
 import { isProgrammeCurrent, programmeProgress } from '@/data/domain/epg';
-import { guideDayStart, GUIDE_TIME_ZONE } from '@/data/domain/guideTime';
+import { guideTelevisionDayStart, GUIDE_TIME_ZONE } from '@/data/domain/guideTime';
 import {
   buildRuntimeGuideFixture,
   programmesForRuntimeChannel,
-  runtimeGuideFixtureNeedsRefresh,
 } from '@/data/fixtures/runtimeGuideFixture';
 import { useTeeveeTheme } from '@/theme/useTeeveeTheme';
 
 import { ChannelIdentity } from './ChannelIdentity';
-import { guideDayOffsetForViewport, type GuideDayOffset } from './dayNavigation';
 import type { ProgrammeSelection } from './detailState';
 import { EdgeReadabilityOverlay } from './EdgeReadabilityOverlay';
+import { GuideDaySelector } from './GuideDaySelector';
+import {
+  guideDayIsSelectable,
+  guideDayOptions,
+  guideTargetForDaySelection,
+  guideTargetForNow,
+  guideTotaalDayForViewedAnchor,
+} from './guideDaySelection';
 import {
   buildTimeTicks,
   programmeContentMode,
@@ -40,10 +46,14 @@ import { GUIDE_TIME_TICK_INTERVAL_MINUTES } from './timeAxis';
 import { TimeAxisLeftMask } from './TimeAxisLeftMask';
 import { TimeAxisTick } from './TimeAxisTick';
 import { useGuideClock } from './useGuideClock';
+import { useSelectedGuideDaySchedule } from './useSelectedGuideDaySchedule';
 
 const GUIDE_CONTROL_MAX_FONT_SIZE_MULTIPLIER = 1.2;
+const TIME_ANCHOR_INSET = 120;
+const HEADER_CONDENSE_THRESHOLD = 24;
 
 type GuideViewProps = {
+  guideDataVersion: number;
   headerAction?: ReactNode;
   onSelectProgramme: (selection: ProgrammeSelection) => void;
 };
@@ -56,41 +66,49 @@ function formatTime(timeMs: number) {
   });
 }
 
-function formatDay(timeMs: number) {
-  return new Date(timeMs).toLocaleDateString('nl-NL', {
-    weekday: 'short',
-    day: 'numeric',
-    month: 'short',
-    timeZone: GUIDE_TIME_ZONE,
-  });
+function clampTime(timeMs: number, fromMs: number, toMs: number) {
+  return Math.min(toMs - 1, Math.max(fromMs, timeMs));
 }
 
 // Modal visibility lives outside this memo boundary. Keep the same mounted
 // ScrollViews and stable selection callback when opening or closing a detail.
-export const GuideView = memo(function GuideView({ onSelectProgramme, headerAction }: GuideViewProps) {
+export const GuideView = memo(function GuideView({
+  guideDataVersion,
+  onSelectProgramme,
+  headerAction,
+}: GuideViewProps) {
   const theme = useTeeveeTheme();
   const { fontScale, width: windowWidth } = useWindowDimensions();
   const layout = useMemo(() => guideLayoutForFontScale(fontScale), [fontScale]);
   const horizontalRef = useRef<ScrollView>(null);
   const channelRef = useRef<ScrollView>(null);
-  const visibleDayOffsetRef = useRef<GuideDayOffset>(0);
   const scrollX = useSharedValue(0);
   const scrollY = useSharedValue(0);
-  const [fixtureAnchorMs, setFixtureAnchorMs] = useState(() => Date.now());
-  const runtimeFixture = useMemo(
-    () => buildRuntimeGuideFixture(fixtureAnchorMs),
-    [fixtureAnchorMs],
-  );
-  const [dayOffset, setDayOffset] = useState<GuideDayOffset>(0);
   const nowMs = useGuideClock();
-
-  const windowStart = useMemo(
-    () => Math.min(...runtimeFixture.programmes.map((programme) => Date.parse(programme.startAt))),
-    [runtimeFixture],
+  const viewedTimeRef = useRef(nowMs);
+  const [visibleDayStartMs, setVisibleDayStartMs] = useState(() =>
+    guideTotaalDayForViewedAnchor(nowMs),
   );
+  const [windowStartDayMs, setWindowStartDayMs] = useState(visibleDayStartMs);
+  const followingDayStartMs = guideTelevisionDayStart(windowStartDayMs, 1);
+  const includeFollowingDay = guideDayIsSelectable(followingDayStartMs, nowMs);
+  const selectedWindow = useSelectedGuideDaySchedule(
+    windowStartDayMs,
+    guideDataVersion,
+    undefined,
+    includeFollowingDay,
+  );
+  const runtimeFixture = useMemo(
+    () => selectedWindow.schedule ?? buildRuntimeGuideFixture(windowStartDayMs),
+    [guideDataVersion, selectedWindow.schedule, windowStartDayMs],
+  );
+  const pendingTargetTimeRef = useRef<number | null>(null);
+  const [condensed, setCondensed] = useState(false);
+
+  const windowStart = windowStartDayMs;
   const windowEnd = useMemo(
-    () => Math.max(...runtimeFixture.programmes.map((programme) => Date.parse(programme.endAt))),
-    [runtimeFixture],
+    () => guideTelevisionDayStart(windowStartDayMs, includeFollowingDay ? 2 : 1),
+    [includeFollowingDay, windowStartDayMs],
   );
   const width = timelineWidth(windowStart, windowEnd, layout.minuteWidth);
   const ticks = useMemo(() => buildTimeTicks(windowStart, windowEnd), [windowStart, windowEnd]);
@@ -98,51 +116,84 @@ export const GuideView = memo(function GuideView({ onSelectProgramme, headerActi
   const tickSpacing = GUIDE_TIME_TICK_INTERVAL_MINUTES * layout.minuteWidth;
   const nowX = timeToX(nowMs, windowStart, layout.minuteWidth);
   const nowInWindow = nowMs >= windowStart && nowMs < windowEnd;
-  const tomorrowStart = useMemo(() => guideDayStart(fixtureAnchorMs, 1), [fixtureAnchorMs]);
-  const tomorrowStartX = timeToX(tomorrowStart, windowStart, layout.minuteWidth);
   const guideHeight = runtimeFixture.channels.length * layout.rowHeight;
   const programmeViewportWidth = Math.max(0, windowWidth - layout.channelWidth);
-
-  const syncVisibleDayOffset = useCallback((visibleDay: GuideDayOffset) => {
-    if (visibleDayOffsetRef.current !== visibleDay) {
-      visibleDayOffsetRef.current = visibleDay;
-      setDayOffset(visibleDay);
-    }
-  }, []);
-
-  const handleHorizontalMomentumEnd = useCallback(
-    (viewportX: number) => {
-      syncVisibleDayOffset(guideDayOffsetForViewport(viewportX, tomorrowStartX));
-    },
-    [syncVisibleDayOffset, tomorrowStartX],
+  const followingDayBoundaryX = timeToX(
+    followingDayStartMs,
+    windowStart,
+    layout.minuteWidth,
   );
 
   const syncVerticalScroll = useCallback((y: number) => {
     channelRef.current?.scrollTo({ y, animated: false });
   }, []);
 
+  const syncCondensed = useCallback((nextCondensed: boolean) => {
+    setCondensed((current) => (current === nextCondensed ? current : nextCondensed));
+  }, []);
+
+  const commitViewedTime = useCallback((viewedTimeMs: number) => {
+    viewedTimeRef.current = viewedTimeMs;
+    const nextVisibleDayStartMs = guideTotaalDayForViewedAnchor(viewedTimeMs);
+    setVisibleDayStartMs((current) =>
+      current === nextVisibleDayStartMs ? current : nextVisibleDayStartMs,
+    );
+  }, []);
+
   useAnimatedReaction(
-    () => guideDayOffsetForViewport(scrollX.value, tomorrowStartX),
-    (visibleDay, previousVisibleDay) => {
-      if (visibleDay === previousVisibleDay) return;
-      scheduleOnRN(syncVisibleDayOffset, visibleDay);
+    () => scrollY.value > HEADER_CONDENSE_THRESHOLD,
+    (nextCondensed, previousCondensed) => {
+      if (nextCondensed === previousCondensed) return;
+      scheduleOnRN(syncCondensed, nextCondensed);
     },
-    [syncVisibleDayOffset, tomorrowStartX],
+    [scrollY, syncCondensed],
+  );
+
+  const viewedTimeForX = useCallback(
+    (viewportX: number) =>
+      clampTime(
+        windowStart + ((Math.max(0, viewportX) + TIME_ANCHOR_INSET) / layout.minuteWidth) * 60_000,
+        windowStart,
+        windowEnd,
+      ),
+    [layout.minuteWidth, windowEnd, windowStart],
+  );
+
+  const syncHorizontalAnchor = useCallback(
+    (viewportX: number) => {
+      commitViewedTime(viewedTimeForX(viewportX));
+    },
+    [commitViewedTime, viewedTimeForX],
+  );
+
+  useAnimatedReaction(
+    () => includeFollowingDay && scrollX.value + TIME_ANCHOR_INSET >= followingDayBoundaryX,
+    (inFollowingDay, previouslyInFollowingDay) => {
+      if (previouslyInFollowingDay === null || inFollowingDay === previouslyInFollowingDay) return;
+      // The date context and exact viewed-time ref are updated through the same anchor path.
+      // This bridge only runs when the stable anchor crosses the 06:00 day boundary.
+      scheduleOnRN(syncHorizontalAnchor, scrollX.value);
+    },
+    [followingDayBoundaryX, includeFollowingDay, scrollX, syncHorizontalAnchor],
   );
 
   const horizontalScrollHandler = useAnimatedScrollHandler(
     {
       onScroll: (event) => {
-        // Keep every scroll frame on the UI thread. Bridging every x-position
-        // to JS can queue work behind a programme tap immediately after a fling.
+        // Keep every scroll frame on the UI thread. Date context crosses the 06:00
+        // threshold via the boundary reaction above, so JS is still not bridged per frame.
         scrollX.value = Math.max(0, event.contentOffset.x);
+      },
+      onEndDrag: (event) => {
+        const viewportX = Math.max(0, event.contentOffset.x);
+        scheduleOnRN(syncHorizontalAnchor, viewportX);
       },
       onMomentumEnd: (event) => {
         const viewportX = Math.max(0, event.contentOffset.x);
-        scheduleOnRN(handleHorizontalMomentumEnd, viewportX);
+        scheduleOnRN(syncHorizontalAnchor, viewportX);
       },
     },
-    [handleHorizontalMomentumEnd, scrollX],
+    [scrollX, syncHorizontalAnchor],
   );
 
   const verticalScrollHandler = useAnimatedScrollHandler(
@@ -156,98 +207,101 @@ export const GuideView = memo(function GuideView({ onSelectProgramme, headerActi
     [scrollY, syncVerticalScroll],
   );
 
-  useEffect(() => {
-    if (!runtimeGuideFixtureNeedsRefresh(runtimeFixture, nowMs)) return;
-    setDayOffset(0);
-    visibleDayOffsetRef.current = 0;
-    setFixtureAnchorMs(nowMs);
-  }, [nowMs, runtimeFixture]);
+  const scrollToTime = useCallback(
+    (timeMs: number, animated: boolean) => {
+      const target = clampTime(timeMs, windowStart, windowEnd);
+      commitViewedTime(target);
+      const x = Math.max(
+        0,
+        timeToX(target, windowStart, layout.minuteWidth) - TIME_ANCHOR_INSET,
+      );
+      scrollX.value = x;
+      horizontalRef.current?.scrollTo({ x, animated });
+    },
+    [commitViewedTime, layout.minuteWidth, scrollX, windowEnd, windowStart],
+  );
 
   useEffect(() => {
-    const initialX = Math.max(0, timeToX(fixtureAnchorMs, windowStart, layout.minuteWidth) - 120);
-    visibleDayOffsetRef.current = 0;
-    scrollX.value = initialX;
-    scrollY.value = 0;
-    const frame = requestAnimationFrame(() => {
-      horizontalRef.current?.scrollTo({ x: initialX, animated: false });
-    });
+    if (guideDayIsSelectable(windowStartDayMs, nowMs)) return;
+
+    const options = guideDayOptions(nowMs);
+    const firstDayStartMs = options[0]!.fromMs;
+    const lastDayStartMs = options.at(-1)!.fromMs;
+    const replacementDayStartMs = windowStartDayMs < firstDayStartMs
+      ? firstDayStartMs
+      : windowStartDayMs > lastDayStartMs
+        ? lastDayStartMs
+        : guideTelevisionDayStart(nowMs);
+    const target = guideTargetForDaySelection(viewedTimeRef.current, replacementDayStartMs);
+    pendingTargetTimeRef.current = target.timeMs;
+    commitViewedTime(target.timeMs);
+    setWindowStartDayMs(replacementDayStartMs);
+  }, [commitViewedTime, nowMs, windowStartDayMs]);
+
+  useEffect(() => {
+    const target = pendingTargetTimeRef.current ??
+      guideTargetForDaySelection(viewedTimeRef.current, windowStartDayMs).timeMs;
+    pendingTargetTimeRef.current = null;
+    const frame = requestAnimationFrame(() => scrollToTime(target, false));
     return () => cancelAnimationFrame(frame);
-  }, [fixtureAnchorMs, layout.minuteWidth, scrollX, scrollY, windowStart]);
+  }, [scrollToTime, windowStartDayMs]);
 
-  const jumpToNow = () => {
-    const currentNow = Date.now();
-    setDayOffset(0);
-    visibleDayOffsetRef.current = 0;
+  const changeDay = useCallback(
+    (nextDayStartMs: number) => {
+      if (nextDayStartMs === visibleDayStartMs && nextDayStartMs === windowStartDayMs) return;
+      const target = guideTargetForDaySelection(viewedTimeRef.current, nextDayStartMs);
+      pendingTargetTimeRef.current = target.timeMs;
+      commitViewedTime(target.timeMs);
+      setWindowStartDayMs(target.dayStartMs);
+    },
+    [commitViewedTime, visibleDayStartMs, windowStartDayMs],
+  );
 
-    if (runtimeGuideFixtureNeedsRefresh(runtimeFixture, currentNow)) {
-      setFixtureAnchorMs(currentNow);
+  const jumpToNow = useCallback(() => {
+    const target = guideTargetForNow(Date.now());
+    if (target.timeMs >= windowStart && target.timeMs < windowEnd) {
+      scrollToTime(target.timeMs, true);
       return;
     }
-
-    const x = Math.max(0, timeToX(currentNow, windowStart, layout.minuteWidth) - 120);
-    horizontalRef.current?.scrollTo({ x, animated: true });
-  };
-
-  const changeDay = (nextOffset: GuideDayOffset) => {
-    const targetTime = nextOffset === 0 ? windowStart : tomorrowStart;
-    const x = Math.max(0, timeToX(targetTime, windowStart, layout.minuteWidth));
-    setDayOffset(nextOffset);
-    visibleDayOffsetRef.current = nextOffset;
-    horizontalRef.current?.scrollTo({ x, animated: true });
-  };
+    pendingTargetTimeRef.current = target.timeMs;
+    commitViewedTime(target.timeMs);
+    setWindowStartDayMs(target.dayStartMs);
+  }, [commitViewedTime, scrollToTime, windowEnd, windowStart]);
 
   return (
     <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.colors.background }]}>
-      <View style={styles.header}>
-        <View style={styles.headerTitleGroup}>
-          <Text accessible={false} style={[styles.eyebrow, { color: theme.colors.textMuted }]}>TEEVEE</Text>
-          <Text accessibilityRole="header" style={[styles.title, { color: theme.colors.text }]}>Gids</Text>
+      {!condensed ? (
+        <View style={styles.header}>
+          <View style={styles.headerTitleGroup}>
+            <Text accessible={false} style={[styles.eyebrow, { color: theme.colors.textMuted }]}>TEEVEE</Text>
+            <Text accessibilityRole="header" style={[styles.title, { color: theme.colors.text }]}>Gids</Text>
+          </View>
+          {headerAction}
         </View>
-        {headerAction}
-      </View>
+      ) : null}
 
-      <View style={styles.guideControls}>
-        {([0, 1] as const).map((offset) => {
-          const active = dayOffset === offset;
-          const label = offset === 0 ? 'Vandaag' : 'Morgen';
-          return (
-            <Pressable
-              key={offset}
-              accessibilityRole="button"
-              accessibilityLabel={offset === 0 ? 'Vandaag' : `Morgen, ${formatDay(tomorrowStart)}`}
-              accessibilityState={{ selected: active }}
-              onPress={() => changeDay(offset)}
-              style={[
-                styles.dayButton,
-                {
-                  backgroundColor: active ? theme.colors.accent : theme.colors.surface,
-                  borderColor: theme.colors.border,
-                },
-              ]}
-            >
-              <Text
-                maxFontSizeMultiplier={GUIDE_CONTROL_MAX_FONT_SIZE_MULTIPLIER}
-                numberOfLines={1}
-                style={[
-                  styles.dayButtonText,
-                  { color: active ? theme.colors.background : theme.colors.textSecondary },
-                ]}
-              >
-                {label}
-              </Text>
-            </Pressable>
-          );
-        })}
+      <View
+        style={[
+          styles.guideControls,
+          condensed ? { borderBottomColor: theme.colors.border, borderBottomWidth: StyleSheet.hairlineWidth } : null,
+        ]}
+      >
+        <GuideDaySelector
+          selectedDayStartMs={visibleDayStartMs}
+          nowMs={nowMs}
+          loading={selectedWindow.loading}
+          unavailable={selectedWindow.unavailable}
+          onSelectDay={changeDay}
+        />
         <Pressable
           accessibilityRole="button"
           accessibilityLabel="Ga naar nu"
           onPress={jumpToNow}
-          style={[styles.nowBadge, { backgroundColor: theme.colors.accent }]}
+          style={[styles.nowBadge, { borderColor: theme.colors.border }]}
         >
           <Text
             maxFontSizeMultiplier={GUIDE_CONTROL_MAX_FONT_SIZE_MULTIPLIER}
-            numberOfLines={1}
-            style={[styles.nowText, { color: theme.colors.background }]}
+            style={[styles.nowText, { color: theme.colors.text }]}
           >
             Nu
           </Text>
@@ -507,33 +561,26 @@ const styles = StyleSheet.create({
   eyebrow: { fontSize: 10, fontWeight: '700', letterSpacing: 1.1 },
   title: { fontSize: 32, fontWeight: '700', letterSpacing: -1.2 },
   guideControls: {
+    minHeight: 56,
     flexDirection: 'row',
     flexWrap: 'nowrap',
     alignItems: 'center',
-    gap: 8,
+    gap: 12,
     paddingHorizontal: 18,
-    paddingBottom: 12,
+    paddingBottom: 8,
   },
   nowBadge: {
     minWidth: 52,
-    minHeight: 44,
+    minHeight: 48,
     paddingHorizontal: 14,
     paddingVertical: 8,
-    borderRadius: 22,
+    borderRadius: 12,
+    borderWidth: StyleSheet.hairlineWidth,
     alignItems: 'center',
     justifyContent: 'center',
     marginLeft: 'auto',
   },
   nowText: { fontSize: 14, fontWeight: '700' },
-  dayButton: {
-    minHeight: 44,
-    justifyContent: 'center',
-    paddingHorizontal: 13,
-    paddingVertical: 8,
-    borderRadius: 22,
-    borderWidth: StyleSheet.hairlineWidth,
-  },
-  dayButtonText: { fontSize: 12, fontWeight: '700' },
   guideFrame: { flex: 1, flexDirection: 'row', borderTopWidth: StyleSheet.hairlineWidth },
   channelColumn: { zIndex: 2, borderRightWidth: StyleSheet.hairlineWidth },
   channelAxisCorner: { justifyContent: 'center', paddingHorizontal: 8, borderBottomWidth: StyleSheet.hairlineWidth },

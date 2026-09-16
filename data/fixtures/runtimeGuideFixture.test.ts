@@ -1,12 +1,17 @@
 import { afterEach, describe, expect, it } from 'vitest';
 
 import type { GuideSchedule } from '../domain/epg';
+import { guideTelevisionDayStart } from '../domain/guideTime';
 import {
   clearRuntimeGuideSchedule,
   installRuntimeGuideSchedule,
 } from '../runtime/guideScheduleRuntime';
 import { guideFixture } from './guideFixture';
-import { buildRuntimeGuideFixture, runtimeGuideFixtureNeedsRefresh } from './runtimeGuideFixture';
+import {
+  buildRuntimeGuideFixture,
+  buildTelevisionDayGuideFixture,
+  runtimeGuideFixtureNeedsRefresh,
+} from './runtimeGuideFixture';
 
 const HOUR_MS = 3_600_000;
 
@@ -30,6 +35,35 @@ describe('runtime Guide fixture', () => {
     expect(runtime.programmes).toHaveLength(guideFixture.programmes.length);
     expect(Math.min(...starts)).toBe(Date.parse(midnight));
     expect(Math.max(...ends)).toBe(Date.parse(midnight) + 49 * HOUR_MS);
+  });
+
+  it.each([
+    ['normal', '2026-09-13T10:00:00Z'],
+    ['spring DST', '2026-03-28T12:00:00Z'],
+    ['fall DST', '2026-10-24T12:00:00Z'],
+  ] as const)('aligns selected %s fallback to the exact television-day boundary for 49 real hours', (_label, input) => {
+    const anchorMs = Date.parse(input);
+    const televisionDayStartMs = guideTelevisionDayStart(anchorMs);
+    const runtime = buildTelevisionDayGuideFixture(anchorMs);
+    const starts = runtime.programmes.map((programme) => Date.parse(programme.startAt));
+    const ends = runtime.programmes.map((programme) => Date.parse(programme.endAt));
+
+    expect(Math.min(...starts)).toBe(televisionDayStartMs);
+    expect(Math.max(...ends)).toBe(televisionDayStartMs + 49 * HOUR_MS);
+    expect(runtime.channels).toEqual(guideFixture.channels);
+    expect(runtime.programmes.map((programme) => programme.id)).toEqual(
+      guideFixture.programmes.map((programme) => programme.id),
+    );
+  });
+
+  it('treats an explicitly supplied 06:00 television-day start as the selected fixture anchor', () => {
+    const dayStartMs = Date.parse('2026-09-13T04:00:00Z');
+    const runtime = buildRuntimeGuideFixture(dayStartMs);
+    const firstProgrammeStart = Math.min(
+      ...runtime.programmes.map((programme) => Date.parse(programme.startAt)),
+    );
+
+    expect(firstProgrammeStart).toBe(dayStartMs);
   });
 
   it('prefers installed canonical data for the matching television day across midnight', () => {

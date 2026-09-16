@@ -80,6 +80,15 @@ function canonicalSchedule(
   };
 }
 
+function coveredEmptyCanonicalSchedule(
+  generatedAt = '2026-09-14T20:00:00Z',
+): GuideSchedule {
+  return {
+    ...canonicalSchedule('covered-empty', generatedAt),
+    programmes: [],
+  };
+}
+
 function deferred<T>() {
   let resolve!: (value: T) => void;
   const promise = new Promise<T>((next) => {
@@ -214,6 +223,52 @@ describe('useHostedGuideScheduleRuntime television-day lifecycle', () => {
 
     expect(runtimeVersion()).toBe(3);
     expect(runtimeGuideScheduleFor(lifecycle.nowMs)?.programmes[0]?.id).toBe('next-day');
+  });
+
+  it('installs a covered-empty canonical current schedule as authoritative', async () => {
+    const empty = coveredEmptyCanonicalSchedule();
+    loader.load.mockResolvedValueOnce(empty);
+
+    await act(async () => root.render(<RuntimeProbe />));
+    await runStartupFrame();
+
+    expect(runtimeVersion()).toBe(1);
+    expect(runtimeGuideScheduleFor(lifecycle.nowMs)).toBe(empty);
+    expect(runtimeGuideScheduleFor(lifecycle.nowMs)?.channels).toHaveLength(1);
+    expect(runtimeGuideScheduleFor(lifecycle.nowMs)?.programmes).toEqual([]);
+  });
+
+  it('treats a zero-channel current result as structurally unusable, separately from covered-empty', async () => {
+    loader.load.mockResolvedValueOnce({
+      ...coveredEmptyCanonicalSchedule(),
+      channels: [],
+    });
+
+    await act(async () => root.render(<RuntimeProbe />));
+    await runStartupFrame();
+
+    expect(runtimeVersion()).toBe(0);
+    expect(runtimeGuideScheduleFor(lifecycle.nowMs)).toBeNull();
+  });
+
+  it('keeps the installed current schedule when forced revalidation is unavailable or fails', async () => {
+    const installed = canonicalSchedule('cached');
+    loader.load.mockResolvedValueOnce(installed);
+
+    await act(async () => root.render(<RuntimeProbe />));
+    await runStartupFrame();
+    expect(runtimeVersion()).toBe(1);
+    expect(runtimeGuideScheduleFor(lifecycle.nowMs)).toBe(installed);
+
+    loader.load.mockResolvedValueOnce(null);
+    await sendAppState('active');
+    expect(runtimeVersion()).toBe(1);
+    expect(runtimeGuideScheduleFor(lifecycle.nowMs)).toBe(installed);
+
+    loader.load.mockRejectedValueOnce(new Error('offline'));
+    await sendAppState('active');
+    expect(runtimeVersion()).toBe(1);
+    expect(runtimeGuideScheduleFor(lifecycle.nowMs)).toBe(installed);
   });
 
   it('refreshes on resume without remounting for freshness-only hosted data', async () => {

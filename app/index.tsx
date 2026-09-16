@@ -120,12 +120,16 @@ export default function GuideScreen() {
         />
       ) : showPerChannel ? (
         <PerChannelGuideView
-          key={guideKey}
+          guideDataVersion={guideDataVersion}
           onSelectProgramme={openDetail}
           headerAction={settingsAction}
         />
       ) : (
-        <GuideView key={guideKey} onSelectProgramme={openDetail} headerAction={settingsAction} />
+        <GuideView
+          guideDataVersion={guideDataVersion}
+          onSelectProgramme={openDetail}
+          headerAction={settingsAction}
+        />
       )}
 
       {nowNextLoadFailed ? (

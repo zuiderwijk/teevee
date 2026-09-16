@@ -86,6 +86,25 @@ export function mergeGuideSchedules(schedules: readonly GuideSchedule[]): GuideS
 }
 
 /**
+ * Load exactly one Teevee television day through one bounded public read. The caller
+ * supplies a television-day anchor, which is normalized through the shared 06:00
+ * Europe/Amsterdam primitive so DST windows remain 23/24/25 real hours as required.
+ */
+export async function loadTelevisionDayGuideSchedule(
+  api: GuideScheduleApi,
+  televisionDayAnchorMs: number,
+): Promise<GuideSchedule | null> {
+  const fromMs = guideTelevisionDayStart(televisionDayAnchorMs);
+  const toMs = guideTelevisionDayStart(fromMs, 1);
+  const response = await api.getSchedule({
+    from: new Date(fromMs).toISOString(),
+    to: new Date(toMs).toISOString(),
+  });
+
+  return response.status === 'ok' ? response.schedule : null;
+}
+
+/**
  * Load the current and following Teevee television days as two independently bounded
  * hosted reads. A television day is 06:00 Europe/Amsterdam -> 06:00 the next local day,
  * so each request remains 23, 24 or 25 real hours across DST rather than assuming 24h.
@@ -99,19 +118,10 @@ export async function loadTwoTelevisionDayGuideSchedule(
   api: GuideScheduleApi,
   anchorMs = Date.now(),
 ): Promise<GuideSchedule | null> {
-  const dayStarts = [0, 1, 2].map((offset) => guideTelevisionDayStart(anchorMs, offset));
-  const requests = [0, 1].map((index) =>
-    api.getSchedule({
-      from: new Date(dayStarts[index]!).toISOString(),
-      to: new Date(dayStarts[index + 1]!).toISOString(),
-    }),
+  const dayStarts = [0, 1].map((offset) => guideTelevisionDayStart(anchorMs, offset));
+  const schedules = await Promise.all(
+    dayStarts.map((dayStartMs) => loadTelevisionDayGuideSchedule(api, dayStartMs)),
   );
-  const responses = await Promise.all(requests);
-  if (responses.some((response) => response.status === 'unavailable')) return null;
-
-  const schedules = responses.map((response) => {
-    if (response.status !== 'ok') throw new Error('Unexpected schedule response');
-    return response.schedule;
-  });
-  return mergeGuideSchedules(schedules);
+  if (schedules.some((schedule) => schedule === null)) return null;
+  return mergeGuideSchedules(schedules as GuideSchedule[]);
 }

@@ -1,7 +1,5 @@
 import type { GuideFixture, Programme } from '@/data/domain/epg';
 
-export type PerChannelDayOffset = 0 | 1;
-
 /**
  * Keep schedule geometry time-based so a vertical offset represents the same
  * wall-clock anchor on every channel. This makes horizontal channel changes

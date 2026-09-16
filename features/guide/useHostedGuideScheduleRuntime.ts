@@ -43,7 +43,11 @@ export function useHostedGuideScheduleRuntime(
       void loadTwoTelevisionDayGuideSchedule(api, anchorMs)
         .then((schedule) => {
           if (requestVersionRef.current !== requestVersion) return;
-          if (!schedule || schedule.channels.length === 0 || schedule.programmes.length === 0) return;
+          if (!schedule || schedule.channels.length === 0) {
+            // Covered-empty canonical schedules remain authoritative under ADR 0007.
+            // Only a zero-channel result is structurally unusable for the Guide surface.
+            return;
+          }
 
           const currentSchedule = runtimeGuideScheduleFor(anchorMs);
           if (currentSchedule && guideScheduleContentEqual(currentSchedule, schedule)) {
