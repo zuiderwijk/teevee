@@ -34,6 +34,8 @@ All measurement logs use the exact prefix:
 
 Each event is one JSON object and includes a surface (`totaal` or `per-zender`) and, for a day-switch trace, a monotonically increasing `traceId`.
 
+To limit observer effect, event payloads are timestamped and buffered in memory at the actual event, but console/Metro I/O is deferred until after the primary measurement window. A day-option press pushes any pending flush at least 2.5 seconds out; the JS-frame sample itself lasts 1.2 seconds. The reported durations therefore describe the original event timings rather than the later log-flush moment.
+
 ### Interaction and presentation timing
 
 - `selector-open-press`: the selector control received the press.
