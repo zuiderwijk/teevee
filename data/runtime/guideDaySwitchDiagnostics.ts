@@ -118,6 +118,12 @@ export function markGuideDaySwitchSurfaceMounted(surface: GuideDaySwitchSurface)
 
 export function markGuideDaySwitchSurfaceUnmounted(surface: GuideDaySwitchSurface): void {
   emit('surface-unmounted', surface);
+  const samplerFrame = jsSamplerFrameBySurface.get(surface);
+  if (samplerFrame !== undefined && typeof cancelAnimationFrame === 'function') {
+    cancelAnimationFrame(samplerFrame);
+  }
+  jsSamplerFrameBySurface.delete(surface);
+  activeTraceBySurface.delete(surface);
   if (mountedSurface === surface) mountedSurface = null;
 }
 
@@ -308,7 +314,7 @@ export function markGuideFixtureAlignment(
   programmeCount: number,
 ): void {
   for (const [surface, trace] of activeTraceBySurface) {
-    if (trace.toDayStartMs !== selectedDayStartMs) continue;
+    if (surface !== mountedSurface || trace.toDayStartMs !== selectedDayStartMs) continue;
     emit('fixture-alignment', surface, {
       fixtureTraceId: trace.id,
       selectedDayStartMs,
