@@ -6,6 +6,7 @@ import {
   GUIDE_PROGRAMME_WINDOW_OVERSCAN_VIEWPORTS,
   guideProgrammeTimeWindow,
   guideProgrammeWindowBucket,
+  guideProgrammaticScrollPrealignmentX,
   windowGuideProgrammesByChannel,
 } from './guideProgrammeWindow';
 
@@ -22,6 +23,30 @@ describe('Totaal programme windowing', () => {
     expect(guideProgrammeWindowBucket(300, VIEWPORT_WIDTH)).toBe(1);
     expect(guideProgrammeWindowBucket(899, VIEWPORT_WIDTH)).toBe(2);
     expect(guideProgrammeWindowBucket(-40, VIEWPORT_WIDTH)).toBe(0);
+  });
+
+  it('keeps animated programmatic ownership on the native viewport until real scroll offsets cross buckets', () => {
+    const sourceViewportX = VIEWPORT_WIDTH * 5 + 40;
+    const targetViewportX = 0;
+    let ownedBucket = guideProgrammeWindowBucket(sourceViewportX, VIEWPORT_WIDTH);
+
+    const animatedPrealignment = guideProgrammaticScrollPrealignmentX(targetViewportX, true);
+    expect(animatedPrealignment).toBeNull();
+    expect(ownedBucket).toBe(5);
+
+    const actualNativeOffsets = [VIEWPORT_WIDTH * 5 - 1, VIEWPORT_WIDTH * 4 - 1, VIEWPORT_WIDTH * 3 - 1];
+    const observedBuckets: number[] = [];
+    for (const viewportX of actualNativeOffsets) {
+      ownedBucket = guideProgrammeWindowBucket(viewportX, VIEWPORT_WIDTH);
+      observedBuckets.push(ownedBucket);
+    }
+
+    expect(observedBuckets).toEqual([4, 3, 2]);
+    expect(ownedBucket).not.toBe(guideProgrammeWindowBucket(targetViewportX, VIEWPORT_WIDTH));
+
+    const nonAnimatedPrealignment = guideProgrammaticScrollPrealignmentX(targetViewportX, false);
+    expect(nonAnimatedPrealignment).toBe(targetViewportX);
+    expect(guideProgrammeWindowBucket(nonAnimatedPrealignment!, VIEWPORT_WIDTH)).toBe(0);
   });
 
   it('keeps every possible viewport inside its bucket covered with conservative overscan', () => {
