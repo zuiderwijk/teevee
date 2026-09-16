@@ -25,6 +25,19 @@ export function guideProgrammeWindowBucket(viewportX: number, viewportWidth: num
   return Math.max(0, Math.floor(Math.max(0, viewportX) / viewportWidth));
 }
 
+/**
+ * Non-animated programmatic jumps need the target programme window mounted before the native
+ * viewport moves there. Animated jumps must not prealign ownership: native onScroll remains the
+ * source of truth while the viewport travels through intermediate buckets.
+ */
+export function guideProgrammaticScrollPrealignmentX(
+  targetViewportX: number,
+  animated: boolean,
+): number | null {
+  if (animated) return null;
+  return Number.isFinite(targetViewportX) ? Math.max(0, targetViewportX) : 0;
+}
+
 export function guideProgrammeTimeWindow({
   bucket,
   viewportWidth,
