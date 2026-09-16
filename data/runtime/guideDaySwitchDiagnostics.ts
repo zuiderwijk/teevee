@@ -20,6 +20,7 @@ type ActiveGuideDaySwitchTrace = {
 type GuideDaySwitchEventFields = Record<string, string | number | boolean | null | undefined>;
 
 const LOG_PREFIX = '[TeeveeGuidePerf]';
+const LOG_FLUSH_DELAY_MS = 2_500;
 const JS_FRAME_SAMPLE_WINDOW_MS = 1_200;
 const JS_FRAME_SLOW_MS = 34;
 const JS_FRAME_VERY_SLOW_MS = 50;
@@ -27,6 +28,8 @@ const JS_FRAME_VERY_SLOW_MS = 50;
 let nextTraceId = 1;
 let nextCacheInstanceId = 1;
 let mountedSurface: GuideDaySwitchSurface | null = null;
+let logFlushTimer: ReturnType<typeof setTimeout> | null = null;
+const pendingLogLines: string[] = [];
 const activeTraceBySurface = new Map<GuideDaySwitchSurface, ActiveGuideDaySwitchTrace>();
 const jsSamplerFrameBySurface = new Map<GuideDaySwitchSurface, number>();
 
@@ -50,6 +53,36 @@ function activeTrace(
   return trace;
 }
 
+function scheduleLogFlush(): void {
+  if (logFlushTimer !== null) return;
+  logFlushTimer = setTimeout(() => {
+    logFlushTimer = null;
+    flushGuideDaySwitchDiagnostics();
+  }, LOG_FLUSH_DELAY_MS);
+}
+
+function deferLogFlushForMeasurement(): void {
+  if (logFlushTimer !== null) clearTimeout(logFlushTimer);
+  logFlushTimer = setTimeout(() => {
+    logFlushTimer = null;
+    flushGuideDaySwitchDiagnostics();
+  }, LOG_FLUSH_DELAY_MS);
+}
+
+/**
+ * Write buffered diagnostic events after the measured interaction window so Metro/console
+ * I/O cannot become the JS work that this temporary instrumentation is trying to measure.
+ * Tests can flush explicitly; device traces flush automatically after a short quiet window.
+ */
+export function flushGuideDaySwitchDiagnostics(): void {
+  if (logFlushTimer !== null) {
+    clearTimeout(logFlushTimer);
+    logFlushTimer = null;
+  }
+  const lines = pendingLogLines.splice(0);
+  lines.forEach((line) => console.info(line));
+}
+
 function emit(
   event: string,
   surface: GuideDaySwitchSurface,
@@ -63,7 +96,8 @@ function emit(
     at: new Date().toISOString(),
     ...fields,
   };
-  console.info(`${LOG_PREFIX} ${JSON.stringify(payload)}`);
+  pendingLogLines.push(`${LOG_PREFIX} ${JSON.stringify(payload)}`);
+  scheduleLogFlush();
 }
 
 function startJsFrameSample(trace: ActiveGuideDaySwitchTrace): void {
@@ -161,6 +195,8 @@ export function beginGuideDaySwitchTrace(
   };
   nextTraceId += 1;
   activeTraceBySurface.set(surface, trace);
+  // Push any pending console I/O beyond the whole JS-frame sample for this interaction.
+  deferLogFlushForMeasurement();
   emit('day-option-press', surface, {
     fromDayStartMs,
     toDayStartMs,
