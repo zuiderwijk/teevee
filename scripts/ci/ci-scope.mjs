@@ -81,9 +81,9 @@ function writeGithubOutputs(result) {
     process.env.GITHUB_OUTPUT,
     [
       `classification=${result.classification}`,
-      `run-quality=${String(result.runQuality)}`,
-      `run-expo-export=${String(result.runExpoExport)}`,
-      `run-native=${String(result.runNative)}`,
+      `run_quality=${String(result.runQuality)}`,
+      `run_expo_export=${String(result.runExpoExport)}`,
+      `run_native=${String(result.runNative)}`,
       '',
     ].join('\n'),
     'utf8',
