@@ -1,8 +1,8 @@
 # Phase 4 Guide day navigation increment
 
-Status: **IMPLEMENTED IN PR #66 — NOT ACCEPTED / NOT MERGED**
+Status: **ACCEPTED / MERGED — PR #66**
 
-This document records the durable implementation choices for the Phase 4 Guide day-selector increment. `docs/PROJECT_STATE.md` remains canonical for accepted project status and its `EXACT NEXT STEP` must not be advanced until Lead has accepted and merged the PR.
+This document records the durable implementation choices for the accepted Phase 4 Guide day-selector increment. PR #66 merged to `main` as `823d3f6335eeec1abe4403f0ef2b1b324f16c35f` from exact independently reviewed and physically tested head `87bc533139223734f2a2fa51fad5fd3b237e861b`.
 
 ## Scope
 
@@ -88,7 +88,7 @@ The deterministic source fixture remains unchanged. A new shared alignment path 
 - semantic theme tokens preserve light/dark/system behaviour;
 - only one Per-zender television day and at most two adjacent Totaal television days are rendered, never all ten horizon days simultaneously.
 
-Larger-text layout, VoiceOver interaction and physical gesture coexistence remain part of the focused iPhone acceptance gate because CI/jsdom cannot prove those device behaviours.
+Representative larger-text/accessibility use and physical gesture coexistence were exercised in the focused iPhone acceptance gate. Exact accessibility audit coverage remains part of later production hardening.
 
 ## Deterministic evidence
 
@@ -113,7 +113,7 @@ Focused tests cover:
 - selected television-day deterministic-fixture alignment without changing source programme identity;
 - existing Programme Detail round-trip remains covered by the repository integration suite.
 
-The exact PR head must have the repository-required typecheck, lint, test, Expo export and Android native CI checks green before QA starts.
+Exact PR head `87bc533139223734f2a2fa51fad5fd3b237e861b` passed CI #401 with strict TypeScript, lint, 44 test files / 265 tests, Expo export for iOS/Android/web and Android PR arm64 native compilation. Independent QA approved that exact head with no blocking or non-blocking findings. Post-merge CI #402 on exact merge SHA `823d3f6335eeec1abe4403f0ef2b1b324f16c35f` passed both `quality` and full-ABI `android-native`.
 
 ## Intentionally unchanged
 
@@ -128,11 +128,12 @@ The exact PR head must have the repository-required typecheck, lint, test, Expo 
 - no Per-zender UX/gesture change as part of the Totaal lifecycle-ownership correction;
 - no change to accepted visual design beyond wiring its documented states.
 
-## Acceptance gates still open
+## Acceptance
 
-This is a **HIGH-risk** increment. Before merge it requires:
-1. exact-head CI fully green;
-2. independent QA on that exact head;
-3. focused physical iPhone acceptance for date-selector interaction, D-2/D+7, Totaal 00:00/06:00 continuity, wall-clock preservation, `Nu`, Per-zender `Primetime`, channel navigation, larger text, light/dark, Programme Detail round-trip, background/resume and frozen gesture behaviour.
+This HIGH-risk increment is accepted and merged.
+
+Physical iPhone acceptance passed on exact PR head `87bc533139223734f2a2fa51fad5fd3b237e861b` using iPhone 13 / iOS 26.6. Durable device evidence is recorded in `docs/PHYSICAL_EVIDENCE_2026-09-16_PHASE4_DAY_NAVIGATION.md`.
+
+One non-blocking physical observation remains: the first very quick follow-up date interaction after a cold day/overview switch can feel briefly less responsive. That observation is tracked as issue #67 and must be measured before selecting any cache/prefetch optimisation. It is not evidence for eager D-2..D+7 loading or a new persistence dependency.
 
 Physical Android remains separately deferred by current project state; Android native compilation is not device acceptance.
