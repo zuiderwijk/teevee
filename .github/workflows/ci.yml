@@ -18,9 +18,9 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       classification: ${{ steps.scope.outputs.classification }}
-      run-quality: ${{ steps.scope.outputs.run-quality }}
-      run-expo-export: ${{ steps.scope.outputs.run-expo-export }}
-      run-native: ${{ steps.scope.outputs.run-native }}
+      run_quality: ${{ steps.scope.outputs.run_quality }}
+      run_expo_export: ${{ steps.scope.outputs.run_expo_export }}
+      run_native: ${{ steps.scope.outputs.run_native }}
     steps:
       - uses: actions/checkout@v7
         with:
@@ -48,7 +48,7 @@ jobs:
 
   quality:
     needs: classify
-    if: needs.classify.outputs.run-quality == 'true'
+    if: needs.classify.outputs.run_quality == 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
@@ -61,12 +61,12 @@ jobs:
       - run: npm run lint
       - run: npm test
       - name: Export iOS, Android and web bundles
-        if: needs.classify.outputs.run-expo-export == 'true'
+        if: needs.classify.outputs.run_expo_export == 'true'
         run: npx expo export --platform all
 
   android-native:
     needs: classify
-    if: needs.classify.outputs.run-native == 'true'
+    if: needs.classify.outputs.run_native == 'true'
     runs-on: ubuntu-latest
     env:
       CI: 1
