@@ -218,7 +218,10 @@ describe('programme detail rendering boundary', () => {
     const renderCount = vi.mocked(useGuideClock).mock.calls.length;
     expect(renderCount).toBeGreaterThan(0);
     expect(guideFixture.channels).toHaveLength(48);
-    expect(container.querySelectorAll('[data-testid^="programme-channel-"]').length).toBeGreaterThan(1000);
+    expect(guideFixture.programmes.length).toBeGreaterThan(1000);
+    const mountedProgrammeCount = container.querySelectorAll('[data-testid^="programme-channel-"]').length;
+    expect(mountedProgrammeCount).toBeGreaterThan(0);
+    expect(mountedProgrammeCount).toBeLessThan(guideFixture.programmes.length);
 
     const first = guideFixture.programmes[0]!;
     for (const closeId of ['programme-detail-close', 'programme-detail-backdrop', 'native-request-close', 'swipe']) {
@@ -232,6 +235,7 @@ describe('programme detail rendering boundary', () => {
       if (closeId === 'swipe') await swipe(100); else await click(closeId);
       expect(container.querySelector('[role="dialog"]')).toBeNull();
       expect(vi.mocked(useGuideClock)).toHaveBeenCalledTimes(renderCount);
+      expect(container.querySelectorAll('[data-testid^="programme-channel-"]').length).toBe(mountedProgrammeCount);
       expect(getByTestId('guide-time-scroll')).toBe(timeScroll);
       expect(getByTestId('guide-channel-scroll')).toBe(channelScroll);
       expect(timeScroll.scrollLeft).toBe(650);

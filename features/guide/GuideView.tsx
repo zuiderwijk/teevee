@@ -32,6 +32,12 @@ import {
   guideTotaalDayForViewedAnchor,
 } from './guideDaySelection';
 import {
+  guideProgrammeTimeWindow,
+  guideProgrammeWindowBucket,
+  guideProgrammaticScrollPrealignmentX,
+  windowGuideProgrammesByChannel,
+} from './guideProgrammeWindow';
+import {
   formatGuideTime,
   indexGuideProgrammesByChannel,
 } from './guideRenderData';
@@ -101,6 +107,7 @@ export const GuideView = memo(function GuideView({
   );
   const pendingTargetTimeRef = useRef<number | null>(null);
   const [condensed, setCondensed] = useState(false);
+  const [programmeWindowBucket, setProgrammeWindowBucket] = useState(0);
 
   const windowStart = windowStartDayMs;
   const windowEnd = useMemo(
@@ -115,6 +122,34 @@ export const GuideView = memo(function GuideView({
   const nowInWindow = nowMs >= windowStart && nowMs < windowEnd;
   const guideHeight = runtimeFixture.channels.length * layout.rowHeight;
   const programmeViewportWidth = Math.max(0, windowWidth - layout.channelWidth);
+  const programmeTimeWindow = useMemo(
+    () =>
+      guideProgrammeTimeWindow({
+        bucket: programmeWindowBucket,
+        viewportWidth: programmeViewportWidth,
+        timelineWidth: width,
+        windowStartMs: windowStart,
+        windowEndMs: windowEnd,
+        minuteWidth: layout.minuteWidth,
+      }),
+    [
+      layout.minuteWidth,
+      programmeViewportWidth,
+      programmeWindowBucket,
+      width,
+      windowEnd,
+      windowStart,
+    ],
+  );
+  const windowedProgrammesByChannel = useMemo(
+    () =>
+      windowGuideProgrammesByChannel(
+        programmesByChannel,
+        programmeTimeWindow.fromMs,
+        programmeTimeWindow.toMs,
+      ),
+    [programmesByChannel, programmeTimeWindow.fromMs, programmeTimeWindow.toMs],
+  );
   const followingDayBoundaryX = timeToX(
     followingDayStartMs,
     windowStart,
@@ -128,6 +163,30 @@ export const GuideView = memo(function GuideView({
   const syncCondensed = useCallback((nextCondensed: boolean) => {
     setCondensed((current) => (current === nextCondensed ? current : nextCondensed));
   }, []);
+
+  const syncProgrammeWindowBucket = useCallback((nextBucket: number) => {
+    setProgrammeWindowBucket((current) => (current === nextBucket ? current : nextBucket));
+  }, []);
+
+  const syncProgrammeWindowForViewportX = useCallback(
+    (viewportX: number) => {
+      syncProgrammeWindowBucket(
+        guideProgrammeWindowBucket(viewportX, programmeViewportWidth),
+      );
+    },
+    [programmeViewportWidth, syncProgrammeWindowBucket],
+  );
+
+  const syncProgrammeWindowForTarget = useCallback(
+    (timeMs: number, targetWindowStartMs: number) => {
+      const viewportX = Math.max(
+        0,
+        timeToX(timeMs, targetWindowStartMs, layout.minuteWidth) - TIME_ANCHOR_INSET,
+      );
+      syncProgrammeWindowForViewportX(viewportX);
+    },
+    [layout.minuteWidth, syncProgrammeWindowForViewportX],
+  );
 
   const commitViewedTime = useCallback((viewedTimeMs: number) => {
     viewedTimeRef.current = viewedTimeMs;
@@ -144,6 +203,20 @@ export const GuideView = memo(function GuideView({
       scheduleOnRN(syncCondensed, nextCondensed);
     },
     [scrollY, syncCondensed],
+  );
+
+  useAnimatedReaction(
+    () =>
+      programmeViewportWidth > 0
+        ? Math.floor(Math.max(0, scrollX.value) / programmeViewportWidth)
+        : 0,
+    (nextBucket, previousBucket) => {
+      if (nextBucket === previousBucket) return;
+      // Keep horizontal scroll frames on the UI thread. React only receives a coarse
+      // update after crossing a full viewport-width bucket; overscan covers the gap.
+      scheduleOnRN(syncProgrammeWindowBucket, nextBucket);
+    },
+    [programmeViewportWidth, scrollX, syncProgrammeWindowBucket],
   );
 
   const viewedTimeForX = useCallback(
@@ -212,10 +285,21 @@ export const GuideView = memo(function GuideView({
         0,
         timeToX(target, windowStart, layout.minuteWidth) - TIME_ANCHOR_INSET,
       );
-      scrollX.value = x;
+      const prealignmentX = guideProgrammaticScrollPrealignmentX(x, animated);
+      if (prealignmentX !== null) {
+        syncProgrammeWindowForViewportX(prealignmentX);
+        scrollX.value = prealignmentX;
+      }
       horizontalRef.current?.scrollTo({ x, animated });
     },
-    [commitViewedTime, layout.minuteWidth, scrollX, windowEnd, windowStart],
+    [
+      commitViewedTime,
+      layout.minuteWidth,
+      scrollX,
+      syncProgrammeWindowForViewportX,
+      windowEnd,
+      windowStart,
+    ],
   );
 
   useEffect(() => {
@@ -231,9 +315,15 @@ export const GuideView = memo(function GuideView({
         : guideTelevisionDayStart(nowMs);
     const target = guideTargetForDaySelection(viewedTimeRef.current, replacementDayStartMs);
     pendingTargetTimeRef.current = target.timeMs;
+    syncProgrammeWindowForTarget(target.timeMs, replacementDayStartMs);
     commitViewedTime(target.timeMs);
     setWindowStartDayMs(replacementDayStartMs);
-  }, [commitViewedTime, nowMs, windowStartDayMs]);
+  }, [
+    commitViewedTime,
+    nowMs,
+    syncProgrammeWindowForTarget,
+    windowStartDayMs,
+  ]);
 
   useEffect(() => {
     const target = pendingTargetTimeRef.current ??
@@ -248,10 +338,16 @@ export const GuideView = memo(function GuideView({
       if (nextDayStartMs === visibleDayStartMs && nextDayStartMs === windowStartDayMs) return;
       const target = guideTargetForDaySelection(viewedTimeRef.current, nextDayStartMs);
       pendingTargetTimeRef.current = target.timeMs;
+      syncProgrammeWindowForTarget(target.timeMs, target.dayStartMs);
       commitViewedTime(target.timeMs);
       setWindowStartDayMs(target.dayStartMs);
     },
-    [commitViewedTime, visibleDayStartMs, windowStartDayMs],
+    [
+      commitViewedTime,
+      syncProgrammeWindowForTarget,
+      visibleDayStartMs,
+      windowStartDayMs,
+    ],
   );
 
   const jumpToNow = useCallback(() => {
@@ -261,9 +357,16 @@ export const GuideView = memo(function GuideView({
       return;
     }
     pendingTargetTimeRef.current = target.timeMs;
+    syncProgrammeWindowForTarget(target.timeMs, target.dayStartMs);
     commitViewedTime(target.timeMs);
     setWindowStartDayMs(target.dayStartMs);
-  }, [commitViewedTime, scrollToTime, windowEnd, windowStart]);
+  }, [
+    commitViewedTime,
+    scrollToTime,
+    syncProgrammeWindowForTarget,
+    windowEnd,
+    windowStart,
+  ]);
 
   return (
     <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.colors.background }]}>
@@ -410,10 +513,8 @@ export const GuideView = memo(function GuideView({
                       },
                     ]}
                   >
-                    {(programmesByChannel.get(channel.id) ?? []).map((programme) => {
+                    {(windowedProgrammesByChannel.get(channel.id) ?? []).map((programme) => {
                       const frame = programmeFrame(programme, windowStart, layout.minuteWidth);
-                      const end = frame.left + frame.width;
-                      if (end < 0 || frame.left > width) return null;
                       const startMs = Date.parse(programme.startAt);
                       const endMs = Date.parse(programme.endAt);
                       const isCurrent = isProgrammeCurrent(programme, nowMs);
