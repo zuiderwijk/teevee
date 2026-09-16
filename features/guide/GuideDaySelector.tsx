@@ -11,6 +11,12 @@ import {
 
 import { useTeeveeTheme } from '@/theme/useTeeveeTheme';
 
+import {
+  beginMountedGuideDaySwitchTrace,
+  markMountedGuideDaySelectorModalDismissed,
+  markMountedGuideDaySelectorModalShown,
+  markMountedGuideDaySelectorOpenPress,
+} from './guideDaySwitchDiagnostics';
 import { guideDayLabel, guideDayOptions } from './guideDaySelection';
 
 type GuideDaySelectorProps = {
@@ -36,7 +42,13 @@ export const GuideDaySelector = memo(function GuideDaySelector({
   const selectedLabel = guideDayLabel(selectedDayStartMs, nowMs);
   const visibleLabel = compactPrefix ? `${compactPrefix} · ${selectedLabel}` : selectedLabel;
 
+  const openSelector = () => {
+    markMountedGuideDaySelectorOpenPress();
+    setOpen(true);
+  };
+
   const selectDay = (dayStartMs: number) => {
+    beginMountedGuideDaySwitchTrace(selectedDayStartMs, dayStartMs);
     setOpen(false);
     onSelectDay(dayStartMs);
   };
@@ -53,7 +65,7 @@ export const GuideDaySelector = memo(function GuideDaySelector({
             : 'Opent de beschikbare gidsdagen.'
         }
         accessibilityState={{ busy: loading }}
-        onPress={() => setOpen(true)}
+        onPress={openSelector}
         style={({ pressed }) => [styles.inlineControl, { opacity: pressed ? 0.55 : 1 }]}
       >
         <Text style={[styles.inlineLabel, { color: theme.colors.text }]}>{visibleLabel}</Text>
@@ -64,6 +76,8 @@ export const GuideDaySelector = memo(function GuideDaySelector({
         animationType="slide"
         transparent
         visible={open}
+        onShow={markMountedGuideDaySelectorModalShown}
+        onDismiss={markMountedGuideDaySelectorModalDismissed}
         onRequestClose={() => setOpen(false)}
       >
         <View style={styles.modalRoot}>
