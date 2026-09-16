@@ -2,6 +2,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import {
   beginMountedGuideDaySwitchTrace,
+  flushGuideDaySwitchDiagnostics,
   markGuideDaySelectionCommitted,
   markGuideDaySwitchSurfaceMounted,
   markGuideDaySwitchSurfaceUnmounted,
@@ -11,11 +12,12 @@ import {
 afterEach(() => {
   markGuideDaySwitchSurfaceUnmounted('totaal');
   markGuideDaySwitchSurfaceUnmounted('per-zender');
+  flushGuideDaySwitchDiagnostics();
   vi.restoreAllMocks();
 });
 
 describe('Guide day-switch diagnostics', () => {
-  it('correlates a mounted surface day switch without changing Guide state', () => {
+  it('correlates a mounted surface day switch while deferring console I/O', () => {
     const log = vi.spyOn(console, 'info').mockImplementation(() => undefined);
     const fromDayStartMs = Date.parse('2026-09-15T04:00:00Z');
     const toDayStartMs = Date.parse('2026-09-16T04:00:00Z');
@@ -26,6 +28,9 @@ describe('Guide day-switch diagnostics', () => {
     markGuideFixtureAlignment(toDayStartMs, 7.25, 48, 576);
 
     expect(traceId).not.toBeNull();
+    expect(log).not.toHaveBeenCalled();
+
+    flushGuideDaySwitchDiagnostics();
     const messages = log.mock.calls.map(([message]) => String(message));
     expect(messages.some((message) => message.includes('"event":"day-option-press"'))).toBe(true);
     expect(messages.some((message) => message.includes('"event":"selection-committed"'))).toBe(true);
@@ -42,6 +47,7 @@ describe('Guide day-switch diagnostics', () => {
     );
 
     expect(traceId).toBeNull();
+    flushGuideDaySwitchDiagnostics();
     expect(log).not.toHaveBeenCalled();
   });
 });
