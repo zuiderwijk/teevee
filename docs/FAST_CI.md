@@ -24,19 +24,19 @@ The avoidable latency is therefore not the correctness suite itself; it is runni
 | Class | Typical repository paths | Quality (`npm ci`, TS, lint, tests) | Expo export | Android native |
 | --- | --- | --- | --- | --- |
 | `docs-design` | `docs/**`, `design/**`, Markdown | skip | skip | skip |
-| `pure-code` | `server/**`, tests, non-CI scripts, static tooling config | run | skip | skip |
-| `runtime-ui` | `app/**`, `components/**`, `features/**`, `data/**`, `services/**`, `theme/**` | run | run | skip |
-| `native-config` | dependencies/lockfile, Expo/app/native config, Android/iOS, CI workflow/classifier | run | run | run |
+| `pure-code` | `server/**`, tests, explicitly whitelisted non-runtime tooling such as `eslint.config.*` and `expo-env.d.ts` | run | skip | skip |
+| `runtime-ui` | `app/**`, `components/**`, `features/**`, `data/**`, `services/**`, `theme/**`, `tsconfig.json` | run | run | skip |
+| `native-config` | dependencies/lockfile, Expo/app/native config, Android/iOS, CI workflow/classifier, unclassified scripts/build helpers | run | run | run |
 
-Unknown files, empty diffs, diff failures and changes to CI/classifier infrastructure fall back to `native-config`.
+Unknown files, new/unclassified script paths, empty diffs, diff failures and changes to CI/classifier infrastructure fall back to `native-config`.
 
 The classifier is intentionally repository-specific. It should be updated when the repository gains a new path whose build impact is understood; until then that path receives the conservative gate.
 
 ## PR and main behaviour
 
-PRs use the base/head merge-base diff and must still prove the required gates on the exact PR head SHA.
+PRs use the base/head merge-base diff and must still prove the required gates on the exact PR head SHA. Rename detection is disabled for classification so both the removed source path and added destination path contribute to the gate.
 
-Pushes to `main` classify the exact `before` -> `after` change and run the same relevant evidence. Exact-main verification therefore remains mandatory, but a docs-only merge no longer rebuilds application bundles or Android native artifacts without a technical reason.
+Pushes to `main` classify the exact `before` -> `after` tree delta rather than PR-style merge-base semantics. This remains correct for non-fast-forward updates and also disables rename collapsing so removed heavier paths cannot disappear from classification. Exact-main verification therefore remains mandatory, but a docs-only merge no longer rebuilds application bundles or Android native artifacts without a technical reason.
 
 Native/config/dependency diffs run arm64 Android compilation on PRs and the complete ABI set on `main`.
 
@@ -50,7 +50,7 @@ Manual `workflow_dispatch` forces `native-config` scope regardless of diff. This
 
 ## Deterministic boundaries
 
-`ci-scope.test.mjs` covers docs-only, design-only, pure server code, tests, runtime/UI, package lock, Expo config, native/buildconfig, workflow changes, classifier self-changes, mixed diffs, unknown files, empty diffs and merge-base diff semantics.
+`ci-scope.test.mjs` covers docs-only, design-only, pure server code, tests, runtime/UI, `tsconfig.json`, package lock, Expo config, native/buildconfig, workflow changes, classifier self-changes, mixed diffs, unknown/new script paths, empty diffs, PR merge-base semantics, runtime/native-to-docs renames, exact non-fast-forward main tree deltas, invalid/missing SHA CLI fallback and forced release validation.
 
 ## Deferred optimization
 

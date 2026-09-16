@@ -18,11 +18,11 @@ const NATIVE_CONFIG = [
 ];
 const PURE_CODE = [
   /^server\//,
-  /^scripts\/(?!ci\/)/,
-  /^(?:tsconfig\.json|eslint\.config\.(?:[cm]?[jt]s)|expo-env\.d\.ts)$/,
+  /^(?:eslint\.config\.(?:[cm]?[jt]s)|expo-env\.d\.ts)$/,
 ];
 const RUNTIME_UI = [
   /^(?:app|components|features|data|services|theme)\//,
+  /^tsconfig\.json$/,
 ];
 
 function matchesAny(file, patterns) {
@@ -66,9 +66,19 @@ function resultFor(classification, reason) {
   };
 }
 
-export function getChangedFiles({ baseSha, headSha, cwd = process.cwd() }) {
+export function getChangedFiles({ baseSha, headSha, diffMode = 'pull-request', cwd = process.cwd() }) {
   if (!baseSha || !headSha) throw new Error('baseSha and headSha are required');
-  const output = execFileSync('git', ['diff', '--name-only', `${baseSha}...${headSha}`], {
+
+  const args = ['diff', '--no-renames', '--name-only'];
+  if (diffMode === 'pull-request') {
+    args.push(`${baseSha}...${headSha}`);
+  } else if (diffMode === 'push') {
+    args.push(baseSha, headSha);
+  } else {
+    throw new Error(`Unsupported diffMode: ${diffMode}`);
+  }
+
+  const output = execFileSync('git', args, {
     cwd,
     encoding: 'utf8',
   });
@@ -98,12 +108,43 @@ function conservativeFailure(error) {
   process.exitCode = 0;
 }
 
+function parseCliArguments(args) {
+  const positional = [];
+  let diffMode = 'pull-request';
+  let forceNative = false;
+
+  for (const arg of args) {
+    if (arg === '--force-native') {
+      forceNative = true;
+      continue;
+    }
+    if (arg.startsWith('--diff-mode=')) {
+      diffMode = arg.slice('--diff-mode='.length);
+      continue;
+    }
+    if (arg.startsWith('--')) throw new Error(`Unsupported option: ${arg}`);
+    positional.push(arg);
+  }
+
+  if (positional.length > 2) throw new Error('Expected at most baseSha and headSha');
+  if (diffMode !== 'pull-request' && diffMode !== 'push') {
+    throw new Error(`Unsupported diffMode: ${diffMode}`);
+  }
+
+  return {
+    baseSha: positional[0],
+    headSha: positional[1],
+    diffMode,
+    forceNative,
+  };
+}
+
 function runCli() {
-  const [, , baseSha, headSha, forceMode] = process.argv;
   try {
-    const result = forceMode === '--force-native'
+    const { baseSha, headSha, diffMode, forceNative } = parseCliArguments(process.argv.slice(2));
+    const result = forceNative
       ? resultFor('native-config', 'Explicit release validation requested.')
-      : classifyCiScope(getChangedFiles({ baseSha, headSha }));
+      : classifyCiScope(getChangedFiles({ baseSha, headSha, diffMode }));
     console.log(result.reason);
     console.log(`CI class: ${result.classification}`);
     writeGithubOutputs(result);

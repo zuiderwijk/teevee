@@ -39,11 +39,11 @@ jobs:
         run: |
           set -euo pipefail
           if [[ "${GITHUB_EVENT_NAME}" == "workflow_dispatch" ]]; then
-            node scripts/ci/ci-scope.mjs HEAD HEAD --force-native
+            node scripts/ci/ci-scope.mjs --force-native
           elif [[ "${GITHUB_EVENT_NAME}" == "pull_request" ]]; then
-            node scripts/ci/ci-scope.mjs "$PR_BASE_SHA" "$PR_HEAD_SHA"
+            node scripts/ci/ci-scope.mjs "$PR_BASE_SHA" "$PR_HEAD_SHA" --diff-mode=pull-request
           else
-            node scripts/ci/ci-scope.mjs "$PUSH_BASE_SHA" "$PUSH_HEAD_SHA"
+            node scripts/ci/ci-scope.mjs "$PUSH_BASE_SHA" "$PUSH_HEAD_SHA" --diff-mode=push
           fi
 
   quality:
