@@ -42,7 +42,8 @@ Examples:
 - loading, empty, error or offline handling;
 - preference persistence;
 - accessibility behaviour;
-- refactors across existing production paths.
+- refactors across existing production paths;
+- CI enforcement/change-classification changes.
 
 Minimum gate:
 - automated tests for the changed behaviour;
@@ -75,20 +76,24 @@ A high-risk change must not be merged solely on the implementation author’s se
 
 ## 3. Required automated quality gates
 
-Every code-changing PR must pass the repository’s required CI jobs for its **exact head SHA** before merge.
+Every substantive PR must pass the **CI gates required by its deterministic change classification** for its exact head SHA before merge. Risk classification from section 2 remains separate: a High-risk product/runtime change can require independent/device evidence even when its automated change class does not require native compilation.
 
-Current mandatory checks are:
-- `npm ci` from the committed lockfile;
-- strict TypeScript via `npm run typecheck`;
-- lint via `npm run lint`;
-- automated tests via `npm test`;
-- Expo export for iOS, Android and web;
-- clean Android Expo prebuild;
-- Android debug APK compilation.
+The central classifier is `scripts/ci/ci-scope.mjs`. Mixed diffs use the heaviest applicable class. Unknown paths, empty/unavailable diffs, classifier failures, and changes to the CI workflow/classifier itself fail safe to the heaviest `native-config` gate.
 
-CI status must be inspected from the workflow run and job conclusions for the exact PR head. PR metadata alone is not sufficient evidence.
+Current automated change classes:
 
-After merge, exact-`main` CI is a separate piece of evidence. Do not claim the merge commit is green until its own workflow completes successfully.
+- **`docs-design`** — documentation, design references and Markdown-only changes. Required CI is classification/minimal validation only; Expo export, prebuild and native compilation add no relevant evidence and are skipped.
+- **`pure-code`** — isolated non-runtime code/tooling and tests where bundling/native output cannot change. Required CI: `npm ci`, strict TypeScript, lint and automated tests. Expo export/native compilation are skipped.
+- **`runtime-ui`** — React/React Native application/runtime code and other bundle-relevant mobile code. Required CI: `npm ci`, strict TypeScript, lint, automated tests and Expo export for iOS/Android/web. Native compilation is skipped unless native/config/dependency impact is also present.
+- **`native-config`** — dependencies/lockfile, Expo/app/native/build config, native projects, CI/build tooling, classifier changes or unknown/ambiguous paths. Required CI: all quality/runtime checks plus clean Android Expo prebuild and Android debug APK compilation. PRs use arm64 where appropriate; exact-`main` and explicit release validation use the full ABI set.
+
+CI status must be inspected from the workflow run and job conclusions for the exact PR head. A skipped job is acceptable only when the classifier does not require that gate; it is not evidence that a required gate passed.
+
+After merge, exact-`main` CI remains a separate mandatory piece of evidence. Exact-main uses the same change-aware policy rather than automatically rerunning every expensive build. A docs-only merge therefore still requires a successful exact-main workflow, but not an unrelated Expo/native build.
+
+A manual release-validation workflow invocation forces the full `native-config` gate. Development CI and release CI therefore need not have identical cost while the full native release safety net remains available.
+
+Obsolete PR-head runs may be cancelled by a newer head for the same PR. `main` runs must not be cancelled merely because another merge lands shortly afterwards; each exact-main change still needs its own completed classification/relevant gate evidence.
 
 ## 4. Static code-quality rules
 
@@ -327,13 +332,14 @@ High-risk exceptions require Lead/human-owner approval when they materially redu
 
 ## 15. Current enforcement and next hardening
 
-Already enforced today:
-- strict TypeScript;
-- lint;
-- Vitest suite;
-- iOS/Android/web export;
-- clean Android prebuild and debug APK compile;
-- exact-head CI protocol;
+Already enforced once Fast CI is merged:
+- central deterministic change classification with conservative fallback;
+- strict TypeScript, lint and Vitest for code classes that can affect executable behaviour;
+- iOS/Android/web Expo export for runtime/bundle-relevant changes;
+- clean Android prebuild and debug APK compilation for native/config/dependency-impacting changes;
+- exact-head PR CI and separate exact-main CI using the relevant classified gates;
+- explicit manual full release validation;
+- obsolete PR-run cancellation without cancelling exact-main runs;
 - physical gates recorded in project state when required.
 
 Engineering-quality hardening to add during Phase 4:
@@ -342,5 +348,7 @@ Engineering-quality hardening to add during Phase 4:
 - broader automated behavioural coverage as final multi-day Guide semantics are implemented;
 - realistic D-2..D+7 performance fixtures/benchmarks;
 - release-like offline cold-start validation outside Expo Go when a standalone/dev build is available.
+
+Further job parallelization is intentionally not part of Fast CI until timings show that duplicated checkout/setup/`npm ci` overhead produces a real wall-clock win.
 
 These hardening items strengthen the system; they do not weaken the requirements in this policy while tooling is being added.

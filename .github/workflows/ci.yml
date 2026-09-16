@@ -4,12 +4,51 @@ on:
   push:
     branches: [main]
   pull_request:
+  workflow_dispatch:
 
 permissions:
   contents: read
 
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.event.pull_request.number || github.run_id }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
 jobs:
+  classify:
+    runs-on: ubuntu-latest
+    outputs:
+      classification: ${{ steps.scope.outputs.classification }}
+      run-quality: ${{ steps.scope.outputs.run-quality }}
+      run-expo-export: ${{ steps.scope.outputs.run-expo-export }}
+      run-native: ${{ steps.scope.outputs.run-native }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+      - name: Classify changed files
+        id: scope
+        shell: bash
+        env:
+          PR_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          PUSH_BASE_SHA: ${{ github.event.before }}
+          PUSH_HEAD_SHA: ${{ github.sha }}
+        run: |
+          set -euo pipefail
+          if [[ "${GITHUB_EVENT_NAME}" == "workflow_dispatch" ]]; then
+            node scripts/ci/ci-scope.mjs HEAD HEAD --force-native
+          elif [[ "${GITHUB_EVENT_NAME}" == "pull_request" ]]; then
+            node scripts/ci/ci-scope.mjs "$PR_BASE_SHA" "$PR_HEAD_SHA"
+          else
+            node scripts/ci/ci-scope.mjs "$PUSH_BASE_SHA" "$PUSH_HEAD_SHA"
+          fi
+
   quality:
+    needs: classify
+    if: needs.classify.outputs.run-quality == 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
@@ -21,61 +60,36 @@ jobs:
       - run: npm run typecheck
       - run: npm run lint
       - run: npm test
-      # Bundle checks exercise native imports/worklets too; not a signed native build.
       - name: Export iOS, Android and web bundles
+        if: needs.classify.outputs.run-expo-export == 'true'
         run: npx expo export --platform all
 
   android-native:
+    needs: classify
+    if: needs.classify.outputs.run-native == 'true'
     runs-on: ubuntu-latest
     env:
       CI: 1
       EXPO_NO_TELEMETRY: 1
     steps:
       - uses: actions/checkout@v7
-        with:
-          # PR scope detection needs the merge base even when main advanced after branching.
-          fetch-depth: 0
-
       - uses: actions/setup-node@v7
         with:
           node-version: 22
           cache: npm
-
-      - name: Determine Android native build scope
-        id: native-scope
-        shell: bash
-        run: |
-          set -euo pipefail
-
-          # main remains the release-like safety net: build the complete ABI set.
-          if [[ "${GITHUB_EVENT_NAME}" != "pull_request" ]]; then
-            echo "run=true" >> "$GITHUB_OUTPUT"
-            echo "scope=all" >> "$GITHUB_OUTPUT"
-            echo "Full Android native build required on ${GITHUB_EVENT_NAME}."
-            exit 0
-          fi
-
-          node scripts/ci/android-native-scope.mjs \
-            "${{ github.event.pull_request.base.sha }}" \
-            "${{ github.event.pull_request.head.sha }}"
-
       - uses: actions/setup-java@v4
-        if: steps.native-scope.outputs.run == 'true'
         with:
           distribution: temurin
           java-version: 17
       - uses: gradle/actions/setup-gradle@v4
-        if: steps.native-scope.outputs.run == 'true'
       - run: npm ci
-        if: steps.native-scope.outputs.run == 'true'
       - name: Generate Android native project
-        if: steps.native-scope.outputs.run == 'true'
         run: npx expo prebuild --platform android --clean
       - name: Compile Android debug APK (PR arm64)
-        if: steps.native-scope.outputs.run == 'true' && github.event_name == 'pull_request'
+        if: github.event_name == 'pull_request'
         working-directory: android
         run: ./gradlew :app:assembleDebug -PreactNativeArchitectures=arm64-v8a --no-daemon
-      - name: Compile Android debug APK (main full ABI set)
-        if: steps.native-scope.outputs.run == 'true' && github.event_name != 'pull_request'
+      - name: Compile Android debug APK (main/release full ABI set)
+        if: github.event_name != 'pull_request'
         working-directory: android
         run: ./gradlew :app:assembleDebug --no-daemon
