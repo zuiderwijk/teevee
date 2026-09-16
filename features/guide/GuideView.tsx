@@ -34,6 +34,7 @@ import {
 import {
   guideProgrammeTimeWindow,
   guideProgrammeWindowBucket,
+  guideProgrammaticScrollPrealignmentX,
   windowGuideProgrammesByChannel,
 } from './guideProgrammeWindow';
 import {
@@ -284,8 +285,11 @@ export const GuideView = memo(function GuideView({
         0,
         timeToX(target, windowStart, layout.minuteWidth) - TIME_ANCHOR_INSET,
       );
-      if (!animated) syncProgrammeWindowForViewportX(x);
-      scrollX.value = x;
+      const prealignmentX = guideProgrammaticScrollPrealignmentX(x, animated);
+      if (prealignmentX !== null) {
+        syncProgrammeWindowForViewportX(prealignmentX);
+        scrollX.value = prealignmentX;
+      }
       horizontalRef.current?.scrollTo({ x, animated });
     },
     [
