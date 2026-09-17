@@ -18,6 +18,7 @@ import { useTeeveeTheme } from '@/theme/useTeeveeTheme';
 
 import { ChannelIdentity } from './ChannelIdentity';
 import type { ProgrammeSelection } from './detailState';
+import { GuideChrome } from './GuideChrome';
 import { GuideDaySelector } from './GuideDaySelector';
 import {
   guideTargetForDaySelection,
@@ -36,8 +37,8 @@ import { useGuideDaySelection } from './useGuideDaySelection';
 import { useSelectedGuideDaySchedule } from './useSelectedGuideDaySchedule';
 
 const CONTROL_MAX_FONT_SIZE_MULTIPLIER = 1.2;
-const CHANNEL_ITEM_WIDTH = 84;
-const CHANNEL_STRIP_HEIGHT = 62;
+const CHANNEL_ITEM_WIDTH = 78;
+const CHANNEL_STRIP_HEIGHT = 64;
 const TIME_GUTTER_WIDTH = 62;
 const NOW_TOP_INSET = 132;
 const HEADER_CONDENSE_THRESHOLD = 24;
@@ -352,19 +353,11 @@ export const PerChannelGuideView = memo(function PerChannelGuideView({
 
   return (
     <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.colors.background }]}>
-      {!condensed ? (
-        <View style={styles.header}>
-          <View>
-            <Text accessible={false} style={[styles.eyebrow, { color: theme.colors.textMuted }]}>TEEVEE</Text>
-            <Text accessibilityRole="header" style={[styles.title, { color: theme.colors.text }]}>Gids</Text>
-          </View>
-          <View style={styles.presentationLabel}>
-            <View style={[styles.presentationDot, { backgroundColor: theme.colors.currentTime }]} />
-            <Text style={[styles.presentationText, { color: theme.colors.textSecondary }]}>Per zender</Text>
-          </View>
-          {headerAction}
-        </View>
-      ) : null}
+      <GuideChrome
+        condensed={condensed}
+        presentationNavigation={headerAction}
+        heading="Gids"
+      />
 
       <ScrollView
         ref={channelStripRef}
@@ -373,7 +366,10 @@ export const PerChannelGuideView = memo(function PerChannelGuideView({
         directionalLockEnabled
         nestedScrollEnabled
         showsHorizontalScrollIndicator={false}
-        style={[styles.channelStrip, { borderBottomColor: theme.colors.border }]}
+        style={[
+          styles.channelStrip,
+          { backgroundColor: theme.colors.background, borderBottomColor: theme.colors.border },
+        ]}
         contentContainerStyle={styles.channelStripContent}
       >
         {channels.map((channel, index) => {
@@ -389,7 +385,9 @@ export const PerChannelGuideView = memo(function PerChannelGuideView({
                 styles.channelButton,
                 {
                   width: CHANNEL_ITEM_WIDTH,
-                  opacity: pressed ? 0.6 : active ? 1 : 0.62,
+                  borderColor: active ? theme.colors.border : 'transparent',
+                  backgroundColor: active ? theme.colors.surfaceElevated : 'transparent',
+                  opacity: pressed ? 0.6 : active ? 1 : 0.68,
                 },
               ]}
             >
@@ -397,8 +395,8 @@ export const PerChannelGuideView = memo(function PerChannelGuideView({
                 channel={channel}
                 textColor={theme.colors.text}
                 mutedTextColor={theme.colors.textMuted}
+                variant="logo-first"
               />
-              {active ? <View style={[styles.channelActive, { backgroundColor: theme.colors.currentTime }]} /> : null}
             </Pressable>
           );
         })}
@@ -406,14 +404,23 @@ export const PerChannelGuideView = memo(function PerChannelGuideView({
 
       {!condensed ? (
         <View style={styles.channelContext}>
-          <Text style={[styles.channelName, { color: theme.colors.text }]}>{selectedChannel.displayName}</Text>
+          <Text
+            maxFontSizeMultiplier={1.25}
+            style={[styles.channelName, { color: theme.colors.text }]}
+          >
+            {selectedChannel.displayName}
+          </Text>
         </View>
       ) : null}
 
       <View
+        testID={condensed ? 'per-channel-context-condensed' : 'per-channel-context-expanded'}
         style={[
           styles.contextRow,
-          condensed ? { borderBottomColor: theme.colors.border, borderBottomWidth: StyleSheet.hairlineWidth } : null,
+          {
+            backgroundColor: theme.colors.background,
+            borderBottomColor: theme.colors.border,
+          },
         ]}
       >
         <GuideDaySelector
@@ -432,6 +439,14 @@ export const PerChannelGuideView = memo(function PerChannelGuideView({
             style={[styles.utilityButton, { borderColor: theme.colors.border }]}
           >
             <Text
+              accessible={false}
+              maxFontSizeMultiplier={1}
+              style={[styles.utilityIcon, { color: theme.colors.textSecondary }]}
+            >
+              ☾
+            </Text>
+            <Text
+              numberOfLines={1}
               maxFontSizeMultiplier={CONTROL_MAX_FONT_SIZE_MULTIPLIER}
               style={[styles.utilityButtonText, { color: theme.colors.textSecondary }]}
             >
@@ -442,9 +457,10 @@ export const PerChannelGuideView = memo(function PerChannelGuideView({
             accessibilityRole="button"
             accessibilityLabel="Ga naar nu"
             onPress={() => scrollToNow(true)}
-            style={[styles.utilityButton, { borderColor: theme.colors.border }]}
+            style={[styles.utilityButton, styles.nowButton, { borderColor: theme.colors.border }]}
           >
             <Text
+              numberOfLines={1}
               maxFontSizeMultiplier={CONTROL_MAX_FONT_SIZE_MULTIPLIER}
               style={[styles.utilityButtonText, { color: theme.colors.text }]}
             >
@@ -506,46 +522,6 @@ const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
   },
-  header: {
-    flexWrap: 'wrap',
-    columnGap: 12,
-    rowGap: 8,
-    minHeight: 78,
-    paddingHorizontal: 18,
-    paddingTop: 10,
-    paddingBottom: 8,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-end',
-  },
-  eyebrow: {
-    fontSize: 10,
-    fontWeight: '800',
-    letterSpacing: 1.6,
-  },
-  title: {
-    marginTop: 2,
-    fontSize: 30,
-    lineHeight: 34,
-    fontWeight: '800',
-    letterSpacing: -1,
-  },
-  presentationLabel: {
-    minHeight: 34,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 7,
-    paddingBottom: 3,
-  },
-  presentationDot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-  },
-  presentationText: {
-    fontSize: 13,
-    fontWeight: '700',
-  },
   channelStrip: {
     flexGrow: 0,
     height: CHANNEL_STRIP_HEIGHT,
@@ -553,19 +529,14 @@ const styles = StyleSheet.create({
   },
   channelStripContent: {
     paddingHorizontal: 8,
+    alignItems: 'center',
   },
   channelButton: {
-    height: CHANNEL_STRIP_HEIGHT,
-    position: 'relative',
+    height: 54,
+    marginHorizontal: 2,
+    borderRadius: 13,
+    borderWidth: StyleSheet.hairlineWidth,
     paddingHorizontal: 3,
-  },
-  channelActive: {
-    position: 'absolute',
-    left: 20,
-    right: 20,
-    bottom: 0,
-    height: 2,
-    borderRadius: 1,
   },
   channelContext: {
     paddingHorizontal: 18,
@@ -579,15 +550,16 @@ const styles = StyleSheet.create({
     letterSpacing: -0.35,
   },
   contextRow: {
-    minHeight: 58,
+    minHeight: 54,
     paddingHorizontal: 14,
-    paddingVertical: 5,
+    paddingVertical: 4,
     flexDirection: 'row',
     flexWrap: 'wrap',
     alignItems: 'center',
     justifyContent: 'space-between',
-    columnGap: 12,
+    columnGap: 10,
     rowGap: 4,
+    borderBottomWidth: StyleSheet.hairlineWidth,
   },
   utilityActions: {
     marginLeft: 'auto',
@@ -595,18 +567,28 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap',
     alignItems: 'center',
     justifyContent: 'flex-end',
-    gap: 7,
+    gap: 6,
   },
   utilityButton: {
-    minHeight: 48,
-    paddingHorizontal: 12,
-    borderRadius: 12,
+    minHeight: 44,
+    paddingHorizontal: 11,
+    borderRadius: 10,
     borderWidth: StyleSheet.hairlineWidth,
+    flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
+    gap: 5,
+  },
+  nowButton: {
+    minWidth: 48,
+  },
+  utilityIcon: {
+    fontSize: 15,
+    lineHeight: 16,
   },
   utilityButtonText: {
-    fontSize: 13,
+    fontSize: 12,
+    lineHeight: 16,
     fontWeight: '700',
   },
   hourTick: {
