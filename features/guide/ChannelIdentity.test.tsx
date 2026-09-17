@@ -77,4 +77,21 @@ describe('ChannelIdentity', () => {
 
     expect(container.querySelector('span')?.getAttribute('data-ellipsize-mode')).toBe('tail');
   });
+
+  it('uses logo-only presentation without losing accessible channel identity', async () => {
+    await act(async () => {
+      root.render(
+        <ChannelIdentity
+          channel={{ ...baseChannel, logoUrl: 'https://example.com/publiek-1.png' }}
+          textColor="#111"
+          mutedTextColor="#777"
+          variant="logo-first"
+        />,
+      );
+    });
+
+    expect(container.querySelector('img')).not.toBeNull();
+    expect(container.querySelector('span')).toBeNull();
+    expect(container.querySelector('[aria-label="Publiek 1"]')).not.toBeNull();
+  });
 });
