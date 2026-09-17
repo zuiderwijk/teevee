@@ -12,6 +12,7 @@ type MockProps = {
   accessibilityRole?: string;
   accessibilityState?: { selected?: boolean; busy?: boolean };
   disabled?: boolean;
+  maxFontSizeMultiplier?: number;
   onPress?: () => void;
 };
 
@@ -21,6 +22,7 @@ vi.mock('react-native', () => {
       tag,
       {
         'data-testid': props.testID,
+        'data-max-font-scale': props.maxFontSizeMultiplier,
         'aria-label': props.accessibilityLabel,
         'aria-selected': props.accessibilityState?.selected,
         'aria-busy': props.accessibilityState?.busy,
@@ -35,6 +37,8 @@ vi.mock('react-native', () => {
     Pressable: (props: MockProps) => element('button', props),
     View: (props: MockProps) => element('div', props),
     Text: (props: MockProps) => element('span', props),
+    Platform: { OS: 'ios' },
+    useWindowDimensions: () => ({ width: 390, height: 844, scale: 3, fontScale: 1 }),
     StyleSheet: {
       hairlineWidth: 1,
       create: <T,>(value: T) => value,
@@ -89,6 +93,8 @@ describe('GuidePresentationSelector', () => {
     expect(tabs).toHaveLength(3);
     expect(tabs.filter((tab) => tab.getAttribute('aria-selected') === 'true')).toHaveLength(1);
     expect(container.querySelector('[data-testid="guide-presentation-total"]')?.getAttribute('aria-selected')).toBe('true');
+    expect(container.querySelector('[data-testid="guide-presentation-active-indicator"]')).not.toBeNull();
+    expect([...container.querySelectorAll('[data-max-font-scale]')].every((node) => node.getAttribute('data-max-font-scale') === '1.2')).toBe(true);
 
     const perChannel = container.querySelector<HTMLButtonElement>('[data-testid="guide-presentation-per-channel"]');
     if (!perChannel) throw new Error('Missing Per zender tab');
