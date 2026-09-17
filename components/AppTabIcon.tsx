@@ -1,14 +1,14 @@
-import { StyleSheet, View } from 'react-native';
+import { type ColorValue, StyleSheet, View } from 'react-native';
 
 type AppTabIconName = 'guide' | 'tonight' | 'search';
 
 type AppTabIconProps = {
   name: AppTabIconName;
-  color: string;
+  color: ColorValue;
   focused: boolean;
 };
 
-function SearchIcon({ color }: { color: string }) {
+function SearchIcon({ color }: { color: ColorValue }) {
   return (
     <View style={styles.searchIcon}>
       <View style={[styles.searchCircle, { borderColor: color }]} />
@@ -17,7 +17,7 @@ function SearchIcon({ color }: { color: string }) {
   );
 }
 
-function GuideIcon({ color, focused }: { color: string; focused: boolean }) {
+function GuideIcon({ color, focused }: { color: ColorValue; focused: boolean }) {
   return (
     <View style={styles.guideIcon}>
       <View style={[styles.guideBody, { borderColor: color }]}>
@@ -37,7 +37,7 @@ function GuideIcon({ color, focused }: { color: string; focused: boolean }) {
   );
 }
 
-function TonightIcon({ color, focused }: { color: string; focused: boolean }) {
+function TonightIcon({ color, focused }: { color: ColorValue; focused: boolean }) {
   return (
     <View style={[styles.tonightCircle, { borderColor: color }]}>
       <View
