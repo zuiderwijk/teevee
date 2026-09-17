@@ -23,6 +23,7 @@ import { useTeeveeTheme } from '@/theme/useTeeveeTheme';
 import { ChannelIdentity } from './ChannelIdentity';
 import type { ProgrammeSelection } from './detailState';
 import { EdgeReadabilityOverlay } from './EdgeReadabilityOverlay';
+import { GuideChrome } from './GuideChrome';
 import { GuideDaySelector } from './GuideDaySelector';
 import {
   guideDayIsSelectable,
@@ -240,8 +241,6 @@ export const GuideView = memo(function GuideView({
     () => includeFollowingDay && scrollX.value + TIME_ANCHOR_INSET >= followingDayBoundaryX,
     (inFollowingDay, previouslyInFollowingDay) => {
       if (previouslyInFollowingDay === null || inFollowingDay === previouslyInFollowingDay) return;
-      // The date context and exact viewed-time ref are updated through the same anchor path.
-      // This bridge only runs when the stable anchor crosses the 06:00 day boundary.
       scheduleOnRN(syncHorizontalAnchor, scrollX.value);
     },
     [followingDayBoundaryX, includeFollowingDay, scrollX, syncHorizontalAnchor],
@@ -250,8 +249,6 @@ export const GuideView = memo(function GuideView({
   const horizontalScrollHandler = useAnimatedScrollHandler(
     {
       onScroll: (event) => {
-        // Keep every scroll frame on the UI thread. Date context crosses the 06:00
-        // threshold via the boundary reaction above, so JS is still not bridged per frame.
         scrollX.value = Math.max(0, event.contentOffset.x);
       },
       onEndDrag: (event) => {
@@ -370,20 +367,20 @@ export const GuideView = memo(function GuideView({
 
   return (
     <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.colors.background }]}>
-      {!condensed ? (
-        <View style={styles.header}>
-          <View style={styles.headerTitleGroup}>
-            <Text accessible={false} style={[styles.eyebrow, { color: theme.colors.textMuted }]}>TEEVEE</Text>
-            <Text accessibilityRole="header" style={[styles.title, { color: theme.colors.text }]}>Gids</Text>
-          </View>
-          {headerAction}
-        </View>
-      ) : null}
+      <GuideChrome
+        condensed={condensed}
+        presentationNavigation={headerAction}
+        heading="Gids"
+        supportingText="Alle zenders, één overzicht"
+      />
 
       <View
         style={[
           styles.guideControls,
-          condensed ? { borderBottomColor: theme.colors.border, borderBottomWidth: StyleSheet.hairlineWidth } : null,
+          {
+            backgroundColor: theme.colors.background,
+            borderBottomColor: theme.colors.border,
+          },
         ]}
       >
         <GuideDaySelector
@@ -417,7 +414,7 @@ export const GuideView = memo(function GuideView({
             styles.channelColumn,
             {
               width: layout.channelWidth,
-              backgroundColor: theme.colors.surface,
+              backgroundColor: theme.colors.background,
               borderRightColor: theme.colors.border,
             },
           ]}
@@ -427,9 +424,7 @@ export const GuideView = memo(function GuideView({
               styles.channelAxisCorner,
               { height: layout.timeAxisHeight, borderBottomColor: theme.colors.border },
             ]}
-          >
-            <Text numberOfLines={1} style={[styles.axisCornerText, { color: theme.colors.textMuted }]}>ZENDER</Text>
-          </View>
+          />
           <ScrollView ref={channelRef} showsVerticalScrollIndicator={false} scrollEnabled={false}>
             {runtimeFixture.channels.map((channel) => (
               <View
@@ -443,6 +438,7 @@ export const GuideView = memo(function GuideView({
                   channel={channel}
                   textColor={theme.colors.text}
                   mutedTextColor={theme.colors.textMuted}
+                  variant="logo-first"
                 />
               </View>
             ))}
@@ -469,7 +465,7 @@ export const GuideView = memo(function GuideView({
                 styles.timeAxis,
                 {
                   height: layout.timeAxisHeight,
-                  backgroundColor: theme.colors.surface,
+                  backgroundColor: theme.colors.background,
                   borderBottomColor: theme.colors.border,
                 },
               ]}
@@ -487,6 +483,25 @@ export const GuideView = memo(function GuideView({
                   />
                 );
               })}
+              {nowInWindow ? (
+                <View
+                  pointerEvents="none"
+                  style={[styles.currentTimeMarker, { left: nowX }]}
+                >
+                  <View style={[styles.currentTimeBadge, { backgroundColor: theme.colors.currentTime }]}>
+                    <Text
+                      maxFontSizeMultiplier={GUIDE_CONTROL_MAX_FONT_SIZE_MULTIPLIER}
+                      style={[
+                        styles.currentTimeText,
+                        { color: theme.dark ? theme.colors.text : theme.colors.surface },
+                      ]}
+                    >
+                      {formatGuideTime(nowMs)}
+                    </Text>
+                  </View>
+                  <View style={[styles.currentTimeTick, { backgroundColor: theme.colors.currentTime }]} />
+                </View>
+              ) : null}
             </View>
 
             <Animated.ScrollView
@@ -577,7 +592,9 @@ export const GuideView = memo(function GuideView({
                               {programme.title}
                             </Text>
                             {showProgrammeTime ? (
-                              <Text numberOfLines={1} style={[styles.programmeTime, { color: theme.colors.textMuted }]}
+                              <Text
+                                numberOfLines={1}
+                                style={[styles.programmeTime, { color: theme.colors.textMuted }]}
                               >
                                 {formatGuideTime(startMs)}
                               </Text>
@@ -588,15 +605,6 @@ export const GuideView = memo(function GuideView({
                     })}
                   </View>
                 ))}
-                {nowInWindow ? (
-                  <View
-                    pointerEvents="none"
-                    style={[
-                      styles.currentTimeLine,
-                      { left: nowX, backgroundColor: theme.colors.currentTime, height: guideHeight },
-                    ]}
-                  />
-                ) : null}
               </View>
             </Animated.ScrollView>
           </View>
@@ -609,7 +617,7 @@ export const GuideView = memo(function GuideView({
             firstTickX={firstTickX}
             tickSpacing={tickSpacing}
             labelWidth={layout.tickLabelWidth}
-            backgroundColor={theme.colors.surface}
+            backgroundColor={theme.colors.background}
             borderBottomColor={theme.colors.border}
             scrollX={scrollX}
           />
@@ -631,8 +639,6 @@ export const GuideView = memo(function GuideView({
             windowStart={windowStart}
             viewportWidth={programmeViewportWidth}
             nowMs={nowMs}
-            nowX={nowX}
-            nowInWindow={nowInWindow}
             scrollX={scrollX}
             scrollY={scrollY}
           />
@@ -644,47 +650,60 @@ export const GuideView = memo(function GuideView({
 
 const styles = StyleSheet.create({
   safeArea: { flex: 1 },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    flexWrap: 'wrap',
-    columnGap: 12,
-    rowGap: 8,
-    paddingHorizontal: 18,
-    paddingTop: 12,
-    paddingBottom: 8,
-  },
-  headerTitleGroup: { flexShrink: 1 },
-  eyebrow: { fontSize: 10, fontWeight: '700', letterSpacing: 1.1 },
-  title: { fontSize: 32, fontWeight: '700', letterSpacing: -1.2 },
   guideControls: {
-    minHeight: 56,
+    minHeight: 52,
     flexDirection: 'row',
     flexWrap: 'nowrap',
     alignItems: 'center',
-    gap: 12,
-    paddingHorizontal: 18,
-    paddingBottom: 8,
+    gap: 10,
+    paddingHorizontal: 16,
+    paddingVertical: 2,
+    borderBottomWidth: StyleSheet.hairlineWidth,
   },
   nowBadge: {
-    minWidth: 52,
-    minHeight: 48,
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-    borderRadius: 12,
+    minWidth: 48,
+    minHeight: 44,
+    paddingHorizontal: 13,
+    paddingVertical: 7,
+    borderRadius: 9,
     borderWidth: StyleSheet.hairlineWidth,
     alignItems: 'center',
     justifyContent: 'center',
     marginLeft: 'auto',
   },
-  nowText: { fontSize: 14, fontWeight: '700' },
-  guideFrame: { flex: 1, flexDirection: 'row', borderTopWidth: StyleSheet.hairlineWidth },
+  nowText: { fontSize: 13, lineHeight: 17, fontWeight: '700' },
+  guideFrame: { flex: 1, flexDirection: 'row' },
   channelColumn: { zIndex: 2, borderRightWidth: StyleSheet.hairlineWidth },
-  channelAxisCorner: { justifyContent: 'center', paddingHorizontal: 8, borderBottomWidth: StyleSheet.hairlineWidth },
-  axisCornerText: { fontSize: 9, fontWeight: '700', letterSpacing: 0.8 },
+  channelAxisCorner: { borderBottomWidth: StyleSheet.hairlineWidth },
   channelCell: { justifyContent: 'center', borderBottomWidth: StyleSheet.hairlineWidth },
   timeAxis: { position: 'relative', borderBottomWidth: StyleSheet.hairlineWidth },
+  currentTimeMarker: {
+    position: 'absolute',
+    bottom: 0,
+    width: 1,
+    alignItems: 'center',
+    zIndex: 5,
+  },
+  currentTimeBadge: {
+    minWidth: 48,
+    minHeight: 24,
+    paddingHorizontal: 8,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+    transform: [{ translateY: -5 }],
+  },
+  currentTimeText: {
+    fontSize: 11,
+    lineHeight: 14,
+    fontWeight: '700',
+    fontVariant: ['tabular-nums'],
+  },
+  currentTimeTick: {
+    width: 2,
+    height: 8,
+    borderRadius: 1,
+  },
   programmeRow: { position: 'absolute', left: 0, borderBottomWidth: StyleSheet.hairlineWidth },
   programme: {
     position: 'absolute',
@@ -704,7 +723,6 @@ const styles = StyleSheet.create({
   programmeTime: { fontSize: 10, marginTop: 4 },
   progressTrack: { height: 2, borderRadius: 1, overflow: 'hidden', marginBottom: 4 },
   progressFill: { height: '100%' },
-  currentTimeLine: { position: 'absolute', top: 0, width: 2, zIndex: 4 },
   edgeOverlayFrame: {
     position: 'absolute',
     right: 0,
