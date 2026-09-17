@@ -1,6 +1,7 @@
 import { memo, useMemo, useState } from 'react';
 import {
   Modal,
+  Platform,
   Pressable,
   SafeAreaView,
   ScrollView,
@@ -15,7 +16,7 @@ import {
   COMPACT_CHROME_MAX_FONT_SIZE_MULTIPLIER,
   GUIDE_TYPOGRAPHY,
   GUIDE_VISUAL_METRICS,
-  platformMinimumTouchTarget,
+  minimumTouchTargetForPlatform,
 } from './guideVisualMetrics';
 import { guideDayLabel, guideDayOptions } from './guideDaySelection';
 
@@ -49,7 +50,7 @@ export const GuideDaySelector = memo(function GuideDaySelector({
   const options = useMemo(() => guideDayOptions(nowMs), [nowMs]);
   const selectedLabel = guideDayLabel(selectedDayStartMs, nowMs);
   const visibleLabel = compactPrefix ? `${compactPrefix} · ${selectedLabel}` : selectedLabel;
-  const minimumTouchTarget = platformMinimumTouchTarget();
+  const minimumTouchTarget = minimumTouchTargetForPlatform(Platform.OS);
 
   const selectDay = (dayStartMs: number) => {
     setOpen(false);
@@ -71,7 +72,10 @@ export const GuideDaySelector = memo(function GuideDaySelector({
         onPress={() => setOpen(true)}
         style={({ pressed }) => [
           styles.inlineControl,
-          { minHeight: minimumTouchTarget, opacity: pressed ? GUIDE_VISUAL_METRICS.controlPressOpacity : 1 },
+          {
+            minHeight: minimumTouchTarget,
+            opacity: pressed ? GUIDE_VISUAL_METRICS.controlPressOpacity : 1,
+          },
         ]}
       >
         <View style={styles.inlineLabelGroup}>
