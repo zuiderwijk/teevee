@@ -114,7 +114,7 @@ The date/day control in the original 13 September Totaal images is **SUPERSEDED*
 
 ### Per zender
 Status: **ACCEPTED**
-Owner-approved direction: 2026-09-13; day-navigation and Primetime amendments 2026-09-15; visual refinement 2026-09-17; rest-state selected-channel-heading removal 2026-09-18
+Owner-approved direction: 2026-09-13; day-navigation and Primetime amendments 2026-09-15; visual refinement 2026-09-17; rest-state selected-channel-heading removal and current-programme spacing refinement 2026-09-18
 Detailed manifest: `design/current/guide/PER_ZENDER.md`
 Production specification: `docs/PER_ZENDER_VISUAL_CONVERGENCE.md`
 
@@ -138,7 +138,7 @@ Accepted visual characteristics:
 - selected channel remains fully visible, centres comfortably where geometry permits and may retain a small trailing continuation cue where practical;
 - rest channel strip is 72 pt; settled condensed strip is 60 pt while channel items remain 48×48;
 - ample separation between channel selector and schedule;
-- current programme uses a restrained local progress treatment without current card, red left rail, global current-time line or now-dot;
+- current programme uses a deliberately spacious **176-pt base row** with 19/23 title, 10-pt title→description gap, 15/22 description up to 4 lines, at least 20 pt clear space before the local progressbar, and no current card, red left rail, global current-time line or now-dot;
 - programme rows prioritise time and title and use a temporary semantic `surface` fill only while pressed;
 - light/dark/system follow the shared Guide shell;
 - date remains primarily typographic;
@@ -150,11 +150,11 @@ Accepted visual characteristics:
 - accepted day selector follows `GUIDE_DAY_SELECTOR.md`;
 - shared typography follows `design/current/TYPOGRAPHY.md`: Instrument Sans replaces any historical Söhne reference for family choice only.
 
-The exact date choices in the original 13 September Per-zender image are **SUPERSEDED**. Any separate large textual selected-channel heading shown in that or another accepted historical Per-zender rest-state visual is also **SUPERSEDED** by the 18 September owner refinement. Preserve the rest of the accepted channel-strip/list composition while using the accepted shared day-selector assets and the written 17–18 September refinements.
+The exact date choices in the original 13 September Per-zender image are **SUPERSEDED**. Any separate large textual selected-channel heading shown in that or another accepted historical Per-zender rest-state visual is also **SUPERSEDED** by the 18 September owner refinement. The earlier compact 120-pt current-programme row / 15/18 three-line description treatment is likewise superseded by the more spacious 18 September current-programme refinement. Preserve the rest of the accepted channel-strip/list composition while using the accepted shared day-selector assets and the written 17–18 September refinements.
 
 The `Primetime` shortcut visible in the original Per-zender visual is canonical in concept and placement priority. Do not infer from that board that the full `Vanmiddag` / `Vooravond` / `Kies tijd…` sheet is required; that expanded time picker is superseded. The later sticky/condensed board remains useful for structural condensation only: for Per zender it is stale where it omits `Primetime`, shows the old static utility treatment or implies a 72-pt settled condensed strip.
 
-Superseded examples include earlier Per-zender variants with programme imagery, genre descriptions, card-heavy rows, explicit previous/next channel arrow buttons, the expanded time picker, static temporal-button-only treatment, a permanently 72-pt settled condensed channel strip, or a separate large textual selected-channel heading in expanded/rest state. The compact textual channel name in condensed context remains accepted.
+Superseded examples include earlier Per-zender variants with programme imagery, genre descriptions, card-heavy rows, explicit previous/next channel arrow buttons, the expanded time picker, static temporal-button-only treatment, a permanently 72-pt settled condensed channel strip, a separate large textual selected-channel heading in expanded/rest state, or the compressed 120-pt current-programme treatment with 15/18 description capped at three lines. The compact textual channel name in condensed context remains accepted.
 
 ### Nu & Straks
 Status: **ACCEPTED**
