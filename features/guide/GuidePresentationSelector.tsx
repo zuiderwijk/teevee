@@ -1,6 +1,6 @@
 import { Pressable, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 
-import { TEEVEE_FONT_WEIGHTS } from '@/theme/typography';
+import { TEEVEE_FONT_FAMILIES } from '@/theme/typography';
 import { useTeeveeTheme } from '@/theme/useTeeveeTheme';
 
 import {
@@ -127,9 +127,9 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   pillLabel: {
+    fontFamily: TEEVEE_FONT_FAMILIES.bold,
     fontSize: 12,
     lineHeight: 16,
-    fontWeight: TEEVEE_FONT_WEIGHTS.bold,
   },
   tabsContainer: {
     width: '100%',
