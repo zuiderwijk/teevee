@@ -18,6 +18,7 @@ This specification is based on:
 - `docs/UX.md`;
 - `docs/VISUAL_BASELINE.md`;
 - `docs/DESIGN_SYSTEM.md`;
+- `design/current/TYPOGRAPHY.md`;
 - `design/current/guide/PER_ZENDER.md`;
 - `design/current/guide/GUIDE_DAY_SELECTOR.md`;
 - ADR 0005, ADR 0007 and ADR 0008;
@@ -48,7 +49,7 @@ The phrase `vertical wall-clock schedule` elsewhere in project documentation mus
 ### 1.2 Source precedence
 
 1. Product behaviour, television-day semantics and gestures: `PROJECT_STATE.md`, `PRODUCT.md`, `UX.md`, accepted ADRs.
-2. Accepted visual composition: `VISUAL_BASELINE.md` + `design/current/guide/PER_ZENDER.md` + exact canonical visual assets.
+2. Accepted visual composition and shared typography: `VISUAL_BASELINE.md` + `design/current/TYPOGRAPHY.md` + `design/current/guide/PER_ZENDER.md` + exact canonical visual assets.
 3. Exact Per-zender implementation metrics and the fixed-row correction above: **this document**.
 4. Reusable visual-system principles: `DESIGN_SYSTEM.md`.
 5. Current runtime/code: evidence of implementation state, never authority for an intentional visual difference.
@@ -158,14 +159,16 @@ Key X geometry:
 
 ### 5.1 Typeface and production-safe fallback
 
-Preferred family: **Söhne**, subject to valid production licensing and mobile delivery.
+Canonical family: **Instrument Sans**.
 
-Until that is available, leave React Native `fontFamily` unset so the platform system UI font is used:
+Instrument Sans is the owner-approved primary Teevee UI typeface and supersedes the earlier Söhne family direction. Use it as the single UI family for Per zender; do not introduce Inter, Geist, Public Sans or another second sans-serif for schedule times or metadata by default.
+
+The exact production font source, licence, bundled weight files and Expo/React Native loading path must still be verified. Until Instrument Sans is wired into the runtime, leaving React Native `fontFamily` unset is an acceptable temporary implementation fallback:
 
 - iOS: system San Francisco family;
 - Android: system Roboto family.
 
-Do not bundle unlicensed Söhne files or hard-code private platform font names.
+That system fallback is implementation debt, not an alternate accepted design. Do not bundle arbitrary/unverified font binaries or hard-code private platform font names.
 
 ### 5.2 Type tokens
 
@@ -186,7 +189,7 @@ Do not bundle unlicensed Söhne files or hard-code private platform font names.
 
 The previous `16/20` standard programme-title specification is superseded. Physical iPhone evidence showed it was materially too small relative to the accepted visual hierarchy. **18/22 weight 500 is canonical for standard programme titles.**
 
-Letter spacing = **0** for programme/time/body text. Programme times use `tabular-nums`.
+Letter spacing = **0** for programme/time/body text. Programme times use `tabular-nums` where supported reliably by the production Instrument Sans/runtime combination.
 
 Do not use light-mode `textMuted` for substantive programme times; use `textSecondary`.
 
@@ -195,7 +198,7 @@ Do not use light-mode `textMuted` for substantive programme times; use `textSeco
 No new brand palette is introduced.
 
 | Semantic use | Light | Dark | Repository token |
-| --- | --- | --- | --- |
+| --- | --- | --- |
 | Guide canvas / sticky background | `#F7F7F5` | `#10100F` | `background` |
 | Raised/base surface | `#FFFFFF` | `#191918` | `surface` |
 | Selected/utility surface | `#FFFFFF` | `#222220` | `surfaceElevated` |
@@ -740,9 +743,9 @@ Development does not choose alternate values locally. Physical retuning requires
 
 ## 22. Missing asset/licensing inputs
 
-### Söhne
+### Instrument Sans
 
-Production font licensing/delivery remains unresolved. Use system-font fallback while preserving the numeric hierarchy above. Do not commit font binaries without licence approval.
+The family choice is accepted. Production still must verify the exact distributable source/licence, required weight files and Expo/React Native delivery. Until that implementation lands, system-font fallback is permitted as temporary implementation debt while preserving the numeric hierarchy above. Do not commit arbitrary font binaries from chat or local machines.
 
 ### Channel logos
 
@@ -765,7 +768,7 @@ Required implementation intent:
 3. Define **52 pt standard row** and **120 pt current row** at fontScale1 as tokens.
 4. Render every non-current programme with the same row height regardless of 5/30/60/120-minute duration.
 5. Render the actual current programme with the dedicated current row.
-6. Use standard title **18/22 weight500**, current title **20/24 weight700**, time **16/20 weight400**, description **15/18 weight400**.
+6. Use standard title **18/22 weight500**, current title **20/24 weight700**, time **16/20 weight400**, description **15/18 weight400** in Instrument Sans once the approved family is wired into runtime.
 7. Current description: max 3 lines, tail ellipsis, shown whenever data exists; no duration-based suppression.
 8. Current progress: mandatory 4-pt local bar, X100 to right24, bottom16; fill from real start/end/now.
 9. Separator: hairline at bottom of each fixed row, left20 to right edge.
@@ -800,7 +803,7 @@ This correction does not reopen:
 - no decorative channel arrows;
 - no expanded historical time picker.
 
-The only corrected interpretation is the Per-zender schedule's vertical layout model plus the resulting programme typography calibration.
+The only corrected interpretation is the Per-zender schedule's vertical layout model plus the resulting programme typography calibration. The separately accepted Instrument Sans family applies globally without reopening these Per-zender mechanics or metrics.
 
 ## 25. Visual acceptance checklist
 
@@ -818,6 +821,7 @@ Per-zender visual convergence is ready only when all are true on the exact imple
 - standard programme title is **18/22 weight500**;
 - current title is **20/24 weight700**;
 - time is **16/20 weight400**, tabular;
+- Instrument Sans is used as the UI family once its approved production font assets are wired into runtime;
 - standard row time/title are vertically centred;
 - progress geometry is X100 → right24, height4, bottom16;
 - every row separator is a bottom hairline from X20 to the right edge;
