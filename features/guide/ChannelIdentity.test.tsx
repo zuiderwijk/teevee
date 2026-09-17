@@ -12,18 +12,24 @@ vi.mock('react-native', () => {
     children?: ReactNode;
     accessibilityLabel?: string;
     ellipsizeMode?: string;
+    maxFontSizeMultiplier?: number;
+    onError?: () => void;
   };
 
   const View = ({ children, accessibilityLabel }: Props) =>
     createElement('div', { 'aria-label': accessibilityLabel }, children);
-  const Text = ({ children, ellipsizeMode }: Props) =>
-    createElement('span', { 'data-ellipsize-mode': ellipsizeMode }, children);
-  const Image = () => createElement('img');
+  const Text = ({ children, ellipsizeMode, maxFontSizeMultiplier }: Props) =>
+    createElement('span', {
+      'data-ellipsize-mode': ellipsizeMode,
+      'data-max-font-scale': maxFontSizeMultiplier,
+    }, children);
+  const Image = ({ onError }: Props) => createElement('img', { onError });
 
   return {
     View,
     Text,
     Image,
+    Platform: { OS: 'ios' },
     StyleSheet: { create: <T,>(value: T) => value },
   };
 });
@@ -93,5 +99,40 @@ describe('ChannelIdentity', () => {
     expect(container.querySelector('img')).not.toBeNull();
     expect(container.querySelector('span')).toBeNull();
     expect(container.querySelector('[aria-label="Publiek 1"]')).not.toBeNull();
+  });
+
+  it('keeps Per-zender fallback inside the logo slot and uses shortName when available', async () => {
+    await act(async () => {
+      root.render(
+        <ChannelIdentity
+          channel={{ ...baseChannel, shortName: 'P1' }}
+          textColor="#111"
+          mutedTextColor="#777"
+          variant="per-channel-strip"
+        />,
+      );
+    });
+
+    const fallback = container.querySelector('span');
+    expect(fallback?.textContent).toBe('P1');
+    expect(fallback?.getAttribute('data-ellipsize-mode')).toBe('tail');
+    expect(fallback?.getAttribute('data-max-font-scale')).toBe('1.2');
+    expect(container.querySelector('[aria-label="Publiek 1"]')).not.toBeNull();
+  });
+
+  it('does not add a permanent caption beneath a successful Per-zender logo', async () => {
+    await act(async () => {
+      root.render(
+        <ChannelIdentity
+          channel={{ ...baseChannel, shortName: 'P1', logoUrl: 'https://example.com/publiek-1.png' }}
+          textColor="#111"
+          mutedTextColor="#777"
+          variant="per-channel-strip"
+        />,
+      );
+    });
+
+    expect(container.querySelector('img')).not.toBeNull();
+    expect(container.querySelector('span')).toBeNull();
   });
 });
