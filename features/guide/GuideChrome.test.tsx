@@ -16,6 +16,7 @@ type MockProps = {
   testID?: string;
   accessibilityLabel?: string;
   accessibilityRole?: string;
+  maxFontSizeMultiplier?: number;
   onPress?: () => void;
 };
 
@@ -25,6 +26,7 @@ vi.mock('react-native', () => {
       tag,
       {
         'data-testid': props.testID,
+        'data-max-font-scale': props.maxFontSizeMultiplier,
         'aria-label': props.accessibilityLabel,
         role: props.accessibilityRole,
         onClick: props.onPress,
@@ -80,12 +82,17 @@ afterEach(async () => {
 });
 
 describe('GuideChrome', () => {
-  it('keeps presentation navigation available when the non-functional header condenses', async () => {
+  it('keeps presentation switching available when the non-functional header condenses', async () => {
+    const switchPresentation = vi.fn();
     await act(async () => {
       root.render(
         <GuideChrome
           condensed
-          presentationNavigation={<div data-testid="presentation-navigation">tabs</div>}
+          presentationNavigation={(
+            <button data-testid="presentation-navigation" onClick={switchPresentation}>
+              tabs
+            </button>
+          )}
           heading="Gids"
           supportingText="Alle zenders, één overzicht"
         />,
@@ -93,12 +100,17 @@ describe('GuideChrome', () => {
     });
 
     expect(container.querySelector('[data-testid="guide-chrome-condensed"]')).not.toBeNull();
-    expect(container.querySelector('[data-testid="presentation-navigation"]')).not.toBeNull();
+    const presentationNavigation = container.querySelector<HTMLButtonElement>(
+      '[data-testid="presentation-navigation"]',
+    );
+    expect(presentationNavigation).not.toBeNull();
+    await act(async () => presentationNavigation?.click());
+    expect(switchPresentation).toHaveBeenCalledOnce();
     expect(container.querySelector('[data-testid="guide-search-action"]')).toBeNull();
     expect(container.textContent).not.toContain('Gids');
   });
 
-  it('keeps search and settings reachable in the expanded shared Guide header', async () => {
+  it('keeps search/settings reachable and bounds compact chrome scaling when expanded', async () => {
     await act(async () => {
       root.render(
         <GuideChrome
@@ -114,6 +126,12 @@ describe('GuideChrome', () => {
     const settings = container.querySelector<HTMLButtonElement>('[data-testid="guide-settings-action"]');
     expect(search?.getAttribute('aria-label')).toBe('Zoeken');
     expect(settings?.getAttribute('aria-label')).toBe('Open instellingen');
+
+    const scalingCaps = [...container.querySelectorAll<HTMLElement>('[data-max-font-scale]')]
+      .map((node) => Number(node.getAttribute('data-max-font-scale')))
+      .filter(Number.isFinite);
+    expect(scalingCaps.length).toBeGreaterThan(0);
+    expect(Math.max(...scalingCaps)).toBeLessThanOrEqual(1.25);
 
     await act(async () => search?.click());
     await act(async () => settings?.click());
