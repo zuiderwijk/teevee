@@ -45,6 +45,29 @@ vi.mock('react-native', () => {
   };
 });
 
+vi.mock('react-native-reanimated', async () => {
+  const { View } = await import('react-native');
+  const transition = () => {
+    const builder = {
+      duration: () => builder,
+      easing: () => builder,
+      reduceMotion: () => builder,
+    };
+    return builder;
+  };
+  return {
+    default: { View },
+    Easing: {
+      cubic: 'cubic',
+      out: (value: unknown) => value,
+    },
+    FadeIn: transition(),
+    FadeOut: transition(),
+    LinearTransition: transition(),
+    ReduceMotion: { System: 'system' },
+  };
+});
+
 vi.mock('@/theme/useTeeveeTheme', () => ({
   useTeeveeTheme: () => ({
     dark: false,
