@@ -488,6 +488,7 @@ export const GuideView = memo(function GuideView({
                 >
                   <View style={[styles.currentTimeBadge, { backgroundColor: theme.colors.currentTime }]}>
                     <Text
+                      numberOfLines={1}
                       maxFontSizeMultiplier={GUIDE_CONTROL_MAX_FONT_SIZE_MULTIPLIER}
                       style={[
                         styles.currentTimeText,
@@ -672,7 +673,7 @@ const styles = StyleSheet.create({
     zIndex: 5,
   },
   currentTimeBadge: {
-    minWidth: 48,
+    minWidth: 56,
     minHeight: 24,
     paddingHorizontal: 8,
     borderRadius: 12,
@@ -710,11 +711,11 @@ const styles = StyleSheet.create({
   programmeTitle: {
     fontSize: 13,
     lineHeight: 17,
-    fontWeight: '600',
+    fontWeight: '500',
     letterSpacing: -0.1,
   },
   programmeTitleCurrent: {
-    fontWeight: '700',
+    fontWeight: '600',
   },
   programmeTitleCompact: {
     fontSize: 11,
