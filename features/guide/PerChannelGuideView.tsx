@@ -13,6 +13,7 @@ import {
   View,
 } from 'react-native';
 import Animated, {
+  useAnimatedReaction,
   useAnimatedScrollHandler,
   useAnimatedStyle,
   useReducedMotion,
@@ -58,6 +59,10 @@ import { useSelectedGuideDaySchedule } from './useSelectedGuideDaySchedule';
 
 const CHANNEL_ITEM_STEP =
   PER_CHANNEL_VISUAL_METRICS.channelItemSize + PER_CHANNEL_VISUAL_METRICS.channelItemGap;
+const TIME_COLUMN_CONTENT_WIDTH =
+  GUIDE_VISUAL_METRICS.screenInsetX +
+  PER_CHANNEL_VISUAL_METRICS.timeGutterWidth -
+  PER_CHANNEL_VISUAL_METRICS.timeTextX;
 const CONTEXT_WRAP_Y_EPSILON = 1;
 
 type PerChannelGuideViewProps = {
@@ -382,16 +387,28 @@ export const PerChannelGuideView = memo(function PerChannelGuideView({
     [collapseAnchorY, collapseProgress],
   );
 
-  const syncScheduleScroll = useCallback((y: number, progress: number) => {
+  const syncViewedTimestamp = useCallback((y: number) => {
     viewedTimeRef.current = timestampForScrollOffset(
       selectedRowsRef.current,
       y,
       referenceInsetRef.current,
       viewedTimeRef.current,
     );
-    const nextCondensed = progress >= 1;
+  }, []);
+
+  const syncCondensedState = useCallback((nextCondensed: boolean) => {
     setCondensed((current) => (current === nextCondensed ? current : nextCondensed));
   }, []);
+
+  useAnimatedReaction(
+    () => collapseProgress.value >= 1,
+    (nextCondensed, previousCondensed) => {
+      if (nextCondensed !== previousCondensed) {
+        scheduleOnRN(syncCondensedState, nextCondensed);
+      }
+    },
+    [syncCondensedState],
+  );
 
   const scheduleScrollHandler = useAnimatedScrollHandler(
     {
@@ -408,16 +425,20 @@ export const PerChannelGuideView = memo(function PerChannelGuideView({
         const collapseY = collapseEnabled.value
           ? Math.max(0, y - collapseAnchorY.value)
           : 0;
-        const progress = reduceMotion
+        collapseProgress.value = reduceMotion
           ? collapseY >= PER_CHANNEL_VISUAL_METRICS.reduceMotionSwitchOffset
             ? 1
             : 0
           : Math.min(1, collapseY / PER_CHANNEL_VISUAL_METRICS.collapseDistance);
-        collapseProgress.value = progress;
-        scheduleOnRN(syncScheduleScroll, y, progress);
+      },
+      onEndDrag: (event) => {
+        scheduleOnRN(syncViewedTimestamp, Math.max(0, event.contentOffset.y));
+      },
+      onMomentumEnd: (event) => {
+        scheduleOnRN(syncViewedTimestamp, Math.max(0, event.contentOffset.y));
       },
     },
-    [reduceMotion, syncScheduleScroll],
+    [reduceMotion, syncViewedTimestamp],
   );
 
   const restHeadingStyle = useAnimatedStyle(() => {
@@ -507,7 +528,7 @@ export const PerChannelGuideView = memo(function PerChannelGuideView({
     : PER_CHANNEL_VISUAL_METRICS.stickyContextHeight;
 
   return (
-    <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.colors.background }]}> 
+    <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.colors.background }]}>
       <GuideChrome
         condensed={condensed}
         presentationNavigation={presentationNavigation}
@@ -823,10 +844,7 @@ const styles = StyleSheet.create({
     left: PER_CHANNEL_VISUAL_METRICS.timeTextX,
     top: 0,
     bottom: 0,
-    width:
-      PER_CHANNEL_VISUAL_METRICS.programmeColumnX -
-      PER_CHANNEL_VISUAL_METRICS.timeTextX -
-      12,
+    width: TIME_COLUMN_CONTENT_WIDTH,
     justifyContent: 'center',
   },
   standardTitleCell: {
@@ -850,10 +868,7 @@ const styles = StyleSheet.create({
     position: 'absolute',
     left: PER_CHANNEL_VISUAL_METRICS.timeTextX,
     top: PER_CHANNEL_VISUAL_METRICS.currentContentTopInset,
-    width:
-      PER_CHANNEL_VISUAL_METRICS.programmeColumnX -
-      PER_CHANNEL_VISUAL_METRICS.timeTextX -
-      12,
+    width: TIME_COLUMN_CONTENT_WIDTH,
     ...GUIDE_TYPOGRAPHY.programmeTime,
     fontVariant: ['tabular-nums'],
     letterSpacing: 0,
@@ -865,8 +880,7 @@ const styles = StyleSheet.create({
     top: PER_CHANNEL_VISUAL_METRICS.currentContentTopInset,
     bottom:
       PER_CHANNEL_VISUAL_METRICS.progressBottomInset +
-      PER_CHANNEL_VISUAL_METRICS.progressHeight +
-      6,
+      PER_CHANNEL_VISUAL_METRICS.progressHeight,
     overflow: 'hidden',
   },
   currentTitle: {
