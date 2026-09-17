@@ -8,7 +8,7 @@ import { PER_CHANNEL_VISUAL_METRICS } from './guideVisualMetrics';
  * direct proportion to the system font scale; programme duration geometry is
  * never replaced by equal-height rows.
  */
-export const PER_CHANNEL_MINUTE_HEIGHT = PER_CHANNEL_VISUAL_METRICS.minuteHeightBase;
+export const PER_CHANNEL_MINUTE_HEIGHT: number = PER_CHANNEL_VISUAL_METRICS.minuteHeightBase;
 
 export function perChannelMinuteHeightForFontScale(fontScale: number): number {
   const scale = Number.isFinite(fontScale) && fontScale > 0 ? Math.max(1, fontScale) : 1;
@@ -78,7 +78,7 @@ export function programmesForChannelDay(
 export function scheduleYForTime(
   timeMs: number,
   dayStartMs: number,
-  minuteHeight = PER_CHANNEL_MINUTE_HEIGHT,
+  minuteHeight: number = PER_CHANNEL_MINUTE_HEIGHT,
 ): number {
   return Math.max(0, ((timeMs - dayStartMs) / 60_000) * minuteHeight);
 }
@@ -86,7 +86,7 @@ export function scheduleYForTime(
 export function scheduleTimeForY(
   y: number,
   dayStartMs: number,
-  minuteHeight = PER_CHANNEL_MINUTE_HEIGHT,
+  minuteHeight: number = PER_CHANNEL_MINUTE_HEIGHT,
 ): number {
   return dayStartMs + (Math.max(0, y) / minuteHeight) * 60_000;
 }
@@ -95,7 +95,7 @@ export function programmeVerticalFrame(
   programme: Programme,
   dayStartMs: number,
   dayEndMs: number,
-  minuteHeight = PER_CHANNEL_MINUTE_HEIGHT,
+  minuteHeight: number = PER_CHANNEL_MINUTE_HEIGHT,
 ): ProgrammeVerticalFrame {
   const visibleStart = Math.max(dayStartMs, Date.parse(programme.startAt));
   const visibleEnd = Math.min(dayEndMs, Date.parse(programme.endAt));
