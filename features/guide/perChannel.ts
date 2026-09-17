@@ -10,6 +10,13 @@ import { PER_CHANNEL_VISUAL_METRICS } from './guideVisualMetrics';
  */
 export const PER_CHANNEL_MINUTE_HEIGHT: number = PER_CHANNEL_VISUAL_METRICS.minuteHeightBase;
 
+/**
+ * Existing Phase 1B interaction anchor: programmatic time jumps position the
+ * requested wall-clock instant below sticky Guide controls. This is frozen
+ * interaction geometry, not a production visual-calibration metric.
+ */
+export const PER_CHANNEL_VIEWED_TIME_ANCHOR_INSET = 132;
+
 export function perChannelMinuteHeightForFontScale(fontScale: number): number {
   const scale = Number.isFinite(fontScale) && fontScale > 0 ? Math.max(1, fontScale) : 1;
   return PER_CHANNEL_MINUTE_HEIGHT * scale;
