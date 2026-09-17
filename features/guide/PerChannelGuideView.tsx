@@ -54,6 +54,7 @@ import {
   PER_CHANNEL_VIEWED_TIME_ANCHOR_INSET,
   perChannelMinuteHeightForFontScale,
   programmeDensityForNormalizedHeight,
+  programmeStartTimeFits,
   programmeVerticalFrame,
   programmesForChannelDay,
   scheduleYForTime,
@@ -64,6 +65,7 @@ import { useSelectedGuideDaySchedule } from './useSelectedGuideDaySchedule';
 
 const CHANNEL_ITEM_STEP =
   PER_CHANNEL_VISUAL_METRICS.channelItemSize + PER_CHANNEL_VISUAL_METRICS.channelItemGap;
+const CONTEXT_WRAP_Y_EPSILON = 1;
 
 type PerChannelGuideViewProps = {
   guideDataVersion: number;
@@ -144,6 +146,7 @@ function ProgrammeBlock({
   const visibleDensity = currentPresentation?.density ?? density;
   const showText = visibleDensity !== 'hidden';
   const compact = visibleDensity === 'compact';
+  const showStartTime = programmeStartTimeFits(frame.height, effectiveFontScale, visibleDensity);
   const contentInsetY = compact
     ? PER_CHANNEL_VISUAL_METRICS.programmeCompactInsetY
     : PER_CHANNEL_VISUAL_METRICS.programmeContentInsetY;
@@ -196,15 +199,18 @@ function ProgrammeBlock({
     >
       {showText ? (
         <>
-          <Text
-            numberOfLines={1}
-            style={[
-              styles.programmeStart,
-              { top: contentInsetY, color: secondaryTextColor },
-            ]}
-          >
-            {formatTime(startMs)}
-          </Text>
+          {showStartTime ? (
+            <Text
+              testID={`per-channel-start-${programme.id}`}
+              numberOfLines={1}
+              style={[
+                styles.programmeStart,
+                { top: contentInsetY, color: secondaryTextColor },
+              ]}
+            >
+              {formatTime(startMs)}
+            </Text>
+          ) : null}
 
           <View
             style={[
@@ -243,6 +249,7 @@ function ProgrammeBlock({
 
             {descriptionLineCount > 0 && detail ? (
               <Text
+                testID={`per-channel-description-${programme.id}`}
                 numberOfLines={descriptionLineCount}
                 ellipsizeMode="tail"
                 style={[styles.programmeDescription, { color: secondaryTextColor }]}
@@ -256,12 +263,8 @@ function ProgrammeBlock({
 
       {showProgress ? (
         <View
-          style={[
-            styles.progressTrack,
-            {
-              backgroundColor: borderColor,
-            },
-          ]}
+          testID={`per-channel-progress-${programme.id}`}
+          style={[styles.progressTrack, { backgroundColor: borderColor }]}
         >
           <View
             style={[
@@ -376,6 +379,8 @@ export const PerChannelGuideView = memo(function PerChannelGuideView({
   const channelStripRef = useRef<ScrollView>(null);
   const pagerRef = useRef<ScrollView>(null);
   const scheduleRef = useRef<ScrollView>(null);
+  const contextDateYRef = useRef<number | null>(null);
+  const contextUtilitiesYRef = useRef<number | null>(null);
   const nowMs = useGuideClock();
   const { selectedDayStartMs, selectDay } = useGuideDaySelection(nowMs);
   const selectedDay = useSelectedGuideDaySchedule(selectedDayStartMs, guideDataVersion);
@@ -385,6 +390,7 @@ export const PerChannelGuideView = memo(function PerChannelGuideView({
   );
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [condensed, setCondensed] = useState(false);
+  const [contextWrapped, setContextWrapped] = useState(false);
   const viewedTimeRef = useRef(nowMs);
   const pendingTargetTimeRef = useRef<number | null>(null);
   const channels = fixture.channels;
@@ -412,6 +418,12 @@ export const PerChannelGuideView = memo(function PerChannelGuideView({
   useEffect(() => {
     if (selectedIndex !== safeSelectedIndex) setSelectedIndex(safeSelectedIndex);
   }, [safeSelectedIndex, selectedIndex]);
+
+  useEffect(() => {
+    contextDateYRef.current = null;
+    contextUtilitiesYRef.current = null;
+    setContextWrapped(false);
+  }, [effectiveFontScale, safeSelectedIndex, selectedDayStartMs, windowWidth]);
 
   const centrePager = useCallback(
     (animated = false) => {
@@ -500,14 +512,14 @@ export const PerChannelGuideView = memo(function PerChannelGuideView({
       },
       onScroll: (event) => {
         const y = Math.max(0, event.contentOffset.y);
-        const chromeScrollY = collapseEnabled.value
-          ? Math.abs(y - collapseAnchorY.value)
+        const scrollY = collapseEnabled.value
+          ? Math.max(0, y - collapseAnchorY.value)
           : 0;
         const progress = reduceMotion
-          ? chromeScrollY >= PER_CHANNEL_VISUAL_METRICS.reduceMotionSwitchOffset
+          ? scrollY >= PER_CHANNEL_VISUAL_METRICS.reduceMotionSwitchOffset
             ? 1
             : 0
-          : Math.min(1, chromeScrollY / PER_CHANNEL_VISUAL_METRICS.collapseDistance);
+          : Math.min(1, scrollY / PER_CHANNEL_VISUAL_METRICS.collapseDistance);
         collapseProgress.value = progress;
         scheduleOnRN(syncScheduleScroll, y, progress);
       },
@@ -583,10 +595,31 @@ export const PerChannelGuideView = memo(function PerChannelGuideView({
     [headingNaturalHeight],
   );
 
+  const detectContextWrap = useCallback(() => {
+    const dateY = contextDateYRef.current;
+    const utilitiesY = contextUtilitiesYRef.current;
+    if (dateY === null || utilitiesY === null) return;
+    if (Math.abs(dateY - utilitiesY) > CONTEXT_WRAP_Y_EPSILON) setContextWrapped(true);
+  }, []);
+
+  const handleDateContextLayout = useCallback((event: LayoutChangeEvent) => {
+    contextDateYRef.current = event.nativeEvent.layout.y;
+    detectContextWrap();
+  }, [detectContextWrap]);
+
+  const handleUtilitiesLayout = useCallback((event: LayoutChangeEvent) => {
+    contextUtilitiesYRef.current = event.nativeEvent.layout.y;
+    detectContextWrap();
+  }, [detectContextWrap]);
+
   if (!selectedChannel) return null;
 
+  const contextMinHeight = condensed && contextWrapped
+    ? PER_CHANNEL_VISUAL_METRICS.stickyContextWrappedHeight
+    : PER_CHANNEL_VISUAL_METRICS.stickyContextHeight;
+
   return (
-    <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.colors.background }]}>
+    <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.colors.background }]}> 
       <GuideChrome
         condensed={condensed}
         presentationNavigation={headerAction}
@@ -658,16 +691,16 @@ export const PerChannelGuideView = memo(function PerChannelGuideView({
         style={[
           styles.contextRow,
           {
-            minHeight: condensed
-              ? PER_CHANNEL_VISUAL_METRICS.stickyContextHeight
-              : PER_CHANNEL_VISUAL_METRICS.utilityRowMinHeight,
+            minHeight: contextMinHeight,
             backgroundColor: theme.colors.background,
-            borderBottomColor: theme.colors.border,
-            borderBottomWidth: condensed ? StyleSheet.hairlineWidth : 0,
           },
         ]}
       >
-        <View style={styles.dateControlWrap}>
+        <View
+          testID="per-channel-date-group"
+          onLayout={handleDateContextLayout}
+          style={[styles.dateControlWrap, contextWrapped ? styles.contextFullWidth : null]}
+        >
           <GuideDaySelector
             selectedDayStartMs={selectedDayStartMs}
             nowMs={nowMs}
@@ -677,7 +710,14 @@ export const PerChannelGuideView = memo(function PerChannelGuideView({
             onSelectDay={changeDay}
           />
         </View>
-        <View style={styles.utilityActions}>
+        <View
+          testID="per-channel-utility-group"
+          onLayout={handleUtilitiesLayout}
+          style={[
+            styles.utilityActions,
+            contextWrapped ? styles.utilityActionsWrapped : null,
+          ]}
+        >
           <Pressable
             testID="per-channel-primetime"
             accessibilityRole="button"
@@ -740,6 +780,11 @@ export const PerChannelGuideView = memo(function PerChannelGuideView({
       </View>
 
       <Animated.View pointerEvents="none" style={scheduleGapStyle} />
+      <View
+        pointerEvents="none"
+        testID="per-channel-schedule-boundary"
+        style={[styles.scheduleBoundary, { backgroundColor: theme.colors.border }]}
+      />
 
       <Animated.ScrollView
         ref={scheduleRef}
@@ -832,12 +877,19 @@ const styles = StyleSheet.create({
   dateControlWrap: {
     flexShrink: 0,
   },
+  contextFullWidth: {
+    width: '100%',
+  },
   utilityActions: {
     marginLeft: 'auto',
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'flex-end',
     gap: PER_CHANNEL_VISUAL_METRICS.utilityGap,
+  },
+  utilityActionsWrapped: {
+    width: '100%',
+    marginLeft: 0,
   },
   utilityTouchTarget: {
     minWidth: GUIDE_VISUAL_METRICS.touchTargetIos,
@@ -884,6 +936,11 @@ const styles = StyleSheet.create({
   utilityButtonText: {
     ...GUIDE_TYPOGRAPHY.utility,
     letterSpacing: 0,
+  },
+  scheduleBoundary: {
+    flexGrow: 0,
+    height: StyleSheet.hairlineWidth,
+    marginLeft: GUIDE_VISUAL_METRICS.screenInsetX,
   },
   programme: {
     position: 'absolute',
