@@ -53,7 +53,7 @@ Older surface-specific handoff text that still names Söhne is stale for the fam
 
 ### Shared Guide day selector — Totaal + Per zender
 Status: **ACCEPTED**
-Owner-approved direction: 2026-09-15; Per-zender Primetime amendment 2026-09-15
+Owner-approved direction: 2026-09-15; Per-zender Primetime amendment 2026-09-15; Per-zender temporal-state refinement 2026-09-17
 Detailed manifest: `design/current/guide/GUIDE_DAY_SELECTOR.md`
 
 Canonical visual assets in the user's Teevee Library:
@@ -73,10 +73,12 @@ Accepted characteristics:
 - vertical scrolling preserves essential day/time context while non-functional brand/header chrome condenses;
 - Totaal keeps date + `Nu` + time axis available;
 - Per zender keeps the channel-logo strip plus one compact channel/date context row with `Primetime` and `Nu` available;
+- in Per zender, `Nu` and `Primetime` use semantic action versus active/current states based on the actual schedule context; active/current is not disabled;
+- in settled condensed Per zender, the channel strip is 60 pt while the 48×48 channel item remains unchanged;
 - larger text adapts height/wrapping instead of forcing tiny labels;
 - Nu & Straks has no independent day selector.
 
-The sticky/condensed visual was created before the owner-approved Per-zender Primetime amendment. It remains canonical for condensation, stickiness and layout structure, but its Per-zender compact row is **SUPERSEDED only where it omits `Primetime`**. The written rules in `PER_ZENDER.md`, `GUIDE_DAY_SELECTOR.md` and `UX.md` win for that detail.
+The sticky/condensed visual predates the Per-zender Primetime amendment and the owner-approved refinement of 17 September. It remains canonical for overall condensation, stickiness and structural intent, but its Per-zender state is **SUPERSEDED** where it omits `Primetime`, implies static utility-button treatment, or implies a permanently 72-pt settled condensed channel strip. The written rules in `PER_ZENDER.md`, `GUIDE_DAY_SELECTOR.md` and `docs/PER_ZENDER_VISUAL_CONVERGENCE.md` win for those details.
 
 These assets **supersede only the stale date/day controls** in the earlier Totaal and Per-zender canonical screenshots. They do not replace the accepted schedule composition, gestures, logo treatment or general visual character of those surfaces. Typography follows the canonical Instrument Sans rule above.
 
@@ -111,8 +113,9 @@ The date/day control in the original 13 September Totaal images is **SUPERSEDED*
 
 ### Per zender
 Status: **ACCEPTED**
-Owner-approved direction: 2026-09-13; day-navigation and Primetime amendments 2026-09-15
+Owner-approved direction: 2026-09-13; day-navigation and Primetime amendments 2026-09-15; visual refinement 2026-09-17
 Detailed manifest: `design/current/guide/PER_ZENDER.md`
+Production specification: `docs/PER_ZENDER_VISUAL_CONVERGENCE.md`
 
 Canonical visual assets in the user's Teevee Library:
 - light + dark reference: `/Teevee/TV-gids app in licht en donker thema.png`
@@ -123,27 +126,32 @@ Canonical visual assets in the user's Teevee Library:
   - Library file id: `file_00000000314481f69f6a34d18ece1c21`
 
 Accepted visual characteristics:
-- open vertical typographic schedule;
+- open chronological fixed-row typographic schedule; programme duration does not determine vertical row geometry;
 - **no programme thumbnails** in the canonical direction;
 - **no genre labels** in the canonical direction;
 - persistent horizontally browsable channel-logo strip;
 - no decorative previous/next arrows required around the strip;
 - logo is primary channel identity; channel name is secondary/contextual;
+- selected channel remains fully visible, centres comfortably where geometry permits and may retain a small trailing continuation cue where practical;
+- rest channel strip is 72 pt; settled condensed strip is 60 pt while channel items remain 48×48;
 - ample separation between channel selector and schedule;
-- current programme can receive restrained live/current emphasis;
-- programme rows prioritise time and title;
+- current programme uses a restrained local progress treatment without current card, red left rail, global current-time line or now-dot;
+- programme rows prioritise time and title and use a temporary semantic `surface` fill only while pressed;
 - light/dark/system follow the shared Guide shell;
-- date navigation, `Primetime` and `Nu` are compact utility controls, not visual hero elements;
+- date remains primarily typographic;
+- `Primetime` and `Nu` use action versus active/current visual/semantic states rather than static permanent button treatments;
 - `Primetime` is **required** and jumps to 20:30 on the currently selected television day without changing that selected day;
 - `Nu` remains distinct and restores the actual current instant/day;
+- active/current state is based on semantic schedule context, is not disabled and is not colour-only;
+- Per-zender title calibration is 17/21 weight 500 for standard titles and 19/23 weight 700 for current titles;
 - accepted day selector follows `GUIDE_DAY_SELECTOR.md`;
 - shared typography follows `design/current/TYPOGRAPHY.md`: Instrument Sans replaces any historical Söhne reference for family choice only.
 
-The exact date choices in the original 13 September Per-zender image are **SUPERSEDED**. Preserve the rest of the accepted channel-strip/list composition while using the accepted shared day-selector assets.
+The exact date choices in the original 13 September Per-zender image are **SUPERSEDED**. Preserve the rest of the accepted channel-strip/list composition while using the accepted shared day-selector assets and the written 17 September refinement.
 
-The `Primetime` button visible in the original Per-zender image is again **canonical in concept and placement priority**. Do not infer from that same historical board that the full `Vanmiddag` / `Vooravond` / `Kies tijd…` sheet is required; that expanded time picker is superseded. The later sticky/condensed board remains valid except that its compact Per-zender row must also include `Primetime` alongside `Nu`.
+The `Primetime` shortcut visible in the original Per-zender visual is canonical in concept and placement priority. Do not infer from that board that the full `Vanmiddag` / `Vooravond` / `Kies tijd…` sheet is required; that expanded time picker is superseded. The later sticky/condensed board remains useful for structural condensation only: for Per zender it is stale where it omits `Primetime`, shows the old static utility treatment or implies a 72-pt settled condensed strip.
 
-Superseded examples include earlier Per-zender variants with programme imagery, genre descriptions, card-heavy rows, explicit previous/next channel arrow buttons, or the expanded time-picker treatment.
+Superseded examples include earlier Per-zender variants with programme imagery, genre descriptions, card-heavy rows, explicit previous/next channel arrow buttons, the expanded time picker, static temporal-button-only treatment or a permanently 72-pt settled condensed channel strip.
 
 ### Nu & Straks
 Status: **ACCEPTED**
@@ -203,7 +211,7 @@ After approval, the producing Design/Lead thread must, before handoff:
 4. state which previous visual is superseded;
 5. merge the change to `main`.
 
-Only the version referenced by `main` is canonical. Branch-only designs are proposals.
+Only the version referenced by `main` is canonical. Branch-only designs are proposals unless the owner has explicitly accepted a pending design PR that is being converged before Lead merge.
 
 ## Historical designs
 
