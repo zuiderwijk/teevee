@@ -12,13 +12,14 @@ vi.mock('react-native', () => {
     children?: ReactNode;
     accessibilityLabel?: string;
     ellipsizeMode?: string;
+    onError?: () => void;
   };
 
   const View = ({ children, accessibilityLabel }: Props) =>
     createElement('div', { 'aria-label': accessibilityLabel }, children);
   const Text = ({ children, ellipsizeMode }: Props) =>
     createElement('span', { 'data-ellipsize-mode': ellipsizeMode }, children);
-  const Image = () => createElement('img');
+  const Image = ({ onError }: Props) => createElement('img', { onError });
 
   return {
     View,
@@ -113,6 +114,34 @@ describe('ChannelIdentity', () => {
 
     expect(container.querySelector('img')).not.toBeNull();
     expect(container.querySelector('span')).toBeNull();
+    expect(container.querySelector('[aria-label="Publiek 1"]')).not.toBeNull();
+  });
+
+  it('falls back inside the same Per-zender identity after a logo load failure', async () => {
+    await act(async () => {
+      root.render(
+        <ChannelIdentity
+          channel={{
+            ...baseChannel,
+            shortName: 'NPO 1',
+            logoUrl: 'https://example.com/publiek-1.png',
+          }}
+          textColor="#111"
+          mutedTextColor="#777"
+          variant="per-channel-strip"
+        />,
+      );
+    });
+
+    const image = container.querySelector('img');
+    expect(image).not.toBeNull();
+
+    await act(async () => {
+      image?.dispatchEvent(new Event('error', { bubbles: true }));
+    });
+
+    expect(container.querySelector('img')).toBeNull();
+    expect(container.textContent).toBe('NPO 1');
     expect(container.querySelector('[aria-label="Publiek 1"]')).not.toBeNull();
   });
 });

@@ -46,6 +46,8 @@ import {
 import {
   adjacentChannelIndex,
   buildProgrammeRows,
+  collapseProgressForScrollOffset,
+  compactContextForCollapseProgress,
   type PerChannelProgrammeRow,
   programmesForChannelDay,
   scheduleHeightForRows,
@@ -129,7 +131,11 @@ function ProgrammeRow({
       ]}
     >
       {current ? (
-        <>
+        <View
+          testID={`per-channel-current-layer-${programme.id}`}
+          pointerEvents="none"
+          style={styles.currentVisualLayer}
+        >
           <Text
             numberOfLines={1}
             style={[styles.currentTime, { color: theme.colors.textSecondary }]}
@@ -169,7 +175,7 @@ function ProgrammeRow({
               ]}
             />
           </View>
-        </>
+        </View>
       ) : (
         <>
           <View style={styles.standardTimeCell}>
@@ -208,7 +214,7 @@ const SchedulePage = memo(function SchedulePage({
 }: SchedulePageProps) {
   const height = scheduleHeightForRows(rows);
   return (
-    <View style={{ width, height }}>
+    <View style={[styles.schedulePage, { width, height }]}>
       {rows.map((row) => (
         <ProgrammeRow
           key={row.programme.id}
@@ -233,9 +239,13 @@ function channelsForPager(channels: Channel[], selectedIndex: number): Channel[]
 
 function MoonGlyph({ color, maskColor }: { color: string; maskColor: string }) {
   return (
-    <View accessible={false} style={styles.moonIconBox}>
-      <View style={[styles.moonCircle, { borderColor: color }]} />
-      <View style={[styles.moonMask, { backgroundColor: maskColor }]} />
+    <View
+      testID="per-channel-primetime-moon"
+      accessible={false}
+      style={styles.moonIconBox}
+    >
+      <View style={[styles.moonDisc, { backgroundColor: color }]} />
+      <View style={[styles.moonCutout, { backgroundColor: maskColor }]} />
     </View>
   );
 }
@@ -402,7 +412,7 @@ export const PerChannelGuideView = memo(function PerChannelGuideView({
   }, []);
 
   useAnimatedReaction(
-    () => collapseProgress.value >= 1,
+    () => compactContextForCollapseProgress(collapseProgress.value),
     (nextCondensed, previousCondensed) => {
       if (nextCondensed !== previousCondensed) {
         scheduleOnRN(syncCondensedState, nextCondensed);
@@ -424,14 +434,11 @@ export const PerChannelGuideView = memo(function PerChannelGuideView({
       },
       onScroll: (event) => {
         const y = Math.max(0, event.contentOffset.y);
-        const collapseY = collapseEnabled.value
-          ? Math.max(0, y - collapseAnchorY.value)
-          : 0;
-        collapseProgress.value = reduceMotion
-          ? collapseY >= PER_CHANNEL_VISUAL_METRICS.reduceMotionSwitchOffset
-            ? 1
-            : 0
-          : Math.min(1, collapseY / PER_CHANNEL_VISUAL_METRICS.collapseDistance);
+        collapseProgress.value = collapseProgressForScrollOffset(
+          y,
+          collapseEnabled.value ? collapseAnchorY.value : y,
+          reduceMotion,
+        );
       },
       onEndDrag: (event) => {
         scheduleOnRN(syncViewedTimestamp, Math.max(0, event.contentOffset.y));
@@ -816,29 +823,39 @@ const styles = StyleSheet.create({
   moonIconBox: {
     width: PER_CHANNEL_VISUAL_METRICS.utilityIconSize,
     height: PER_CHANNEL_VISUAL_METRICS.utilityIconSize,
+    overflow: 'hidden',
   },
-  moonCircle: {
+  moonDisc: {
+    position: 'absolute',
+    left: 0,
+    top: 0,
     width: PER_CHANNEL_VISUAL_METRICS.utilityIconSize,
     height: PER_CHANNEL_VISUAL_METRICS.utilityIconSize,
     borderRadius: PER_CHANNEL_VISUAL_METRICS.utilityIconSize / 2,
-    borderWidth: 1.5,
   },
-  moonMask: {
+  moonCutout: {
     position: 'absolute',
-    width: 9,
-    height: 9,
-    right: -2,
-    top: -2,
-    borderRadius: 5,
+    left: 5,
+    top: -1,
+    width: 11,
+    height: 11,
+    borderRadius: 6,
   },
   utilityButtonText: {
     ...GUIDE_TYPOGRAPHY.utility,
     letterSpacing: 0,
   },
+  schedulePage: {
+    overflow: 'hidden',
+  },
   programmeRow: {
     position: 'absolute',
     left: 0,
     right: 0,
+    overflow: 'hidden',
+  },
+  currentVisualLayer: {
+    ...StyleSheet.absoluteFillObject,
     overflow: 'hidden',
   },
   standardTimeCell: {

@@ -152,6 +152,36 @@ export function timestampForScrollOffset(
   return Date.parse(row.programme.startAt);
 }
 
+/**
+ * Canonical Per-zender chrome collapse remains coupled to scroll position. The
+ * anchor is a visual header anchor only; it never converts pixels into time.
+ */
+export function collapseProgressForScrollOffset(
+  scrollY: number,
+  anchorY: number,
+  reduceMotion: boolean,
+) {
+  'worklet';
+  const collapseY = Math.max(0, Math.max(0, scrollY) - Math.max(0, anchorY));
+  if (reduceMotion) {
+    return collapseY >= PER_CHANNEL_VISUAL_METRICS.reduceMotionSwitchOffset ? 1 : 0;
+  }
+  return Math.min(1, collapseY / PER_CHANNEL_VISUAL_METRICS.collapseDistance);
+}
+
+/**
+ * Compact channel/date context switches at the same canonical midpoint used by
+ * Reduce Motion. This keeps the binary context composition coherent while the
+ * surrounding chrome continues to interpolate directly with scroll position.
+ */
+export function compactContextForCollapseProgress(progress: number) {
+  'worklet';
+  const threshold =
+    PER_CHANNEL_VISUAL_METRICS.reduceMotionSwitchOffset /
+    PER_CHANNEL_VISUAL_METRICS.collapseDistance;
+  return Math.min(1, Math.max(0, progress)) >= threshold;
+}
+
 export function adjacentChannelIndex(currentIndex: number, delta: -1 | 1, channelCount: number) {
   if (channelCount <= 0) return 0;
   return Math.min(channelCount - 1, Math.max(0, currentIndex + delta));

@@ -5,6 +5,8 @@ import type { GuideFixture, Programme } from '@/data/domain/epg';
 import {
   adjacentChannelIndex,
   buildProgrammeRows,
+  collapseProgressForScrollOffset,
+  compactContextForCollapseProgress,
   currentProgrammeIdAt,
   currentProgrammeRowHeight,
   programmeRowForTimestamp,
@@ -117,6 +119,23 @@ describe('per-channel fixed-row schedule', () => {
     expect(programmeRowForTimestamp(rows, primetime)?.programme.id).toBe('prime');
     expect(scrollOffsetForTimestamp(rows, primetime, anchor)).toBe(0);
     expect(timestampForScrollOffset(rows, 52, 0, primetime)).toBe(Date.parse(programmes[1]!.startAt));
+  });
+
+  it('keeps collapse position-coupled and applies the canonical Reduce Motion switch', () => {
+    expect(collapseProgressForScrollOffset(100, 100, false)).toBe(0);
+    expect(collapseProgressForScrollOffset(128, 100, false)).toBe(0.5);
+    expect(collapseProgressForScrollOffset(156, 100, false)).toBe(1);
+    expect(collapseProgressForScrollOffset(220, 100, false)).toBe(1);
+
+    expect(collapseProgressForScrollOffset(127, 100, true)).toBe(0);
+    expect(collapseProgressForScrollOffset(128, 100, true)).toBe(1);
+  });
+
+  it('switches the binary compact context at the canonical collapse midpoint', () => {
+    expect(compactContextForCollapseProgress(0)).toBe(false);
+    expect(compactContextForCollapseProgress(0.49)).toBe(false);
+    expect(compactContextForCollapseProgress(0.5)).toBe(true);
+    expect(compactContextForCollapseProgress(1)).toBe(true);
   });
 
   it('clamps adjacent channel navigation at the lineup edges', () => {

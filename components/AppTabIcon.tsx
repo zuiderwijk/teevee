@@ -10,7 +10,7 @@ type AppTabIconProps = {
 
 function SearchIcon({ color }: { color: ColorValue }) {
   return (
-    <View accessible={false} style={styles.searchIcon}>
+    <View testID="app-tab-icon-search" accessible={false} style={styles.searchIcon}>
       <View style={[styles.searchCircle, { borderColor: color }]} />
       <View style={[styles.searchHandle, { backgroundColor: color }]} />
     </View>
@@ -19,7 +19,7 @@ function SearchIcon({ color }: { color: ColorValue }) {
 
 function GuideIcon({ color, focused }: { color: ColorValue; focused: boolean }) {
   return (
-    <View accessible={false} style={styles.guideIcon}>
+    <View testID="app-tab-icon-guide" accessible={false} style={styles.guideIcon}>
       <View style={[styles.guideBody, { borderColor: color }]}>
         <View
           style={[
@@ -39,7 +39,11 @@ function GuideIcon({ color, focused }: { color: ColorValue; focused: boolean }) 
 
 function TonightIcon({ color, focused }: { color: ColorValue; focused: boolean }) {
   return (
-    <View accessible={false} style={[styles.tonightCircle, { borderColor: color }]}>
+    <View
+      testID="app-tab-icon-tonight"
+      accessible={false}
+      style={[styles.tonightCircle, { borderColor: color }]}
+    >
       <View
         style={[
           styles.tonightNeedle,
