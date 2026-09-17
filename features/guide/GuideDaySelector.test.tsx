@@ -109,7 +109,7 @@ describe('GuideDaySelector', () => {
     });
     await click('[data-testid="guide-day-selector"]');
 
-    const options = [...container.querySelectorAll<HTMLElement>('[data-testid^="guide-day-option-"]')];
+    const options = [...container.querySelectorAll<HTMLElement>('button[data-testid^="guide-day-option-"]')];
     expect(options).toHaveLength(10);
     expect(options[0]?.dataset.testid).toBe('guide-day-option--2');
     expect(options.at(-1)?.dataset.testid).toBe('guide-day-option-7');
@@ -136,7 +136,7 @@ describe('GuideDaySelector', () => {
     expect(selector?.getAttribute('aria-label')).not.toContain('Vandaag · ma 14 sep');
 
     await click('[data-testid="guide-day-selector"]');
-    expect(container.querySelectorAll('[data-testid^="guide-day-option-"]')).toHaveLength(10);
+    expect(container.querySelectorAll('button[data-testid^="guide-day-option-"]')).toHaveLength(10);
     expect(container.textContent).not.toContain('Kies datum');
   });
 
