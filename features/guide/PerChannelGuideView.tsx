@@ -1,7 +1,9 @@
 import { type ReactNode, memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
+  type LayoutChangeEvent,
   type NativeScrollEvent,
   type NativeSyntheticEvent,
+  Platform,
   Pressable,
   SafeAreaView,
   ScrollView,
@@ -10,15 +12,36 @@ import {
   useWindowDimensions,
   View,
 } from 'react-native';
+import Animated, {
+  useAnimatedScrollHandler,
+  useAnimatedStyle,
+  useReducedMotion,
+  useSharedValue,
+} from 'react-native-reanimated';
+import { scheduleOnRN } from 'react-native-worklets';
 
-import { isProgrammeCurrent, type Channel, type GuideFixture } from '@/data/domain/epg';
+import {
+  isProgrammeCurrent,
+  programmeProgress,
+  type Channel,
+  type GuideFixture,
+  type Programme,
+} from '@/data/domain/epg';
 import { guideTelevisionDayStart, GUIDE_TIME_ZONE } from '@/data/domain/guideTime';
 import { buildRuntimeGuideFixture } from '@/data/fixtures/runtimeGuideFixture';
 import { useTeeveeTheme } from '@/theme/useTeeveeTheme';
 
 import { ChannelIdentity } from './ChannelIdentity';
 import type { ProgrammeSelection } from './detailState';
+import { GuideChrome } from './GuideChrome';
 import { GuideDaySelector } from './GuideDaySelector';
+import {
+  COMPACT_CHROME_MAX_FONT_SIZE_MULTIPLIER,
+  GUIDE_TYPOGRAPHY,
+  GUIDE_VISUAL_METRICS,
+  minimumTouchTargetForPlatform,
+  PER_CHANNEL_VISUAL_METRICS,
+} from './guideVisualMetrics';
 import {
   guideTargetForDaySelection,
   guideTargetForNow,
@@ -26,7 +49,12 @@ import {
 } from './guideDaySelection';
 import {
   adjacentChannelIndex,
-  PER_CHANNEL_MINUTE_HEIGHT,
+  currentProgrammePresentationForNormalizedHeight,
+  normalizedProgrammeHeight,
+  PER_CHANNEL_VIEWED_TIME_ANCHOR_INSET,
+  perChannelMinuteHeightForFontScale,
+  programmeDensityForNormalizedHeight,
+  programmeStartTimeFits,
   programmeVerticalFrame,
   programmesForChannelDay,
   scheduleYForTime,
@@ -35,13 +63,9 @@ import { useGuideClock } from './useGuideClock';
 import { useGuideDaySelection } from './useGuideDaySelection';
 import { useSelectedGuideDaySchedule } from './useSelectedGuideDaySchedule';
 
-const CONTROL_MAX_FONT_SIZE_MULTIPLIER = 1.2;
-const CHANNEL_ITEM_WIDTH = 84;
-const CHANNEL_STRIP_HEIGHT = 62;
-const TIME_GUTTER_WIDTH = 62;
-const NOW_TOP_INSET = 132;
-const HEADER_CONDENSE_THRESHOLD = 24;
-const HOUR_MS = 60 * 60 * 1000;
+const CHANNEL_ITEM_STEP =
+  PER_CHANNEL_VISUAL_METRICS.channelItemSize + PER_CHANNEL_VISUAL_METRICS.channelItemGap;
+const CONTEXT_WRAP_Y_EPSILON = 1;
 
 type PerChannelGuideViewProps = {
   guideDataVersion: number;
@@ -55,7 +79,25 @@ type SchedulePageProps = {
   dayStartMs: number;
   dayEndMs: number;
   nowMs: number;
+  minuteHeight: number;
+  fontScale: number;
   width: number;
+  onSelectProgramme: (selection: ProgrammeSelection) => void;
+};
+
+type ProgrammeBlockProps = {
+  channel: Channel;
+  programme: Programme;
+  frame: { top: number; height: number };
+  current: boolean;
+  progress: number;
+  fontScale: number;
+  showSeparator: boolean;
+  textColor: string;
+  secondaryTextColor: string;
+  borderColor: string;
+  currentTimeColor: string;
+  pressedBackground: string;
   onSelectProgramme: (selection: ProgrammeSelection) => void;
 };
 
@@ -67,14 +109,183 @@ function formatTime(timeMs: number) {
   });
 }
 
-function hourTicks(dayStartMs: number, dayEndMs: number) {
-  const ticks: number[] = [];
-  for (let tick = dayStartMs; tick <= dayEndMs; tick += HOUR_MS) ticks.push(tick);
-  return ticks;
-}
-
 function clampTime(timeMs: number, fromMs: number, toMs: number) {
   return Math.min(toMs - 1, Math.max(fromMs, timeMs));
+}
+
+function currentDetail(programme: Programme): string | null {
+  const description = programme.description?.trim();
+  if (description) return description;
+  const subtitle = programme.subtitle?.trim();
+  return subtitle || null;
+}
+
+function ProgrammeBlock({
+  channel,
+  programme,
+  frame,
+  current,
+  progress,
+  fontScale,
+  showSeparator,
+  textColor,
+  secondaryTextColor,
+  borderColor,
+  currentTimeColor,
+  pressedBackground,
+  onSelectProgramme,
+}: ProgrammeBlockProps) {
+  const startMs = Date.parse(programme.startAt);
+  const endMs = Date.parse(programme.endAt);
+  const effectiveFontScale = Number.isFinite(fontScale) && fontScale > 0 ? Math.max(1, fontScale) : 1;
+  const normalizedHeight = normalizedProgrammeHeight(frame.height, effectiveFontScale);
+  const density = programmeDensityForNormalizedHeight(normalizedHeight);
+  const currentPresentation = current
+    ? currentProgrammePresentationForNormalizedHeight(normalizedHeight)
+    : null;
+  const visibleDensity = currentPresentation?.density ?? density;
+  const showText = visibleDensity !== 'hidden';
+  const compact = visibleDensity === 'compact';
+  const showStartTime = programmeStartTimeFits(frame.height, effectiveFontScale, visibleDensity);
+  const contentInsetY = compact
+    ? PER_CHANNEL_VISUAL_METRICS.programmeCompactInsetY
+    : PER_CHANNEL_VISUAL_METRICS.programmeContentInsetY;
+  const allowSecondTitleLine =
+    !compact && normalizedHeight >= PER_CHANNEL_VISUAL_METRICS.twoLineTitleMinNormalizedHeight;
+  const detail = current ? currentDetail(programme) : null;
+  const showProgress = Boolean(currentPresentation?.showProgress);
+  const canShowDescription = Boolean(currentPresentation?.showDescription && detail);
+  const [measuredTitleLines, setMeasuredTitleLines] = useState(1);
+  const titleLineHeight = compact
+    ? GUIDE_TYPOGRAPHY.programmeTitleCompact.lineHeight
+    : GUIDE_TYPOGRAPHY.programmeTitle.lineHeight;
+  const progressTopBoundary =
+    frame.height -
+    PER_CHANNEL_VISUAL_METRICS.progressBottomInset -
+    PER_CHANNEL_VISUAL_METRICS.progressHeight -
+    PER_CHANNEL_VISUAL_METRICS.progressTextClearance;
+  const descriptionStart =
+    contentInsetY +
+    titleLineHeight * effectiveFontScale * Math.max(1, measuredTitleLines) +
+    PER_CHANNEL_VISUAL_METRICS.descriptionGap;
+  const descriptionLineCount = canShowDescription
+    ? Math.max(
+        0,
+        Math.min(
+          3,
+          Math.floor(
+            (progressTopBoundary - descriptionStart) /
+              (GUIDE_TYPOGRAPHY.currentDescription.lineHeight * effectiveFontScale),
+          ),
+        ),
+      )
+    : 0;
+
+  return (
+    <Pressable
+      testID={`per-channel-programme-${programme.id}`}
+      accessibilityRole="button"
+      accessibilityLabel={`${channel.displayName}, ${programme.title}, ${formatTime(startMs)} tot ${formatTime(endMs)}${current ? ', nu bezig' : ''}`}
+      accessibilityHint="Opent programmadetails"
+      onPress={() => onSelectProgramme({ programme, channelName: channel.displayName })}
+      style={({ pressed }) => [
+        styles.programme,
+        {
+          top: frame.top,
+          height: frame.height,
+          backgroundColor: pressed ? pressedBackground : 'transparent',
+        },
+      ]}
+    >
+      {showText ? (
+        <>
+          {showStartTime ? (
+            <Text
+              testID={`per-channel-start-${programme.id}`}
+              numberOfLines={1}
+              style={[
+                styles.programmeStart,
+                { top: contentInsetY, color: secondaryTextColor },
+              ]}
+            >
+              {formatTime(startMs)}
+            </Text>
+          ) : null}
+
+          <View
+            style={[
+              styles.programmeContent,
+              {
+                top: contentInsetY,
+                bottom: showProgress
+                  ? PER_CHANNEL_VISUAL_METRICS.progressBottomInset +
+                    PER_CHANNEL_VISUAL_METRICS.progressHeight +
+                    PER_CHANNEL_VISUAL_METRICS.progressTextClearance
+                  : 0,
+              },
+            ]}
+          >
+            <Text
+              numberOfLines={allowSecondTitleLine ? 2 : 1}
+              ellipsizeMode="tail"
+              onTextLayout={(event) => {
+                if (!current || !canShowDescription) return;
+                const lines = Math.max(1, Math.min(2, event.nativeEvent.lines.length));
+                setMeasuredTitleLines((previous) => (previous === lines ? previous : lines));
+              }}
+              style={[
+                compact
+                  ? current
+                    ? styles.currentProgrammeTitleCompact
+                    : styles.programmeTitleCompact
+                  : current
+                    ? styles.currentProgrammeTitle
+                    : styles.programmeTitle,
+                { color: textColor },
+              ]}
+            >
+              {programme.title}
+            </Text>
+
+            {descriptionLineCount > 0 && detail ? (
+              <Text
+                testID={`per-channel-description-${programme.id}`}
+                numberOfLines={descriptionLineCount}
+                ellipsizeMode="tail"
+                style={[styles.programmeDescription, { color: secondaryTextColor }]}
+              >
+                {detail}
+              </Text>
+            ) : null}
+          </View>
+        </>
+      ) : null}
+
+      {showProgress ? (
+        <View
+          testID={`per-channel-progress-${programme.id}`}
+          style={[styles.progressTrack, { backgroundColor: borderColor }]}
+        >
+          <View
+            style={[
+              styles.progressFill,
+              {
+                width: `${Math.min(1, Math.max(0, progress)) * 100}%`,
+                backgroundColor: currentTimeColor,
+              },
+            ]}
+          />
+        </View>
+      ) : null}
+
+      {showSeparator ? (
+        <View
+          pointerEvents="none"
+          style={[styles.programmeSeparator, { backgroundColor: borderColor }]}
+        />
+      ) : null}
+    </Pressable>
+  );
 }
 
 const SchedulePage = memo(function SchedulePage({
@@ -83,6 +294,8 @@ const SchedulePage = memo(function SchedulePage({
   dayStartMs,
   dayEndMs,
   nowMs,
+  minuteHeight,
+  fontScale,
   width,
   onSelectProgramme,
 }: SchedulePageProps) {
@@ -91,102 +304,42 @@ const SchedulePage = memo(function SchedulePage({
     () => programmesForChannelDay(fixture, channel.id, dayStartMs, dayEndMs),
     [channel.id, dayEndMs, dayStartMs, fixture],
   );
-  const ticks = useMemo(() => hourTicks(dayStartMs, dayEndMs), [dayEndMs, dayStartMs]);
-  const height = ((dayEndMs - dayStartMs) / 60_000) * PER_CHANNEL_MINUTE_HEIGHT;
-  const nowInDay = nowMs >= dayStartMs && nowMs < dayEndMs;
+  const separatorOwnerIds = useMemo(() => {
+    const ownerByEnd = new Map<number, string>();
+    programmes.forEach((programme) => {
+      const visibleEnd = Math.min(dayEndMs, Date.parse(programme.endAt));
+      if (!ownerByEnd.has(visibleEnd)) ownerByEnd.set(visibleEnd, programme.id);
+    });
+    return new Set(ownerByEnd.values());
+  }, [dayEndMs, programmes]);
+  const height = ((dayEndMs - dayStartMs) / 60_000) * minuteHeight;
 
   return (
     <View style={{ width, height }}>
-      {ticks.map((tick) => (
-        <View
-          key={tick}
-          pointerEvents="none"
-          accessible={false}
-          style={[
-            styles.hourTick,
-            {
-              top: scheduleYForTime(tick, dayStartMs),
-              borderTopColor: theme.colors.border,
-            },
-          ]}
-        >
-          <Text style={[styles.hourLabel, { color: theme.colors.textMuted }]}>{formatTime(tick)}</Text>
-        </View>
-      ))}
-
       {programmes.map((programme) => {
-        const frame = programmeVerticalFrame(programme, dayStartMs, dayEndMs);
-        const startMs = Date.parse(programme.startAt);
-        const endMs = Date.parse(programme.endAt);
+        const frame = programmeVerticalFrame(programme, dayStartMs, dayEndMs, minuteHeight);
         const current = isProgrammeCurrent(programme, nowMs);
-        const compact = frame.height < 58;
-        const veryCompact = frame.height < 42;
-        const timeText = current ? `Nu bezig · tot ${formatTime(endMs)}` : formatTime(startMs);
+        const progress = current ? programmeProgress(programme, nowMs) : 0;
 
         return (
-          <Pressable
+          <ProgrammeBlock
             key={programme.id}
-            testID={`per-channel-programme-${programme.id}`}
-            accessibilityRole="button"
-            accessibilityLabel={`${channel.displayName}, ${programme.title}, ${formatTime(startMs)} tot ${formatTime(endMs)}${current ? ', nu bezig' : ''}`}
-            accessibilityHint="Opent programmadetails"
-            onPress={() => onSelectProgramme({ programme, channelName: channel.displayName })}
-            style={({ pressed }) => [
-              styles.programme,
-              {
-                top: frame.top,
-                height: frame.height,
-                left: TIME_GUTTER_WIDTH,
-                right: 14,
-                borderBottomColor: theme.colors.border,
-                borderLeftColor: current ? theme.colors.currentTime : 'transparent',
-                backgroundColor: current ? theme.colors.surfaceElevated : 'transparent',
-                opacity: pressed ? 0.58 : 1,
-              },
-            ]}
-          >
-            <Text
-              numberOfLines={1}
-              ellipsizeMode="tail"
-              style={[
-                veryCompact ? styles.programmeTitleTiny : styles.programmeTitle,
-                compact && !veryCompact ? styles.programmeTitleCompact : null,
-                { color: theme.colors.text },
-              ]}
-            >
-              {programme.title}
-            </Text>
-            {!compact ? (
-              <Text
-                numberOfLines={1}
-                style={[
-                  styles.programmeTime,
-                  { color: current ? theme.colors.currentTime : theme.colors.textMuted },
-                ]}
-              >
-                {timeText}
-              </Text>
-            ) : null}
-          </Pressable>
+            channel={channel}
+            programme={programme}
+            frame={frame}
+            current={current}
+            progress={progress}
+            fontScale={fontScale}
+            showSeparator={separatorOwnerIds.has(programme.id)}
+            textColor={theme.colors.text}
+            secondaryTextColor={theme.colors.textSecondary}
+            borderColor={theme.colors.border}
+            currentTimeColor={theme.colors.currentTime}
+            pressedBackground={theme.colors.surfaceElevated}
+            onSelectProgramme={onSelectProgramme}
+          />
         );
       })}
-
-      {nowInDay ? (
-        <View
-          pointerEvents="none"
-          style={[
-            styles.nowMarker,
-            {
-              top: scheduleYForTime(nowMs, dayStartMs),
-              left: TIME_GUTTER_WIDTH - 5,
-              right: 14,
-              backgroundColor: theme.colors.currentTime,
-            },
-          ]}
-        >
-          <View style={[styles.nowDot, { backgroundColor: theme.colors.currentTime }]} />
-        </View>
-      ) : null}
     </View>
   );
 });
@@ -200,16 +353,34 @@ function channelsForPager(channels: Channel[], selectedIndex: number): Channel[]
   return [previous, current, next];
 }
 
+function MoonGlyph({ color, maskColor }: { color: string; maskColor: string }) {
+  return (
+    <View accessible={false} style={styles.moonIconBox}>
+      <View style={[styles.moonCircle, { borderColor: color }]} />
+      <View style={[styles.moonMask, { backgroundColor: maskColor }]} />
+    </View>
+  );
+}
+
 export const PerChannelGuideView = memo(function PerChannelGuideView({
   guideDataVersion,
   onSelectProgramme,
   headerAction,
 }: PerChannelGuideViewProps) {
   const theme = useTeeveeTheme();
-  const { width: windowWidth } = useWindowDimensions();
+  const { width: windowWidth, fontScale = 1 } = useWindowDimensions();
+  const effectiveFontScale = Number.isFinite(fontScale) && fontScale > 0 ? Math.max(1, fontScale) : 1;
+  const minuteHeight = useMemo(
+    () => perChannelMinuteHeightForFontScale(effectiveFontScale),
+    [effectiveFontScale],
+  );
+  const minimumTouchTarget = minimumTouchTargetForPlatform(Platform.OS);
+  const reduceMotion = useReducedMotion();
   const channelStripRef = useRef<ScrollView>(null);
   const pagerRef = useRef<ScrollView>(null);
   const scheduleRef = useRef<ScrollView>(null);
+  const contextDateYRef = useRef<number | null>(null);
+  const contextUtilitiesYRef = useRef<number | null>(null);
   const nowMs = useGuideClock();
   const { selectedDayStartMs, selectDay } = useGuideDaySelection(nowMs);
   const selectedDay = useSelectedGuideDaySchedule(selectedDayStartMs, guideDataVersion);
@@ -219,9 +390,9 @@ export const PerChannelGuideView = memo(function PerChannelGuideView({
   );
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [condensed, setCondensed] = useState(false);
-  const viewedTimeRef = useRef(Date.now());
+  const [contextWrapped, setContextWrapped] = useState(false);
+  const viewedTimeRef = useRef(nowMs);
   const pendingTargetTimeRef = useRef<number | null>(null);
-  const userHasScrolledRef = useRef(false);
   const channels = fixture.channels;
   const safeSelectedIndex = Math.min(Math.max(0, selectedIndex), Math.max(0, channels.length - 1));
   const selectedChannel = channels[safeSelectedIndex] ?? channels[0];
@@ -230,15 +401,29 @@ export const PerChannelGuideView = memo(function PerChannelGuideView({
     () => guideTelevisionDayStart(selectedDayStartMs, 1),
     [selectedDayStartMs],
   );
-  const scheduleHeight = ((dayEndMs - dayStartMs) / 60_000) * PER_CHANNEL_MINUTE_HEIGHT;
+  const scheduleHeight = ((dayEndMs - dayStartMs) / 60_000) * minuteHeight;
   const pagerChannels = useMemo(
     () => channelsForPager(channels, safeSelectedIndex),
     [channels, safeSelectedIndex],
+  );
+  const collapseProgress = useSharedValue(0);
+  const collapseAnchorY = useSharedValue(0);
+  const collapseEnabled = useSharedValue(0);
+  const headingNaturalHeight = useSharedValue(
+    PER_CHANNEL_VISUAL_METRICS.stripToHeadingGap +
+      GUIDE_TYPOGRAPHY.selectedChannelHeading.lineHeight +
+      PER_CHANNEL_VISUAL_METRICS.headingToUtilitiesGap,
   );
 
   useEffect(() => {
     if (selectedIndex !== safeSelectedIndex) setSelectedIndex(safeSelectedIndex);
   }, [safeSelectedIndex, selectedIndex]);
+
+  useEffect(() => {
+    contextDateYRef.current = null;
+    contextUtilitiesYRef.current = null;
+    setContextWrapped(false);
+  }, [effectiveFontScale, safeSelectedIndex, selectedDayStartMs, windowWidth]);
 
   const centrePager = useCallback(
     (animated = false) => {
@@ -249,8 +434,16 @@ export const PerChannelGuideView = memo(function PerChannelGuideView({
 
   const centreSelectedChannel = useCallback(
     (index: number, animated = true) => {
-      const target = index * CHANNEL_ITEM_WIDTH - windowWidth / 2 + CHANNEL_ITEM_WIDTH / 2;
-      const max = Math.max(0, channels.length * CHANNEL_ITEM_WIDTH - windowWidth);
+      const itemCentre =
+        PER_CHANNEL_VISUAL_METRICS.channelStripInsetX +
+        index * CHANNEL_ITEM_STEP +
+        PER_CHANNEL_VISUAL_METRICS.channelItemSize / 2;
+      const contentWidth =
+        PER_CHANNEL_VISUAL_METRICS.channelStripInsetX * 2 +
+        channels.length * PER_CHANNEL_VISUAL_METRICS.channelItemSize +
+        Math.max(0, channels.length - 1) * PER_CHANNEL_VISUAL_METRICS.channelItemGap;
+      const max = Math.max(0, contentWidth - windowWidth);
+      const target = itemCentre - windowWidth / 2;
       channelStripRef.current?.scrollTo({ x: Math.min(max, Math.max(0, target)), animated });
     },
     [channels.length, windowWidth],
@@ -285,23 +478,69 @@ export const PerChannelGuideView = memo(function PerChannelGuideView({
     (timeMs: number, animated: boolean) => {
       const target = clampTime(timeMs, dayStartMs, dayEndMs);
       viewedTimeRef.current = target;
-      const y = Math.max(0, scheduleYForTime(target, dayStartMs) - NOW_TOP_INSET);
+      const y = Math.max(
+        0,
+        scheduleYForTime(target, dayStartMs, minuteHeight) - PER_CHANNEL_VIEWED_TIME_ANCHOR_INSET,
+      );
+      if (!animated) {
+        collapseAnchorY.value = y;
+        collapseEnabled.value = 0;
+        collapseProgress.value = 0;
+        setCondensed(false);
+      }
       scheduleRef.current?.scrollTo({ y, animated });
     },
-    [dayEndMs, dayStartMs],
+    [collapseAnchorY, collapseEnabled, collapseProgress, dayEndMs, dayStartMs, minuteHeight],
   );
 
-  const handleScheduleScroll = useCallback(
-    (event: NativeSyntheticEvent<NativeScrollEvent>) => {
-      const y = Math.max(0, event.nativeEvent.contentOffset.y);
-      const nextViewedTime = dayStartMs + ((y + NOW_TOP_INSET) / PER_CHANNEL_MINUTE_HEIGHT) * 60_000;
+  const syncScheduleScroll = useCallback(
+    (y: number, progress: number) => {
+      const nextViewedTime =
+        dayStartMs +
+        ((Math.max(0, y) + PER_CHANNEL_VIEWED_TIME_ANCHOR_INSET) / minuteHeight) * 60_000;
       viewedTimeRef.current = clampTime(nextViewedTime, dayStartMs, dayEndMs);
-      if (!userHasScrolledRef.current) return;
-      const nextCondensed = y > HEADER_CONDENSE_THRESHOLD;
+      const nextCondensed = progress >= 1;
       setCondensed((current) => (current === nextCondensed ? current : nextCondensed));
     },
-    [dayEndMs, dayStartMs],
+    [dayEndMs, dayStartMs, minuteHeight],
   );
+
+  const scheduleScrollHandler = useAnimatedScrollHandler(
+    {
+      onBeginDrag: () => {
+        collapseEnabled.value = 1;
+      },
+      onScroll: (event) => {
+        const y = Math.max(0, event.contentOffset.y);
+        const scrollY = collapseEnabled.value
+          ? Math.max(0, y - collapseAnchorY.value)
+          : 0;
+        const progress = reduceMotion
+          ? scrollY >= PER_CHANNEL_VISUAL_METRICS.reduceMotionSwitchOffset
+            ? 1
+            : 0
+          : Math.min(1, scrollY / PER_CHANNEL_VISUAL_METRICS.collapseDistance);
+        collapseProgress.value = progress;
+        scheduleOnRN(syncScheduleScroll, y, progress);
+      },
+    },
+    [reduceMotion, syncScheduleScroll],
+  );
+
+  const restHeadingStyle = useAnimatedStyle(() => {
+    const progress = collapseProgress.value;
+    return {
+      height: headingNaturalHeight.value * (1 - progress),
+      opacity: 1 - progress,
+      transform: [
+        { translateY: -PER_CHANNEL_VISUAL_METRICS.collapseTranslateY * progress },
+      ],
+    };
+  });
+
+  const scheduleGapStyle = useAnimatedStyle(() => ({
+    height: PER_CHANNEL_VISUAL_METRICS.utilityToScheduleGap * (1 - collapseProgress.value),
+  }));
 
   const changeDay = useCallback(
     (nextDayStartMs: number) => {
@@ -348,32 +587,54 @@ export const PerChannelGuideView = memo(function PerChannelGuideView({
     return () => cancelAnimationFrame(frame);
   }, [scrollToTime, selectedDayStartMs]);
 
+  const handleHeadingLayout = useCallback(
+    (event: LayoutChangeEvent) => {
+      const measured = event.nativeEvent.layout.height;
+      if (measured > 0) headingNaturalHeight.value = measured;
+    },
+    [headingNaturalHeight],
+  );
+
+  const detectContextWrap = useCallback(() => {
+    const dateY = contextDateYRef.current;
+    const utilitiesY = contextUtilitiesYRef.current;
+    if (dateY === null || utilitiesY === null) return;
+    if (Math.abs(dateY - utilitiesY) > CONTEXT_WRAP_Y_EPSILON) setContextWrapped(true);
+  }, []);
+
+  const handleDateContextLayout = useCallback((event: LayoutChangeEvent) => {
+    contextDateYRef.current = event.nativeEvent.layout.y;
+    detectContextWrap();
+  }, [detectContextWrap]);
+
+  const handleUtilitiesLayout = useCallback((event: LayoutChangeEvent) => {
+    contextUtilitiesYRef.current = event.nativeEvent.layout.y;
+    detectContextWrap();
+  }, [detectContextWrap]);
+
   if (!selectedChannel) return null;
 
+  const contextMinHeight = condensed && contextWrapped
+    ? PER_CHANNEL_VISUAL_METRICS.stickyContextWrappedHeight
+    : PER_CHANNEL_VISUAL_METRICS.stickyContextHeight;
+
   return (
-    <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.colors.background }]}>
-      {!condensed ? (
-        <View style={styles.header}>
-          <View>
-            <Text accessible={false} style={[styles.eyebrow, { color: theme.colors.textMuted }]}>TEEVEE</Text>
-            <Text accessibilityRole="header" style={[styles.title, { color: theme.colors.text }]}>Gids</Text>
-          </View>
-          <View style={styles.presentationLabel}>
-            <View style={[styles.presentationDot, { backgroundColor: theme.colors.currentTime }]} />
-            <Text style={[styles.presentationText, { color: theme.colors.textSecondary }]}>Per zender</Text>
-          </View>
-          {headerAction}
-        </View>
-      ) : null}
+    <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.colors.background }]}> 
+      <GuideChrome
+        condensed={condensed}
+        presentationNavigation={headerAction}
+        collapseProgress={collapseProgress}
+      />
 
       <ScrollView
         ref={channelStripRef}
+        testID="per-channel-channel-strip"
         horizontal
         bounces
         directionalLockEnabled
         nestedScrollEnabled
         showsHorizontalScrollIndicator={false}
-        style={[styles.channelStrip, { borderBottomColor: theme.colors.border }]}
+        style={[styles.channelStrip, { backgroundColor: theme.colors.background }]}
         contentContainerStyle={styles.channelStripContent}
       >
         {channels.map((channel, index) => {
@@ -381,6 +642,7 @@ export const PerChannelGuideView = memo(function PerChannelGuideView({
           return (
             <Pressable
               key={channel.id}
+              testID={`per-channel-channel-${channel.id}`}
               accessibilityRole="button"
               accessibilityLabel={channel.displayName}
               accessibilityState={{ selected: active }}
@@ -388,73 +650,143 @@ export const PerChannelGuideView = memo(function PerChannelGuideView({
               style={({ pressed }) => [
                 styles.channelButton,
                 {
-                  width: CHANNEL_ITEM_WIDTH,
-                  opacity: pressed ? 0.6 : active ? 1 : 0.62,
+                  backgroundColor: active ? theme.colors.surfaceElevated : 'transparent',
+                  borderColor: active ? theme.colors.border : 'transparent',
+                  borderWidth: active ? StyleSheet.hairlineWidth : 0,
+                  opacity: pressed ? GUIDE_VISUAL_METRICS.controlPressOpacity : 1,
                 },
               ]}
             >
               <ChannelIdentity
                 channel={channel}
-                textColor={theme.colors.text}
-                mutedTextColor={theme.colors.textMuted}
+                textColor={active ? theme.colors.text : theme.colors.textSecondary}
+                mutedTextColor={theme.colors.textSecondary}
+                variant="per-channel-strip"
               />
-              {active ? <View style={[styles.channelActive, { backgroundColor: theme.colors.currentTime }]} /> : null}
             </Pressable>
           );
         })}
       </ScrollView>
 
-      {!condensed ? (
-        <View style={styles.channelContext}>
-          <Text style={[styles.channelName, { color: theme.colors.text }]}>{selectedChannel.displayName}</Text>
+      <Animated.View
+        testID="per-channel-rest-heading"
+        pointerEvents={condensed ? 'none' : 'auto'}
+        accessibilityElementsHidden={condensed}
+        importantForAccessibility={condensed ? 'no-hide-descendants' : 'auto'}
+        style={[styles.restHeadingClip, restHeadingStyle]}
+      >
+        <View onLayout={handleHeadingLayout} style={styles.channelContext}>
+          <Text
+            accessibilityRole="header"
+            numberOfLines={2}
+            style={[styles.channelName, { color: theme.colors.text }]}
+          >
+            {selectedChannel.displayName}
+          </Text>
         </View>
-      ) : null}
+      </Animated.View>
 
       <View
+        testID={condensed ? 'per-channel-context-condensed' : 'per-channel-context-expanded'}
         style={[
           styles.contextRow,
-          condensed ? { borderBottomColor: theme.colors.border, borderBottomWidth: StyleSheet.hairlineWidth } : null,
+          {
+            minHeight: contextMinHeight,
+            backgroundColor: theme.colors.background,
+          },
         ]}
       >
-        <GuideDaySelector
-          selectedDayStartMs={selectedDayStartMs}
-          nowMs={nowMs}
-          loading={selectedDay.loading}
-          unavailable={selectedDay.unavailable}
-          compactPrefix={condensed ? selectedChannel.displayName : undefined}
-          onSelectDay={changeDay}
-        />
-        <View style={styles.utilityActions}>
+        <View
+          testID="per-channel-date-group"
+          onLayout={handleDateContextLayout}
+          style={[styles.dateControlWrap, contextWrapped ? styles.contextFullWidth : null]}
+        >
+          <GuideDaySelector
+            selectedDayStartMs={selectedDayStartMs}
+            nowMs={nowMs}
+            loading={selectedDay.loading}
+            unavailable={selectedDay.unavailable}
+            compactPrefix={condensed ? selectedChannel.displayName : undefined}
+            onSelectDay={changeDay}
+          />
+        </View>
+        <View
+          testID="per-channel-utility-group"
+          onLayout={handleUtilitiesLayout}
+          style={[
+            styles.utilityActions,
+            contextWrapped ? styles.utilityActionsWrapped : null,
+          ]}
+        >
           <Pressable
+            testID="per-channel-primetime"
             accessibilityRole="button"
-            accessibilityLabel="Ga naar primetime om 20:30 op de geselecteerde dag"
+            accessibilityLabel="Ga naar primetime, 20:30 op geselecteerde dag"
             onPress={scrollToPrimetime}
-            style={[styles.utilityButton, { borderColor: theme.colors.border }]}
+            style={({ pressed }) => [
+              styles.utilityTouchTarget,
+              {
+                minHeight: minimumTouchTarget,
+                opacity: pressed ? GUIDE_VISUAL_METRICS.controlPressOpacity : 1,
+              },
+            ]}
           >
-            <Text
-              maxFontSizeMultiplier={CONTROL_MAX_FONT_SIZE_MULTIPLIER}
-              style={[styles.utilityButtonText, { color: theme.colors.textSecondary }]}
+            <View
+              style={[
+                styles.primetimeVisible,
+                {
+                  backgroundColor: theme.colors.surfaceElevated,
+                  borderColor: theme.colors.border,
+                },
+              ]}
             >
-              Primetime
-            </Text>
+              <MoonGlyph
+                color={theme.colors.textSecondary}
+                maskColor={theme.colors.surfaceElevated}
+              />
+              <Text
+                numberOfLines={1}
+                maxFontSizeMultiplier={COMPACT_CHROME_MAX_FONT_SIZE_MULTIPLIER}
+                style={[styles.utilityButtonText, { color: theme.colors.textSecondary }]}
+              >
+                Primetime
+              </Text>
+            </View>
           </Pressable>
           <Pressable
+            testID="per-channel-now"
             accessibilityRole="button"
             accessibilityLabel="Ga naar nu"
             onPress={() => scrollToNow(true)}
-            style={[styles.utilityButton, { borderColor: theme.colors.border }]}
+            style={({ pressed }) => [
+              styles.utilityTouchTarget,
+              {
+                minHeight: minimumTouchTarget,
+                opacity: pressed ? GUIDE_VISUAL_METRICS.controlPressOpacity : 1,
+              },
+            ]}
           >
-            <Text
-              maxFontSizeMultiplier={CONTROL_MAX_FONT_SIZE_MULTIPLIER}
-              style={[styles.utilityButtonText, { color: theme.colors.text }]}
-            >
-              Nu
-            </Text>
+            <View style={[styles.nowVisible, { borderColor: theme.colors.border }]}> 
+              <Text
+                numberOfLines={1}
+                maxFontSizeMultiplier={COMPACT_CHROME_MAX_FONT_SIZE_MULTIPLIER}
+                style={[styles.utilityButtonText, { color: theme.colors.text }]}
+              >
+                Nu
+              </Text>
+            </View>
           </Pressable>
         </View>
       </View>
 
-      <ScrollView
+      <Animated.View pointerEvents="none" style={scheduleGapStyle} />
+      <View
+        pointerEvents="none"
+        testID="per-channel-schedule-boundary"
+        style={[styles.scheduleBoundary, { backgroundColor: theme.colors.border }]}
+      />
+
+      <Animated.ScrollView
         ref={scheduleRef}
         testID="per-channel-schedule-scroll"
         bounces
@@ -463,11 +795,8 @@ export const PerChannelGuideView = memo(function PerChannelGuideView({
         nestedScrollEnabled
         decelerationRate="normal"
         showsVerticalScrollIndicator
-        scrollEventThrottle={32}
-        onScrollBeginDrag={() => {
-          userHasScrolledRef.current = true;
-        }}
-        onScroll={handleScheduleScroll}
+        scrollEventThrottle={16}
+        onScroll={scheduleScrollHandler}
         contentContainerStyle={{ height: scheduleHeight }}
       >
         <ScrollView
@@ -492,12 +821,14 @@ export const PerChannelGuideView = memo(function PerChannelGuideView({
               dayStartMs={dayStartMs}
               dayEndMs={dayEndMs}
               nowMs={nowMs}
+              minuteHeight={minuteHeight}
+              fontScale={effectiveFontScale}
               width={windowWidth}
               onSelectProgramme={onSelectProgramme}
             />
           ))}
         </ScrollView>
-      </ScrollView>
+      </Animated.ScrollView>
     </SafeAreaView>
   );
 });
@@ -506,166 +837,172 @@ const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
   },
-  header: {
-    flexWrap: 'wrap',
-    columnGap: 12,
-    rowGap: 8,
-    minHeight: 78,
-    paddingHorizontal: 18,
-    paddingTop: 10,
-    paddingBottom: 8,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-end',
-  },
-  eyebrow: {
-    fontSize: 10,
-    fontWeight: '800',
-    letterSpacing: 1.6,
-  },
-  title: {
-    marginTop: 2,
-    fontSize: 30,
-    lineHeight: 34,
-    fontWeight: '800',
-    letterSpacing: -1,
-  },
-  presentationLabel: {
-    minHeight: 34,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 7,
-    paddingBottom: 3,
-  },
-  presentationDot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-  },
-  presentationText: {
-    fontSize: 13,
-    fontWeight: '700',
-  },
   channelStrip: {
     flexGrow: 0,
-    height: CHANNEL_STRIP_HEIGHT,
-    borderBottomWidth: StyleSheet.hairlineWidth,
+    height: PER_CHANNEL_VISUAL_METRICS.channelStripHeight,
   },
   channelStripContent: {
-    paddingHorizontal: 8,
+    paddingHorizontal: PER_CHANNEL_VISUAL_METRICS.channelStripInsetX,
+    alignItems: 'center',
+    gap: PER_CHANNEL_VISUAL_METRICS.channelItemGap,
   },
   channelButton: {
-    height: CHANNEL_STRIP_HEIGHT,
-    position: 'relative',
-    paddingHorizontal: 3,
+    width: PER_CHANNEL_VISUAL_METRICS.channelItemSize,
+    height: PER_CHANNEL_VISUAL_METRICS.channelItemSize,
+    borderRadius: PER_CHANNEL_VISUAL_METRICS.channelSelectedRadius,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  channelActive: {
-    position: 'absolute',
-    left: 20,
-    right: 20,
-    bottom: 0,
-    height: 2,
-    borderRadius: 1,
+  restHeadingClip: {
+    overflow: 'hidden',
   },
   channelContext: {
-    paddingHorizontal: 18,
-    paddingTop: 10,
-    paddingBottom: 1,
+    paddingHorizontal: GUIDE_VISUAL_METRICS.screenInsetX,
+    paddingTop: PER_CHANNEL_VISUAL_METRICS.stripToHeadingGap,
+    paddingBottom: PER_CHANNEL_VISUAL_METRICS.headingToUtilitiesGap,
   },
   channelName: {
-    fontSize: 22,
-    lineHeight: 27,
-    fontWeight: '800',
-    letterSpacing: -0.35,
+    ...GUIDE_TYPOGRAPHY.selectedChannelHeading,
+    letterSpacing: 0,
   },
   contextRow: {
-    minHeight: 58,
-    paddingHorizontal: 14,
-    paddingVertical: 5,
+    paddingHorizontal: GUIDE_VISUAL_METRICS.screenInsetX,
     flexDirection: 'row',
     flexWrap: 'wrap',
     alignItems: 'center',
     justifyContent: 'space-between',
-    columnGap: 12,
-    rowGap: 4,
+    columnGap: PER_CHANNEL_VISUAL_METRICS.utilityGap,
+    rowGap: 0,
+  },
+  dateControlWrap: {
+    flexShrink: 0,
+  },
+  contextFullWidth: {
+    width: '100%',
   },
   utilityActions: {
     marginLeft: 'auto',
     flexDirection: 'row',
-    flexWrap: 'wrap',
     alignItems: 'center',
     justifyContent: 'flex-end',
-    gap: 7,
+    gap: PER_CHANNEL_VISUAL_METRICS.utilityGap,
   },
-  utilityButton: {
-    minHeight: 48,
-    paddingHorizontal: 12,
-    borderRadius: 12,
+  utilityActionsWrapped: {
+    width: '100%',
+    marginLeft: 0,
+  },
+  utilityTouchTarget: {
+    minWidth: GUIDE_VISUAL_METRICS.touchTargetIos,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  primetimeVisible: {
+    height: PER_CHANNEL_VISUAL_METRICS.utilityVisibleHeight,
+    paddingHorizontal: PER_CHANNEL_VISUAL_METRICS.primetimePaddingX,
+    borderRadius: PER_CHANNEL_VISUAL_METRICS.utilityRadius,
+    borderWidth: StyleSheet.hairlineWidth,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: PER_CHANNEL_VISUAL_METRICS.utilityIconGap,
+  },
+  nowVisible: {
+    height: PER_CHANNEL_VISUAL_METRICS.utilityVisibleHeight,
+    minWidth: PER_CHANNEL_VISUAL_METRICS.nowMinWidth,
+    paddingHorizontal: PER_CHANNEL_VISUAL_METRICS.nowPaddingX,
+    borderRadius: PER_CHANNEL_VISUAL_METRICS.utilityRadius,
     borderWidth: StyleSheet.hairlineWidth,
     alignItems: 'center',
     justifyContent: 'center',
   },
+  moonIconBox: {
+    width: PER_CHANNEL_VISUAL_METRICS.utilityIconSize,
+    height: PER_CHANNEL_VISUAL_METRICS.utilityIconSize,
+  },
+  moonCircle: {
+    width: PER_CHANNEL_VISUAL_METRICS.utilityIconSize,
+    height: PER_CHANNEL_VISUAL_METRICS.utilityIconSize,
+    borderRadius: PER_CHANNEL_VISUAL_METRICS.utilityIconSize / 2,
+    borderWidth: 1.5,
+  },
+  moonMask: {
+    position: 'absolute',
+    width: 10,
+    height: 10,
+    right: -2,
+    top: -2,
+    borderRadius: 5,
+  },
   utilityButtonText: {
-    fontSize: 13,
-    fontWeight: '700',
+    ...GUIDE_TYPOGRAPHY.utility,
+    letterSpacing: 0,
   },
-  hourTick: {
-    position: 'absolute',
-    left: 0,
-    right: 0,
-    height: 1,
-    borderTopWidth: StyleSheet.hairlineWidth,
-  },
-  hourLabel: {
-    position: 'absolute',
-    top: -8,
-    left: 12,
-    width: 42,
-    fontSize: 10,
-    fontWeight: '600',
-    fontVariant: ['tabular-nums'],
+  scheduleBoundary: {
+    flexGrow: 0,
+    height: StyleSheet.hairlineWidth,
+    marginLeft: GUIDE_VISUAL_METRICS.screenInsetX,
   },
   programme: {
     position: 'absolute',
-    paddingHorizontal: 12,
-    paddingVertical: 7,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderLeftWidth: 2,
+    left: 0,
+    right: 0,
     overflow: 'hidden',
-    justifyContent: 'center',
   },
-  programmeTitle: {
-    fontSize: 16,
-    lineHeight: 20,
-    fontWeight: '700',
-    letterSpacing: -0.2,
-  },
-  programmeTitleCompact: {
-    fontSize: 14,
-    lineHeight: 17,
-  },
-  programmeTitleTiny: {
-    fontSize: 12,
-    lineHeight: 14,
-    fontWeight: '600',
-  },
-  programmeTime: {
-    marginTop: 3,
-    fontSize: 11,
-    lineHeight: 14,
-    fontWeight: '600',
+  programmeStart: {
+    position: 'absolute',
+    left: GUIDE_VISUAL_METRICS.screenInsetX + PER_CHANNEL_VISUAL_METRICS.timeTextInsetX,
+    width:
+      PER_CHANNEL_VISUAL_METRICS.timeGutterWidth -
+      PER_CHANNEL_VISUAL_METRICS.timeTextInsetX,
+    ...GUIDE_TYPOGRAPHY.programmeStart,
+    letterSpacing: 0,
     fontVariant: ['tabular-nums'],
   },
-  nowMarker: {
+  programmeContent: {
     position: 'absolute',
-    height: 1,
+    left: PER_CHANNEL_VISUAL_METRICS.programmeColumnX,
+    right: PER_CHANNEL_VISUAL_METRICS.programmeRightInset,
+    overflow: 'hidden',
   },
-  nowDot: {
+  programmeTitle: {
+    ...GUIDE_TYPOGRAPHY.programmeTitle,
+    letterSpacing: 0,
+  },
+  programmeTitleCompact: {
+    ...GUIDE_TYPOGRAPHY.programmeTitleCompact,
+    letterSpacing: 0,
+  },
+  currentProgrammeTitle: {
+    ...GUIDE_TYPOGRAPHY.currentProgrammeTitle,
+    letterSpacing: 0,
+  },
+  currentProgrammeTitleCompact: {
+    ...GUIDE_TYPOGRAPHY.currentProgrammeTitleCompact,
+    letterSpacing: 0,
+  },
+  programmeDescription: {
+    ...GUIDE_TYPOGRAPHY.currentDescription,
+    marginTop: PER_CHANNEL_VISUAL_METRICS.descriptionGap,
+    letterSpacing: 0,
+  },
+  progressTrack: {
     position: 'absolute',
-    width: 7,
-    height: 7,
-    borderRadius: 4,
-    left: -3,
-    top: -3,
+    left: PER_CHANNEL_VISUAL_METRICS.programmeColumnX,
+    right: PER_CHANNEL_VISUAL_METRICS.programmeRightInset,
+    bottom: PER_CHANNEL_VISUAL_METRICS.progressBottomInset,
+    height: PER_CHANNEL_VISUAL_METRICS.progressHeight,
+    borderRadius: PER_CHANNEL_VISUAL_METRICS.progressRadius,
+    overflow: 'hidden',
+  },
+  progressFill: {
+    height: '100%',
+    borderRadius: PER_CHANNEL_VISUAL_METRICS.progressRadius,
+  },
+  programmeSeparator: {
+    position: 'absolute',
+    left: GUIDE_VISUAL_METRICS.screenInsetX,
+    right: 0,
+    bottom: 0,
+    height: StyleSheet.hairlineWidth,
   },
 });

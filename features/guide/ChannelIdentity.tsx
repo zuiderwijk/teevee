@@ -3,25 +3,41 @@ import { Image, StyleSheet, Text, View } from 'react-native';
 
 import type { Channel } from '@/data/domain/epg';
 
+import {
+  COMPACT_CHROME_MAX_FONT_SIZE_MULTIPLIER,
+  GUIDE_TYPOGRAPHY,
+  PER_CHANNEL_VISUAL_METRICS,
+} from './guideVisualMetrics';
+
+type ChannelIdentityVariant = 'default' | 'logo-first' | 'per-channel-strip';
+
 type ChannelIdentityProps = {
   channel: Channel;
   textColor: string;
   mutedTextColor: string;
+  variant?: ChannelIdentityVariant;
 };
 
 export const ChannelIdentity = memo(function ChannelIdentity({
   channel,
   textColor,
   mutedTextColor,
+  variant = 'default',
 }: ChannelIdentityProps) {
   const [failedLogoUrl, setFailedLogoUrl] = useState<string | null>(null);
   const showLogo = Boolean(channel.logoUrl) && failedLogoUrl !== channel.logoUrl;
+  const logoFirst = variant === 'logo-first';
+  const perChannelStrip = variant === 'per-channel-strip';
+  const showVisibleName = perChannelStrip ? !showLogo : !showLogo || !logoFirst;
+  const visibleName = perChannelStrip
+    ? channel.shortName ?? channel.displayName
+    : channel.displayName;
 
   return (
     <View
       accessible
       accessibilityLabel={channel.displayName}
-      style={styles.container}
+      style={[styles.container, perChannelStrip ? styles.perChannelContainer : null]}
     >
       {showLogo ? (
         <Image
@@ -29,20 +45,30 @@ export const ChannelIdentity = memo(function ChannelIdentity({
           source={{ uri: channel.logoUrl }}
           resizeMode="contain"
           onError={() => setFailedLogoUrl(channel.logoUrl ?? null)}
-          style={styles.logo}
+          style={[
+            styles.logo,
+            logoFirst ? styles.logoFirst : null,
+            perChannelStrip ? styles.perChannelLogo : null,
+          ]}
         />
       ) : null}
-      <Text
-        numberOfLines={1}
-        ellipsizeMode={showLogo ? 'tail' : 'middle'}
-        style={[
-          styles.name,
-          showLogo ? styles.nameWithLogo : null,
-          { color: showLogo ? mutedTextColor : textColor },
-        ]}
-      >
-        {channel.displayName}
-      </Text>
+      {showVisibleName ? (
+        <Text
+          numberOfLines={1}
+          ellipsizeMode={perChannelStrip || showLogo ? 'tail' : 'middle'}
+          maxFontSizeMultiplier={
+            perChannelStrip ? COMPACT_CHROME_MAX_FONT_SIZE_MULTIPLIER : undefined
+          }
+          style={[
+            styles.name,
+            showLogo ? styles.nameWithLogo : null,
+            perChannelStrip ? styles.perChannelFallback : null,
+            { color: perChannelStrip ? textColor : showLogo ? mutedTextColor : textColor },
+          ]}
+        >
+          {visibleName}
+        </Text>
+      ) : null}
     </View>
   );
 });
@@ -55,10 +81,26 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     paddingHorizontal: 6,
   },
+  perChannelContainer: {
+    width: PER_CHANNEL_VISUAL_METRICS.logoMaxWidth,
+    height: PER_CHANNEL_VISUAL_METRICS.logoMaxHeight,
+    flex: 0,
+    paddingHorizontal: 0,
+  },
   logo: {
     width: '78%',
     height: 24,
     marginBottom: 4,
+  },
+  logoFirst: {
+    width: '82%',
+    height: 30,
+    marginBottom: 0,
+  },
+  perChannelLogo: {
+    width: PER_CHANNEL_VISUAL_METRICS.logoMaxWidth,
+    height: PER_CHANNEL_VISUAL_METRICS.logoMaxHeight,
+    marginBottom: 0,
   },
   name: {
     width: '100%',
@@ -69,5 +111,11 @@ const styles = StyleSheet.create({
   nameWithLogo: {
     fontSize: 10,
     fontWeight: '600',
+  },
+  perChannelFallback: {
+    ...GUIDE_TYPOGRAPHY.channelFallback,
+    width: PER_CHANNEL_VISUAL_METRICS.logoMaxWidth,
+    textAlign: 'center',
+    letterSpacing: 0,
   },
 });

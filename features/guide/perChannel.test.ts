@@ -4,6 +4,12 @@ import type { GuideFixture, Programme } from '@/data/domain/epg';
 
 import {
   adjacentChannelIndex,
+  currentProgrammePresentationForNormalizedHeight,
+  normalizedProgrammeHeight,
+  perChannelCollapseProgress,
+  perChannelMinuteHeightForFontScale,
+  programmeDensityForNormalizedHeight,
+  programmeStartTimeFits,
   programmeVerticalFrame,
   programmesForChannelDay,
   scheduleTimeForY,
@@ -54,6 +60,62 @@ describe('per-channel schedule geometry', () => {
     const time = dayStart + 13.5 * 60 * 60_000;
     const y = scheduleYForTime(time, dayStart, 2.2);
     expect(scheduleTimeForY(y, dayStart, 2.2)).toBe(time);
+  });
+
+  it('uses the canonical 1.30 pt/min base scale and expands it with Dynamic Type', () => {
+    expect(perChannelMinuteHeightForFontScale(1)).toBe(1.3);
+    expect(perChannelMinuteHeightForFontScale(1.1)).toBeCloseTo(1.43, 6);
+    expect(perChannelMinuteHeightForFontScale(1.35)).toBeCloseTo(1.755, 6);
+    expect(perChannelMinuteHeightForFontScale(1.5)).toBeCloseTo(1.95, 6);
+    expect(perChannelMinuteHeightForFontScale(Number.NaN)).toBe(1.3);
+  });
+
+  it('normalizes frame height against the same effective font scale', () => {
+    expect(normalizedProgrammeHeight(105.3, 1.35)).toBeCloseTo(78, 6);
+    expect(normalizedProgrammeHeight(78, 0.8)).toBe(78);
+  });
+
+  it('applies the canonical 20/32 title density thresholds', () => {
+    expect(programmeDensityForNormalizedHeight(19.99)).toBe('hidden');
+    expect(programmeDensityForNormalizedHeight(20)).toBe('compact');
+    expect(programmeDensityForNormalizedHeight(31.99)).toBe('compact');
+    expect(programmeDensityForNormalizedHeight(32)).toBe('normal');
+  });
+
+  it('omits visible start times when the scaled line cannot fit the real programme frame', () => {
+    expect(programmeStartTimeFits(19.99, 1, 'hidden')).toBe(false);
+    expect(programmeStartTimeFits(20, 1, 'compact')).toBe(false);
+    expect(programmeStartTimeFits(24, 1, 'compact')).toBe(true);
+    expect(programmeStartTimeFits(32, 1, 'normal')).toBe(true);
+    expect(programmeStartTimeFits(27, 1.35, 'compact')).toBe(false);
+    expect(programmeStartTimeFits(32.4, 1.35, 'compact')).toBe(true);
+  });
+
+  it('applies the canonical 56/92 current-programme thresholds', () => {
+    expect(currentProgrammePresentationForNormalizedHeight(55.99)).toEqual({
+      density: 'normal',
+      showProgress: false,
+      showDescription: false,
+    });
+    expect(currentProgrammePresentationForNormalizedHeight(56)).toEqual({
+      density: 'normal',
+      showProgress: true,
+      showDescription: false,
+    });
+    expect(currentProgrammePresentationForNormalizedHeight(92)).toEqual({
+      density: 'normal',
+      showProgress: true,
+      showDescription: true,
+    });
+  });
+
+  it('uses scroll-coupled collapse and the 28pt Reduce Motion switch', () => {
+    expect(perChannelCollapseProgress(0, false)).toBe(0);
+    expect(perChannelCollapseProgress(28, false)).toBe(0.5);
+    expect(perChannelCollapseProgress(56, false)).toBe(1);
+    expect(perChannelCollapseProgress(120, false)).toBe(1);
+    expect(perChannelCollapseProgress(27.99, true)).toBe(0);
+    expect(perChannelCollapseProgress(28, true)).toBe(1);
   });
 
   it('clamps adjacent channel navigation at the lineup edges', () => {

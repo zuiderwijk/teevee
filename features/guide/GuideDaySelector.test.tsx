@@ -14,6 +14,7 @@ type MockProps = {
   accessibilityRole?: string;
   accessibilityState?: { selected?: boolean; busy?: boolean };
   visible?: boolean;
+  maxFontSizeMultiplier?: number;
   onPress?: () => void;
   onRequestClose?: () => void;
   style?: unknown;
@@ -25,6 +26,7 @@ vi.mock('react-native', () => {
       tag,
       {
         'data-testid': props.testID,
+        'data-max-font-scale': props.maxFontSizeMultiplier,
         'aria-label': props.accessibilityLabel,
         'aria-selected': props.accessibilityState?.selected,
         'aria-busy': props.accessibilityState?.busy,
@@ -40,6 +42,7 @@ vi.mock('react-native', () => {
     ScrollView: (props: MockProps) => element('div', props),
     View: (props: MockProps) => element('div', props),
     Text: (props: MockProps) => element('span', props),
+    Platform: { OS: 'ios' },
     StyleSheet: {
       hairlineWidth: 1,
       absoluteFill: {},
@@ -106,11 +109,12 @@ describe('GuideDaySelector', () => {
     });
     await click('[data-testid="guide-day-selector"]');
 
-    const options = [...container.querySelectorAll<HTMLElement>('[data-testid^="guide-day-option-"]')];
+    const options = [...container.querySelectorAll<HTMLElement>('button[data-testid^="guide-day-option-"]')];
     expect(options).toHaveLength(10);
     expect(options[0]?.dataset.testid).toBe('guide-day-option--2');
     expect(options.at(-1)?.dataset.testid).toBe('guide-day-option-7');
     expect(options.filter((option) => option.getAttribute('aria-selected') === 'true')).toHaveLength(1);
+    expect(container.querySelectorAll('[data-testid="guide-day-option-selected-mark"]')).toHaveLength(1);
   });
 
   it('uses the preceding absolute television-day date before 06:00 and never exposes an unbounded calendar', async () => {
@@ -132,8 +136,29 @@ describe('GuideDaySelector', () => {
     expect(selector?.getAttribute('aria-label')).not.toContain('Vandaag · ma 14 sep');
 
     await click('[data-testid="guide-day-selector"]');
-    expect(container.querySelectorAll('[data-testid^="guide-day-option-"]')).toHaveLength(10);
+    expect(container.querySelectorAll('button[data-testid^="guide-day-option-"]')).toHaveLength(10);
     expect(container.textContent).not.toContain('Kies datum');
+  });
+
+  it('keeps compact date/prefix copy inside the documented 1.20 chrome scaling cap', async () => {
+    const nowMs = Date.parse('2026-09-15T17:00:00Z');
+    const selectedDay = guideTelevisionDayHorizon(nowMs)[2]!;
+
+    await act(async () => {
+      root.render(
+        <GuideDaySelector
+          selectedDayStartMs={selectedDay.fromMs}
+          nowMs={nowMs}
+          compactPrefix="NPO 1"
+          onSelectDay={() => undefined}
+        />,
+      );
+    });
+
+    expect(container.querySelector('[data-testid="guide-day-selector"]')?.getAttribute('aria-label')).toContain('NPO 1');
+    const capped = [...container.querySelectorAll('[data-max-font-scale]')];
+    expect(capped).toHaveLength(2);
+    expect(capped.every((node) => node.getAttribute('data-max-font-scale') === '1.2')).toBe(true);
   });
 
   it('announces loading state and commits the chosen day from the whole option row', async () => {

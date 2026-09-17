@@ -1,7 +1,5 @@
-import { type ComponentType, type ReactNode, useCallback, useEffect, useReducer, useRef, useState } from 'react';
-import { StyleSheet, View } from 'react-native';
+import { type ComponentType, type ReactNode, useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react';
 
-import { SettingsButton } from '@/components/SettingsButton';
 import { detailReducer, initialDetailState, type ProgrammeSelection } from '@/features/guide/detailState';
 import { GuidePresentationSelector } from '@/features/guide/GuidePresentationSelector';
 import {
@@ -18,8 +16,6 @@ import {
   readAppPreferences,
   writeAppPreferences,
 } from '@/services/storage/appPreferencesStorage';
-
-const settingsAction = <SettingsButton />;
 
 type NowNextGuideComponent = ComponentType<{
   headerAction?: ReactNode;
@@ -108,6 +104,19 @@ export default function GuideScreen() {
     [loadAndShowNowNext, persistPresentationPreference],
   );
 
+  // Keep the shared presentation navigation referentially stable across Programme Detail
+  // state changes so memoized Guide surfaces do not rerender merely because detail opens.
+  const guideHeaderAction = useMemo<ReactNode>(
+    () => (
+      <GuidePresentationSelector
+        selected={presentation}
+        loadingPresentation={nowNextLoading ? 'now-next' : null}
+        onSelect={selectPresentation}
+      />
+    ),
+    [nowNextLoading, presentation, selectPresentation],
+  );
+
   const guideKey = `guide-data-${guideDataVersion}`;
 
   return (
@@ -116,19 +125,19 @@ export default function GuideScreen() {
         <NowNextComponent
           key={guideKey}
           onSelectProgramme={openDetail}
-          headerAction={settingsAction}
+          headerAction={guideHeaderAction}
         />
       ) : showPerChannel ? (
         <PerChannelGuideView
           guideDataVersion={guideDataVersion}
           onSelectProgramme={openDetail}
-          headerAction={settingsAction}
+          headerAction={guideHeaderAction}
         />
       ) : (
         <GuideView
           guideDataVersion={guideDataVersion}
           onSelectProgramme={openDetail}
-          headerAction={settingsAction}
+          headerAction={guideHeaderAction}
         />
       )}
 
@@ -136,26 +145,7 @@ export default function GuideScreen() {
         <NowNextLoadErrorNotice onRetry={() => void loadAndShowNowNext()} />
       ) : null}
 
-      <View pointerEvents="box-none" style={styles.presentationSelectorDock}>
-        <GuidePresentationSelector
-          selected={presentation}
-          loadingPresentation={nowNextLoading ? 'now-next' : null}
-          onSelect={selectPresentation}
-        />
-      </View>
-
       <ProgrammeDetail state={detail} onClose={closeDetail} />
     </>
   );
 }
-
-const styles = StyleSheet.create({
-  presentationSelectorDock: {
-    position: 'absolute',
-    left: 12,
-    right: 12,
-    bottom: 16,
-    zIndex: 20,
-    alignItems: 'center',
-  },
-});

@@ -7,7 +7,7 @@ import Animated, {
 } from 'react-native-reanimated';
 import { scheduleOnRN } from 'react-native-worklets';
 
-import { isProgrammeCurrent, type GuideFixture, type Programme } from '@/data/domain/epg';
+import type { GuideFixture, Programme } from '@/data/domain/epg';
 import { useTeeveeTheme } from '@/theme/useTeeveeTheme';
 
 import {
@@ -26,9 +26,6 @@ type EdgeReadabilityOverlayProps = {
   layout: GuideLayoutMetrics;
   windowStart: number;
   viewportWidth: number;
-  nowMs: number;
-  nowX: number;
-  nowInWindow: boolean;
   scrollX: SharedValue<number>;
   scrollY: SharedValue<number>;
 };
@@ -39,11 +36,10 @@ type EdgeRowProps = {
   rowHeight: number;
   viewportWidth: number;
   largeText: boolean;
-  nowMs: number;
   scrollX: SharedValue<number>;
   textColor: string;
-  programmeColor: string;
-  currentProgrammeColor: string;
+  backgroundColor: string;
+  borderColor: string;
 };
 
 function EdgeRow({
@@ -52,55 +48,47 @@ function EdgeRow({
   rowHeight,
   viewportWidth,
   largeText,
-  nowMs,
   scrollX,
   textColor,
-  programmeColor,
-  currentProgrammeColor,
+  backgroundColor,
+  borderColor,
 }: EdgeRowProps) {
   const startX = edge?.frame.left ?? 0;
   const endX = edge ? edge.frame.left + edge.frame.width : 0;
   const hasEdge = edge !== null;
   const contentMode = edge ? programmeContentMode(edge.frame.width) : 'compact';
   const horizontalPadding = contentMode === 'compact' ? 5 : 8;
-  const isCurrent = edge !== null && isProgrammeCurrent(edge.programme, nowMs);
-  const leavesProgressVisible = isCurrent && contentMode !== 'compact';
-  const topInset = leavesProgressVisible ? 14 : 4;
-  const bottomInset = 4;
 
   const animatedStyle = useAnimatedStyle(() => {
-    if (!hasEdge) return { width: 0, opacity: 0, borderTopRightRadius: 0, borderBottomRightRadius: 0 };
+    if (!hasEdge) return { width: 0, opacity: 0 };
 
     const x = scrollX.value;
     const remaining = Math.max(0, endX - x);
     const width = Math.min(viewportWidth, remaining);
     const active = x > startX && x < endX;
-    const endVisible = remaining <= viewportWidth;
 
     return {
       width,
       opacity: active && width >= MIN_READABLE_TEXT_WIDTH ? 1 : 0,
-      borderTopRightRadius: endVisible && !leavesProgressVisible ? 8 : 0,
-      borderBottomRightRadius: endVisible ? 8 : 0,
     };
-  }, [endX, hasEdge, leavesProgressVisible, startX, viewportWidth]);
+  }, [endX, hasEdge, startX, viewportWidth]);
 
   return (
     <Animated.View
       style={[
         styles.edgeMask,
         {
-          top: rowIndex * rowHeight + topInset,
-          height: Math.max(0, rowHeight - topInset - bottomInset),
+          top: rowIndex * rowHeight,
+          height: rowHeight,
           paddingHorizontal: horizontalPadding,
-          paddingVertical: contentMode === 'compact' ? 6 : 7,
-          backgroundColor: isCurrent ? currentProgrammeColor : programmeColor,
+          backgroundColor,
+          borderRightColor: borderColor,
         },
         animatedStyle,
       ]}
     >
       <Text
-        numberOfLines={1}
+        numberOfLines={largeText ? 2 : contentMode === 'comfortable' ? 2 : 1}
         ellipsizeMode="tail"
         style={[
           styles.title,
@@ -120,9 +108,6 @@ export function EdgeReadabilityOverlay({
   layout,
   windowStart,
   viewportWidth,
-  nowMs,
-  nowX,
-  nowInWindow,
   scrollX,
   scrollY,
 }: EdgeReadabilityOverlayProps) {
@@ -182,14 +167,6 @@ export function EdgeReadabilityOverlay({
     transform: [{ translateY: -scrollY.value }],
   }));
 
-  const currentTimeStyle = useAnimatedStyle(() => {
-    const left = nowX - scrollX.value;
-    return {
-      opacity: nowInWindow && left >= 0 && left <= viewportWidth ? 1 : 0,
-      transform: [{ translateX: left }],
-    };
-  }, [nowInWindow, nowX, viewportWidth]);
-
   return (
     <View
       testID="guide-edge-readability-overlay"
@@ -214,24 +191,13 @@ export function EdgeReadabilityOverlay({
             rowHeight={layout.rowHeight}
             viewportWidth={viewportWidth}
             largeText={layout.largeText}
-            nowMs={nowMs}
             scrollX={scrollX}
             textColor={theme.colors.text}
-            programmeColor={theme.colors.programme}
-            currentProgrammeColor={theme.colors.programmeCurrent}
+            backgroundColor={theme.colors.background}
+            borderColor={theme.colors.border}
           />
         ))}
       </Animated.View>
-
-      {nowInWindow ? (
-        <Animated.View
-          style={[
-            styles.currentTimeLine,
-            { backgroundColor: theme.colors.currentTime },
-            currentTimeStyle,
-          ]}
-        />
-      ) : null}
     </View>
   );
 }
@@ -257,16 +223,19 @@ const styles = StyleSheet.create({
     left: 0,
     overflow: 'hidden',
     justifyContent: 'center',
+    borderRightWidth: StyleSheet.hairlineWidth,
   },
-  title: { fontSize: 12, fontWeight: '600' },
-  titleCompact: { fontSize: 10 },
-  titleLargeText: { fontSize: 12 },
-  currentTimeLine: {
-    position: 'absolute',
-    left: 0,
-    top: 0,
-    bottom: 0,
-    width: 2,
-    zIndex: 4,
+  title: {
+    fontSize: 13,
+    lineHeight: 17,
+    fontWeight: '600',
+  },
+  titleCompact: {
+    fontSize: 11,
+    lineHeight: 14,
+  },
+  titleLargeText: {
+    fontSize: 13,
+    lineHeight: 17,
   },
 });

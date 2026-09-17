@@ -1,16 +1,86 @@
 import type { GuideFixture, Programme } from '@/data/domain/epg';
 
+import { GUIDE_TYPOGRAPHY, PER_CHANNEL_VISUAL_METRICS } from './guideVisualMetrics';
+
 /**
  * Keep schedule geometry time-based so a vertical offset represents the same
- * wall-clock anchor on every channel. This makes horizontal channel changes
- * preserve time, not an arbitrary programme-row index.
+ * wall-clock anchor on every channel. Dynamic Type expands the time scale in
+ * direct proportion to the system font scale; programme duration geometry is
+ * never replaced by equal-height rows.
  */
-export const PER_CHANNEL_MINUTE_HEIGHT = 2.2;
+export const PER_CHANNEL_MINUTE_HEIGHT: number = PER_CHANNEL_VISUAL_METRICS.minuteHeightBase;
+
+/**
+ * Existing Phase 1B interaction anchor: programmatic time jumps position the
+ * requested wall-clock instant below sticky Guide controls. This is frozen
+ * interaction geometry, not a production visual-calibration metric.
+ */
+export const PER_CHANNEL_VIEWED_TIME_ANCHOR_INSET = 132;
+
+function effectiveFontScale(fontScale: number): number {
+  return Number.isFinite(fontScale) && fontScale > 0 ? Math.max(1, fontScale) : 1;
+}
+
+export function perChannelMinuteHeightForFontScale(fontScale: number): number {
+  return PER_CHANNEL_MINUTE_HEIGHT * effectiveFontScale(fontScale);
+}
 
 export type ProgrammeVerticalFrame = {
   top: number;
   height: number;
 };
+
+export type ProgrammeDensity = 'hidden' | 'compact' | 'normal';
+
+export type CurrentProgrammePresentation = {
+  density: ProgrammeDensity;
+  showProgress: boolean;
+  showDescription: boolean;
+};
+
+export function normalizedProgrammeHeight(frameHeight: number, fontScale: number): number {
+  return Math.max(0, frameHeight) / effectiveFontScale(fontScale);
+}
+
+export function programmeDensityForNormalizedHeight(normalizedHeight: number): ProgrammeDensity {
+  if (normalizedHeight < PER_CHANNEL_VISUAL_METRICS.normalTitleMinNormalizedHeight) return 'hidden';
+  if (normalizedHeight < PER_CHANNEL_VISUAL_METRICS.normalFullTitleMinNormalizedHeight) return 'compact';
+  return 'normal';
+}
+
+export function programmeStartTimeFits(
+  frameHeight: number,
+  fontScale: number,
+  density: ProgrammeDensity,
+): boolean {
+  if (density === 'hidden') return false;
+  const contentInsetY = density === 'compact'
+    ? PER_CHANNEL_VISUAL_METRICS.programmeCompactInsetY
+    : PER_CHANNEL_VISUAL_METRICS.programmeContentInsetY;
+  const requiredHeight =
+    contentInsetY + GUIDE_TYPOGRAPHY.programmeStart.lineHeight * effectiveFontScale(fontScale);
+  return frameHeight >= requiredHeight;
+}
+
+export function currentProgrammePresentationForNormalizedHeight(
+  normalizedHeight: number,
+): CurrentProgrammePresentation {
+  return {
+    density: programmeDensityForNormalizedHeight(normalizedHeight),
+    showProgress:
+      normalizedHeight >= PER_CHANNEL_VISUAL_METRICS.currentProgressMinNormalizedHeight,
+    showDescription:
+      normalizedHeight >= PER_CHANNEL_VISUAL_METRICS.currentDescriptionMinNormalizedHeight,
+  };
+}
+
+export function perChannelCollapseProgress(scrollY: number, reduceMotion: boolean): number {
+  const y = Math.max(0, scrollY);
+  if (reduceMotion) {
+    return y >= PER_CHANNEL_VISUAL_METRICS.reduceMotionSwitchOffset ? 1 : 0;
+  }
+  return Math.min(1, y / PER_CHANNEL_VISUAL_METRICS.collapseDistance);
+}
 
 export function programmesForChannelDay(
   fixture: GuideFixture,
@@ -31,7 +101,7 @@ export function programmesForChannelDay(
 export function scheduleYForTime(
   timeMs: number,
   dayStartMs: number,
-  minuteHeight = PER_CHANNEL_MINUTE_HEIGHT,
+  minuteHeight: number = PER_CHANNEL_MINUTE_HEIGHT,
 ): number {
   return Math.max(0, ((timeMs - dayStartMs) / 60_000) * minuteHeight);
 }
@@ -39,7 +109,7 @@ export function scheduleYForTime(
 export function scheduleTimeForY(
   y: number,
   dayStartMs: number,
-  minuteHeight = PER_CHANNEL_MINUTE_HEIGHT,
+  minuteHeight: number = PER_CHANNEL_MINUTE_HEIGHT,
 ): number {
   return dayStartMs + (Math.max(0, y) / minuteHeight) * 60_000;
 }
@@ -48,7 +118,7 @@ export function programmeVerticalFrame(
   programme: Programme,
   dayStartMs: number,
   dayEndMs: number,
-  minuteHeight = PER_CHANNEL_MINUTE_HEIGHT,
+  minuteHeight: number = PER_CHANNEL_MINUTE_HEIGHT,
 ): ProgrammeVerticalFrame {
   const visibleStart = Math.max(dayStartMs, Date.parse(programme.startAt));
   const visibleEnd = Math.min(dayEndMs, Date.parse(programme.endAt));

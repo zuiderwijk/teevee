@@ -3,6 +3,8 @@ import { StyleSheet, Text, View } from 'react-native';
 
 import { GUIDE_TIME_TICK_LABEL_OFFSET } from './timeAxis';
 
+const TIME_LABEL_MAX_FONT_SIZE_MULTIPLIER = 1.2;
+
 type TimeAxisTickProps = {
   left: number;
   label: string;
@@ -20,7 +22,11 @@ export const TimeAxisTick = memo(function TimeAxisTick({
 }: TimeAxisTickProps) {
   return (
     <View style={[styles.tick, { left, borderLeftColor: borderColor }]}>
-      <Text numberOfLines={1} style={[styles.tickLabel, { width: labelWidth, color: labelColor }]}>
+      <Text
+        numberOfLines={1}
+        maxFontSizeMultiplier={TIME_LABEL_MAX_FONT_SIZE_MULTIPLIER}
+        style={[styles.tickLabel, { width: labelWidth, color: labelColor }]}
+      >
         {label}
       </Text>
     </View>
@@ -37,5 +43,5 @@ const styles = StyleSheet.create({
     paddingLeft: GUIDE_TIME_TICK_LABEL_OFFSET,
     paddingTop: 11,
   },
-  tickLabel: { fontSize: 10, fontWeight: '600' },
+  tickLabel: { fontSize: 10, fontWeight: '600', fontVariant: ['tabular-nums'] },
 });
