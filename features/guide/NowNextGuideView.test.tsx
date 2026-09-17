@@ -48,6 +48,9 @@ vi.mock('react-native', async () => {
         'aria-label': props.accessibilityLabel,
         'aria-selected': props.accessibilityState?.selected,
         onClick: props.onPress,
+        onDoubleClick: props.onMomentumScrollEnd
+          ? () => props.onMomentumScrollEnd?.({ nativeEvent: { contentOffset: { x: 760 } } })
+          : undefined,
       },
       props.children,
     );
@@ -114,6 +117,23 @@ afterEach(async () => {
 });
 
 describe('NowNextGuideView temporal chrome', () => {
+  it('stays live when a programmatic rail alignment reports momentum completion', async () => {
+    await act(async () => {
+      root.render(<NowNextGuideView onSelectProgramme={() => undefined} />);
+    });
+
+    const rail = container.querySelector<HTMLElement>('[data-testid="now-next-time-rail"]');
+    expect(rail).not.toBeNull();
+
+    await act(async () => {
+      rail?.dispatchEvent(new MouseEvent('dblclick', { bubbles: true }));
+    });
+
+    expect(container.querySelector('[data-testid="now-next-reference-badge"]')?.textContent).toContain('10:45');
+    expect(container.querySelector('[data-testid="now-next-primetime-action"]')).not.toBeNull();
+    expect(container.querySelector('[data-testid="now-next-now-action"]')).toBeNull();
+  });
+
   it('uses one shared live reference and swaps Primetime for Nu while browsing', async () => {
     await act(async () => {
       root.render(<NowNextGuideView onSelectProgramme={() => undefined} />);
