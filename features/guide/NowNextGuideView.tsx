@@ -30,7 +30,7 @@ import { useGuideClock } from './useGuideClock';
 
 const CONTROL_MAX_FONT_SIZE_MULTIPLIER = 1.2;
 const TIME_SLOT_WIDTH = 76;
-const CHANNEL_WIDTH = 82;
+const CHANNEL_WIDTH = 78;
 const SLOT_MS = 30 * 60 * 1000;
 const HEADER_CONDENSE_THRESHOLD = 24;
 
@@ -96,6 +96,7 @@ const ChannelRow = memo(function ChannelRow({
           channel={channel}
           textColor={theme.colors.text}
           mutedTextColor={theme.colors.textMuted}
+          variant="logo-first"
         />
       </View>
 
@@ -113,12 +114,9 @@ const ChannelRow = memo(function ChannelRow({
             </Text>
             <Text
               numberOfLines={1}
-              style={[
-                styles.referenceMeta,
-                { color: isActuallyLive ? theme.colors.currentTime : theme.colors.textSecondary },
-              ]}
+              style={[styles.referenceMeta, { color: theme.colors.textSecondary }]}
             >
-              {isActuallyLive ? `Nu · tot ${formatEndTime(referenceProgramme)}` : `tot ${formatEndTime(referenceProgramme)}`}
+              {`tot ${formatEndTime(referenceProgramme)}`}
             </Text>
           </Pressable>
         ) : (
@@ -536,11 +534,11 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
   channelList: {
-    paddingBottom: 110,
+    paddingBottom: 96,
   },
   channelRow: {
-    minHeight: 150,
-    paddingVertical: 16,
+    minHeight: 118,
+    paddingVertical: 10,
     paddingHorizontal: 12,
     flexDirection: 'row',
     borderBottomWidth: StyleSheet.hairlineWidth,
@@ -553,51 +551,51 @@ const styles = StyleSheet.create({
   programmesColumn: {
     flex: 1,
     minWidth: 0,
-    paddingLeft: 6,
+    paddingLeft: 8,
   },
   referenceProgramme: {
-    minHeight: 52,
+    minHeight: 38,
     justifyContent: 'center',
     paddingRight: 6,
   },
   referenceTitle: {
-    fontSize: 17,
-    lineHeight: 21,
-    fontWeight: '800',
-    letterSpacing: -0.2,
-  },
-  gapTitle: {
     fontSize: 15,
     lineHeight: 19,
     fontWeight: '700',
+    letterSpacing: -0.15,
   },
-  referenceMeta: {
-    marginTop: 3,
-    fontSize: 12,
-    lineHeight: 16,
+  gapTitle: {
+    fontSize: 14,
+    lineHeight: 18,
     fontWeight: '600',
   },
+  referenceMeta: {
+    marginTop: 1,
+    fontSize: 11,
+    lineHeight: 15,
+    fontWeight: '500',
+  },
   followingList: {
-    marginTop: 9,
-    gap: 3,
+    marginTop: 6,
+    gap: 1,
   },
   followingRow: {
-    minHeight: 24,
+    minHeight: 19,
     flexDirection: 'row',
     alignItems: 'center',
   },
   followingTime: {
-    width: 48,
+    width: 50,
     fontSize: 11,
     lineHeight: 15,
-    fontWeight: '600',
+    fontWeight: '500',
     fontVariant: ['tabular-nums'],
   },
   followingTitle: {
     flex: 1,
     minWidth: 0,
-    fontSize: 13,
-    lineHeight: 17,
-    fontWeight: '600',
+    fontSize: 12,
+    lineHeight: 16,
+    fontWeight: '500',
   },
 });
