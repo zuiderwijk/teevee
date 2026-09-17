@@ -27,8 +27,6 @@ type EdgeReadabilityOverlayProps = {
   windowStart: number;
   viewportWidth: number;
   nowMs: number;
-  nowX: number;
-  nowInWindow: boolean;
   scrollX: SharedValue<number>;
   scrollY: SharedValue<number>;
 };
@@ -121,8 +119,6 @@ export function EdgeReadabilityOverlay({
   windowStart,
   viewportWidth,
   nowMs,
-  nowX,
-  nowInWindow,
   scrollX,
   scrollY,
 }: EdgeReadabilityOverlayProps) {
@@ -182,14 +178,6 @@ export function EdgeReadabilityOverlay({
     transform: [{ translateY: -scrollY.value }],
   }));
 
-  const currentTimeStyle = useAnimatedStyle(() => {
-    const left = nowX - scrollX.value;
-    return {
-      opacity: nowInWindow && left >= 0 && left <= viewportWidth ? 1 : 0,
-      transform: [{ translateX: left }],
-    };
-  }, [nowInWindow, nowX, viewportWidth]);
-
   return (
     <View
       testID="guide-edge-readability-overlay"
@@ -222,16 +210,6 @@ export function EdgeReadabilityOverlay({
           />
         ))}
       </Animated.View>
-
-      {nowInWindow ? (
-        <Animated.View
-          style={[
-            styles.currentTimeLine,
-            { backgroundColor: theme.colors.currentTime },
-            currentTimeStyle,
-          ]}
-        />
-      ) : null}
     </View>
   );
 }
@@ -261,12 +239,4 @@ const styles = StyleSheet.create({
   title: { fontSize: 12, fontWeight: '600' },
   titleCompact: { fontSize: 10 },
   titleLargeText: { fontSize: 12 },
-  currentTimeLine: {
-    position: 'absolute',
-    left: 0,
-    top: 0,
-    bottom: 0,
-    width: 2,
-    zIndex: 4,
-  },
 });
