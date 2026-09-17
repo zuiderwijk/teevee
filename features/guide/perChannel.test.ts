@@ -11,6 +11,8 @@ import {
   collapseProgressForScrollOffset,
   compactContextForCollapseProgress,
   currentProgrammeIdAt,
+  perChannelFunctionalGapsForCollapseProgress,
+  perChannelLayoutAnchorKey,
   currentProgrammeRowHeight,
   programmeRowForTimestamp,
   programmesForChannelDay,
@@ -143,6 +145,17 @@ describe('per-channel fixed-row schedule', () => {
     expect(compactContextForCollapseProgress(0.49)).toBe(false);
     expect(compactContextForCollapseProgress(0.5)).toBe(true);
     expect(compactContextForCollapseProgress(1)).toBe(true);
+  });
+
+  it('uses canonical rest and settled-condensed functional gaps', () => {
+    expect(perChannelFunctionalGapsForCollapseProgress(0)).toEqual({
+      stripToContext: 24,
+      contextToSchedule: 12,
+    });
+    expect(perChannelFunctionalGapsForCollapseProgress(1)).toEqual({
+      stripToContext: 0,
+      contextToSchedule: 0,
+    });
   });
 
   it('uses the accepted Per-zender typography and 72/60 rail geometry', () => {
@@ -299,6 +312,13 @@ describe('per-channel fixed-row schedule', () => {
     expect(presentation.channels).toBe(selectedSchedule.channels);
     expect(presentation.schedule).toBe(selectedSchedule);
     expect(selectedChannelIndexForId(presentation.channels, 'nl-rtl-4')).toBe(1);
+    expect(selectedChannelIndexForId([...presentation.channels].reverse(), 'nl-rtl-4')).toBe(0);
+    expect(
+      perChannelLayoutAnchorKey(dayStart, 'nl-rtl-4', 1, null),
+    ).toBeNull();
+    expect(
+      perChannelLayoutAnchorKey(dayStart, 'nl-rtl-4', 1, selectedSchedule),
+    ).toContain('nl-rtl-4');
   });
 
   it('keeps the deterministic generic fixture valid only when no canonical catalogue exists', () => {

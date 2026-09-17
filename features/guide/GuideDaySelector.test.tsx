@@ -137,6 +137,26 @@ describe('GuideDaySelector', () => {
     expect(container.textContent).not.toContain('Kies datum');
   });
 
+  it('renders the compact channel prefix only when condensed context supplies it', async () => {
+    const nowMs = Date.parse('2026-09-15T17:00:00Z');
+    const selectedDay = guideTelevisionDayHorizon(nowMs).find(({ offset }) => offset === 0)!;
+
+    await act(async () => {
+      root.render(
+        <GuideDaySelector
+          selectedDayStartMs={selectedDay.fromMs}
+          nowMs={nowMs}
+          compactPrefix="NPO 3"
+          onSelectDay={() => undefined}
+        />,
+      );
+    });
+
+    const selector = container.querySelector<HTMLElement>('[data-testid="guide-day-selector"]');
+    expect(selector?.getAttribute('aria-label')).toContain('NPO 3');
+    expect(container.textContent).toContain('NPO 3');
+  });
+
   it('announces loading state and commits the chosen day from the whole option row', async () => {
     const nowMs = Date.parse('2026-09-15T17:00:00Z');
     const horizon = guideTelevisionDayHorizon(nowMs);

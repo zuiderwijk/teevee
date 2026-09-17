@@ -182,6 +182,25 @@ export function compactContextForCollapseProgress(progress: number) {
   return Math.min(1, Math.max(0, progress)) >= threshold;
 }
 
+export function perChannelFunctionalGapsForCollapseProgress(progress: number) {
+  'worklet';
+  const clamped = Math.min(1, Math.max(0, progress));
+  return {
+    stripToContext: PER_CHANNEL_VISUAL_METRICS.stripToUtilitiesGap * (1 - clamped),
+    contextToSchedule: PER_CHANNEL_VISUAL_METRICS.utilityToScheduleGap * (1 - clamped),
+  } as const;
+}
+
+export function perChannelLayoutAnchorKey(
+  selectedDayStartMs: number,
+  selectedChannelId: string | null,
+  fontScale: number,
+  schedule: GuideSchedule | null,
+) {
+  if (!schedule || !selectedChannelId) return null;
+  return `${selectedDayStartMs}:${selectedChannelId}:${fontScale}:${schedule.generatedAt}`;
+}
+
 export function channelRailOffsetForSelection(
   selectedIndex: number,
   channelCount: number,

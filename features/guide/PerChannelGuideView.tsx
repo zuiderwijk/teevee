@@ -51,6 +51,8 @@ import {
   channelRailRecenterPlan,
   collapseProgressForScrollOffset,
   compactContextForCollapseProgress,
+  perChannelFunctionalGapsForCollapseProgress,
+  perChannelLayoutAnchorKey,
   type PerChannelProgrammeRow,
   programmesForChannelDay,
   programmeRowPressBackgroundColor,
@@ -516,11 +518,11 @@ export const PerChannelGuideView = memo(function PerChannelGuideView({
   );
 
   const contextTopGapStyle = useAnimatedStyle(() => ({
-    height: PER_CHANNEL_VISUAL_METRICS.stripToUtilitiesGap * (1 - collapseProgress.value),
+    height: perChannelFunctionalGapsForCollapseProgress(collapseProgress.value).stripToContext,
   }));
 
   const scheduleGapStyle = useAnimatedStyle(() => ({
-    height: PER_CHANNEL_VISUAL_METRICS.utilityToScheduleGap * (1 - collapseProgress.value),
+    height: perChannelFunctionalGapsForCollapseProgress(collapseProgress.value).contextToSchedule,
   }));
 
   const channelStripHeightStyle = useAnimatedStyle(() => ({
@@ -559,10 +561,12 @@ export const PerChannelGuideView = memo(function PerChannelGuideView({
     return () => cancelAnimationFrame(frame);
   }, [centrePager, safeSelectedIndex, selectedDayStartMs]);
 
-  const layoutAnchorKey =
-    programmeSchedule && selectedChannel
-      ? `${selectedDayStartMs}:${selectedChannel.id}:${effectiveFontScale}:${programmeSchedule.generatedAt}`
-      : null;
+  const layoutAnchorKey = perChannelLayoutAnchorKey(
+    selectedDayStartMs,
+    selectedChannel?.id ?? null,
+    effectiveFontScale,
+    programmeSchedule,
+  );
   useEffect(() => {
     if (!layoutAnchorKey) return;
     const target = pendingTargetTimeRef.current ?? viewedTimeRef.current;
