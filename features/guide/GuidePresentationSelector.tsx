@@ -1,14 +1,14 @@
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 
-import { TEEVEE_FONT_FAMILIES } from '@/theme/typography';
+import { TEEVEE_FONT_WEIGHTS } from '@/theme/typography';
 import { useTeeveeTheme } from '@/theme/useTeeveeTheme';
 
-import { GUIDE_PRESENTATIONS, type GuidePresentation } from './guidePresentation';
 import {
   COMPACT_GUIDE_MAX_FONT_SIZE_MULTIPLIER,
-  PER_CHANNEL_TYPOGRAPHY,
-  PER_CHANNEL_VISUAL_METRICS,
-} from './perChannelVisualMetrics';
+  GUIDE_TYPOGRAPHY,
+  GUIDE_VISUAL_METRICS,
+} from './guideVisualMetrics';
+import { GUIDE_PRESENTATIONS, type GuidePresentation } from './guidePresentation';
 
 type GuidePresentationSelectorProps = {
   selected: GuidePresentation;
@@ -24,7 +24,16 @@ export function GuidePresentationSelector({
   variant = 'pill',
 }: GuidePresentationSelectorProps) {
   const theme = useTeeveeTheme();
+  const { width } = useWindowDimensions();
   const tabs = variant === 'tabs';
+  const tabWidth = Math.max(
+    0,
+    (width - GUIDE_VISUAL_METRICS.screenInsetX * 2) / GUIDE_PRESENTATIONS.length,
+  );
+  const indicatorWidth = Math.min(
+    GUIDE_VISUAL_METRICS.presentationIndicatorWidth,
+    Math.max(0, tabWidth - 16),
+  );
 
   return (
     <View
@@ -55,9 +64,9 @@ export function GuidePresentationSelector({
                 : { backgroundColor: active ? theme.colors.accent : 'transparent' },
               {
                 opacity: loading
-                  ? 0.5
+                  ? GUIDE_VISUAL_METRICS.disabledOpacity
                   : pressed
-                    ? PER_CHANNEL_VISUAL_METRICS.controlPressedOpacity
+                    ? GUIDE_VISUAL_METRICS.controlPressOpacity
                     : 1,
               },
             ]}
@@ -88,7 +97,10 @@ export function GuidePresentationSelector({
               <View
                 pointerEvents="none"
                 testID="guide-presentation-active-indicator"
-                style={[styles.tabIndicator, { backgroundColor: theme.colors.currentTime }]}
+                style={[
+                  styles.tabIndicator,
+                  { width: indicatorWidth, backgroundColor: theme.colors.currentTime },
+                ]}
               />
             ) : null}
           </Pressable>
@@ -107,7 +119,7 @@ const styles = StyleSheet.create({
     borderRadius: 24,
   },
   pillItem: {
-    minHeight: 44,
+    minHeight: GUIDE_VISUAL_METRICS.touchTargetIos,
     minWidth: 88,
     paddingHorizontal: 13,
     borderRadius: 20,
@@ -115,35 +127,36 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   pillLabel: {
-    fontFamily: TEEVEE_FONT_FAMILIES.bold,
     fontSize: 12,
     lineHeight: 16,
+    fontWeight: TEEVEE_FONT_WEIGHTS.bold,
   },
   tabsContainer: {
     width: '100%',
-    height: 52,
+    height: GUIDE_VISUAL_METRICS.presentationNavHeight,
     flexDirection: 'row',
     alignItems: 'stretch',
-    paddingHorizontal: PER_CHANNEL_VISUAL_METRICS.screenInsetX,
+    paddingHorizontal: GUIDE_VISUAL_METRICS.screenInsetX,
   },
   tabItem: {
     position: 'relative',
     flex: 1,
-    minHeight: 52,
+    minHeight: GUIDE_VISUAL_METRICS.presentationNavHeight,
     alignItems: 'center',
     justifyContent: 'center',
   },
   tabInactiveLabel: {
-    ...PER_CHANNEL_TYPOGRAPHY.presentationInactive,
+    ...GUIDE_TYPOGRAPHY.presentationInactive,
+    letterSpacing: 0,
   },
   tabSelectedLabel: {
-    ...PER_CHANNEL_TYPOGRAPHY.presentationSelected,
+    ...GUIDE_TYPOGRAPHY.presentationSelected,
+    letterSpacing: 0,
   },
   tabIndicator: {
     position: 'absolute',
     bottom: 0,
-    width: 36,
-    height: 2,
-    borderRadius: 1,
+    height: GUIDE_VISUAL_METRICS.presentationIndicatorHeight,
+    borderRadius: GUIDE_VISUAL_METRICS.presentationIndicatorRadius,
   },
 });
