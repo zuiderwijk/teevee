@@ -1,6 +1,6 @@
 import type { GuideFixture, Programme } from '@/data/domain/epg';
 
-import { PER_CHANNEL_VISUAL_METRICS } from './guideVisualMetrics';
+import { GUIDE_TYPOGRAPHY, PER_CHANNEL_VISUAL_METRICS } from './guideVisualMetrics';
 
 /**
  * Keep schedule geometry time-based so a vertical offset represents the same
@@ -17,9 +17,12 @@ export const PER_CHANNEL_MINUTE_HEIGHT: number = PER_CHANNEL_VISUAL_METRICS.minu
  */
 export const PER_CHANNEL_VIEWED_TIME_ANCHOR_INSET = 132;
 
+function effectiveFontScale(fontScale: number): number {
+  return Number.isFinite(fontScale) && fontScale > 0 ? Math.max(1, fontScale) : 1;
+}
+
 export function perChannelMinuteHeightForFontScale(fontScale: number): number {
-  const scale = Number.isFinite(fontScale) && fontScale > 0 ? Math.max(1, fontScale) : 1;
-  return PER_CHANNEL_MINUTE_HEIGHT * scale;
+  return PER_CHANNEL_MINUTE_HEIGHT * effectiveFontScale(fontScale);
 }
 
 export type ProgrammeVerticalFrame = {
@@ -36,14 +39,27 @@ export type CurrentProgrammePresentation = {
 };
 
 export function normalizedProgrammeHeight(frameHeight: number, fontScale: number): number {
-  const scale = Number.isFinite(fontScale) && fontScale > 0 ? Math.max(1, fontScale) : 1;
-  return Math.max(0, frameHeight) / scale;
+  return Math.max(0, frameHeight) / effectiveFontScale(fontScale);
 }
 
 export function programmeDensityForNormalizedHeight(normalizedHeight: number): ProgrammeDensity {
   if (normalizedHeight < PER_CHANNEL_VISUAL_METRICS.normalTitleMinNormalizedHeight) return 'hidden';
   if (normalizedHeight < PER_CHANNEL_VISUAL_METRICS.normalFullTitleMinNormalizedHeight) return 'compact';
   return 'normal';
+}
+
+export function programmeStartTimeFits(
+  frameHeight: number,
+  fontScale: number,
+  density: ProgrammeDensity,
+): boolean {
+  if (density === 'hidden') return false;
+  const contentInsetY = density === 'compact'
+    ? PER_CHANNEL_VISUAL_METRICS.programmeCompactInsetY
+    : PER_CHANNEL_VISUAL_METRICS.programmeContentInsetY;
+  const requiredHeight =
+    contentInsetY + GUIDE_TYPOGRAPHY.programmeStart.lineHeight * effectiveFontScale(fontScale);
+  return frameHeight >= requiredHeight;
 }
 
 export function currentProgrammePresentationForNormalizedHeight(
