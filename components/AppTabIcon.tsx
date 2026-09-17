@@ -20,19 +20,14 @@ function SearchIcon({ color }: { color: string }) {
 function GuideIcon({ color, focused }: { color: string; focused: boolean }) {
   return (
     <View style={styles.guideIcon}>
-      <View
-        style={[
-          styles.guideBody,
-          {
-            borderColor: color,
-            backgroundColor: focused ? color : 'transparent',
-          },
-        ]}
-      >
+      <View style={[styles.guideBody, { borderColor: color }]}>
         <View
           style={[
             styles.guideScreen,
-            { backgroundColor: focused ? 'rgba(255,255,255,0.88)' : color },
+            {
+              backgroundColor: color,
+              opacity: focused ? 1 : 0.72,
+            },
           ]}
         />
       </View>
