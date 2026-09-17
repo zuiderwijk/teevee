@@ -2,6 +2,7 @@ import { memo, useState } from 'react';
 import { Image, StyleSheet, Text, View } from 'react-native';
 
 import type { Channel } from '@/data/domain/epg';
+import { TEEVEE_FONT_FAMILIES } from '@/theme/typography';
 
 import {
   COMPACT_GUIDE_MAX_FONT_SIZE_MULTIPLIER,
@@ -91,12 +92,12 @@ const styles = StyleSheet.create({
   name: {
     width: '100%',
     textAlign: 'center',
+    fontFamily: TEEVEE_FONT_FAMILIES.bold,
     fontSize: 12,
-    fontWeight: '700',
   },
   nameWithLogo: {
+    fontFamily: TEEVEE_FONT_FAMILIES.semibold,
     fontSize: 10,
-    fontWeight: '600',
   },
   perChannelFallback: {
     ...GUIDE_TYPOGRAPHY.channelFallback,
