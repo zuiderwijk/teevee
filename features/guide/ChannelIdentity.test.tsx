@@ -77,4 +77,42 @@ describe('ChannelIdentity', () => {
 
     expect(container.querySelector('span')?.getAttribute('data-ellipsize-mode')).toBe('tail');
   });
+
+  it('uses the short name inside the Per-zender fallback while exposing the full channel name', async () => {
+    await act(async () => {
+      root.render(
+        <ChannelIdentity
+          channel={{ ...baseChannel, shortName: 'NPO 1' }}
+          textColor="#111"
+          mutedTextColor="#777"
+          variant="per-channel-strip"
+        />,
+      );
+    });
+
+    expect(container.textContent).toBe('NPO 1');
+    expect(container.querySelector('[aria-label="Publiek 1"]')).not.toBeNull();
+    expect(container.querySelector('span')?.getAttribute('data-ellipsize-mode')).toBe('tail');
+  });
+
+  it('does not render a permanent caption under a successful Per-zender logo', async () => {
+    await act(async () => {
+      root.render(
+        <ChannelIdentity
+          channel={{
+            ...baseChannel,
+            shortName: 'NPO 1',
+            logoUrl: 'https://example.com/publiek-1.png',
+          }}
+          textColor="#111"
+          mutedTextColor="#777"
+          variant="per-channel-strip"
+        />,
+      );
+    });
+
+    expect(container.querySelector('img')).not.toBeNull();
+    expect(container.querySelector('span')).toBeNull();
+    expect(container.querySelector('[aria-label="Publiek 1"]')).not.toBeNull();
+  });
 });
