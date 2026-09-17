@@ -50,6 +50,7 @@ export const PER_CHANNEL_VISUAL_METRICS = {
   progressHeight: 4,
   progressRadius: 2,
   progressBottomInset: 16,
+  progressTextClearance: 6,
   separatorLeftInset: 20,
   stickyContextHeight: 52,
   stickyContextWrappedHeight: 88,
