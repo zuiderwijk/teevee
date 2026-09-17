@@ -1,4 +1,4 @@
-import { Pressable, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
+import { Platform, Pressable, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 
 import { TEEVEE_FONT_FAMILIES } from '@/theme/typography';
 import { useTeeveeTheme } from '@/theme/useTeeveeTheme';
@@ -27,7 +27,7 @@ export function GuidePresentationSelector({
   const theme = useTeeveeTheme();
   const { width } = useWindowDimensions();
   const tabs = variant === 'tabs';
-  const minimumTouchTarget = minimumTouchTargetForPlatform();
+  const minimumTouchTarget = minimumTouchTargetForPlatform(Platform?.OS);
   const tabWidth = Math.max(
     0,
     (width - GUIDE_VISUAL_METRICS.screenInsetX * 2) / GUIDE_PRESENTATIONS.length,
