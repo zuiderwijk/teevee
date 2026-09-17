@@ -1,7 +1,7 @@
 # Teevee — Canonical Visual Baseline
 
 Status: **ACTIVE VISUAL SOURCE OF TRUTH**
-Last reconciled: 2026-09-17
+Last reconciled: 2026-09-18
 
 This document answers one question unambiguously: **which visual design is the current accepted Teevee design for each product surface?**
 
