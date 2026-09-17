@@ -866,7 +866,7 @@ const styles = StyleSheet.create({
     bottom:
       PER_CHANNEL_VISUAL_METRICS.progressBottomInset +
       PER_CHANNEL_VISUAL_METRICS.progressHeight +
-      8,
+      6,
     overflow: 'hidden',
   },
   currentTitle: {
