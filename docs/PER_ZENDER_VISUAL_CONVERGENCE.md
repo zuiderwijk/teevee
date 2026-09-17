@@ -899,18 +899,18 @@ When Lead schedules Per-zender visual convergence, Development must be able to i
 7. preserve time X24 / programme X100 / right24 / progress 4 high / bottom16;
 8. rest channel strip **72**, settled condensed **60**, item **48×48** throughout;
 9. do not render a separate large textual selected-channel heading in expanded/rest state; selected logo is sufficient identity there, while compact textual channel name remains in condensed context;
-21. after channel change: fully visible → comfortably centred → trailing ~12-pt continuation cue where practical;
-10. date remains typographic, not a pill;
-11. derive `Nu` and `Primetime` action/current states from semantic timestamp/programme anchors, with Nu precedence at actual Now;
-12. `Nu` away from Now = strongest elevated return action; at Now = typographic active/current + short underline;
-13. `Primetime` inactive = light transparent secondary action; active = primary text + short underline;
-14. active/current never means disabled;
-15. full programme row pressed = temporary semantic `surface` fill; clear on release/cancel/gesture takeover;
-16. preserve horizontal adjacent-channel swipe, channel-rail browsing, D-2..D+7, 06:00 television-day semantics, Programme Detail round-trip and time-anchor semantics;
-17. implement 72→60 strip collapse without changing 48×48 items; no spring; discrete Reduce Motion state;
-18. validate light/dark/system, Dynamic Type, VoiceOver, TalkBack and Reduce Motion;
-19. do not add swipe nudge, overflow button, arrows, fade masks or old exploration chrome;
-20. run the implementation's normal automated/physical gates when Development occurs.
+10. after channel change: fully visible → comfortably centred → trailing ~12-pt continuation cue where practical;
+11. date remains typographic, not a pill;
+12. derive `Nu` and `Primetime` action/current states from semantic timestamp/programme anchors, with Nu precedence at actual Now;
+13. `Nu` away from Now = strongest elevated return action; at Now = typographic active/current + short underline;
+14. `Primetime` inactive = light transparent secondary action; active = primary text + short underline;
+15. active/current never means disabled;
+16. full programme row pressed = temporary semantic `surface` fill; clear on release/cancel/gesture takeover;
+17. preserve horizontal adjacent-channel swipe, channel-rail browsing, D-2..D+7, 06:00 television-day semantics, Programme Detail round-trip and time-anchor semantics;
+18. implement 72→60 strip collapse without changing 48×48 items; no spring; discrete Reduce Motion state;
+19. validate light/dark/system, Dynamic Type, VoiceOver, TalkBack and Reduce Motion;
+20. do not add swipe nudge, overflow button, arrows, fade masks or old exploration chrome;
+21. run the implementation's normal automated/physical gates when Development occurs.
 
 This design-spec increment changes no runtime code.
 
