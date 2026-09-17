@@ -9,7 +9,7 @@ import {
   View,
 } from 'react-native';
 
-import { TEEVEE_FONT_WEIGHTS } from '@/theme/typography';
+import { TEEVEE_FONT_FAMILIES } from '@/theme/typography';
 import { useTeeveeTheme } from '@/theme/useTeeveeTheme';
 
 import { guideDayLabel, guideDayOptions } from './guideDaySelection';
@@ -261,9 +261,9 @@ const styles = StyleSheet.create({
   },
   sheetTitle: {
     flexShrink: 1,
+    fontFamily: TEEVEE_FONT_FAMILIES.bold,
     fontSize: 18,
     lineHeight: 24,
-    fontWeight: TEEVEE_FONT_WEIGHTS.bold,
   },
   closeButton: {
     width: 48,
@@ -272,9 +272,9 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   closeText: {
+    fontFamily: TEEVEE_FONT_FAMILIES.regular,
     fontSize: 28,
     lineHeight: 30,
-    fontWeight: TEEVEE_FONT_WEIGHTS.regular,
   },
   optionList: {
     paddingHorizontal: 12,
@@ -292,13 +292,13 @@ const styles = StyleSheet.create({
   },
   optionLabel: {
     flexShrink: 1,
+    fontFamily: TEEVEE_FONT_FAMILIES.semibold,
     fontSize: 15,
     lineHeight: 21,
-    fontWeight: TEEVEE_FONT_WEIGHTS.semibold,
   },
   selectedMark: {
+    fontFamily: TEEVEE_FONT_FAMILIES.bold,
     fontSize: 18,
     lineHeight: 22,
-    fontWeight: TEEVEE_FONT_WEIGHTS.bold,
   },
 });
