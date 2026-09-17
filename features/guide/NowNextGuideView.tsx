@@ -12,15 +12,14 @@ import {
 } from 'react-native';
 
 import type { Channel, GuideFixture, Programme } from '@/data/domain/epg';
-import { guideDayStart, GUIDE_TIME_ZONE } from '@/data/domain/guideTime';
-import {
-  buildRuntimeGuideFixture,
-  runtimeGuideFixtureNeedsRefresh,
-} from '@/data/fixtures/runtimeGuideFixture';
+import { guideTelevisionDayStart, GUIDE_TIME_ZONE } from '@/data/domain/guideTime';
+import { buildRuntimeGuideFixture } from '@/data/fixtures/runtimeGuideFixture';
 import { useTeeveeTheme } from '@/theme/useTeeveeTheme';
 
 import { ChannelIdentity } from './ChannelIdentity';
 import type { ProgrammeSelection } from './detailState';
+import { GuideChrome } from './GuideChrome';
+import { guideTargetForPrimetime } from './guideDaySelection';
 import {
   clampReferenceTime,
   nearestSlotIndex,
@@ -32,7 +31,8 @@ import { useGuideClock } from './useGuideClock';
 const CONTROL_MAX_FONT_SIZE_MULTIPLIER = 1.2;
 const TIME_SLOT_WIDTH = 76;
 const CHANNEL_WIDTH = 82;
-const PRIMETIME_LABEL = '20:30';
+const SLOT_MS = 30 * 60 * 1000;
+const HEADER_CONDENSE_THRESHOLD = 24;
 
 type NowNextGuideViewProps = {
   headerAction?: ReactNode;
@@ -163,14 +163,21 @@ export const NowNextGuideView = memo(function NowNextGuideView({
   const theme = useTeeveeTheme();
   const { width: windowWidth } = useWindowDimensions();
   const timeRailRef = useRef<ScrollView>(null);
-  const [fixtureAnchorMs, setFixtureAnchorMs] = useState(() => Date.now());
-  const fixture = useMemo(() => buildRuntimeGuideFixture(fixtureAnchorMs), [fixtureAnchorMs]);
   const nowMs = useGuideClock();
-  const dayStartMs = guideDayStart(fixtureAnchorMs, 0);
-  const dayEndMs = guideDayStart(fixtureAnchorMs, 1);
+  const currentTelevisionDayStartMs = guideTelevisionDayStart(nowMs);
+  const [fixtureDayStartMs, setFixtureDayStartMs] = useState(() =>
+    guideTelevisionDayStart(Date.now()),
+  );
+  const fixture = useMemo(
+    () => buildRuntimeGuideFixture(fixtureDayStartMs),
+    [fixtureDayStartMs],
+  );
+  const dayStartMs = fixtureDayStartMs;
+  const dayEndMs = useMemo(() => guideTelevisionDayStart(dayStartMs, 1), [dayStartMs]);
   const slots = useMemo(() => timeSlotsForDay(dayStartMs, dayEndMs), [dayEndMs, dayStartMs]);
   const [live, setLive] = useState(true);
   const [pinnedReferenceMs, setPinnedReferenceMs] = useState(() => Date.now());
+  const [condensed, setCondensed] = useState(false);
   const referenceMs = live
     ? clampReferenceTime(nowMs, dayStartMs, dayEndMs)
     : clampReferenceTime(pinnedReferenceMs, dayStartMs, dayEndMs);
@@ -182,6 +189,14 @@ export const NowNextGuideView = memo(function NowNextGuideView({
       timeRailRef.current?.scrollTo({ x: Math.max(0, index * TIME_SLOT_WIDTH), animated });
     },
     [],
+  );
+
+  const centreReferenceTime = useCallback(
+    (timeMs: number, animated = true) => {
+      const slotPosition = (clampReferenceTime(timeMs, dayStartMs, dayEndMs) - dayStartMs) / SLOT_MS;
+      timeRailRef.current?.scrollTo({ x: Math.max(0, slotPosition * TIME_SLOT_WIDTH), animated });
+    },
+    [dayEndMs, dayStartMs],
   );
 
   const setReferenceSlot = useCallback(
@@ -209,8 +224,6 @@ export const NowNextGuideView = memo(function NowNextGuideView({
         0,
         Math.min(slots.length - 1, Math.round(event.nativeEvent.contentOffset.x / TIME_SLOT_WIDTH)),
       );
-      // The native rail has already snapped here. Update semantic state only;
-      // never issue another scrollTo from a rail-originated commit.
       setReferenceSlot(index);
     },
     [setReferenceSlot, slots.length],
@@ -234,110 +247,59 @@ export const NowNextGuideView = memo(function NowNextGuideView({
 
   const goNow = useCallback(() => {
     const currentNow = Date.now();
-    if (runtimeGuideFixtureNeedsRefresh(fixture, currentNow)) {
-      setFixtureAnchorMs(currentNow);
+    const currentDayStart = guideTelevisionDayStart(currentNow);
+    if (currentDayStart !== fixtureDayStartMs) {
+      setFixtureDayStartMs(currentDayStart);
       setPinnedReferenceMs(currentNow);
       setLive(true);
       return;
     }
     setPinnedReferenceMs(currentNow);
     setLive(true);
-    const index = nearestSlotIndex(slots, currentNow);
-    requestAnimationFrame(() => centreTime(index, true));
-  }, [centreTime, fixture, slots]);
+    requestAnimationFrame(() => centreReferenceTime(currentNow, true));
+  }, [centreReferenceTime, fixtureDayStartMs]);
 
   const goPrimetime = useCallback(() => {
-    const primetimeIndex = slots.findIndex((slot) => formatTime(slot) === PRIMETIME_LABEL);
-    const index = primetimeIndex >= 0
-      ? primetimeIndex
-      : nearestSlotIndex(slots, dayStartMs + 20.5 * 60 * 60 * 1000);
-    chooseSlot(index);
+    const target = guideTargetForPrimetime(dayStartMs);
+    chooseSlot(nearestSlotIndex(slots, target.timeMs));
   }, [chooseSlot, dayStartMs, slots]);
 
-  // Centre once when the day/slot set changes. Normal rail interaction must remain
-  // fully native until momentum and snap have settled.
   useEffect(() => {
-    const index = nearestSlotIndex(slots, Date.now());
-    const frame = requestAnimationFrame(() => centreTime(index, false));
-    return () => cancelAnimationFrame(frame);
-  }, [centreTime, slots]);
-
-  useEffect(() => {
-    if (!runtimeGuideFixtureNeedsRefresh(fixture, nowMs)) return;
-    setFixtureAnchorMs(nowMs);
+    if (currentTelevisionDayStartMs === fixtureDayStartMs) return;
+    setFixtureDayStartMs(currentTelevisionDayStartMs);
     setPinnedReferenceMs(nowMs);
     setLive(true);
-  }, [fixture, nowMs]);
+  }, [currentTelevisionDayStartMs, fixtureDayStartMs, nowMs]);
+
+  useEffect(() => {
+    const frame = requestAnimationFrame(() => {
+      if (live) centreReferenceTime(referenceMs, false);
+      else centreTime(selectedSlotIndex, false);
+    });
+    return () => cancelAnimationFrame(frame);
+  }, [centreReferenceTime, centreTime, live, referenceMs, selectedSlotIndex, slots]);
+
+  const handleChannelScroll = useCallback((event: NativeSyntheticEvent<NativeScrollEvent>) => {
+    const nextCondensed = event.nativeEvent.contentOffset.y > HEADER_CONDENSE_THRESHOLD;
+    setCondensed((current) => (current === nextCondensed ? current : nextCondensed));
+  }, []);
 
   return (
     <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.colors.background }]}>
-      <View style={styles.header}>
-        <View>
-          <Text accessible={false} style={[styles.eyebrow, { color: theme.colors.textMuted }]}>TEEVEE</Text>
-          <Text accessibilityRole="header" style={[styles.title, { color: theme.colors.text }]}>Gids</Text>
-        </View>
-        <View style={styles.presentationLabel}>
-          <View style={[styles.presentationDot, { backgroundColor: theme.colors.currentTime }]} />
-          <Text style={[styles.presentationText, { color: theme.colors.textSecondary }]}>Nu & Straks</Text>
-        </View>
-        {headerAction}
-      </View>
+      <GuideChrome
+        condensed={condensed}
+        presentationNavigation={headerAction}
+      />
 
-      <View style={styles.referenceControls}>
-        <View>
-          <Text style={[styles.referenceCaption, { color: theme.colors.textMuted }]}>Referentietijd</Text>
-          <Text style={[styles.referenceTime, { color: theme.colors.text }]}>
-            {live ? `Nu · ${formatTime(referenceMs)}` : formatTime(referenceMs)}
-          </Text>
-        </View>
-        <View style={styles.shortcutRow}>
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel="Ga naar primetime"
-            onPress={goPrimetime}
-            style={[
-              styles.shortcutButton,
-              { borderColor: theme.colors.border, backgroundColor: theme.colors.surface },
-            ]}
-          >
-            <Text
-              maxFontSizeMultiplier={CONTROL_MAX_FONT_SIZE_MULTIPLIER}
-              style={[styles.shortcutText, { color: theme.colors.textSecondary }]}
-            >
-              Primetime
-            </Text>
-          </Pressable>
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel="Ga naar nu"
-            accessibilityState={{ selected: live }}
-            onPress={goNow}
-            style={[
-              styles.shortcutButton,
-              {
-                borderColor: live ? theme.colors.accent : theme.colors.border,
-                backgroundColor: live ? theme.colors.accent : theme.colors.surface,
-              },
-            ]}
-          >
-            <Text
-              maxFontSizeMultiplier={CONTROL_MAX_FONT_SIZE_MULTIPLIER}
-              style={[
-                styles.shortcutText,
-                { color: live ? theme.colors.background : theme.colors.textSecondary },
-              ]}
-            >
-              Nu
-            </Text>
-          </Pressable>
-        </View>
-      </View>
-
-      <View style={[styles.timeRailShell, { borderBottomColor: theme.colors.border }]}>
-        <View
-          pointerEvents="none"
-          style={[styles.referenceMarker, { backgroundColor: theme.colors.currentTime }]}
-        />
+      <View
+        style={[
+          styles.timeRailShell,
+          {
+            backgroundColor: theme.colors.background,
+            borderBottomColor: theme.colors.border,
+          },
+        ]}
+      >
         <ScrollView
           ref={timeRailRef}
           horizontal
@@ -369,17 +331,96 @@ export const NowNextGuideView = memo(function NowNextGuideView({
                   style={[
                     styles.timeSlotText,
                     {
-                      color: selected ? theme.colors.text : theme.colors.textMuted,
-                      fontWeight: selected ? '700' : '600',
+                      color: theme.colors.textMuted,
+                      opacity: selected ? 0 : 1,
                     },
                   ]}
                 >
                   {formatTime(slot)}
                 </Text>
+                <View style={[styles.timeSlotTick, { backgroundColor: theme.colors.border }]} />
               </Pressable>
             );
           })}
         </ScrollView>
+
+        <View
+          testID="now-next-reference-badge"
+          pointerEvents="none"
+          style={styles.referenceMarker}
+        >
+          <View style={[styles.referenceBadge, { backgroundColor: theme.colors.currentTime }]}> 
+            <Text
+              numberOfLines={1}
+              maxFontSizeMultiplier={CONTROL_MAX_FONT_SIZE_MULTIPLIER}
+              style={[
+                styles.referenceBadgeText,
+                { color: theme.dark ? theme.colors.text : theme.colors.surface },
+              ]}
+            >
+              {formatTime(referenceMs)}
+            </Text>
+          </View>
+          <View style={[styles.referenceTick, { backgroundColor: theme.colors.currentTime }]} />
+        </View>
+      </View>
+
+      <View
+        style={[
+          styles.shortcutRow,
+          {
+            backgroundColor: theme.colors.background,
+            borderBottomColor: theme.colors.border,
+          },
+        ]}
+      >
+        {live ? (
+          <Pressable
+            testID="now-next-primetime-action"
+            accessibilityRole="button"
+            accessibilityLabel="Ga naar primetime om 20:30"
+            onPress={goPrimetime}
+            style={[styles.shortcutButton, { borderColor: theme.colors.border }]}
+          >
+            <Text
+              accessible={false}
+              maxFontSizeMultiplier={1}
+              style={[styles.shortcutIcon, { color: theme.colors.textSecondary }]}
+            >
+              ☾
+            </Text>
+            <Text
+              numberOfLines={1}
+              maxFontSizeMultiplier={CONTROL_MAX_FONT_SIZE_MULTIPLIER}
+              style={[styles.shortcutText, { color: theme.colors.textSecondary }]}
+            >
+              Primetime
+            </Text>
+          </Pressable>
+        ) : (
+          <Pressable
+            testID="now-next-now-action"
+            accessibilityRole="button"
+            accessibilityLabel="Ga naar nu"
+            onPress={goNow}
+            style={[styles.shortcutButton, { borderColor: theme.colors.border }]}
+          >
+            <Text
+              accessible={false}
+              maxFontSizeMultiplier={1}
+              style={[styles.shortcutIcon, { color: theme.colors.textSecondary }]}
+            >
+              ◷
+            </Text>
+            <Text
+              numberOfLines={1}
+              maxFontSizeMultiplier={CONTROL_MAX_FONT_SIZE_MULTIPLIER}
+              style={[styles.shortcutText, { color: theme.colors.textSecondary }]}
+            >
+              Nu
+            </Text>
+          </Pressable>
+        )}
       </View>
 
       <ScrollView
@@ -388,6 +429,8 @@ export const NowNextGuideView = memo(function NowNextGuideView({
         alwaysBounceVertical
         directionalLockEnabled
         showsVerticalScrollIndicator
+        scrollEventThrottle={32}
+        onScroll={handleChannelScroll}
         contentContainerStyle={styles.channelList}
       >
         {fixture.channels.map((channel) => (
@@ -410,110 +453,87 @@ const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
   },
-  header: {
-    flexWrap: 'wrap',
-    columnGap: 12,
-    rowGap: 8,
-    paddingHorizontal: 20,
-    paddingTop: 18,
-    paddingBottom: 14,
-    flexDirection: 'row',
-    alignItems: 'flex-end',
-    justifyContent: 'space-between',
+  timeRailShell: {
+    height: 54,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    justifyContent: 'center',
+    overflow: 'hidden',
   },
-  eyebrow: {
-    fontSize: 10,
-    lineHeight: 13,
-    fontWeight: '800',
-    letterSpacing: 2.2,
-  },
-  title: {
-    marginTop: 2,
-    fontSize: 34,
-    lineHeight: 38,
-    fontWeight: '800',
-    letterSpacing: -1.1,
-  },
-  presentationLabel: {
-    paddingBottom: 5,
-    flexDirection: 'row',
+  timeSlot: {
+    position: 'relative',
+    width: TIME_SLOT_WIDTH,
+    height: 50,
     alignItems: 'center',
-    gap: 7,
+    justifyContent: 'flex-start',
+    paddingTop: 9,
   },
-  presentationDot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-  },
-  presentationText: {
-    fontSize: 13,
-    lineHeight: 17,
-    fontWeight: '700',
-  },
-  referenceControls: {
-    paddingHorizontal: 20,
-    paddingTop: 8,
-    paddingBottom: 12,
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    alignItems: 'flex-start',
-    justifyContent: 'space-between',
-    columnGap: 12,
-    rowGap: 10,
-  },
-  referenceCaption: {
+  timeSlotText: {
     fontSize: 11,
-    lineHeight: 14,
+    lineHeight: 15,
     fontWeight: '600',
+    fontVariant: ['tabular-nums'],
   },
-  referenceTime: {
-    marginTop: 2,
-    fontSize: 20,
-    lineHeight: 24,
-    fontWeight: '800',
-    letterSpacing: -0.3,
+  timeSlotTick: {
+    position: 'absolute',
+    bottom: 1,
+    width: StyleSheet.hairlineWidth,
+    height: 11,
   },
-  shortcutRow: {
-    flexDirection: 'row',
+  referenceMarker: {
+    position: 'absolute',
+    left: '50%',
+    top: 5,
+    width: 56,
+    marginLeft: -28,
     alignItems: 'center',
-    gap: 8,
+    zIndex: 4,
   },
-  shortcutButton: {
-    minHeight: 44,
-    paddingHorizontal: 13,
-    borderRadius: 22,
-    borderWidth: StyleSheet.hairlineWidth,
+  referenceBadge: {
+    minWidth: 50,
+    minHeight: 25,
+    paddingHorizontal: 8,
+    borderRadius: 13,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  referenceBadgeText: {
+    fontSize: 11,
+    lineHeight: 14,
+    fontWeight: '800',
+    fontVariant: ['tabular-nums'],
+  },
+  referenceTick: {
+    width: 2,
+    height: 9,
+    borderRadius: 1,
+  },
+  shortcutRow: {
+    minHeight: 48,
+    paddingHorizontal: 14,
+    paddingVertical: 3,
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    alignItems: 'center',
+    borderBottomWidth: StyleSheet.hairlineWidth,
+  },
+  shortcutButton: {
+    minHeight: 42,
+    paddingHorizontal: 12,
+    borderRadius: 21,
+    borderWidth: StyleSheet.hairlineWidth,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+  },
+  shortcutIcon: {
+    fontSize: 15,
+    lineHeight: 17,
   },
   shortcutText: {
     fontSize: 12,
     lineHeight: 16,
     fontWeight: '700',
-  },
-  timeRailShell: {
-    height: 50,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    justifyContent: 'center',
-  },
-  referenceMarker: {
-    position: 'absolute',
-    left: '50%',
-    bottom: 0,
-    width: 2,
-    height: 8,
-    zIndex: 2,
-    borderRadius: 1,
-  },
-  timeSlot: {
-    width: TIME_SLOT_WIDTH,
-    height: 48,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  timeSlotText: {
-    fontSize: 12,
-    lineHeight: 16,
   },
   channelList: {
     paddingBottom: 110,
