@@ -3,6 +3,7 @@ import { StatusBar } from 'expo-status-bar';
 
 import { AppScreenErrorBoundary } from '@/components/AppScreenErrorBoundary';
 import { AppearancePreferenceProvider } from '@/features/settings/AppearancePreferenceProvider';
+import { TEEVEE_FONT_FAMILIES, useTeeveeFonts } from '@/theme/typography';
 import { useTeeveeTheme } from '@/theme/useTeeveeTheme';
 
 function ThemedTabs() {
@@ -27,9 +28,9 @@ function ThemedTabs() {
             paddingBottom: 7,
           },
           tabBarLabelStyle: {
+            fontFamily: TEEVEE_FONT_FAMILIES.semibold,
             fontSize: 12,
             lineHeight: 16,
-            fontWeight: '700',
           },
         }}
       >
@@ -43,6 +44,11 @@ function ThemedTabs() {
 }
 
 export default function RootLayout() {
+  const [fontsLoaded, fontError] = useTeeveeFonts();
+
+  if (fontError) throw fontError;
+  if (!fontsLoaded) return null;
+
   return (
     <AppearancePreferenceProvider>
       <ThemedTabs />
