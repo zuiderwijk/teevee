@@ -9,6 +9,7 @@ import {
   perChannelCollapseProgress,
   perChannelMinuteHeightForFontScale,
   programmeDensityForNormalizedHeight,
+  programmeStartTimeFits,
   programmeVerticalFrame,
   programmesForChannelDay,
   scheduleTimeForY,
@@ -79,6 +80,15 @@ describe('per-channel schedule geometry', () => {
     expect(programmeDensityForNormalizedHeight(20)).toBe('compact');
     expect(programmeDensityForNormalizedHeight(31.99)).toBe('compact');
     expect(programmeDensityForNormalizedHeight(32)).toBe('normal');
+  });
+
+  it('omits visible start times when the scaled line cannot fit the real programme frame', () => {
+    expect(programmeStartTimeFits(19.99, 1, 'hidden')).toBe(false);
+    expect(programmeStartTimeFits(20, 1, 'compact')).toBe(false);
+    expect(programmeStartTimeFits(24, 1, 'compact')).toBe(true);
+    expect(programmeStartTimeFits(32, 1, 'normal')).toBe(true);
+    expect(programmeStartTimeFits(27, 1.35, 'compact')).toBe(false);
+    expect(programmeStartTimeFits(32.4, 1.35, 'compact')).toBe(true);
   });
 
   it('applies the canonical 56/92 current-programme thresholds', () => {
