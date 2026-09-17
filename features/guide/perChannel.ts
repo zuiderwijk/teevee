@@ -2,10 +2,16 @@ import type { GuideFixture, Programme } from '@/data/domain/epg';
 
 /**
  * Keep schedule geometry time-based so a vertical offset represents the same
- * wall-clock anchor on every channel. This makes horizontal channel changes
- * preserve time, not an arbitrary programme-row index.
+ * wall-clock anchor on every channel. The base density matches the accepted
+ * open Per-zender schedule; larger system text expands this scale rather than
+ * clipping substantive programme content into a fixed-height presentation.
  */
-export const PER_CHANNEL_MINUTE_HEIGHT = 2.2;
+export const PER_CHANNEL_MINUTE_HEIGHT = 0.78;
+
+export function perChannelMinuteHeightForFontScale(fontScale: number): number {
+  const scale = Number.isFinite(fontScale) && fontScale > 0 ? Math.max(1, fontScale) : 1;
+  return Math.round(PER_CHANNEL_MINUTE_HEIGHT * scale * 100) / 100;
+}
 
 export type ProgrammeVerticalFrame = {
   top: number;
