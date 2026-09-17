@@ -1,5 +1,3 @@
-import { Platform } from 'react-native';
-
 export const GUIDE_VISUAL_METRICS = {
   screenInsetX: 20,
   brandTopInset: 8,
@@ -58,7 +56,6 @@ export const PER_CHANNEL_VISUAL_METRICS = {
   collapseDistance: 56,
   collapseTranslateY: 12,
   reduceMotionSwitchOffset: 28,
-  scrollTargetInsetY: 132,
 } as const;
 
 export const GUIDE_TYPOGRAPHY = {
@@ -136,8 +133,8 @@ export const GUIDE_TYPOGRAPHY = {
 
 export const COMPACT_CHROME_MAX_FONT_SIZE_MULTIPLIER = 1.2;
 
-export function platformMinimumTouchTarget(): number {
-  return Platform?.OS === 'ios'
+export function minimumTouchTargetForPlatform(platformOs: string): number {
+  return platformOs === 'ios'
     ? GUIDE_VISUAL_METRICS.touchTargetIos
     : GUIDE_VISUAL_METRICS.touchTargetAndroid;
 }
