@@ -3,6 +3,7 @@ import {
   type LayoutChangeEvent,
   type NativeScrollEvent,
   type NativeSyntheticEvent,
+  Platform,
   Pressable,
   SafeAreaView,
   ScrollView,
@@ -38,8 +39,8 @@ import {
   COMPACT_CHROME_MAX_FONT_SIZE_MULTIPLIER,
   GUIDE_TYPOGRAPHY,
   GUIDE_VISUAL_METRICS,
+  minimumTouchTargetForPlatform,
   PER_CHANNEL_VISUAL_METRICS,
-  platformMinimumTouchTarget,
 } from './guideVisualMetrics';
 import {
   guideTargetForDaySelection,
@@ -50,6 +51,7 @@ import {
   adjacentChannelIndex,
   currentProgrammePresentationForNormalizedHeight,
   normalizedProgrammeHeight,
+  PER_CHANNEL_VIEWED_TIME_ANCHOR_INSET,
   perChannelMinuteHeightForFontScale,
   programmeDensityForNormalizedHeight,
   programmeVerticalFrame,
@@ -86,6 +88,7 @@ type ProgrammeBlockProps = {
   programme: Programme;
   frame: { top: number; height: number };
   current: boolean;
+  progress: number;
   fontScale: number;
   showSeparator: boolean;
   textColor: string;
@@ -120,6 +123,7 @@ function ProgrammeBlock({
   programme,
   frame,
   current,
+  progress,
   fontScale,
   showSeparator,
   textColor,
@@ -173,7 +177,6 @@ function ProgrammeBlock({
         ),
       )
     : 0;
-  const progress = current ? programmeProgress(programme, Date.now()) : 0;
 
   return (
     <Pressable
@@ -313,6 +316,7 @@ const SchedulePage = memo(function SchedulePage({
       {programmes.map((programme) => {
         const frame = programmeVerticalFrame(programme, dayStartMs, dayEndMs, minuteHeight);
         const current = isProgrammeCurrent(programme, nowMs);
+        const progress = current ? programmeProgress(programme, nowMs) : 0;
 
         return (
           <ProgrammeBlock
@@ -321,6 +325,7 @@ const SchedulePage = memo(function SchedulePage({
             programme={programme}
             frame={frame}
             current={current}
+            progress={progress}
             fontScale={fontScale}
             showSeparator={separatorOwnerIds.has(programme.id)}
             textColor={theme.colors.text}
@@ -366,7 +371,7 @@ export const PerChannelGuideView = memo(function PerChannelGuideView({
     () => perChannelMinuteHeightForFontScale(effectiveFontScale),
     [effectiveFontScale],
   );
-  const minimumTouchTarget = platformMinimumTouchTarget();
+  const minimumTouchTarget = minimumTouchTargetForPlatform(Platform.OS);
   const reduceMotion = useReducedMotion();
   const channelStripRef = useRef<ScrollView>(null);
   const pagerRef = useRef<ScrollView>(null);
@@ -380,7 +385,7 @@ export const PerChannelGuideView = memo(function PerChannelGuideView({
   );
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [condensed, setCondensed] = useState(false);
-  const viewedTimeRef = useRef(Date.now());
+  const viewedTimeRef = useRef(nowMs);
   const pendingTargetTimeRef = useRef<number | null>(null);
   const channels = fixture.channels;
   const safeSelectedIndex = Math.min(Math.max(0, selectedIndex), Math.max(0, channels.length - 1));
@@ -463,8 +468,7 @@ export const PerChannelGuideView = memo(function PerChannelGuideView({
       viewedTimeRef.current = target;
       const y = Math.max(
         0,
-        scheduleYForTime(target, dayStartMs, minuteHeight) -
-          PER_CHANNEL_VISUAL_METRICS.scrollTargetInsetY,
+        scheduleYForTime(target, dayStartMs, minuteHeight) - PER_CHANNEL_VIEWED_TIME_ANCHOR_INSET,
       );
       if (!animated) {
         collapseAnchorY.value = y;
@@ -481,8 +485,7 @@ export const PerChannelGuideView = memo(function PerChannelGuideView({
     (y: number, progress: number) => {
       const nextViewedTime =
         dayStartMs +
-        ((Math.max(0, y) + PER_CHANNEL_VISUAL_METRICS.scrollTargetInsetY) / minuteHeight) *
-          60_000;
+        ((Math.max(0, y) + PER_CHANNEL_VIEWED_TIME_ANCHOR_INSET) / minuteHeight) * 60_000;
       viewedTimeRef.current = clampTime(nextViewedTime, dayStartMs, dayEndMs);
       const nextCondensed = progress >= 1;
       setCondensed((current) => (current === nextCondensed ? current : nextCondensed));
