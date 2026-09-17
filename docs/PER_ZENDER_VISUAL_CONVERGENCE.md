@@ -2,7 +2,7 @@
 
 Status: **CANONICAL PRODUCTION IMPLEMENTATION SPEC — accepted design, no redesign**  
 Date: 2026-09-18  
-Revision: **owner-approved Per-zender refinement — rest-state selected-channel heading removed; prior accepted refinements preserved**
+Revision: **owner-approved Per-zender refinement — rest-state heading removed and current-programme spacing expanded; prior accepted refinements preserved**
 
 This document is the production implementation specification for the accepted **Per zender** Guide presentation. It converts the owner-approved visual/UX baseline into concrete metrics and state rules. It is accepted-design convergence, not exploration or Development implementation.
 
@@ -35,7 +35,7 @@ Exact canonical pixels remain:
 - Guide day-selector states: `/Teevee/Teevee Guide day selector - states and bottom sheet.png`, Library file id `file_00000000390c8210b76256621721592b`;
 - sticky/condensed behaviour: `/Teevee/Teevee Guide day selector - sticky scroll behavior.png`, Library file id `file_00000000314481f69f6a34d18ece1c21`.
 
-The 2026-09-17 written refinement supersedes those historical pixels only for the explicitly changed details in this document: temporal utility states, programme-title calibration, settled condensed channel-strip height, channel-rail positioning behaviour and programme-row pressed feedback. The 2026-09-18 owner refinement additionally supersedes any separate large textual selected-channel heading shown in expanded/rest state. All other accepted composition remains intact.
+The 2026-09-17 written refinement supersedes those historical pixels only for the explicitly changed details in this document: temporal utility states, programme-title calibration, settled condensed channel-strip height, channel-rail positioning behaviour and programme-row pressed feedback. The 2026-09-18 owner refinements additionally supersede any separate large textual selected-channel heading shown in expanded/rest state and the former compressed current-programme treatment. All other accepted composition remains intact.
 
 ### Source precedence
 
@@ -80,7 +80,7 @@ The phrase `vertical wall-clock schedule` in older broad project documentation m
 | Time gutter | Start-time orientation | Stable left column; tabular numerals. |
 | Programme column | Title/current detail | Stable X across all row types. |
 | Standard row | Non-current programme | Fixed 52 pt base row; vertically centred time + title. |
-| Current row | Actual current programme | Fixed 120 pt base row; title + description/subtitle when available + mandatory local progress. |
+| Current row | Actual current programme | Spacious fixed **176 pt** base row; title + up to four description lines + mandatory local progress with deliberate vertical breathing room. |
 | Row separator | Scanning cue | One quiet row-bottom hairline. |
 | Pressed row | Interaction feedback | Temporary full-row semantic `surface` fill only while pressed. |
 | Sticky/condensed state | Functional context while scrolling | 60-pt channel strip + 52-pt compact context, 88 pt when wrapped. |
@@ -153,13 +153,14 @@ The short underline is a geometric current-state cue. Accessibility state remain
 | Token | Value | Status | Rule |
 | --- | ---: | --- | --- |
 | `perChannel.standardRowHeight` | **52** | ACCEPTED | All non-current programmes at fontScale 1.0. |
-| `perChannel.currentRowHeight` | **120** | ACCEPTED | Actual current programme at fontScale 1.0. |
+| `perChannel.currentRowHeight` | **176** | ACCEPTED | Actual current programme at fontScale 1.0; deliberately spacious. |
 | `perChannel.timeGutterWidth` | 64 | IMPLEMENTATION CALIBRATION | Stable time column. |
 | `perChannel.timeTextX` | **24** | ACCEPTED CALIBRATION | Start-time X. |
 | `perChannel.programmeColumnX` | **100** | ACCEPTED CALIBRATION | Title/description/progress X. |
 | `perChannel.programmeRightInset` | **24** | ACCEPTED CALIBRATION | Content right inset. |
 | `perChannel.currentContentTopInset` | **14** | ACCEPTED CALIBRATION | Current time/title top. |
-| `perChannel.currentDescriptionGap` | **2** | ACCEPTED CALIBRATION | Current title → description. |
+| `perChannel.currentDescriptionGap` | **10** | ACCEPTED | Current title → description. |
+| `perChannel.currentDescriptionToProgressMinGap` | **20** | ACCEPTED | Minimum clear vertical space between a full four-line description block and progress track at base scale. |
 | `perChannel.progressHeight` | **4** | ACCEPTED | Current local progress. |
 | `perChannel.progressRadius` | **2** | ACCEPTED CALIBRATION | Half progress height. |
 | `perChannel.progressBottomInset` | **16** | ACCEPTED | Current-row bottom → progress bottom. |
@@ -189,7 +190,7 @@ Use Instrument Sans as one coherent UI family for Per zender. Do not introduce a
 | Programme start time | **16 / 20** | **400** | `textSecondary` | substantive; uncapped; tabular numerals |
 | Standard programme title | **17 / 21** | **500** | `text` | substantive; uncapped |
 | Current programme title | **19 / 23** | **700** | `text` | substantive; uncapped |
-| Current description | **15 / 18** | **400** | `textSecondary` | substantive; uncapped; max 3 lines |
+| Current description | **15 / 22** | **400** | `textSecondary` | substantive; uncapped; max 4 lines |
 
 The 17/21 standard title and 19/23 current title are **Per-zender surface-specific accepted calibrations**. Do not propagate them to other Teevee surfaces without a separate owner decision.
 
@@ -496,28 +497,32 @@ Clear the surface immediately on release, cancel, vertical-scroll takeover or ho
 
 ## 12. Current programme row
 
-The actual current programme receives exactly one 120-pt base row.
+The actual current programme receives exactly one deliberately spacious **176-pt base row**.
+
+The extra height is intentional: the current row should feel premium and editorial, with title, synopsis and progressbar reading as three distinct layers rather than a compressed metadata block.
 
 ### 12.1 Geometry
 
 At fontScale 1.0:
 
-- row height **120**;
+- row height **176**;
 - time X 24;
 - title/description/progress X 100;
 - right inset 24;
 - current time/title top inset **14**;
 - bottom separator at row bottom.
 
-The 14-pt top inset remains accepted after the 19/23 title refinement. Geometry check at base size:
+The 14-pt top inset remains accepted. Base-size geometry:
 
 - current title line occupies Y 14–37;
-- description begins at Y 39 after the 2-pt gap;
-- max three 18-pt lines occupy through Y 93;
-- progress top = `120 - 16 - 4 = 100`;
-- therefore even a full three-line description leaves 7 pt clear space before progress.
+- description begins at Y 47 after the **10-pt** title→description gap;
+- max four **22-pt** description line boxes occupy through Y 135;
+- progress top = `176 - 16 - 4 = 156`;
+- a full four-line description therefore retains **21 pt** clear space before progress, satisfying the accepted minimum of 20 pt.
 
-No top-inset change is required.
+Do not reclaim this space simply because a description is shorter. Shorter copy should leave calm open space rather than vertically compressing the row.
+
+No top-inset or progress-bottom-inset change is required.
 
 ### 12.2 Current time/title
 
@@ -539,9 +544,10 @@ Title:
 
 If `description` exists, show it. Otherwise a useful `subtitle` may be used.
 
-- top gap from title line = 2;
-- `15/18 400 textSecondary`;
-- maximum **3 lines**;
+- top gap from title line = **10**;
+- `15/22 400 textSecondary`;
+- maximum **4 lines**;
+- preserve at least **20 pt** clear space between the full description block and progressbar at base scale;
 - tail ellipsis;
 - never hide because programme duration is short.
 
@@ -610,28 +616,30 @@ The 17/21 title scales as substantive content. Do not retain offsets/examples ba
 
 ### 14.2 Current row
 
-`currentRowHeight(fontScale) = round(120 × contentScale)`
+`currentRowHeight(fontScale) = round(176 × contentScale)`
 
 Rules:
 
 - current title/description remain uncapped substantive text;
 - current title stays one line through 1.35 and may use max two lines above 1.35;
-- description remains max three lines with tail ellipsis;
+- description remains max four lines with tail ellipsis;
+- description uses the accepted 15/22 base typography and scales as substantive content;
 - progress stays 4 pt high and does not scale into a heavy bar;
 - progress bottom inset stays 16;
 - current top inset stays 14;
-- title→description gap stays 2;
+- title→description gap stays 10;
+- maintain at least 20 pt description→progress clearance at base scale; scaled row height naturally provides at least that much at larger sizes;
 - no duration-based content suppression.
 
 Representative heights:
 
 | Font scale | Current row |
 | ---: | ---: |
-| 1.00 | 120 |
-| 1.10 | 132 |
-| 1.35 | 162 |
-| 1.50 | 180 |
-| 2.00 | 240 |
+| 1.00 | 176 |
+| 1.10 | 194 |
+| 1.35 | 238 |
+| 1.50 | 264 |
+| 2.00 | 352 |
 
 The 19/23 title replaces all old 20/24 assumptions.
 
@@ -821,9 +829,9 @@ The accepted refinement explicitly corrects the previous production calibration;
 | Standard title | 18/22 weight 500 | **17/21 weight 500** |
 | Current title | 20/24 weight 700 | **19/23 weight 700** |
 | Time | 16/20 weight 400 | **unchanged: 16/20 weight 400** |
-| Description | 15/18 weight 400 | **unchanged: 15/18 weight 400, max 3** |
+| Description | 15/18 weight 400, max 3 | **15/22 weight 400, max 4** |
 | Standard row | 52 | **unchanged: 52** |
-| Current row | 120 | **unchanged: 120** |
+| Current row | 120 | **176**, deliberately more spacious |
 | Settled condensed channel strip | 72 | **60**, item remains 48×48 |
 | Primetime | Permanent elevated/bordered capsule | **light transparent secondary action; active/current via primary text + short underline** |
 | Nu | Permanent fixed outlined/pill treatment | **strong elevated return action away from Now; typographic active/current state at Now** |
@@ -831,6 +839,7 @@ The accepted refinement explicitly corrects the previous production calibration;
 | Channel selection positioning | Fully visible/centre where practical, underspecified | **fully visible → comfortably centred → trailing continuation cue where practical** |
 | Programme press | Generic opacity reduction | **temporary full-row semantic `surface` fill** |
 | Rest selected-channel heading | Large 24/30 textual channel name below rail | **removed; selected logo is sufficient identity, compact textual channel name remains only in condensed context** |
+| Current internal spacing | 2-pt title→description gap; ~7 pt before progress at max copy | **10-pt title→description gap; minimum 20 pt before progress at max four-line copy** |
 
 All fixed-row schedule corrections from the previous owner decision remain in force: no pt/minute, duration-proportional rows, normalizedHeight or duration-based content suppression.
 
@@ -849,6 +858,9 @@ The following must not survive as current rules:
 - channel selection merely being just-visible without the centering priority;
 - no intentional continuation cue in the rail;
 - a separate large textual selected-channel heading in expanded/rest state;
+- current row height 120 pt;
+- current description 15/18 capped at three lines;
+- 2-pt current title→description gap and the compressed description→progress spacing it produced;
 - any pt/minute, `normalizedHeight`, duration-height thresholds or duration-driven Per-zender programme geometry.
 
 ## 22. Implementation calibration register
@@ -862,9 +874,9 @@ Surface-specific implementation calibrations now frozen for Development handoff:
 5. Context spacing: 24 strip→utilities, 52 utility-row minimum, 12 utility→schedule; no large rest-state selected-channel heading.
 6. Temporal visible frame 36, active underline 24×2/bottom2, icon14/gap7, Nu return-action padding12/min width48.
 7. Programme columns: time X24, programme X100, right24.
-8. Standard row 52, current row 120.
-9. Standard title 17/21 500, current title 19/23 700, time 16/20 400, description 15/18 400 — Instrument Sans.
-10. Current top14, description gap2, progress 4 high/radius2/bottom16.
+8. Standard row 52, current row **176**.
+9. Standard title 17/21 500, current title 19/23 700, time 16/20 400, current description **15/22 400 max4** — Instrument Sans.
+10. Current top14, title→description gap **10**, description→progress minimum **20**, progress 4 high/radius2/bottom16.
 11. Separator left20 at bottom of each row.
 12. Sticky context 52/88; collapse distance56; Reduce Motion state switch at28.
 
@@ -894,9 +906,9 @@ When Lead schedules Per-zender visual convergence, Development must be able to i
 2. standard title **17/21 500**;
 3. current title **19/23 700**;
 4. time **16/20 400**;
-5. current description **15/18 400**, max 3 lines + ellipsis;
-6. preserve fixed rows: 52 standard / 120 current at fontScale1;
-7. preserve time X24 / programme X100 / right24 / progress 4 high / bottom16;
+5. current description **15/22 400**, max 4 lines + ellipsis;
+6. preserve fixed rows: 52 standard / **176 current** at fontScale1;
+7. preserve time X24 / programme X100 / right24; current top14; title→description gap10; minimum 20 pt description→progress clearance; progress 4 high / bottom16;
 8. rest channel strip **72**, settled condensed **60**, item **48×48** throughout;
 9. do not render a separate large textual selected-channel heading in expanded/rest state; selected logo is sufficient identity there, while compact textual channel name remains in condensed context;
 10. after channel change: fully visible → comfortably centred → trailing ~12-pt continuation cue where practical;
@@ -919,7 +931,7 @@ This design-spec increment changes no runtime code.
 This refinement does not reopen:
 
 - fixed-row chronological Per-zender schedule;
-- 52/120 base programme-row geometry;
+- 52-pt standard-row geometry and **176-pt current-row geometry**;
 - horizontal adjacent-channel swipe;
 - direct channel-strip selection;
 - preserving viewed time context where practical;
@@ -973,9 +985,9 @@ Per-zender visual convergence is ready only when all are true on the exact imple
 - standard title is **17/21 500**;
 - current title is **19/23 700**;
 - time is **16/20 400**;
-- description is **15/18 400**, max 3 lines + ellipsis;
+- description is **15/22 400**, max 4 lines + ellipsis;
 - standard row remains **52** and title is geometrically centred with 21-pt line height;
-- current row remains **120**, current top inset 14 and progress geometry remains canonical;
+- current row is **176**, current top inset 14, title→description gap is 10, full-copy description→progress clearance is at least 20 pt, and progress geometry remains 4 high / bottom16;
 - all non-current rows remain equal at a given Dynamic Type scale;
 - programme duration has zero effect on row height/spacing;
 - every row uses one bottom separator;
