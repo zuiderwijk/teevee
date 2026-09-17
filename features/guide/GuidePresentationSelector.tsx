@@ -4,6 +4,8 @@ import { useTeeveeTheme } from '@/theme/useTeeveeTheme';
 
 import { GUIDE_PRESENTATIONS, type GuidePresentation } from './guidePresentation';
 
+const PRESENTATION_MAX_FONT_SIZE_MULTIPLIER = 1.15;
+
 type GuidePresentationSelectorProps = {
   selected: GuidePresentation;
   loadingPresentation?: GuidePresentation | null;
@@ -38,12 +40,12 @@ export function GuidePresentationSelector({
             onPress={() => onSelect(presentation.id)}
             style={({ pressed }) => [
               styles.item,
-              { opacity: loading ? 0.5 : pressed ? 0.68 : 1 },
+              { opacity: loading ? 0.5 : pressed ? 0.62 : 1 },
             ]}
           >
             <Text
               numberOfLines={1}
-              maxFontSizeMultiplier={1.2}
+              maxFontSizeMultiplier={PRESENTATION_MAX_FONT_SIZE_MULTIPLIER}
               style={[
                 styles.label,
                 {
@@ -70,27 +72,29 @@ export function GuidePresentationSelector({
 const styles = StyleSheet.create({
   container: {
     width: '100%',
+    minHeight: 44,
     flexDirection: 'row',
     alignItems: 'stretch',
     borderBottomWidth: StyleSheet.hairlineWidth,
+    paddingHorizontal: 8,
   },
   item: {
     position: 'relative',
     flex: 1,
-    minHeight: 48,
-    paddingHorizontal: 8,
-    paddingVertical: 12,
+    minHeight: 44,
+    paddingHorizontal: 6,
+    paddingVertical: 9,
     alignItems: 'center',
     justifyContent: 'center',
   },
   label: {
-    fontSize: 16,
-    lineHeight: 20,
+    fontSize: 15,
+    lineHeight: 19,
   },
   activeIndicator: {
     position: 'absolute',
-    left: 12,
-    right: 12,
+    left: 14,
+    right: 14,
     bottom: -StyleSheet.hairlineWidth,
     height: 3,
     borderRadius: 2,
