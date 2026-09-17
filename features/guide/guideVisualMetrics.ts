@@ -126,7 +126,12 @@ export const GUIDE_TYPOGRAPHY = {
   },
 } as const;
 
-export function minimumTouchTargetForPlatform(platform: string) {
+/**
+ * Callers at a native boundary should pass Platform.OS. The conservative
+ * default is Android's 48 dp minimum so an unresolved platform can never
+ * undershoot either platform's touch-target requirement.
+ */
+export function minimumTouchTargetForPlatform(platform = 'android') {
   return platform === 'android'
     ? GUIDE_VISUAL_METRICS.touchTargetAndroid
     : GUIDE_VISUAL_METRICS.touchTargetIos;
