@@ -3,19 +3,25 @@ import { Image, StyleSheet, Text, View } from 'react-native';
 
 import type { Channel } from '@/data/domain/epg';
 
+type ChannelIdentityVariant = 'default' | 'logo-first';
+
 type ChannelIdentityProps = {
   channel: Channel;
   textColor: string;
   mutedTextColor: string;
+  variant?: ChannelIdentityVariant;
 };
 
 export const ChannelIdentity = memo(function ChannelIdentity({
   channel,
   textColor,
   mutedTextColor,
+  variant = 'default',
 }: ChannelIdentityProps) {
   const [failedLogoUrl, setFailedLogoUrl] = useState<string | null>(null);
   const showLogo = Boolean(channel.logoUrl) && failedLogoUrl !== channel.logoUrl;
+  const logoFirst = variant === 'logo-first';
+  const showVisibleName = !showLogo || !logoFirst;
 
   return (
     <View
@@ -29,20 +35,22 @@ export const ChannelIdentity = memo(function ChannelIdentity({
           source={{ uri: channel.logoUrl }}
           resizeMode="contain"
           onError={() => setFailedLogoUrl(channel.logoUrl ?? null)}
-          style={styles.logo}
+          style={[styles.logo, logoFirst ? styles.logoFirst : null]}
         />
       ) : null}
-      <Text
-        numberOfLines={1}
-        ellipsizeMode={showLogo ? 'tail' : 'middle'}
-        style={[
-          styles.name,
-          showLogo ? styles.nameWithLogo : null,
-          { color: showLogo ? mutedTextColor : textColor },
-        ]}
-      >
-        {channel.displayName}
-      </Text>
+      {showVisibleName ? (
+        <Text
+          numberOfLines={1}
+          ellipsizeMode={showLogo ? 'tail' : 'middle'}
+          style={[
+            styles.name,
+            showLogo ? styles.nameWithLogo : null,
+            { color: showLogo ? mutedTextColor : textColor },
+          ]}
+        >
+          {channel.displayName}
+        </Text>
+      ) : null}
     </View>
   );
 });
@@ -59,6 +67,11 @@ const styles = StyleSheet.create({
     width: '78%',
     height: 24,
     marginBottom: 4,
+  },
+  logoFirst: {
+    width: '82%',
+    height: 30,
+    marginBottom: 0,
   },
   name: {
     width: '100%',
