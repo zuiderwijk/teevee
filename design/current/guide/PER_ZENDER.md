@@ -1,7 +1,7 @@
 # Per zender — current accepted visual
 
 Status: **ACCEPTED**
-Accepted: 2026-09-13; day-selector and Primetime behaviour amended 2026-09-15
+Accepted: 2026-09-13; day-selector and Primetime behaviour amended 2026-09-15; accepted visual refinement amended 2026-09-17
 
 ## Canonical asset
 - Light + dark reference: `/Teevee/TV-gids app in licht en donker thema.png`
@@ -12,6 +12,8 @@ Accepted: 2026-09-13; day-selector and Primetime behaviour amended 2026-09-15
 - Accepted sticky / condensed day-selector behaviour:
   - `/Teevee/Teevee Guide day selector - sticky scroll behavior.png`
   - file id: `file_00000000314481f69f6a34d18ece1c21`
+
+The 2026-09-17 owner-approved refinement in this document supersedes the older visual references only for the explicitly listed refined details below. All other accepted composition remains unchanged.
 
 Detailed shared day-selector contract: `design/current/guide/GUIDE_DAY_SELECTOR.md`.
 Development-ready visual-convergence handoff: `docs/PER_ZENDER_VISUAL_CONVERGENCE.md`.
@@ -29,6 +31,7 @@ Development-ready visual-convergence handoff: `docs/PER_ZENDER_VISUAL_CONVERGENC
 - Current programme may receive restrained live/current emphasis.
 - Light/dark/system use the same quiet Guide shell.
 - `Primetime` is a first-class Per-zender utility shortcut to the selected television day's 20:30 reference point.
+- Programme rows remain open typographic rows; pressed feedback must never turn them into permanent cards.
 
 ## Accepted day/time navigation
 - One compact typographic date selector plus separate `Primetime` and `Nu` actions.
@@ -43,10 +46,67 @@ Development-ready visual-convergence handoff: `docs/PER_ZENDER_VISUAL_CONVERGENC
 - Date/time utilities must not intercept the accepted horizontal schedule swipe for adjacent channels.
 - Do not reintroduce the earlier full time-picker (`Vanmiddag`, `Vooravond`, `Kies tijd…`) as part of this decision; only the direct `Primetime` shortcut is accepted.
 
-## Screenshot authority note
-The exact historical date choices shown in the original 13 September image are **SUPERSEDED** by `GUIDE_DAY_SELECTOR.md` and the two accepted day-selector assets above. The rest of the Per-zender list/strip composition remains canonical.
+## Accepted refinement — 2026-09-17
 
-The `Primetime` shortcut visible in the original Per-zender visual is **ACCEPTED** again by owner decision on 2026-09-15. The historical expanded time-picker is not accepted. The sticky/condensed day-selector board predates this amendment and is stale only where its Per-zender condensed row omits `Primetime`; the written rule above wins for that detail.
+### Temporal utility states and reduced button chrome
+`Nu` and `Primetime` are no longer treated as visually static buttons only. They have explicit semantic states based on the actual schedule context.
+
+- Date remains primarily typographic with disclosure chevron; no permanent date pill.
+- `Primetime` uses a light secondary action treatment when inactive.
+- `Nu` may use the stronger return-action treatment when the user is away from the actual current instant.
+- When `Nu` is the current temporal context, it switches from return-action treatment to an explicit active/current state.
+- When the stable schedule anchor corresponds to the programme/context containing the selected television day's 20:30 reference point, `Primetime` uses the active/current state.
+- Active/current state is semantic, not determined by the last control tapped.
+- Active/current state must not rely on colour alone; the accepted refinement uses a restrained short `currentTime` underline plus semantic selected/current accessibility state.
+- `disabled` is reserved for an actually unavailable action; active/current is not disabled.
+- Avoid three competing pill controls. Programme content remains visually dominant.
+
+### Programme typography refinement
+Per-zender programme titles are slightly quieter than the earlier production calibration:
+
+- standard programme title: **17/21, weight 500**;
+- current programme title: **19/23, weight 700**;
+- programme time remains **16/20, weight 400**;
+- current description remains **15/18, weight 400**.
+
+This is a Per-zender surface-specific calibration. It does not change Instrument Sans as the accepted Teevee UI family or automatically change typography on other product surfaces.
+
+### Condensed channel-strip efficiency
+- Rest-state channel strip remains **72 pt** high.
+- Settled condensed/sticky channel strip is **60 pt** high.
+- Channel item remains **48 × 48**; touch target and logo geometry do not shrink.
+- Normal motion may interpolate 72 → 60 during the existing collapse transition.
+- Reduce Motion uses the accepted discrete rest/condensed transition.
+
+### Channel strip as spatial navigation
+After direct channel selection or adjacent-channel schedule swipe:
+
+1. keep the selected channel fully visible;
+2. move it toward a comfortable/optical centre where geometry allows;
+3. clamp naturally at rail start/end;
+4. where trailing channels remain and this does not conflict with selected visibility/centring, leave a small partial next-channel continuation cue visible.
+
+Priority is: selected fully visible → selected comfortably centred → trailing continuation cue where practical.
+
+Do not add arrows, fade masks, gradients, page dots or permanent swipe-help text.
+
+### Programme-row pressed state
+- Entire programme row remains tappable.
+- On press only, apply a subtle temporary semantic `surface` fill across the full row.
+- No permanent programme background.
+- No card radius, chevron or additional border.
+- Existing row separator remains intact.
+- Press fill clears on release/cancel.
+- Do not use strong whole-row opacity reduction as the primary pressed treatment.
+
+## Explicitly not accepted in this refinement
+- No one-time horizontal swipe nudge/peek is canonical yet; it remains a separate interaction refinement requiring explicit acceptance after physical/interaction validation.
+- No `•••` overflow entry is added here; that remains a future shared-header/application-IA decision rather than a Per-zender-only refinement.
+
+## Screenshot authority note
+The exact historical date choices shown in the original 13 September image are **SUPERSEDED** by `GUIDE_DAY_SELECTOR.md` and the two accepted day-selector assets above. The rest of the Per-zender list/strip composition remains canonical except for the explicit 2026-09-17 refinements documented above.
+
+The `Primetime` shortcut visible in the original Per-zender visual is **ACCEPTED** again by owner decision on 2026-09-15. The historical expanded time-picker is not accepted. The sticky/condensed day-selector board predates this amendment and is stale where its Per-zender condensed row omits `Primetime`, and is additionally stale for the 72-pt condensed channel-strip height and old static utility treatments; the written rules above win for those details.
 
 ## Superseded
 Earlier Per-zender mock-ups with programme imagery, genre descriptions, card-heavy programme rows or explicit previous/next channel arrows are not current and must not be used as a starting point.
@@ -57,3 +117,9 @@ Also superseded for day/time navigation:
 - horizontal ten-day date rails;
 - previous/next-day arrow chrome;
 - the expanded historical time-picker with `Vanmiddag`, `Vooravond` and arbitrary `Kies tijd…` navigation.
+
+Also superseded by the 2026-09-17 refinement:
+- treating `Nu` and `Primetime` only as static button visuals regardless of temporal context;
+- a permanently 72-pt channel strip in settled condensed state;
+- 18/22 standard programme-title calibration and 20/24 current-title calibration for Per zender;
+- programme-row interaction feedback that relies only on generic opacity rather than the accepted temporary surface fill.
