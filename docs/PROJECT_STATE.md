@@ -1,6 +1,6 @@
 # Teevee — Canonical Project State
 
-Last updated: 2026-09-16.
+Last updated: 2026-09-17.
 Status: ACTIVE — **Phase 4 Core Guide MVP hardening**.
 Current phase: **Phase 4 — Core Guide MVP hardening**
 Previous phase: **Phase 3 — Real Data Vertical Slice — CLOSED**
@@ -50,10 +50,11 @@ Do not retune accepted Guide mechanics without concrete regression evidence.
 - programme cells are horizontally windowed around the actual viewport with conservative overscan; programme-window ownership during animated scrolling follows the native viewport rather than jumping ahead of it.
 
 ### Per zender
-- vertical wall-clock schedule;
-- horizontal adjacent-channel paging preserves time anchor where practical;
-- persistent/browsable channel strip with direct selection;
-- shared date context plus `Primetime` and `Nu`;
+- chronological fixed-row schedule: standard rows 52 pt and actual-current row 120 pt at base scale; programme duration never changes row height;
+- horizontal adjacent-channel paging preserves the semantic viewed-time anchor where practical;
+- persistent/browsable 48×48 channel strip with direct selection; rest rail 72 pt and settled condensed rail 60 pt;
+- canonical local channel-logo registry is wired for NPO 1/2/3, RTL 4/5 and SBS6, with identical text fallback geometry for channels without a local asset;
+- shared date context plus semantic `Primetime` and `Nu` controls; active/current state derives from the stable programme/timestamp anchor and Nu wins on overlap;
 - `Primetime` = 20:30 on the selected television day;
 - Programme Detail round-trip preserves relevant context.
 
@@ -115,14 +116,14 @@ Physical Android interaction acceptance remains OPEN/DEFERRED because no Android
 ## Deferred / later gates
 - true offline cold-start validation in a standalone/dev build rather than Expo Go;
 - release-like performance outside Expo Go;
-- production EPG/logo/artwork rights/SLA and D-2..D+7 horizon proof;
+- production EPG/artwork rights/SLA and D-2..D+7 horizon proof; channel-logo provenance is repository-managed in `docs/CHANNEL_LOGO_ASSETS.md`;
 - pricing/trial/paywall and subscription implementation;
 - production typography licensing;
 - final Tonight composition;
 - physical Android validation.
 
 ## EXACT NEXT STEP
-**Start the accepted Guide visual-convergence implementation with the smallest coherent Totaal increment. Read `docs/VISUAL_BASELINE.md`, the Totaal manifest under `design/current/`, `docs/TOTAAL_VISUAL_CONVERGENCE.md`, `docs/UX.md` and `docs/DESIGN_SYSTEM.md`, then inspect the current `GuideView` implementation before changing it. Bring the shared/Totaal Guide chrome toward the accepted visual baseline without changing frozen gestures, programme geometry, D-2..D+7 or 06:00 semantics, programme-windowing performance architecture, loading/cache/provider contracts or Programme Detail navigation. Do not incorporate unapproved ongoing brand/color exploration. Keep the increment visually reviewable and small enough to isolate regressions; run the full relevant automated checks and require physical iPhone visual/interaction acceptance before declaring the visual increment complete.**
+**Finish PR #81 against canonical main `178d81ba444e1def67e5f123971bd241bbb30581`: require exact-head CI, then perform physical iPhone acceptance of the refined Per-zender screen with real local NPO/RTL/SBS6 logos. Validate expanded 72-pt and settled-condensed 60-pt rails, direct selection/adjacent swipe/recentring, semantic Nu/Primetime states, fixed 52/120 rows, current description/progress, row press feedback, dark mode and accepted bottom navigation. Do not request Independent QA until the owner has physically accepted the exact CI-green head; do not merge from Development.**
 
 Owner checkout: `~/projects/teevee`.
 

@@ -2,15 +2,20 @@ import { describe, expect, it } from 'vitest';
 
 import type { GuideFixture, Programme } from '@/data/domain/epg';
 
+import { GUIDE_TYPOGRAPHY, PER_CHANNEL_VISUAL_METRICS } from './guideVisualMetrics';
 import {
   adjacentChannelIndex,
   buildProgrammeRows,
+  channelRailOffsetForSelection,
+  channelRailRecenterPlan,
   collapseProgressForScrollOffset,
   compactContextForCollapseProgress,
   currentProgrammeIdAt,
   currentProgrammeRowHeight,
   programmeRowForTimestamp,
   programmesForChannelDay,
+  programmeRowPressBackgroundColor,
+  resolvePerChannelTemporalControlStates,
   scheduleHeightForRows,
   scrollOffsetForTimestamp,
   standardProgrammeRowHeight,
@@ -136,6 +141,116 @@ describe('per-channel fixed-row schedule', () => {
     expect(compactContextForCollapseProgress(0.49)).toBe(false);
     expect(compactContextForCollapseProgress(0.5)).toBe(true);
     expect(compactContextForCollapseProgress(1)).toBe(true);
+  });
+
+  it('uses the accepted Per-zender typography and 72/60 rail geometry', () => {
+    expect(GUIDE_TYPOGRAPHY.programmeTitle).toMatchObject({ fontSize: 17, lineHeight: 21 });
+    expect(GUIDE_TYPOGRAPHY.currentProgrammeTitle).toMatchObject({ fontSize: 19, lineHeight: 23 });
+    expect(GUIDE_TYPOGRAPHY.programmeTime).toMatchObject({ fontSize: 16, lineHeight: 20 });
+    expect(GUIDE_TYPOGRAPHY.currentDescription).toMatchObject({ fontSize: 15, lineHeight: 18 });
+    expect(PER_CHANNEL_VISUAL_METRICS.channelStripHeight).toBe(72);
+    expect(PER_CHANNEL_VISUAL_METRICS.channelStripCondensedHeight).toBe(60);
+    expect(PER_CHANNEL_VISUAL_METRICS.channelItemSize).toBe(48);
+    expect(PER_CHANNEL_VISUAL_METRICS.channelItemGap).toBe(12);
+  });
+
+  it('recentres a selected channel while keeping rail bounds authoritative', () => {
+    const viewportWidth = 390;
+    const middleOffset = channelRailOffsetForSelection(5, 12, viewportWidth);
+    expect(middleOffset).toBe(149);
+
+    const selectedLeft = 20 + 5 * 60 - middleOffset;
+    expect(selectedLeft).toBeGreaterThanOrEqual(0);
+    expect(selectedLeft + 48).toBeLessThanOrEqual(viewportWidth);
+
+    expect(channelRailOffsetForSelection(0, 12, viewportWidth)).toBe(0);
+    expect(channelRailOffsetForSelection(11, 12, viewportWidth)).toBe(358);
+  });
+
+  it('uses the same final rail target with Reduce Motion but disables recenter animation', () => {
+    const animated = channelRailRecenterPlan(5, 12, 390, false);
+    const reduced = channelRailRecenterPlan(5, 12, 390, true);
+    expect(reduced.x).toBe(animated.x);
+    expect(animated.animated).toBe(true);
+    expect(reduced.animated).toBe(false);
+  });
+
+  it('derives Nu and Primetime state from semantic programme anchors with Nu precedence', () => {
+    const rows = buildProgrammeRows(
+      [
+        programme('now-context', '2026-09-13T18:00:00.000Z', '2026-09-13T19:00:00.000Z'),
+        programme('prime-context', '2026-09-13T19:00:00.000Z', '2026-09-13T22:00:00.000Z'),
+      ],
+      Date.parse('2026-09-13T18:30:00.000Z'),
+      1,
+    );
+    const selectedDayStartMs = Date.parse('2026-09-13T04:00:00.000Z');
+    const nowTimeMs = Date.parse('2026-09-13T18:30:00.000Z');
+    const primetimeTimeMs = Date.parse('2026-09-13T20:30:00.000Z');
+
+    expect(
+      resolvePerChannelTemporalControlStates({
+        rows,
+        stableAnchorTimeMs: nowTimeMs,
+        selectedDayStartMs,
+        nowDayStartMs: selectedDayStartMs,
+        nowTimeMs,
+        primetimeTimeMs,
+      }),
+    ).toEqual({ nu: 'active', primetime: 'inactive' });
+
+    expect(
+      resolvePerChannelTemporalControlStates({
+        rows,
+        stableAnchorTimeMs: primetimeTimeMs,
+        selectedDayStartMs,
+        nowDayStartMs: selectedDayStartMs,
+        nowTimeMs,
+        primetimeTimeMs,
+      }),
+    ).toEqual({ nu: 'return', primetime: 'active' });
+
+    const overlapRows = buildProgrammeRows(
+      [programme('shared-context', '2026-09-13T18:00:00.000Z', '2026-09-13T22:00:00.000Z')],
+      Date.parse('2026-09-13T20:40:00.000Z'),
+      1,
+    );
+    expect(
+      resolvePerChannelTemporalControlStates({
+        rows: overlapRows,
+        stableAnchorTimeMs: primetimeTimeMs,
+        selectedDayStartMs,
+        nowDayStartMs: selectedDayStartMs,
+        nowTimeMs: Date.parse('2026-09-13T20:40:00.000Z'),
+        primetimeTimeMs,
+      }),
+    ).toEqual({ nu: 'active', primetime: 'inactive' });
+  });
+
+  it('keeps active distinct from disabled and reserves disabled for unavailable targets', () => {
+    const rows = buildProgrammeRows(
+      [programme('context', '2026-09-13T19:00:00.000Z', '2026-09-13T22:00:00.000Z')],
+      Date.parse('2026-09-13T18:00:00.000Z'),
+      1,
+    );
+    const state = resolvePerChannelTemporalControlStates({
+      rows,
+      stableAnchorTimeMs: Date.parse('2026-09-13T20:30:00.000Z'),
+      selectedDayStartMs: 1,
+      nowDayStartMs: 2,
+      nowTimeMs: Date.parse('2026-09-13T18:00:00.000Z'),
+      primetimeTimeMs: Date.parse('2026-09-13T20:30:00.000Z'),
+      nuAvailable: false,
+      primetimeAvailable: false,
+    });
+    expect(state).toEqual({ nu: 'disabled', primetime: 'disabled' });
+    expect(state.nu).not.toBe('active');
+    expect(state.primetime).not.toBe('active');
+  });
+
+  it('uses semantic surface fill only while a full programme row is pressed', () => {
+    expect(programmeRowPressBackgroundColor(true, '#surface')).toBe('#surface');
+    expect(programmeRowPressBackgroundColor(false, '#surface')).toBe('transparent');
   });
 
   it('clamps adjacent channel navigation at the lineup edges', () => {

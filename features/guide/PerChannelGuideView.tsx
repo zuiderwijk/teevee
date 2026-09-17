@@ -46,10 +46,13 @@ import {
 import {
   adjacentChannelIndex,
   buildProgrammeRows,
+  channelRailRecenterPlan,
   collapseProgressForScrollOffset,
   compactContextForCollapseProgress,
   type PerChannelProgrammeRow,
   programmesForChannelDay,
+  programmeRowPressBackgroundColor,
+  resolvePerChannelTemporalControlStates,
   scheduleHeightForRows,
   scrollOffsetForTimestamp,
   timestampForScrollOffset,
@@ -126,7 +129,7 @@ function ProgrammeRow({
         {
           top: row.top,
           height: row.height,
-          backgroundColor: pressed ? theme.colors.surfaceElevated : 'transparent',
+          backgroundColor: programmeRowPressBackgroundColor(pressed, theme.colors.surface),
         },
       ]}
     >
@@ -277,6 +280,7 @@ export const PerChannelGuideView = memo(function PerChannelGuideView({
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [condensed, setCondensed] = useState(false);
   const [contextWrapped, setContextWrapped] = useState(false);
+  const [stableAnchorTimeMs, setStableAnchorTimeMs] = useState(() => viewedTimeRef.current);
   const channels = fixture.channels;
   const safeSelectedIndex = Math.min(Math.max(0, selectedIndex), Math.max(0, channels.length - 1));
   const selectedChannel = channels[safeSelectedIndex] ?? channels[0];
@@ -301,6 +305,33 @@ export const PerChannelGuideView = memo(function PerChannelGuideView({
     [dayEndMs, dayStartMs, effectiveFontScale, fixture, nowMs, pagerChannels],
   );
   const selectedRows = pagerPages[1]?.rows ?? [];
+  const nowTarget = useMemo(() => guideTargetForNow(nowMs), [nowMs]);
+  const primetimeTarget = useMemo(
+    () => guideTargetForPrimetime(selectedDayStartMs),
+    [selectedDayStartMs],
+  );
+  const temporalControlStates = useMemo(
+    () =>
+      resolvePerChannelTemporalControlStates({
+        rows: selectedRows,
+        stableAnchorTimeMs,
+        selectedDayStartMs,
+        nowDayStartMs: nowTarget.dayStartMs,
+        nowTimeMs: nowTarget.timeMs,
+        primetimeTimeMs: primetimeTarget.timeMs,
+        nuAvailable: channels.length > 0,
+        primetimeAvailable: selectedRows.length > 0,
+      }),
+    [
+      channels.length,
+      nowTarget.dayStartMs,
+      nowTarget.timeMs,
+      primetimeTarget.timeMs,
+      selectedDayStartMs,
+      selectedRows,
+      stableAnchorTimeMs,
+    ],
+  );
   const selectedCurrentId = selectedRows.find(({ current }) => current)?.programme.id ?? 'none';
   const scheduleHeight = Math.max(1, ...pagerPages.map(({ rows }) => scheduleHeightForRows(rows)));
   const referenceInset = viewportReferenceInset(effectiveFontScale);
@@ -334,22 +365,14 @@ export const PerChannelGuideView = memo(function PerChannelGuideView({
   );
 
   const centreSelectedChannel = useCallback(
-    (index: number, animated = true) => {
-      const itemCentre =
-        PER_CHANNEL_VISUAL_METRICS.channelStripInsetX +
-        index * CHANNEL_ITEM_STEP +
-        PER_CHANNEL_VISUAL_METRICS.channelItemSize / 2;
-      const contentWidth =
-        PER_CHANNEL_VISUAL_METRICS.channelStripInsetX * 2 +
-        channels.length * PER_CHANNEL_VISUAL_METRICS.channelItemSize +
-        Math.max(0, channels.length - 1) * PER_CHANNEL_VISUAL_METRICS.channelItemGap;
-      const max = Math.max(0, contentWidth - windowWidth);
+    (index: number, animatedOverride?: boolean) => {
+      const plan = channelRailRecenterPlan(index, channels.length, windowWidth, reduceMotion);
       channelStripRef.current?.scrollTo({
-        x: Math.min(max, Math.max(0, itemCentre - windowWidth / 2)),
-        animated,
+        x: plan.x,
+        animated: animatedOverride ?? plan.animated,
       });
     },
-    [channels.length, windowWidth],
+    [channels.length, reduceMotion, windowWidth],
   );
 
   const selectChannel = useCallback(
@@ -368,11 +391,14 @@ export const PerChannelGuideView = memo(function PerChannelGuideView({
       if (page === 1) return;
       const delta: -1 | 1 = page < 1 ? -1 : 1;
       const nextIndex = adjacentChannelIndex(safeSelectedIndex, delta, channels.length);
-      if (nextIndex !== safeSelectedIndex) {
-        setSelectedIndex(nextIndex);
-        centreSelectedChannel(nextIndex);
-      }
-      requestAnimationFrame(() => centrePager(false));
+      const changedChannel = nextIndex !== safeSelectedIndex;
+      if (changedChannel) setSelectedIndex(nextIndex);
+      requestAnimationFrame(() => {
+        centrePager(false);
+        if (changedChannel) {
+          requestAnimationFrame(() => centreSelectedChannel(nextIndex));
+        }
+      });
     },
     [centrePager, centreSelectedChannel, channels.length, safeSelectedIndex, windowWidth],
   );
@@ -380,6 +406,7 @@ export const PerChannelGuideView = memo(function PerChannelGuideView({
   const scrollToTimestamp = useCallback(
     (timeMs: number, animated: boolean) => {
       viewedTimeRef.current = timeMs;
+      setStableAnchorTimeMs(timeMs);
       const y = scrollOffsetForTimestamp(
         selectedRowsRef.current,
         timeMs,
@@ -399,12 +426,14 @@ export const PerChannelGuideView = memo(function PerChannelGuideView({
   );
 
   const syncViewedTimestamp = useCallback((y: number) => {
-    viewedTimeRef.current = timestampForScrollOffset(
+    const nextTimeMs = timestampForScrollOffset(
       selectedRowsRef.current,
       y,
       referenceInsetRef.current,
       viewedTimeRef.current,
     );
+    viewedTimeRef.current = nextTimeMs;
+    setStableAnchorTimeMs(nextTimeMs);
   }, []);
 
   const syncCondensedState = useCallback((nextCondensed: boolean) => {
@@ -463,6 +492,14 @@ export const PerChannelGuideView = memo(function PerChannelGuideView({
     height: PER_CHANNEL_VISUAL_METRICS.utilityToScheduleGap * (1 - collapseProgress.value),
   }));
 
+  const channelStripHeightStyle = useAnimatedStyle(() => ({
+    height:
+      PER_CHANNEL_VISUAL_METRICS.channelStripHeight -
+      (PER_CHANNEL_VISUAL_METRICS.channelStripHeight -
+        PER_CHANNEL_VISUAL_METRICS.channelStripCondensedHeight) *
+        collapseProgress.value,
+  }));
+
   const changeDay = useCallback(
     (nextDayStartMs: number) => {
       if (nextDayStartMs === selectedDayStartMs) return;
@@ -474,28 +511,22 @@ export const PerChannelGuideView = memo(function PerChannelGuideView({
   );
 
   const scrollToNow = useCallback(() => {
-    const target = guideTargetForNow(nowMs);
-    if (target.dayStartMs === selectedDayStartMs) {
-      scrollToTimestamp(target.timeMs, true);
+    if (nowTarget.dayStartMs === selectedDayStartMs) {
+      scrollToTimestamp(nowTarget.timeMs, true);
       return;
     }
-    pendingTargetTimeRef.current = target.timeMs;
-    selectDay(target.dayStartMs);
-  }, [nowMs, scrollToTimestamp, selectDay, selectedDayStartMs]);
+    pendingTargetTimeRef.current = nowTarget.timeMs;
+    selectDay(nowTarget.dayStartMs);
+  }, [nowTarget, scrollToTimestamp, selectDay, selectedDayStartMs]);
 
   const scrollToPrimetime = useCallback(() => {
-    const target = guideTargetForPrimetime(selectedDayStartMs);
-    scrollToTimestamp(target.timeMs, true);
-  }, [scrollToTimestamp, selectedDayStartMs]);
+    scrollToTimestamp(primetimeTarget.timeMs, true);
+  }, [primetimeTarget.timeMs, scrollToTimestamp]);
 
   useEffect(() => {
     const frame = requestAnimationFrame(() => centrePager(false));
     return () => cancelAnimationFrame(frame);
   }, [centrePager, safeSelectedIndex, selectedDayStartMs]);
-
-  useEffect(() => {
-    centreSelectedChannel(safeSelectedIndex, false);
-  }, [centreSelectedChannel, safeSelectedIndex]);
 
   const layoutAnchorKey = `${selectedDayStartMs}:${safeSelectedIndex}:${effectiveFontScale}:${selectedCurrentId}`;
   useEffect(() => {
@@ -544,17 +575,18 @@ export const PerChannelGuideView = memo(function PerChannelGuideView({
         collapseProgress={collapseProgress}
       />
 
-      <ScrollView
-        ref={channelStripRef}
-        testID="per-channel-channel-strip"
-        horizontal
-        bounces
-        directionalLockEnabled
-        nestedScrollEnabled
-        showsHorizontalScrollIndicator={false}
-        style={[styles.channelStrip, { backgroundColor: theme.colors.background }]}
-        contentContainerStyle={styles.channelStripContent}
-      >
+      <Animated.View style={[styles.channelStripFrame, channelStripHeightStyle]}>
+        <ScrollView
+          ref={channelStripRef}
+          testID="per-channel-channel-strip"
+          horizontal
+          bounces
+          directionalLockEnabled
+          nestedScrollEnabled
+          showsHorizontalScrollIndicator={false}
+          style={[styles.channelStrip, { backgroundColor: theme.colors.background }]}
+          contentContainerStyle={styles.channelStripContent}
+        >
         {channels.map((channel, index) => {
           const active = index === safeSelectedIndex;
           return (
@@ -584,7 +616,8 @@ export const PerChannelGuideView = memo(function PerChannelGuideView({
             </Pressable>
           );
         })}
-      </ScrollView>
+        </ScrollView>
+      </Animated.View>
 
       <Animated.View
         testID="per-channel-rest-heading"
@@ -640,30 +673,56 @@ export const PerChannelGuideView = memo(function PerChannelGuideView({
             testID="per-channel-primetime"
             accessibilityRole="button"
             accessibilityLabel="Ga naar primetime, 20:30 op geselecteerde dag"
+            accessibilityState={{
+              selected: temporalControlStates.primetime === 'active',
+              disabled: temporalControlStates.primetime === 'disabled',
+            }}
+            disabled={temporalControlStates.primetime === 'disabled'}
             onPress={scrollToPrimetime}
             style={({ pressed }) => [
               styles.utilityTouchTarget,
               {
                 minHeight: minimumTouchTarget,
                 minWidth: minimumTouchTarget,
-                opacity: pressed ? GUIDE_VISUAL_METRICS.controlPressOpacity : 1,
+                opacity:
+                  temporalControlStates.primetime === 'disabled'
+                    ? GUIDE_VISUAL_METRICS.disabledOpacity
+                    : pressed
+                      ? PER_CHANNEL_VISUAL_METRICS.utilityPressedOpacity
+                      : 1,
               },
             ]}
           >
-            <View
-              style={[
-                styles.primetimeVisible,
-                { backgroundColor: theme.colors.surfaceElevated, borderColor: theme.colors.border },
-              ]}
-            >
-              <MoonGlyph color={theme.colors.textSecondary} maskColor={theme.colors.surfaceElevated} />
+            <View style={styles.primetimeVisible}>
+              <MoonGlyph
+                color={
+                  temporalControlStates.primetime === 'active'
+                    ? theme.colors.text
+                    : theme.colors.textSecondary
+                }
+                maskColor={theme.colors.background}
+              />
               <Text
                 numberOfLines={1}
                 maxFontSizeMultiplier={COMPACT_GUIDE_MAX_FONT_SIZE_MULTIPLIER}
-                style={[styles.utilityButtonText, { color: theme.colors.textSecondary }]}
+                style={[
+                  styles.utilityButtonText,
+                  {
+                    color:
+                      temporalControlStates.primetime === 'active'
+                        ? theme.colors.text
+                        : theme.colors.textSecondary,
+                  },
+                ]}
               >
                 Primetime
               </Text>
+              {temporalControlStates.primetime === 'active' ? (
+                <View
+                  testID="per-channel-primetime-active-indicator"
+                  style={[styles.utilityCurrentIndicator, { backgroundColor: theme.colors.currentTime }]}
+                />
+              ) : null}
             </View>
           </Pressable>
 
@@ -671,17 +730,35 @@ export const PerChannelGuideView = memo(function PerChannelGuideView({
             testID="per-channel-now"
             accessibilityRole="button"
             accessibilityLabel="Ga naar nu"
+            accessibilityState={{
+              selected: temporalControlStates.nu === 'active',
+              disabled: temporalControlStates.nu === 'disabled',
+            }}
+            disabled={temporalControlStates.nu === 'disabled'}
             onPress={scrollToNow}
             style={({ pressed }) => [
               styles.utilityTouchTarget,
               {
                 minHeight: minimumTouchTarget,
                 minWidth: minimumTouchTarget,
-                opacity: pressed ? GUIDE_VISUAL_METRICS.controlPressOpacity : 1,
+                opacity:
+                  temporalControlStates.nu === 'disabled'
+                    ? GUIDE_VISUAL_METRICS.disabledOpacity
+                    : pressed
+                      ? PER_CHANNEL_VISUAL_METRICS.utilityPressedOpacity
+                      : 1,
               },
             ]}
           >
-            <View style={[styles.nowVisible, { borderColor: theme.colors.border }]}> 
+            <View
+              style={[
+                styles.nowVisible,
+                temporalControlStates.nu !== 'active' ? styles.nowReturnVisible : null,
+                temporalControlStates.nu !== 'active'
+                  ? { backgroundColor: theme.colors.surfaceElevated, borderColor: theme.colors.border }
+                  : null,
+              ]}
+            >
               <Text
                 numberOfLines={1}
                 maxFontSizeMultiplier={COMPACT_GUIDE_MAX_FONT_SIZE_MULTIPLIER}
@@ -689,6 +766,12 @@ export const PerChannelGuideView = memo(function PerChannelGuideView({
               >
                 Nu
               </Text>
+              {temporalControlStates.nu === 'active' ? (
+                <View
+                  testID="per-channel-now-active-indicator"
+                  style={[styles.utilityCurrentIndicator, { backgroundColor: theme.colors.currentTime }]}
+                />
+              ) : null}
             </View>
           </Pressable>
         </View>
@@ -743,9 +826,12 @@ const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
   },
-  channelStrip: {
+  channelStripFrame: {
     flexGrow: 0,
-    height: PER_CHANNEL_VISUAL_METRICS.channelStripHeight,
+    overflow: 'hidden',
+  },
+  channelStrip: {
+    flex: 1,
   },
   channelStripContent: {
     paddingHorizontal: PER_CHANNEL_VISUAL_METRICS.channelStripInsetX,
@@ -802,23 +888,32 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   primetimeVisible: {
+    position: 'relative',
     height: PER_CHANNEL_VISUAL_METRICS.utilityVisibleHeight,
     paddingHorizontal: PER_CHANNEL_VISUAL_METRICS.primetimePaddingX,
-    borderRadius: PER_CHANNEL_VISUAL_METRICS.utilityRadius,
-    borderWidth: StyleSheet.hairlineWidth,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: PER_CHANNEL_VISUAL_METRICS.utilityIconGap,
   },
   nowVisible: {
+    position: 'relative',
     height: PER_CHANNEL_VISUAL_METRICS.utilityVisibleHeight,
     minWidth: PER_CHANNEL_VISUAL_METRICS.nowMinWidth,
     paddingHorizontal: PER_CHANNEL_VISUAL_METRICS.nowPaddingX,
-    borderRadius: PER_CHANNEL_VISUAL_METRICS.utilityRadius,
-    borderWidth: StyleSheet.hairlineWidth,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  nowReturnVisible: {
+    borderRadius: PER_CHANNEL_VISUAL_METRICS.utilityRadius,
+    borderWidth: StyleSheet.hairlineWidth,
+  },
+  utilityCurrentIndicator: {
+    position: 'absolute',
+    bottom: PER_CHANNEL_VISUAL_METRICS.utilityIndicatorBottomInset,
+    width: PER_CHANNEL_VISUAL_METRICS.utilityIndicatorWidth,
+    height: PER_CHANNEL_VISUAL_METRICS.utilityIndicatorHeight,
+    borderRadius: PER_CHANNEL_VISUAL_METRICS.utilityIndicatorRadius,
   },
   moonIconBox: {
     width: PER_CHANNEL_VISUAL_METRICS.utilityIconSize,

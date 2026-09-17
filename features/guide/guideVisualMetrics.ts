@@ -19,6 +19,7 @@ export const GUIDE_VISUAL_METRICS = {
 
 export const PER_CHANNEL_VISUAL_METRICS = {
   channelStripHeight: 72,
+  channelStripCondensedHeight: 60,
   channelStripInsetX: 20,
   channelItemSize: 48,
   channelItemGap: 12,
@@ -32,7 +33,12 @@ export const PER_CHANNEL_VISUAL_METRICS = {
   utilityVisibleHeight: 36,
   utilityRadius: 18,
   utilityGap: 8,
-  primetimePaddingX: 14,
+  utilityPressedOpacity: 0.72,
+  utilityIndicatorWidth: 24,
+  utilityIndicatorHeight: 2,
+  utilityIndicatorRadius: 1,
+  utilityIndicatorBottomInset: 2,
+  primetimePaddingX: 10,
   nowPaddingX: 12,
   nowMinWidth: 48,
   utilityIconSize: 14,
@@ -113,13 +119,13 @@ export const GUIDE_TYPOGRAPHY = {
   },
   programmeTitle: {
     fontFamily: TEEVEE_FONT_FAMILIES.medium,
-    fontSize: 18,
-    lineHeight: 22,
+    fontSize: 17,
+    lineHeight: 21,
   },
   currentProgrammeTitle: {
     fontFamily: TEEVEE_FONT_FAMILIES.bold,
-    fontSize: 20,
-    lineHeight: 24,
+    fontSize: 19,
+    lineHeight: 23,
   },
   currentDescription: {
     fontFamily: TEEVEE_FONT_FAMILIES.regular,

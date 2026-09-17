@@ -29,6 +29,14 @@ vi.mock('react-native', () => {
   };
 });
 
+vi.mock('./channelLogoRegistry', () => ({
+  resolveChannelLogo: (channel: { id: string; logoUrl?: string }) => {
+    if (channel.id === 'nl-npo-1') return { key: 'local:nl-npo-1', source: 1 };
+    if (channel.logoUrl) return { key: `remote:${channel.logoUrl}`, source: { uri: channel.logoUrl } };
+    return null;
+  },
+}));
+
 const baseChannel: Channel = {
   id: 'publiek-1',
   name: 'Publiek 1',
@@ -115,6 +123,23 @@ describe('ChannelIdentity', () => {
     expect(container.querySelector('img')).not.toBeNull();
     expect(container.querySelector('span')).toBeNull();
     expect(container.querySelector('[aria-label="Publiek 1"]')).not.toBeNull();
+  });
+
+  it('resolves a local canonical Per-zender logo without a visible caption and keeps the full accessibility name', async () => {
+    await act(async () => {
+      root.render(
+        <ChannelIdentity
+          channel={{ ...baseChannel, id: 'nl-npo-1', displayName: 'NPO 1', shortName: 'NPO 1' }}
+          textColor="#111"
+          mutedTextColor="#777"
+          variant="per-channel-strip"
+        />,
+      );
+    });
+
+    expect(container.querySelector('img')).not.toBeNull();
+    expect(container.querySelector('span')).toBeNull();
+    expect(container.querySelector('[aria-label="NPO 1"]')).not.toBeNull();
   });
 
   it('falls back inside the same Per-zender identity after a logo load failure', async () => {

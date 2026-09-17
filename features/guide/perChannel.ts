@@ -182,6 +182,94 @@ export function compactContextForCollapseProgress(progress: number) {
   return Math.min(1, Math.max(0, progress)) >= threshold;
 }
 
+export function channelRailOffsetForSelection(
+  selectedIndex: number,
+  channelCount: number,
+  viewportWidth: number,
+) {
+  if (channelCount <= 0 || viewportWidth <= 0) return 0;
+  const safeIndex = Math.min(channelCount - 1, Math.max(0, selectedIndex));
+  const step =
+    PER_CHANNEL_VISUAL_METRICS.channelItemSize + PER_CHANNEL_VISUAL_METRICS.channelItemGap;
+  const itemCentre =
+    PER_CHANNEL_VISUAL_METRICS.channelStripInsetX +
+    safeIndex * step +
+    PER_CHANNEL_VISUAL_METRICS.channelItemSize / 2;
+  const contentWidth =
+    PER_CHANNEL_VISUAL_METRICS.channelStripInsetX * 2 +
+    channelCount * PER_CHANNEL_VISUAL_METRICS.channelItemSize +
+    Math.max(0, channelCount - 1) * PER_CHANNEL_VISUAL_METRICS.channelItemGap;
+  const maxOffset = Math.max(0, contentWidth - viewportWidth);
+  return Math.min(maxOffset, Math.max(0, itemCentre - viewportWidth / 2));
+}
+
+export function channelRailRecenterPlan(
+  selectedIndex: number,
+  channelCount: number,
+  viewportWidth: number,
+  reduceMotion: boolean,
+) {
+  return {
+    x: channelRailOffsetForSelection(selectedIndex, channelCount, viewportWidth),
+    animated: !reduceMotion,
+  } as const;
+}
+
+export type PerChannelTemporalControlStates = {
+  nu: 'active' | 'return' | 'disabled';
+  primetime: 'active' | 'inactive' | 'disabled';
+};
+
+type PerChannelTemporalControlStateInput = {
+  rows: PerChannelProgrammeRow[];
+  stableAnchorTimeMs: number;
+  selectedDayStartMs: number;
+  nowDayStartMs: number;
+  nowTimeMs: number;
+  primetimeTimeMs: number;
+  nuAvailable?: boolean;
+  primetimeAvailable?: boolean;
+};
+
+function semanticAnchorId(rows: PerChannelProgrammeRow[], timeMs: number) {
+  return programmeRowForTimestamp(rows, timeMs)?.programme.id ?? null;
+}
+
+/** Resolve Nu/Primetime from semantic programme/context anchors, never pixels/minute tolerances. */
+export function resolvePerChannelTemporalControlStates({
+  rows,
+  stableAnchorTimeMs,
+  selectedDayStartMs,
+  nowDayStartMs,
+  nowTimeMs,
+  primetimeTimeMs,
+  nuAvailable = true,
+  primetimeAvailable = true,
+}: PerChannelTemporalControlStateInput): PerChannelTemporalControlStates {
+  const stableAnchorId = semanticAnchorId(rows, stableAnchorTimeMs);
+  const nowAnchorId =
+    selectedDayStartMs === nowDayStartMs ? semanticAnchorId(rows, nowTimeMs) : null;
+  const primetimeAnchorId = semanticAnchorId(rows, primetimeTimeMs);
+
+  const nuActive =
+    nuAvailable && stableAnchorId !== null && nowAnchorId !== null && stableAnchorId === nowAnchorId;
+  const primetimeActive =
+    primetimeAvailable &&
+    !nuActive &&
+    stableAnchorId !== null &&
+    primetimeAnchorId !== null &&
+    stableAnchorId === primetimeAnchorId;
+
+  return {
+    nu: nuAvailable ? (nuActive ? 'active' : 'return') : 'disabled',
+    primetime: primetimeAvailable ? (primetimeActive ? 'active' : 'inactive') : 'disabled',
+  };
+}
+
+export function programmeRowPressBackgroundColor(pressed: boolean, surfaceColor: string) {
+  return pressed ? surfaceColor : 'transparent';
+}
+
 export function adjacentChannelIndex(currentIndex: number, delta: -1 | 1, channelCount: number) {
   if (channelCount <= 0) return 0;
   return Math.min(channelCount - 1, Math.max(0, currentIndex + delta));

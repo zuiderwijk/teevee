@@ -8,6 +8,7 @@ import {
   GUIDE_TYPOGRAPHY,
   PER_CHANNEL_VISUAL_METRICS,
 } from './guideVisualMetrics';
+import { resolveChannelLogo } from './channelLogoRegistry';
 
 type ChannelIdentityProps = {
   channel: Channel;
@@ -22,8 +23,9 @@ export const ChannelIdentity = memo(function ChannelIdentity({
   mutedTextColor,
   variant = 'default',
 }: ChannelIdentityProps) {
-  const [failedLogoUrl, setFailedLogoUrl] = useState<string | null>(null);
-  const showLogo = Boolean(channel.logoUrl) && failedLogoUrl !== channel.logoUrl;
+  const resolvedLogo = resolveChannelLogo(channel);
+  const [failedLogoKey, setFailedLogoKey] = useState<string | null>(null);
+  const showLogo = Boolean(resolvedLogo) && failedLogoKey !== resolvedLogo?.key;
   const perChannelStrip = variant === 'per-channel-strip';
   const showVisibleName = perChannelStrip ? !showLogo : true;
   const visibleName = perChannelStrip ? channel.shortName ?? channel.displayName : channel.displayName;
@@ -37,9 +39,9 @@ export const ChannelIdentity = memo(function ChannelIdentity({
       {showLogo ? (
         <Image
           accessible={false}
-          source={{ uri: channel.logoUrl }}
+          source={resolvedLogo!.source}
           resizeMode="contain"
-          onError={() => setFailedLogoUrl(channel.logoUrl ?? null)}
+          onError={() => setFailedLogoKey(resolvedLogo?.key ?? null)}
           style={[styles.logo, perChannelStrip ? styles.perChannelLogo : null]}
         />
       ) : null}
