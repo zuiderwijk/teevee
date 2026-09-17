@@ -1,11 +1,3 @@
-## 2026-09-17 - Per-zender fixed-row production convergence and Instrument Sans runtime
-- Implemented the owner-corrected `docs/PER_ZENDER_VISUAL_CONVERGENCE.md`: Per zender is now a chronological fixed-row list, with 52 pt standard rows and one 120 pt actual-current row at base text size. Programme duration no longer controls vertical position, row height, gaps, density or content visibility.
-- Replaced pixel/minute time restoration with timestamp -> containing/nearest programme-row anchoring while preserving adjacent-channel swipe, direct channel selection, D-2..D+7, 06:00 television-day, Primetime/Nu and Programme Detail semantics.
-- Centralised Per-zender/Guide visual metrics in `features/guide/guideVisualMetrics.ts`, including schedule columns, Dynamic Type row scaling, channel-strip geometry, current progress, separators and sticky/Reduce Motion metrics.
-- Wired canonical Instrument Sans from the official `@expo-google-fonts/instrument-sans@0.4.2` distribution (MIT AND OFL-1.1 package metadata), loading only Regular/Medium/SemiBold/Bold static weights before mounting the app so installed builds are offline-capable without a visible font swap. Runtime loading is isolated in `theme/useTeeveeFonts.ts`; pure typography tokens remain in `theme/typography.ts`.
-- Added/updated regression coverage for duration-independent fixed rows, Dynamic Type heights, single-current selection/progress, timestamp anchors, collapse semantics and channel-logo fallback. The first CI pass exposed test-runtime coupling to Expo/React Native modules; production/test boundaries were separated rather than weakening tests.
-- Quality status: exact-head CI and physical-device acceptance are still required before Independent QA or merge.
-
 # Teevee Development Logboek
 
 Doel: chronologisch, begrijpelijk overzicht van substantiële milestones, verificatie en blokkades. `docs/PROJECT_STATE.md` is altijd de canonieke actuele toestand. Granulaire CI/device-details blijven terugvindbaar in GitHub PR/commit-history en timestamped evidence-docs.
@@ -18,6 +10,14 @@ Doel: chronologisch, begrijpelijk overzicht van substantiële milestones, verifi
 - Iedere substantieve entry eindigt met de volgende stap.
 
 ---
+
+## 2026-09-17 - Per-zender fixed-row production convergence and Instrument Sans runtime
+- Implemented the owner-corrected `docs/PER_ZENDER_VISUAL_CONVERGENCE.md`: Per zender is now a chronological fixed-row list, with 52 pt standard rows and one 120 pt actual-current row at base text size. Programme duration no longer controls vertical position, row height, gaps, density or content visibility.
+- Replaced pixel/minute time restoration with timestamp -> containing/nearest programme-row anchoring while preserving adjacent-channel swipe, direct channel selection, D-2..D+7, 06:00 television-day, Primetime/Nu and Programme Detail semantics.
+- Centralised Per-zender/Guide visual metrics in `features/guide/guideVisualMetrics.ts`, including schedule columns, Dynamic Type row scaling, channel-strip geometry, current progress, separators and sticky/Reduce Motion metrics.
+- Wired canonical Instrument Sans from the official `@expo-google-fonts/instrument-sans@0.4.2` distribution (MIT AND OFL-1.1 package metadata), loading only Regular/Medium/SemiBold/Bold static weights before mounting the app so installed builds are offline-capable without a visible font swap. Runtime loading is isolated in `theme/useTeeveeFonts.ts`; pure typography tokens remain in `theme/typography.ts`.
+- Added/updated regression coverage for duration-independent fixed rows, Dynamic Type heights, single-current selection/progress, timestamp anchors, collapse semantics and channel-logo fallback. The first CI pass exposed test-runtime coupling to Expo/React Native modules; production/test boundaries were separated rather than weakening tests.
+- Quality status: exact-head CI and physical-device acceptance are still required before Independent QA or merge.
 
 ## 15 september 2026 — Phase 4 television-day domain foundation gemergd
 
