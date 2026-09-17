@@ -1,7 +1,6 @@
 import { memo, useMemo, useState } from 'react';
 import {
   Modal,
-  Platform,
   Pressable,
   SafeAreaView,
   ScrollView,
@@ -51,7 +50,7 @@ export const GuideDaySelector = memo(function GuideDaySelector({
   const options = useMemo(() => guideDayOptions(nowMs), [nowMs]);
   const selectedLabel = guideDayLabel(selectedDayStartMs, nowMs);
   const visibleLabel = compactPrefix ? `${compactPrefix} · ${selectedLabel}` : selectedLabel;
-  const minimumTouchTarget = minimumTouchTargetForPlatform(Platform.OS);
+  const minimumTouchTarget = minimumTouchTargetForPlatform();
 
   const selectDay = (dayStartMs: number) => {
     setOpen(false);
