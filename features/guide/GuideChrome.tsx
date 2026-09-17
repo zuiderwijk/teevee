@@ -1,6 +1,6 @@
 import { useRouter } from 'expo-router';
 import { type ReactNode, memo } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 import Animated, { type SharedValue, useAnimatedStyle } from 'react-native-reanimated';
 
 import { TEEVEE_FONT_FAMILIES } from '@/theme/typography';
@@ -17,7 +17,7 @@ const EXPANDED_CHROME_HEIGHT =
   GUIDE_VISUAL_METRICS.brandTopInset +
   GUIDE_VISUAL_METRICS.brandMarkBoxHeight +
   GUIDE_VISUAL_METRICS.presentationNavHeight;
-const CHROME_TOUCH_TARGET = minimumTouchTargetForPlatform();
+const CHROME_TOUCH_TARGET = minimumTouchTargetForPlatform(Platform.OS);
 
 type GuideChromeProps = {
   condensed: boolean;
