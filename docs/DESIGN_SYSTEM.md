@@ -1,6 +1,6 @@
 # Teevee Design System Direction
 
-Status: visual-design baseline updated 15 September 2026. Guide and Programme Detail direction below reflects owner-approved design decisions. Exact production token values still require implementation/device validation. Tonight remains provisional.
+Status: visual-design baseline updated 17 September 2026. Guide and Programme Detail direction below reflects owner-approved design decisions. Instrument Sans is the accepted UI typeface. Exact production token values still require implementation/device validation. Tonight remains provisional.
 
 ## Objective
 Teevee should communicate premium utility: calm, precise, contemporary and highly legible. The Guide can contain substantial schedule information without looking dense or cheap.
@@ -22,17 +22,26 @@ A Design or Development thread changing an existing surface must inspect those c
 - avoid ornamental media-app conventions that do not improve the TV-guide task.
 
 ## Typography
-The preferred visual direction established during exploration is **Söhne** (or the approved production equivalent if licensing/technical constraints require substitution). Its role is a contemporary, premium, neutral grotesk with strong legibility rather than conspicuous brand typography.
+**Instrument Sans** is the accepted primary UI typeface for Teevee. It replaces the earlier Söhne visual direction for typeface family choice while preserving the premium, contemporary, neutral-grotesk character that made that direction successful.
+
+Use Instrument Sans as one coherent UI family across Guide, Programme Detail, Tonight/Vanavond, Search, Settings and other product surfaces. Do **not** pair it with Inter, Geist, Public Sans or another sans-serif by default. Create hierarchy through size, weight, line height, contrast and spacing rather than through a second UI family.
 
 Typography rules:
 - title hierarchy should carry more of the visual structure than containers do;
 - programme titles use clear weight contrast without excessive boldness everywhere;
+- Regular is the default direction for body copy, programme times and quiet secondary information;
+- Medium is the default direction for programme titles and compact functional labels where extra emphasis is needed;
+- Semibold is the default direction for primary headings, selected navigation and stronger programme states;
+- Bold is exceptional rather than a default UI weight;
 - secondary times/channel names use lower weight/contrast;
 - following programmes in Nu & Straks are deliberately quieter than the programme at the reference time;
+- where supported reliably by the production build, aligned schedule numerals use tabular numerals;
 - substantive content respects platform font scaling;
 - never preserve a screenshot's density by clipping essential content or globally disabling Dynamic Type/font scaling.
 
-A typeface choice is not permission to bundle/distribute font files without the appropriate licence. Production implementation must verify font licensing and platform delivery separately.
+A final brand wordmark may use separate custom lettering if explicitly approved; that does not alter Instrument Sans as the product UI family.
+
+The exact font source, licence, weight files, Expo/React Native loading strategy, fallback behaviour and physical-device rendering remain implementation/verification concerns. Do not commit arbitrary font binaries merely because the family is approved. The canonical shared typography contract is `design/current/TYPOGRAPHY.md`.
 
 ## Theme model
 Support light, dark and system appearance. Components use semantic tokens rather than hard-coded theme colours.
@@ -67,7 +76,7 @@ Avoid a redundant full-height red current-time line when a compact time indicato
 - the interface should never optimise for fitting the maximum number of facts into one viewport.
 
 ## Channel identity
-Channel logo is the primary visual identifier when licensed/readable artwork is available. Channel name is secondary/contextual and remains available to assistive technology.
+Channel logo is the primary visual identifier when licensed/readable artwork exists. Channel name is secondary/contextual and remains available to assistive technology.
 
 Rules:
 - preserve logo proportions;
@@ -166,7 +175,7 @@ Guide day selection and `Nu` remain reachable while vertically browsing Totaal o
 ## Freeze model
 There are three levels:
 1. **Accepted UX/visual baseline** — owner-approved direction that implementation should follow; exact current visual references are listed in `docs/VISUAL_BASELINE.md` / `design/current/`;
-2. **Provisional direction** — promising but intentionally open (currently notably Tonight composition and exact production tokens);
+2. **Provisional direction** — promising but intentionally open (currently notably Tonight composition and exact production tokens; the Instrument Sans family choice itself is accepted);
 3. **Technically frozen implementation** — implemented and validated on representative devices in light/dark and relevant accessibility settings.
 
 A visual baseline is not automatically a claim that the current code implements it. Material changes to an accepted baseline should be recorded explicitly rather than silently drifting through implementation.

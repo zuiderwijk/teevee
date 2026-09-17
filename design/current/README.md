@@ -14,6 +14,9 @@
 
 ## Current manifests
 
+Shared system:
+- `TYPOGRAPHY.md` — accepted Instrument Sans UI typography system across Teevee.
+
 Guide:
 - `guide/TOTAAL.md`
 - `guide/PER_ZENDER.md`

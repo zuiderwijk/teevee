@@ -1,7 +1,7 @@
 # Totaal — current accepted visual
 
 Status: **ACCEPTED**
-Accepted: 2026-09-13; day-selector behaviour accepted 2026-09-15
+Accepted: 2026-09-13; day-selector behaviour accepted 2026-09-15; Instrument Sans typography accepted 2026-09-17
 
 ## Canonical assets
 - Light: `/Teevee/Nederlandse tv-gids op smartphone.png`
@@ -16,10 +16,11 @@ Accepted: 2026-09-13; day-selector behaviour accepted 2026-09-15
   - file id: `file_00000000314481f69f6a34d18ece1c21`
 
 Detailed shared day-selector contract: `design/current/guide/GUIDE_DAY_SELECTOR.md`.
+Shared typography contract: `design/current/TYPOGRAPHY.md`.
 Development visual-convergence handoff: `docs/TOTAAL_VISUAL_CONVERGENCE.md`.
 
 ## Preserve
-- Söhne visual direction.
+- Instrument Sans as the accepted UI typeface; historical Söhne-like screenshot typography is superseded for family choice only.
 - Near-white neutral light canvas / dark-anthracite dark canvas.
 - Open 2D time/channel grid.
 - Channel logos in the left identity rail.
@@ -38,7 +39,7 @@ Development visual-convergence handoff: `docs/TOTAAL_VISUAL_CONVERGENCE.md`.
 - During horizontal browsing, date context follows the stable time-navigation anchor and updates when that anchor crosses the 06:00 television-day boundary.
 
 ## Screenshot authority note
-The exact historical date control visible in the original 13 September light/dark images is **SUPERSEDED** by `GUIDE_DAY_SELECTOR.md` and the two accepted day-selector assets above. The rest of those Totaal references remains canonical.
+The exact historical date control visible in the original 13 September light/dark images is **SUPERSEDED** by `GUIDE_DAY_SELECTOR.md` and the two accepted day-selector assets above. The typeface shown in those screenshots is also **SUPERSEDED for family choice only** by `design/current/TYPOGRAPHY.md`. Preserve the rest of their visual hierarchy and composition.
 
 ## Superseded
 Earlier Totaal explorations with card-like programme blocks, a full-height red current-time line, dense metadata, more decorative chrome or a different typography direction are not current.
