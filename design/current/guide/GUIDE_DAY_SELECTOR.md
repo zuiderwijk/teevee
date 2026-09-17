@@ -1,7 +1,7 @@
 # Guide day selector — current accepted interaction and visual direction
 
 Status: **ACCEPTED**
-Accepted: 2026-09-15; Per-zender Primetime amendment accepted 2026-09-15; Per-zender temporal-state refinement accepted 2026-09-17
+Accepted: 2026-09-15; Per-zender Primetime amendment accepted 2026-09-15; Per-zender temporal-state refinement accepted 2026-09-17; Per-zender rest-heading removal accepted 2026-09-18
 
 Applies to:
 - Totaal;
@@ -32,7 +32,7 @@ Use this reference for:
 - Totaal time-axis stickiness;
 - Per-zender channel-strip + compact channel/date context.
 
-Authority amendment: the sticky/condensed visual predates the accepted Per-zender `Primetime` shortcut and the 2026-09-17 Per-zender refinement. Its Per-zender compact context is therefore stale where it omits `Primetime`, where it implies only static utility-button visuals, or where it implies a 72-pt settled condensed channel strip. The written Per-zender rules below supersede those details.
+Authority amendment: the sticky/condensed visual predates the accepted Per-zender `Primetime` shortcut and later refinements. Its Per-zender representation is stale where it omits `Primetime`, implies only static utility-button visuals, implies a 72-pt settled condensed channel strip, or shows a separate large textual selected-channel heading in expanded/rest state. The written Per-zender rules below supersede those details.
 
 ## Accepted behaviour
 
@@ -76,7 +76,8 @@ Example: viewing Monday around 20:35 and selecting Thursday should land around T
 At rest:
 - shared Guide/brand chrome may be visible;
 - the horizontal channel-logo strip is available;
-- channel name plus date, `Primetime` and `Nu` form the schedule context;
+- selected channel identity in expanded/rest state is carried by the selected logo in the channel rail; do not render a separate large textual selected-channel heading;
+- date, `Primetime` and `Nu` form the schedule context;
 - `Primetime` keeps the selected television day and jumps to 20:30 on that day;
 - between 00:00 and 05:59 this means jumping back to the preceding television-day evening at 20:30;
 - `Nu` remains distinct and restores the actual current day and instant;
@@ -92,8 +93,9 @@ After vertical scroll:
 - the channel-logo strip remains sticky;
 - settled condensed Per-zender channel strip is 60 pt high while preserving the 48 × 48 channel touch/item geometry;
 - immediately beneath it, use one compact sticky channel/date context row with both `Primetime` and `Nu` available;
+- retain the compact textual channel name in that condensed channel/date context for orientation;
 - the same semantic action/current state rules for `Primetime` and `Nu` continue in condensed state;
-- do not retain a duplicate large channel heading in the condensed state;
+- do not introduce any separate large channel heading;
 - horizontal schedule swipe continues to change adjacent channel without being intercepted by date/time utilities.
 
 The earlier expanded Per-zender time picker (`Vanmiddag`, `Vooravond`, `Kies tijd…`) is not part of this accepted pattern.
@@ -133,6 +135,6 @@ For Totaal and Per zender, this supersedes:
 - stale date controls shown in the 13 September canonical Guide images;
 - any exploration using a horizontal ten-day rail, unrestricted calendar, or previous/next-day arrow chrome.
 
-For Per zender specifically, the expanded historical time-picker is superseded, while the direct `Primetime` shortcut is accepted. Static utility-button-only treatment and a permanently 72-pt settled condensed channel strip are superseded by the 2026-09-17 Per-zender refinement.
+For Per zender specifically, the expanded historical time-picker is superseded, while the direct `Primetime` shortcut is accepted. Static utility-button-only treatment and a permanently 72-pt settled condensed channel strip are superseded by the 2026-09-17 Per-zender refinement. The separate large textual selected-channel heading in expanded/rest state is superseded by the owner-approved 2026-09-18 refinement; the compact textual channel name in condensed context remains accepted.
 
 The rest of the canonical Totaal and Per-zender visual references remain accepted unless explicitly superseded elsewhere.

@@ -60,8 +60,8 @@ Totaal and Per zender share one compact day-navigation model. Nu & Straks has no
 Sticky behaviour:
 - essential day/time context remains available during vertical Guide scrolling while non-functional brand/header chrome may condense away;
 - in Totaal, the date selector, `Nu` and time axis remain available;
-- in Per zender, the horizontal channel-logo strip remains sticky and is followed by one compact sticky channel/date context row with `Primetime` and `Nu` available;
-- the condensed Per-zender state must not duplicate the large channel heading;
+- in Per zender, the horizontal channel-logo strip remains sticky and is followed by one compact sticky channel/date context row with the compact textual channel name, `Primetime` and `Nu` available;
+- Per-zender expanded/rest state does not render a separate large textual selected-channel heading; the selected logo in the rail carries channel identity there;
 - scrolling back to the top restores the full rest-state hierarchy naturally;
 - reduced-motion mode may use a simpler non-interpolated transition.
 
@@ -108,6 +108,7 @@ Purpose: inspect the schedule of one channel while making adjacent-channel compa
 - no previous/next arrow buttons are required around the logo strip when swipe/scroll affordance is clear;
 - active channel remains visible and may be centred automatically after a channel change;
 - channel logo is primary; channel name is contextual/secondary;
+- do not duplicate the selected channel logo with a separate large textual selected-channel heading in expanded/rest state; retain the compact textual channel name only in the condensed channel/date context for orientation;
 - changing channel preserves the viewed time anchor rather than blindly preserving a pixel offset;
 - use the accepted shared Guide day selector for D-2..D+7 navigation;
 - date remains secondary to channel context;

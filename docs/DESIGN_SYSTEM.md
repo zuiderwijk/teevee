@@ -90,7 +90,7 @@ All three Guide presentations share one visual shell.
 
 At rest the shell may show brand identity and the Guide-view selector. During vertical scrolling, nonessential brand chrome may condense to return space to schedule content. Essential context is view-specific:
 - Totaal: selected day, `Nu`, and time axis/context;
-- Per zender: channel-logo strip plus compact channel/date context and `Nu`;
+- Per zender: channel-logo strip plus compact channel/date context and `Nu`; expanded/rest state does not duplicate selected channel identity with a large textual heading;
 - Nu & Straks: reference-time context/selector.
 
 Bottom navigation remains stable. Avoid making the `tv.` brand mark consume permanent vertical space when it is no longer functionally useful during scroll.
@@ -112,7 +112,8 @@ Sticky/condensed rules:
 - condensation removes non-functional chrome; it must not remove essential Guide context;
 - Totaal keeps date + `Nu` + time axis available while the Guide scrolls vertically;
 - Per zender keeps the channel-logo strip and one compact channel/date row available while the schedule scrolls vertically;
-- do not show both a large channel heading and the compact channel/date heading simultaneously in the settled condensed state;
+- Per-zender expanded/rest state does not show a separate large textual selected-channel heading; the selected logo is sufficient channel identity there;
+- the compact textual channel name remains in the condensed channel/date row for orientation;
 - prefer whitespace and, only when needed, a subtle hairline/theme surface to separate sticky context from scrolling content;
 - avoid heavy floating cards and shadows;
 - reduced-motion preferences may replace interpolated condensation with a simpler state change.
