@@ -62,8 +62,6 @@ import { useGuideClock } from './useGuideClock';
 import { useGuideDaySelection } from './useGuideDaySelection';
 import { useSelectedGuideDaySchedule } from './useSelectedGuideDaySchedule';
 
-const CHANNEL_ITEM_STEP =
-  PER_CHANNEL_VISUAL_METRICS.channelItemSize + PER_CHANNEL_VISUAL_METRICS.channelItemGap;
 const TIME_COLUMN_CONTENT_WIDTH =
   GUIDE_VISUAL_METRICS.screenInsetX +
   PER_CHANNEL_VISUAL_METRICS.timeGutterWidth -
