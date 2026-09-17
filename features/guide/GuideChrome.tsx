@@ -3,7 +3,7 @@ import { type ReactNode, memo } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import Animated, { type SharedValue, useAnimatedStyle } from 'react-native-reanimated';
 
-import { TEEVEE_FONT_WEIGHTS } from '@/theme/typography';
+import { TEEVEE_FONT_FAMILIES } from '@/theme/typography';
 import { useTeeveeTheme } from '@/theme/useTeeveeTheme';
 
 import {
@@ -144,9 +144,9 @@ const styles = StyleSheet.create({
     paddingVertical: 4,
   },
   brandText: {
+    fontFamily: TEEVEE_FONT_FAMILIES.bold,
     fontSize: 31,
     lineHeight: 34,
-    fontWeight: TEEVEE_FONT_WEIGHTS.bold,
     letterSpacing: -1.8,
   },
   brandDot: {
@@ -190,9 +190,9 @@ const styles = StyleSheet.create({
     transform: [{ rotate: '45deg' }],
   },
   moreGlyph: {
+    fontFamily: TEEVEE_FONT_FAMILIES.bold,
     fontSize: 24,
     lineHeight: 26,
-    fontWeight: TEEVEE_FONT_WEIGHTS.bold,
     marginTop: -5,
   },
   presentationNavigation: {
