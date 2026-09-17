@@ -1,6 +1,5 @@
 import { type ComponentType, type ReactNode, useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react';
 
-import { SettingsButton } from '@/components/SettingsButton';
 import { detailReducer, initialDetailState, type ProgrammeSelection } from '@/features/guide/detailState';
 import { GuidePresentationSelector } from '@/features/guide/GuidePresentationSelector';
 import {
@@ -17,8 +16,6 @@ import {
   readAppPreferences,
   writeAppPreferences,
 } from '@/services/storage/appPreferencesStorage';
-
-const settingsAction = <SettingsButton />;
 
 type NowNextGuideComponent = ComponentType<{
   headerAction?: ReactNode;
@@ -107,18 +104,15 @@ export default function GuideScreen() {
     [loadAndShowNowNext, persistPresentationPreference],
   );
 
-  // Keep this node referentially stable across Programme Detail state changes so the
-  // memoized Guide surfaces do not rerender merely because the detail modal opens/closes.
+  // Keep the shared presentation navigation referentially stable across Programme Detail
+  // state changes so memoized Guide surfaces do not rerender merely because detail opens.
   const guideHeaderAction = useMemo<ReactNode>(
     () => (
-      <>
-        {settingsAction}
-        <GuidePresentationSelector
-          selected={presentation}
-          loadingPresentation={nowNextLoading ? 'now-next' : null}
-          onSelect={selectPresentation}
-        />
-      </>
+      <GuidePresentationSelector
+        selected={presentation}
+        loadingPresentation={nowNextLoading ? 'now-next' : null}
+        onSelect={selectPresentation}
+      />
     ),
     [nowNextLoading, presentation, selectPresentation],
   );
