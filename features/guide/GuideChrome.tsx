@@ -1,35 +1,21 @@
 import { useRouter } from 'expo-router';
-import { type ReactNode, memo } from 'react';
+import { type ReactNode, memo, useEffect } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import Animated, {
-  Easing,
-  FadeIn,
-  FadeOut,
-  LinearTransition,
   ReduceMotion,
+  useAnimatedStyle,
+  useSharedValue,
+  withSpring,
 } from 'react-native-reanimated';
 
 import { useTeeveeTheme } from '@/theme/useTeeveeTheme';
 
 const CHROME_MAX_FONT_SIZE_MULTIPLIER = 1.15;
-const CHROME_LAYOUT_DURATION_MS = 190;
-const CHROME_FADE_DURATION_MS = 140;
-
-const chromeLayoutTransition = LinearTransition.duration(CHROME_LAYOUT_DURATION_MS)
-  .easing(Easing.out(Easing.cubic))
-  .reduceMotion(ReduceMotion.System);
-const chromeEnterTransition = FadeIn.duration(CHROME_FADE_DURATION_MS)
-  .easing(Easing.out(Easing.cubic))
-  .reduceMotion(ReduceMotion.System);
-const chromeExitTransition = FadeOut.duration(CHROME_FADE_DURATION_MS)
-  .easing(Easing.out(Easing.cubic))
-  .reduceMotion(ReduceMotion.System);
+const EXPANDED_CHROME_HEIGHT = 98;
 
 type GuideChromeProps = {
   condensed: boolean;
   presentationNavigation: ReactNode;
-  heading?: string;
-  supportingText?: string;
 };
 
 function SearchGlyph({ color }: { color: string }) {
@@ -44,90 +30,84 @@ function SearchGlyph({ color }: { color: string }) {
 export const GuideChrome = memo(function GuideChrome({
   condensed,
   presentationNavigation,
-  heading,
-  supportingText,
 }: GuideChromeProps) {
   const router = useRouter();
   const theme = useTeeveeTheme();
+  const expansion = useSharedValue(condensed ? 0 : 1);
+
+  useEffect(() => {
+    expansion.value = withSpring(condensed ? 0 : 1, {
+      damping: 24,
+      stiffness: 260,
+      mass: 0.7,
+      overshootClamping: true,
+      reduceMotion: ReduceMotion.System,
+    });
+  }, [condensed, expansion]);
+
+  const expandedChromeStyle = useAnimatedStyle(() => ({
+    height: EXPANDED_CHROME_HEIGHT * expansion.value,
+    opacity: expansion.value,
+    transform: [{ translateY: -8 * (1 - expansion.value) }],
+  }));
 
   return (
-    <Animated.View
+    <View
       testID={condensed ? 'guide-chrome-condensed' : 'guide-chrome-expanded'}
-      layout={chromeLayoutTransition}
       style={[styles.chrome, { backgroundColor: theme.colors.background }]}
     >
-      {!condensed ? (
-        <Animated.View
-          entering={chromeEnterTransition}
-          exiting={chromeExitTransition}
-          style={styles.expandedChrome}
-        >
-          <View style={styles.brandRow}>
-            <View accessible accessibilityRole="text" accessibilityLabel="Teevee" style={styles.brandMark}>
-              <Text
-                accessible={false}
-                maxFontSizeMultiplier={CHROME_MAX_FONT_SIZE_MULTIPLIER}
-                style={[styles.brandText, { color: theme.colors.text }]}
-              >
-                tv
-              </Text>
-              <View style={[styles.brandDot, { backgroundColor: theme.colors.currentTime }]} />
-            </View>
-
-            <View style={styles.headerActions}>
-              <Pressable
-                testID="guide-search-action"
-                accessibilityRole="button"
-                accessibilityLabel="Zoeken"
-                hitSlop={4}
-                onPress={() => router.push('/search')}
-                style={({ pressed }) => [styles.iconButton, { opacity: pressed ? 0.55 : 1 }]}
-              >
-                <SearchGlyph color={theme.colors.textSecondary} />
-              </Pressable>
-              <Pressable
-                testID="guide-settings-action"
-                accessibilityRole="button"
-                accessibilityLabel="Open instellingen"
-                hitSlop={4}
-                onPress={() => router.push('/settings')}
-                style={({ pressed }) => [styles.iconButton, { opacity: pressed ? 0.55 : 1 }]}
-              >
-                <Text
-                  accessible={false}
-                  maxFontSizeMultiplier={1}
-                  style={[styles.moreGlyph, { color: theme.colors.textSecondary }]}
-                >
-                  …
-                </Text>
-              </Pressable>
-            </View>
+      <Animated.View
+        testID="guide-chrome-expanded-content"
+        pointerEvents={condensed ? 'none' : 'auto'}
+        accessibilityElementsHidden={condensed}
+        importantForAccessibility={condensed ? 'no-hide-descendants' : 'auto'}
+        style={[styles.expandedChrome, expandedChromeStyle]}
+      >
+        <View style={styles.brandRow}>
+          <View accessible accessibilityRole="text" accessibilityLabel="Teevee" style={styles.brandMark}>
+            <Text
+              accessible={false}
+              maxFontSizeMultiplier={CHROME_MAX_FONT_SIZE_MULTIPLIER}
+              style={[styles.brandText, { color: theme.colors.text }]}
+            >
+              tv
+            </Text>
+            <View style={[styles.brandDot, { backgroundColor: theme.colors.currentTime }]} />
           </View>
 
-          {heading ? (
-            <View style={styles.headingGroup}>
+          <View style={styles.headerActions}>
+            <Pressable
+              testID="guide-search-action"
+              accessibilityRole="button"
+              accessibilityLabel="Zoeken"
+              hitSlop={4}
+              onPress={() => router.push('/search')}
+              style={({ pressed }) => [styles.iconButton, { opacity: pressed ? 0.55 : 1 }]}
+            >
+              <SearchGlyph color={theme.colors.textSecondary} />
+            </Pressable>
+            <Pressable
+              testID="guide-settings-action"
+              accessibilityRole="button"
+              accessibilityLabel="Open instellingen"
+              hitSlop={4}
+              onPress={() => router.push('/settings')}
+              style={({ pressed }) => [styles.iconButton, { opacity: pressed ? 0.55 : 1 }]}
+            >
               <Text
-                accessibilityRole="header"
-                maxFontSizeMultiplier={CHROME_MAX_FONT_SIZE_MULTIPLIER}
-                style={[styles.heading, { color: theme.colors.text }]}
+                accessible={false}
+                maxFontSizeMultiplier={1}
+                style={[styles.moreGlyph, { color: theme.colors.textSecondary }]}
               >
-                {heading}
+                …
               </Text>
-              {supportingText ? (
-                <Text
-                  maxFontSizeMultiplier={1.25}
-                  style={[styles.supportingText, { color: theme.colors.textSecondary }]}
-                >
-                  {supportingText}
-                </Text>
-              ) : null}
-            </View>
-          ) : null}
+            </Pressable>
+          </View>
+        </View>
 
-          <View style={styles.presentationNavigation}>{presentationNavigation}</View>
-        </Animated.View>
-      ) : null}
-    </Animated.View>
+        <View style={styles.presentationNavigation}>{presentationNavigation}</View>
+      </Animated.View>
+    </View>
   );
 });
 
@@ -138,9 +118,10 @@ const styles = StyleSheet.create({
   },
   expandedChrome: {
     width: '100%',
+    overflow: 'hidden',
   },
   brandRow: {
-    minHeight: 54,
+    height: 54,
     paddingHorizontal: 18,
     paddingTop: 8,
     flexDirection: 'row',
@@ -206,24 +187,8 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     marginTop: -5,
   },
-  headingGroup: {
-    paddingHorizontal: 18,
-    paddingTop: 2,
-    paddingBottom: 8,
-  },
-  heading: {
-    fontSize: 29,
-    lineHeight: 33,
-    fontWeight: '800',
-    letterSpacing: -0.9,
-  },
-  supportingText: {
-    marginTop: 2,
-    fontSize: 13,
-    lineHeight: 18,
-    fontWeight: '500',
-  },
   presentationNavigation: {
     width: '100%',
+    height: 44,
   },
 });
