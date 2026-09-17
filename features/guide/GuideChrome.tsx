@@ -7,14 +7,15 @@ import { useTeeveeTheme } from '@/theme/useTeeveeTheme';
 
 import {
   COMPACT_GUIDE_MAX_FONT_SIZE_MULTIPLIER,
-  PER_CHANNEL_TYPOGRAPHY,
+  GUIDE_TYPOGRAPHY,
+  GUIDE_VISUAL_METRICS,
   PER_CHANNEL_VISUAL_METRICS,
-} from './perChannelVisualMetrics';
+} from './guideVisualMetrics';
 
-const BRAND_TOP_INSET = 10;
-const BRAND_ROW_HEIGHT = 50;
-const PRESENTATION_NAV_HEIGHT = 52;
-const EXPANDED_CHROME_HEIGHT = BRAND_TOP_INSET + BRAND_ROW_HEIGHT + PRESENTATION_NAV_HEIGHT;
+const EXPANDED_CHROME_HEIGHT =
+  GUIDE_VISUAL_METRICS.brandTopInset +
+  GUIDE_VISUAL_METRICS.brandMarkBoxHeight +
+  GUIDE_VISUAL_METRICS.presentationNavHeight;
 
 type GuideChromeProps = {
   condensed: boolean;
@@ -81,7 +82,7 @@ export const GuideChrome = memo(function GuideChrome({
               onPress={() => router.push('/search')}
               style={({ pressed }) => [
                 styles.iconButton,
-                { opacity: pressed ? PER_CHANNEL_VISUAL_METRICS.controlPressedOpacity : 1 },
+                { opacity: pressed ? GUIDE_VISUAL_METRICS.controlPressOpacity : 1 },
               ]}
             >
               <SearchGlyph color={theme.colors.textSecondary} />
@@ -93,7 +94,7 @@ export const GuideChrome = memo(function GuideChrome({
               onPress={() => router.push('/settings')}
               style={({ pressed }) => [
                 styles.iconButton,
-                { opacity: pressed ? PER_CHANNEL_VISUAL_METRICS.controlPressedOpacity : 1 },
+                { opacity: pressed ? GUIDE_VISUAL_METRICS.controlPressOpacity : 1 },
               ]}
             >
               <Text accessible={false} maxFontSizeMultiplier={1} style={[styles.moreGlyph, { color: theme.colors.textSecondary }]}>…</Text>
@@ -116,21 +117,21 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
   brandRow: {
-    height: BRAND_TOP_INSET + BRAND_ROW_HEIGHT,
-    paddingHorizontal: PER_CHANNEL_VISUAL_METRICS.screenInsetX,
-    paddingTop: BRAND_TOP_INSET,
+    height: GUIDE_VISUAL_METRICS.brandTopInset + GUIDE_VISUAL_METRICS.brandMarkBoxHeight,
+    paddingHorizontal: GUIDE_VISUAL_METRICS.screenInsetX,
+    paddingTop: GUIDE_VISUAL_METRICS.brandTopInset,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
   },
   brandMark: {
-    width: 64,
-    height: BRAND_ROW_HEIGHT,
+    width: GUIDE_VISUAL_METRICS.brandMarkBoxWidth,
+    height: GUIDE_VISUAL_METRICS.brandMarkBoxHeight,
     flexDirection: 'row',
     alignItems: 'center',
   },
   brandText: {
-    ...PER_CHANNEL_TYPOGRAPHY.brand,
+    ...GUIDE_TYPOGRAPHY.brandMark,
     letterSpacing: -1.6,
   },
   brandDot: {
@@ -180,6 +181,6 @@ const styles = StyleSheet.create({
   },
   presentationNavigation: {
     width: '100%',
-    height: PRESENTATION_NAV_HEIGHT,
+    height: GUIDE_VISUAL_METRICS.presentationNavHeight,
   },
 });
