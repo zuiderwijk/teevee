@@ -1,7 +1,7 @@
 # Per zender — current accepted visual
 
 Status: **ACCEPTED**
-Accepted: 2026-09-13; day-selector and Primetime behaviour amended 2026-09-15; accepted visual refinement amended 2026-09-17; selected-channel-heading removal accepted 2026-09-18
+Accepted: 2026-09-13; day-selector and Primetime behaviour amended 2026-09-15; accepted visual refinement amended 2026-09-17; selected-channel-heading removal and current-programme spacing refinement accepted 2026-09-18
 
 ## Canonical asset
 - Light + dark reference: `/Teevee/TV-gids app in licht en donker thema.png`
@@ -68,7 +68,7 @@ Per-zender programme titles are slightly quieter than the earlier production cal
 - standard programme title: **17/21, weight 500**;
 - current programme title: **19/23, weight 700**;
 - programme time remains **16/20, weight 400**;
-- current description remains **15/18, weight 400**.
+- current-description density from this refinement is superseded by the 2026-09-18 current-programme spacing refinement below.
 
 This is a Per-zender surface-specific calibration. It does not change Instrument Sans as the accepted Teevee UI family or automatically change typography on other product surfaces.
 
@@ -109,12 +109,27 @@ Do not add arrows, fade masks, gradients, page dots or permanent swipe-help text
 - The compact textual channel name in the condensed channel/date context (`NPO 3 · Do 17 sep`, etc.) remains accepted and required for orientation.
 - This refinement removes only the large rest-state heading; it does not reopen spacing, channel-strip, temporal-control, programme-list or gesture decisions.
 
+### Current-programme spacing refinement
+The current-programme row intentionally receives substantially more breathing room. This is owner-approved premium-density calibration, not a card treatment.
+
+- current row base height: **176 pt** at fontScale 1.0;
+- current title remains **19/23, weight 700**;
+- title → description gap: **10 pt**;
+- current description: **15/22, weight 400**, maximum **4 lines**;
+- when four description lines are present, preserve at least **20 pt** clear space before the progressbar;
+- current content top inset remains **14 pt**;
+- progressbar remains **4 pt** high with **16 pt** bottom inset;
+- standard non-current rows remain **52 pt** at fontScale 1.0;
+- no permanent background, radius, card chrome or additional current indicator is introduced.
+
+The accepted visual intent is deliberately more spacious and editorial: title, synopsis and progress must read as three distinct layers rather than one compressed block.
+
 ## Explicitly not accepted in this refinement
 - No one-time horizontal swipe nudge/peek is canonical yet; it remains a separate interaction refinement requiring explicit acceptance after physical/interaction validation.
 - No `•••` overflow entry is added here; that remains a future shared-header/application-IA decision rather than a Per-zender-only refinement.
 
 ## Screenshot authority note
-The exact historical date choices shown in the original 13 September image are **SUPERSEDED** by `GUIDE_DAY_SELECTOR.md` and the two accepted day-selector assets above. The rest of the Per-zender list/strip composition remains canonical except for the explicit 2026-09-17 refinements and the 2026-09-18 removal of the large rest-state selected-channel heading documented above.
+The exact historical date choices shown in the original 13 September image are **SUPERSEDED** by `GUIDE_DAY_SELECTOR.md` and the two accepted day-selector assets above. The rest of the Per-zender list/strip composition remains canonical except for the explicit 2026-09-17 refinements and the 2026-09-18 removal of the large rest-state selected-channel heading plus current-programme spacing refinement documented above.
 
 The `Primetime` shortcut visible in the original Per-zender visual is **ACCEPTED** again by owner decision on 2026-09-15. The historical expanded time-picker is not accepted. Any accepted historical Per-zender visual that shows a separate large textual selected-channel heading in expanded/rest state is stale for that element only. The sticky/condensed day-selector board also predates later amendments and is stale where its Per-zender condensed row omits `Primetime`, and for the 72-pt condensed channel-strip height and old static utility treatments; the written rules above win for those details.
 
@@ -133,4 +148,5 @@ Also superseded by the 2026-09-17 refinement:
 - a permanently 72-pt channel strip in settled condensed state;
 - 18/22 standard programme-title calibration and 20/24 current-title calibration for Per zender;
 - programme-row interaction feedback that relies only on generic opacity rather than the accepted temporary surface fill;
-- the separate large textual selected-channel heading in expanded/rest state. The compact textual channel name in condensed context remains accepted.
+- the separate large textual selected-channel heading in expanded/rest state. The compact textual channel name in condensed context remains accepted;
+- the former compressed current-programme calibration: 120-pt base row, 15/18 description capped at 3 lines, 2-pt title→description gap and the resulting minimal description→progress clearance.
