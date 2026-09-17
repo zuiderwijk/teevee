@@ -22,6 +22,8 @@ export const TEEVEE_FONT_WEIGHTS = {
   bold: '700',
 } as const;
 
+// Keep this source/version pinned with package.json and package-lock.json so the
+// accepted family and the distributed static assets cannot drift independently.
 export const INSTRUMENT_SANS_RUNTIME = {
   enabled: true,
   package: '@expo-google-fonts/instrument-sans@0.4.2',
