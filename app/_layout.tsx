@@ -3,7 +3,8 @@ import { StatusBar } from 'expo-status-bar';
 
 import { AppScreenErrorBoundary } from '@/components/AppScreenErrorBoundary';
 import { AppearancePreferenceProvider } from '@/features/settings/AppearancePreferenceProvider';
-import { TEEVEE_FONT_FAMILIES, useTeeveeFonts } from '@/theme/typography';
+import { TEEVEE_FONT_FAMILIES } from '@/theme/typography';
+import { useTeeveeFonts } from '@/theme/useTeeveeFonts';
 import { useTeeveeTheme } from '@/theme/useTeeveeTheme';
 
 function ThemedTabs() {
