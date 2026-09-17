@@ -1,4 +1,4 @@
-import { Platform, Pressable, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
+import { Pressable, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 
 import { TEEVEE_FONT_FAMILIES } from '@/theme/typography';
 import { useTeeveeTheme } from '@/theme/useTeeveeTheme';
@@ -7,7 +7,6 @@ import {
   COMPACT_GUIDE_MAX_FONT_SIZE_MULTIPLIER,
   GUIDE_TYPOGRAPHY,
   GUIDE_VISUAL_METRICS,
-  minimumTouchTargetForPlatform,
 } from './guideVisualMetrics';
 import { GUIDE_PRESENTATIONS, type GuidePresentation } from './guidePresentation';
 
@@ -27,7 +26,6 @@ export function GuidePresentationSelector({
   const theme = useTeeveeTheme();
   const { width } = useWindowDimensions();
   const tabs = variant === 'tabs';
-  const minimumTouchTarget = minimumTouchTargetForPlatform(Platform?.OS);
   const tabWidth = Math.max(
     0,
     (width - GUIDE_VISUAL_METRICS.screenInsetX * 2) / GUIDE_PRESENTATIONS.length,
@@ -61,7 +59,6 @@ export function GuidePresentationSelector({
             onPress={() => onSelect(presentation.id)}
             style={({ pressed }) => [
               tabs ? styles.tabItem : styles.pillItem,
-              tabs ? { minHeight: minimumTouchTarget } : null,
               tabs
                 ? null
                 : { backgroundColor: active ? theme.colors.accent : 'transparent' },
@@ -144,6 +141,7 @@ const styles = StyleSheet.create({
   tabItem: {
     position: 'relative',
     flex: 1,
+    minHeight: GUIDE_VISUAL_METRICS.minimumTouchTarget,
     alignItems: 'center',
     justifyContent: 'center',
   },
