@@ -9,9 +9,15 @@ import {
   View,
 } from 'react-native';
 
+import { TEEVEE_FONT_FAMILIES } from '@/theme/typography';
 import { useTeeveeTheme } from '@/theme/useTeeveeTheme';
 
 import { guideDayLabel, guideDayOptions } from './guideDaySelection';
+import {
+  COMPACT_GUIDE_MAX_FONT_SIZE_MULTIPLIER,
+  minimumTouchTargetForPlatform,
+  PER_CHANNEL_TYPOGRAPHY,
+} from './perChannelVisualMetrics';
 
 type GuideDaySelectorProps = {
   selectedDayStartMs: number;
@@ -35,6 +41,7 @@ export const GuideDaySelector = memo(function GuideDaySelector({
   const options = useMemo(() => guideDayOptions(nowMs), [nowMs]);
   const selectedLabel = guideDayLabel(selectedDayStartMs, nowMs);
   const visibleLabel = compactPrefix ? `${compactPrefix} · ${selectedLabel}` : selectedLabel;
+  const minimumTouchTarget = minimumTouchTargetForPlatform();
 
   const selectDay = (dayStartMs: number) => {
     setOpen(false);
@@ -54,18 +61,49 @@ export const GuideDaySelector = memo(function GuideDaySelector({
         }
         accessibilityState={{ busy: loading }}
         onPress={() => setOpen(true)}
-        style={({ pressed }) => [styles.inlineControl, { opacity: pressed ? 0.55 : 1 }]}
+        style={({ pressed }) => [
+          styles.inlineControl,
+          { minHeight: minimumTouchTarget, opacity: pressed ? 0.64 : 1 },
+        ]}
       >
-        <Text style={[styles.inlineLabel, { color: theme.colors.text }]}>{visibleLabel}</Text>
-        <Text accessible={false} style={[styles.disclosure, { color: theme.colors.textMuted }]}>⌄</Text>
+        <View style={styles.inlineTextGroup}>
+          {compactPrefix ? (
+            <>
+              <Text
+                numberOfLines={1}
+                maxFontSizeMultiplier={COMPACT_GUIDE_MAX_FONT_SIZE_MULTIPLIER}
+                style={[styles.compactPrefix, { color: theme.colors.text }]}
+              >
+                {compactPrefix}
+              </Text>
+              <Text
+                maxFontSizeMultiplier={COMPACT_GUIDE_MAX_FONT_SIZE_MULTIPLIER}
+                style={[styles.compactDate, { color: theme.colors.text }]}
+              >
+                {' · '}{selectedLabel}
+              </Text>
+            </>
+          ) : (
+            <Text
+              numberOfLines={1}
+              maxFontSizeMultiplier={COMPACT_GUIDE_MAX_FONT_SIZE_MULTIPLIER}
+              style={[styles.inlineLabel, { color: theme.colors.text }]}
+            >
+              {selectedLabel}
+            </Text>
+          )}
+        </View>
+        <View accessible={false} style={styles.chevronBox}>
+          <Text
+            maxFontSizeMultiplier={1}
+            style={[styles.disclosure, { color: theme.colors.textSecondary }]}
+          >
+            ⌄
+          </Text>
+        </View>
       </Pressable>
 
-      <Modal
-        animationType="slide"
-        transparent
-        visible={open}
-        onRequestClose={() => setOpen(false)}
-      >
+      <Modal animationType="slide" transparent visible={open} onRequestClose={() => setOpen(false)}>
         <View style={styles.modalRoot}>
           <Pressable
             accessible={false}
@@ -76,10 +114,7 @@ export const GuideDaySelector = memo(function GuideDaySelector({
           <SafeAreaView
             style={[
               styles.sheet,
-              {
-                backgroundColor: theme.colors.surface,
-                borderColor: theme.colors.border,
-              },
+              { backgroundColor: theme.colors.surface, borderColor: theme.colors.border },
             ]}
           >
             <View style={[styles.handle, { backgroundColor: theme.colors.border }]} />
@@ -90,16 +125,12 @@ export const GuideDaySelector = memo(function GuideDaySelector({
                 accessibilityLabel="Sluit dagkiezer"
                 hitSlop={8}
                 onPress={() => setOpen(false)}
-                style={({ pressed }) => [styles.closeButton, { opacity: pressed ? 0.55 : 1 }]}
+                style={({ pressed }) => [styles.closeButton, { opacity: pressed ? 0.64 : 1 }]}
               >
                 <Text accessible={false} style={[styles.closeText, { color: theme.colors.text }]}>×</Text>
               </Pressable>
             </View>
-            <ScrollView
-              bounces={false}
-              showsVerticalScrollIndicator={false}
-              contentContainerStyle={styles.optionList}
-            >
+            <ScrollView bounces={false} showsVerticalScrollIndicator={false} contentContainerStyle={styles.optionList}>
               {options.map((window) => {
                 const selected = window.fromMs === selectedDayStartMs;
                 const label = guideDayLabel(window.fromMs, nowMs);
@@ -116,7 +147,7 @@ export const GuideDaySelector = memo(function GuideDaySelector({
                       {
                         borderBottomColor: theme.colors.border,
                         backgroundColor: selected ? theme.colors.surfaceElevated : theme.colors.surface,
-                        opacity: pressed ? 0.65 : 1,
+                        opacity: pressed ? 0.64 : 1,
                       },
                     ]}
                   >
@@ -129,12 +160,7 @@ export const GuideDaySelector = memo(function GuideDaySelector({
                       {label}
                     </Text>
                     {selected ? (
-                      <Text
-                        accessible={false}
-                        style={[styles.selectedMark, { color: theme.colors.currentTime }]}
-                      >
-                        ✓
-                      </Text>
+                      <Text accessible={false} style={[styles.selectedMark, { color: theme.colors.currentTime }]}>✓</Text>
                     ) : null}
                   </Pressable>
                 );
@@ -149,24 +175,40 @@ export const GuideDaySelector = memo(function GuideDaySelector({
 
 const styles = StyleSheet.create({
   inlineControl: {
-    minHeight: 48,
     minWidth: 44,
     flexShrink: 1,
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 5,
-    paddingVertical: 8,
-    paddingHorizontal: 2,
+    gap: 6,
+  },
+  inlineTextGroup: {
+    minWidth: 0,
+    flexShrink: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
   },
   inlineLabel: {
     flexShrink: 1,
-    fontSize: 14,
-    lineHeight: 19,
-    fontWeight: '700',
+    ...PER_CHANNEL_TYPOGRAPHY.daySelector,
+  },
+  compactPrefix: {
+    flexShrink: 1,
+    ...PER_CHANNEL_TYPOGRAPHY.compactChannelPrefix,
+  },
+  compactDate: {
+    flexShrink: 0,
+    ...PER_CHANNEL_TYPOGRAPHY.compactDate,
+  },
+  chevronBox: {
+    width: 14,
+    height: 18,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   disclosure: {
-    fontSize: 15,
-    fontWeight: '700',
+    fontFamily: TEEVEE_FONT_FAMILIES.semibold,
+    fontSize: 14,
+    lineHeight: 16,
   },
   modalRoot: {
     flex: 1,
@@ -200,9 +242,9 @@ const styles = StyleSheet.create({
   },
   sheetTitle: {
     flexShrink: 1,
+    fontFamily: TEEVEE_FONT_FAMILIES.bold,
     fontSize: 18,
     lineHeight: 24,
-    fontWeight: '800',
   },
   closeButton: {
     width: 48,
@@ -211,9 +253,9 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   closeText: {
+    fontFamily: TEEVEE_FONT_FAMILIES.regular,
     fontSize: 28,
     lineHeight: 30,
-    fontWeight: '400',
   },
   optionList: {
     paddingHorizontal: 12,
@@ -231,13 +273,13 @@ const styles = StyleSheet.create({
   },
   optionLabel: {
     flexShrink: 1,
+    fontFamily: TEEVEE_FONT_FAMILIES.semibold,
     fontSize: 15,
     lineHeight: 21,
-    fontWeight: '600',
   },
   selectedMark: {
+    fontFamily: TEEVEE_FONT_FAMILIES.bold,
     fontSize: 18,
     lineHeight: 22,
-    fontWeight: '800',
   },
 });
