@@ -109,6 +109,14 @@ export default function GuideScreen() {
   );
 
   const guideKey = `guide-data-${guideDataVersion}`;
+  const perChannelPresentationNavigation = (
+    <GuidePresentationSelector
+      selected={presentation}
+      loadingPresentation={nowNextLoading ? 'now-next' : null}
+      onSelect={selectPresentation}
+      variant="tabs"
+    />
+  );
 
   return (
     <>
@@ -122,7 +130,7 @@ export default function GuideScreen() {
         <PerChannelGuideView
           guideDataVersion={guideDataVersion}
           onSelectProgramme={openDetail}
-          headerAction={settingsAction}
+          presentationNavigation={perChannelPresentationNavigation}
         />
       ) : (
         <GuideView
@@ -136,13 +144,15 @@ export default function GuideScreen() {
         <NowNextLoadErrorNotice onRetry={() => void loadAndShowNowNext()} />
       ) : null}
 
-      <View pointerEvents="box-none" style={styles.presentationSelectorDock}>
-        <GuidePresentationSelector
-          selected={presentation}
-          loadingPresentation={nowNextLoading ? 'now-next' : null}
-          onSelect={selectPresentation}
-        />
-      </View>
+      {!showPerChannel ? (
+        <View pointerEvents="box-none" style={styles.presentationSelectorDock}>
+          <GuidePresentationSelector
+            selected={presentation}
+            loadingPresentation={nowNextLoading ? 'now-next' : null}
+            onSelect={selectPresentation}
+          />
+        </View>
+      ) : null}
 
       <ProgrammeDetail state={detail} onClose={closeDetail} />
     </>
