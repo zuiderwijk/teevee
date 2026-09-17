@@ -82,17 +82,12 @@ afterEach(async () => {
 });
 
 describe('GuideChrome', () => {
-  it('keeps presentation switching available when the non-functional header condenses', async () => {
-    const switchPresentation = vi.fn();
+  it('removes non-essential brand and presentation chrome when condensed', async () => {
     await act(async () => {
       root.render(
         <GuideChrome
           condensed
-          presentationNavigation={(
-            <button data-testid="presentation-navigation" onClick={switchPresentation}>
-              tabs
-            </button>
-          )}
+          presentationNavigation={<button data-testid="presentation-navigation">tabs</button>}
           heading="Gids"
           supportingText="Alle zenders, één overzicht"
         />,
@@ -100,17 +95,13 @@ describe('GuideChrome', () => {
     });
 
     expect(container.querySelector('[data-testid="guide-chrome-condensed"]')).not.toBeNull();
-    const presentationNavigation = container.querySelector<HTMLButtonElement>(
-      '[data-testid="presentation-navigation"]',
-    );
-    expect(presentationNavigation).not.toBeNull();
-    await act(async () => presentationNavigation?.click());
-    expect(switchPresentation).toHaveBeenCalledOnce();
+    expect(container.querySelector('[data-testid="presentation-navigation"]')).toBeNull();
     expect(container.querySelector('[data-testid="guide-search-action"]')).toBeNull();
+    expect(container.querySelector('[data-testid="guide-settings-action"]')).toBeNull();
     expect(container.textContent).not.toContain('Gids');
   });
 
-  it('keeps search/settings reachable and bounds compact chrome scaling when expanded', async () => {
+  it('keeps presentation switching, search/settings and bounded scaling when expanded', async () => {
     await act(async () => {
       root.render(
         <GuideChrome
@@ -122,6 +113,7 @@ describe('GuideChrome', () => {
       );
     });
 
+    expect(container.querySelector('[data-testid="presentation-navigation"]')).not.toBeNull();
     const search = container.querySelector<HTMLButtonElement>('[data-testid="guide-search-action"]');
     const settings = container.querySelector<HTMLButtonElement>('[data-testid="guide-settings-action"]');
     expect(search?.getAttribute('aria-label')).toBe('Zoeken');
