@@ -381,10 +381,11 @@ export const PerChannelGuideView = memo(function PerChannelGuideView({
           0,
           y - progress * PER_CHANNEL_VISUAL_METRICS.collapseDistance,
         );
+        collapseEnabled.value = 1;
       }
       scheduleRef.current?.scrollTo({ y, animated });
     },
-    [collapseAnchorY, collapseProgress],
+    [collapseAnchorY, collapseEnabled, collapseProgress],
   );
 
   const syncViewedTimestamp = useCallback((y: number) => {
@@ -413,6 +414,7 @@ export const PerChannelGuideView = memo(function PerChannelGuideView({
   const scheduleScrollHandler = useAnimatedScrollHandler(
     {
       onBeginDrag: (event) => {
+        if (collapseEnabled.value !== 0) return;
         const y = Math.max(0, event.contentOffset.y);
         collapseAnchorY.value = Math.max(
           0,
