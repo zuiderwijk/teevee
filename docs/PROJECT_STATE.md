@@ -1,6 +1,6 @@
 # Teevee — Canonical Project State
 
-Last updated: 2026-09-16.
+Last updated: 2026-09-17.
 Status: ACTIVE — **Phase 4 Core Guide MVP hardening**.
 Current phase: **Phase 4 — Core Guide MVP hardening**
 Previous phase: **Phase 3 — Real Data Vertical Slice — CLOSED**
@@ -23,7 +23,7 @@ Previous phase: **Phase 3 — Real Data Vertical Slice — CLOSED**
 2. **Phase 1B — Per zender / Nu & Straks:** complete and physically accepted on iPhone.
 3. **Phase 2 — App Shell:** complete and physically accepted on iPhone.
 4. **Phase 3 — Real Data Vertical Slice:** complete and physically accepted on iPhone. Real provider -> hosted ingest -> canonical persistence -> public typed read -> mobile canonical datasource is proven, including fixture-first startup, real-data transition, fallback and context retention.
-5. **Phase 4 — Core Guide MVP hardening:** active. The 06:00 television-day foundation, television-day-aware runtime, D-2..D+7 day navigation/date context and the measured Totaal cold-switch performance hardening are merged, independently QA-reviewed where required and physically accepted on iPhone.
+5. **Phase 4 — Core Guide MVP hardening:** active. The 06:00 television-day foundation, television-day-aware runtime, D-2..D+7 day navigation/date context and the measured Totaal cold-switch performance hardening are merged, independently QA-reviewed where required and physically accepted on iPhone. PR #78 is the active complete Guide visual-convergence candidate; it is not yet physically accepted, independently QA-approved or merged.
 
 ## Frozen television-day and Guide-horizon semantics
 ADR 0008 is canonical:
@@ -96,10 +96,21 @@ Focused PR #74 physical proof before the final animated-`Nu` correction:
 
 Independent QA then found one blocking animated same-window `Nu` ownership case. Development corrected it so animated programmatic scrolling leaves programme-window ownership tied to actual native scroll offsets. QA re-reviewed the final exact head with the blocker closed. Final focused physical iPhone acceptance passed Totaal day-switch responsiveness, animated same-window `Nu` continuity, hard horizontal fling/bounce and normal Guide scrolling. No persistent cache, eager horizon prefetch, provider/data-contract change, new dependency or full FlatList/FlashList virtualization was introduced.
 
+## Active Phase 4 Guide visual-convergence candidate
+PR #78 has been expanded from isolated chrome convergence to one complete physical-review candidate for all three Guide presentations. Canonical repository designs and visual manifests remain authoritative; earlier red-zone annotations are no longer the scope boundary.
+
+The active branch candidate now includes:
+- **Totaal:** shared Guide chrome, logo-first rail, restrained time axis/current-time badge and an open schedule body without permanent filled/rounded programme cards or in-cell current progress bars. Existing horizontal/vertical native scrolling, real-duration geometry, partial-left readability and PR #74 programme windowing remain intact.
+- **Per zender:** shared/sticky Guide chrome, logo-first channel strip, date/Primetime/Nu context and an open programme-aligned time/title schedule. The schedule-wide current-time line and current filled/red-border stack are removed; one restrained row-local progress treatment remains for current programmes where real programme height permits it. Base schedule density is reduced toward the canonical reference while larger system text proportionally expands the minute scale rather than flattening wall-clock geometry.
+- **Nu & Straks:** shared time/reference model and chrome remain intact; channel content is denser and logo-first, the reference programme stays dominant, exactly three following programmes remain subordinate, and duplicate visible live-state copy is removed while accessibility still exposes current status.
+- **Shared:** light/dark/system continue through semantic theme tokens; no Söhne files, new dependencies, persistent cache, provider contract or native configuration were introduced; Programme Detail remains outside the redesign scope.
+
+This is **implementation-candidate state only**. PR #78 must not merge and must not be sent to Independent QA before physical iPhone product/visual acceptance. Exact-head CI evidence belongs in the PR handoff and must be green for the head used on-device.
+
 ## Remaining Phase 4 responsibilities
-- bring implemented Guide surfaces into the already accepted visual baseline without reopening frozen interaction mechanics;
+- complete physical iPhone product/visual acceptance of the full PR #78 Guide candidate, then run Independent QA on exactly the physically accepted head before any merge decision;
 - production-quality Programme Detail actions (`Herinner mij` + `Bewaar`) and contextual sticky bottom copies as a separate coherent increment;
-- revisit known Nu & Straks density/accessibility debt without overlapping touch targets;
+- revisit any remaining Nu & Straks density/accessibility debt found by physical review without overlapping touch targets;
 - decide local schedule persistence/cache only if measured MVP/offline requirements justify it;
 - preserve schedule refresh/date/channel/time context and deterministic fixture fallback;
 - physical Android interaction acceptance remains open until an Android device is available.
@@ -122,9 +133,9 @@ Physical Android interaction acceptance remains OPEN/DEFERRED because no Android
 - physical Android validation.
 
 ## EXACT NEXT STEP
-**Start the accepted Guide visual-convergence implementation with the smallest coherent Totaal increment. Read `docs/VISUAL_BASELINE.md`, the Totaal manifest under `design/current/`, `docs/TOTAAL_VISUAL_CONVERGENCE.md`, `docs/UX.md` and `docs/DESIGN_SYSTEM.md`, then inspect the current `GuideView` implementation before changing it. Bring the shared/Totaal Guide chrome toward the accepted visual baseline without changing frozen gestures, programme geometry, D-2..D+7 or 06:00 semantics, programme-windowing performance architecture, loading/cache/provider contracts or Programme Detail navigation. Do not incorporate unapproved ongoing brand/color exploration. Keep the increment visually reviewable and small enough to isolate regressions; run the full relevant automated checks and require physical iPhone visual/interaction acceptance before declaring the visual increment complete.**
+**Perform physical iPhone product/visual acceptance on the exact CI-green head of PR #78 as one complete three-presentation Guide review: Totaal, Per zender and Nu & Straks in light/dark/system, including programme bodies, sticky states, Dynamic Type, native gestures, Programme Detail round-trips and the post-PR #74 Totaal performance/blank-gap regression checks. If physical review finds anything, fix it in Development and repeat exact-head CI + physical review. Only after explicit physical acceptance may that exact head go to Independent QA. Do not merge PR #78 before both gates are complete.**
 
 Owner checkout: `~/projects/teevee`.
 
 ## Resume instruction
-> Read `AGENTS.md`, this file, `docs/ENGINEERING_QUALITY_POLICY.md`, ADR 0007, ADR 0008 and the visual handoff documents before changing the repository. Phase 1A, Phase 1B, Phase 2 and Phase 3 are closed on iPhone. Phase 4 is active. PRs #62, #64 and #66 established the television-day/runtime/day-navigation foundation. Issues #67/#70/#73 and PRs #71/#74 closed the measured Totaal cold-switch performance problem on iPhone. Preserve the accepted performance architecture and frozen Guide mechanics. The single next increment is Totaal visual convergence against the already accepted visual baseline; unapproved brand exploration remains outside production scope.
+> Read `AGENTS.md`, this file, `docs/ENGINEERING_QUALITY_POLICY.md`, ADR 0007, ADR 0008 and the visual handoff documents before changing the repository. Phase 1A, Phase 1B, Phase 2 and Phase 3 are closed on iPhone. Phase 4 is active. PRs #62, #64 and #66 established the television-day/runtime/day-navigation foundation. Issues #67/#70/#73 and PRs #71/#74 closed the measured Totaal cold-switch performance problem on iPhone. Preserve the accepted performance architecture and frozen Guide mechanics. PR #78 is the active complete Guide visual-convergence candidate across Totaal, Per zender and Nu & Straks. Its next gate is physical iPhone product/visual acceptance on an exact CI-green head; only after explicit physical acceptance may that exact head go to Independent QA. Unapproved brand exploration remains outside production scope.
