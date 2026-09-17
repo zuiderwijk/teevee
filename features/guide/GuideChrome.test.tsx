@@ -16,6 +16,8 @@ type MockProps = {
   testID?: string;
   accessibilityLabel?: string;
   accessibilityRole?: string;
+  accessibilityElementsHidden?: boolean;
+  importantForAccessibility?: string;
   maxFontSizeMultiplier?: number;
   onPress?: () => void;
 };
@@ -28,6 +30,9 @@ vi.mock('react-native', () => {
         'data-testid': props.testID,
         'data-max-font-scale': props.maxFontSizeMultiplier,
         'aria-label': props.accessibilityLabel,
+        'aria-hidden': props.accessibilityElementsHidden || props.importantForAccessibility === 'no-hide-descendants'
+          ? true
+          : undefined,
         role: props.accessibilityRole,
         onClick: props.onPress,
       },
@@ -46,25 +51,17 @@ vi.mock('react-native', () => {
 });
 
 vi.mock('react-native-reanimated', async () => {
+  const { useState } = await import('react');
   const { View } = await import('react-native');
-  const transition = () => {
-    const builder = {
-      duration: () => builder,
-      easing: () => builder,
-      reduceMotion: () => builder,
-    };
-    return builder;
-  };
   return {
     default: { View },
-    Easing: {
-      cubic: 'cubic',
-      out: (value: unknown) => value,
-    },
-    FadeIn: transition(),
-    FadeOut: transition(),
-    LinearTransition: transition(),
     ReduceMotion: { System: 'system' },
+    useSharedValue: function useSharedValue<T>(initial: T) {
+      const [value] = useState(() => ({ value: initial }));
+      return value;
+    },
+    useAnimatedStyle: (callback: () => unknown) => callback(),
+    withSpring: (target: number) => target,
   };
 });
 
@@ -105,23 +102,19 @@ afterEach(async () => {
 });
 
 describe('GuideChrome', () => {
-  it('removes non-essential brand and presentation chrome when condensed', async () => {
+  it('hides non-essential brand and presentation chrome from interaction when condensed', async () => {
     await act(async () => {
       root.render(
         <GuideChrome
           condensed
           presentationNavigation={<button data-testid="presentation-navigation">tabs</button>}
-          heading="Gids"
-          supportingText="Alle zenders, één overzicht"
         />,
       );
     });
 
     expect(container.querySelector('[data-testid="guide-chrome-condensed"]')).not.toBeNull();
-    expect(container.querySelector('[data-testid="presentation-navigation"]')).toBeNull();
-    expect(container.querySelector('[data-testid="guide-search-action"]')).toBeNull();
-    expect(container.querySelector('[data-testid="guide-settings-action"]')).toBeNull();
-    expect(container.textContent).not.toContain('Gids');
+    expect(container.querySelector('[data-testid="guide-chrome-expanded-content"]')?.getAttribute('aria-hidden'))
+      .toBe('true');
   });
 
   it('keeps presentation switching, search/settings and bounded scaling when expanded', async () => {
@@ -130,8 +123,6 @@ describe('GuideChrome', () => {
         <GuideChrome
           condensed={false}
           presentationNavigation={<div data-testid="presentation-navigation">tabs</div>}
-          heading="Gids"
-          supportingText="Alle zenders, één overzicht"
         />,
       );
     });
@@ -146,7 +137,7 @@ describe('GuideChrome', () => {
       .map((node) => Number(node.getAttribute('data-max-font-scale')))
       .filter(Number.isFinite);
     expect(scalingCaps.length).toBeGreaterThan(0);
-    expect(Math.max(...scalingCaps)).toBeLessThanOrEqual(1.25);
+    expect(Math.max(...scalingCaps)).toBeLessThanOrEqual(1.15);
 
     await act(async () => search?.click());
     await act(async () => settings?.click());
