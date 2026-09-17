@@ -1,0 +1,35 @@
+name: Temporary DEVLOG structure correction
+
+on:
+  push:
+    branches:
+      - feat/per-channel-fixed-row-convergence
+
+permissions:
+  contents: write
+
+jobs:
+  fix-devlog:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - name: Move latest entry below the DEVLOG header
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          path = Path('docs/DEVLOG.md')
+          text = path.read_text()
+          header = '# Teevee Development Logboek\n'
+          header_index = text.index(header)
+          entry = text[:header_index].strip() + '\n\n'
+          body = text[header_index:]
+          marker = '---\n\n'
+          insert_at = body.index(marker) + len(marker)
+          path.write_text(body[:insert_at] + entry + body[insert_at:])
+          PY
+          rm .github/workflows/_temporary-devlog-order.yml
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add docs/DEVLOG.md .github/workflows/_temporary-devlog-order.yml
+          git commit -m 'Docs: restore DEVLOG structure'
+          git push origin HEAD:feat/per-channel-fixed-row-convergence
