@@ -350,7 +350,6 @@ export const PerChannelGuideView = memo(function PerChannelGuideView({
       <GuideChrome
         condensed={condensed}
         presentationNavigation={headerAction}
-        heading="Gids"
       />
 
       <ScrollView
