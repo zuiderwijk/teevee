@@ -1,7 +1,7 @@
 # Per zender — current accepted visual
 
 Status: **ACCEPTED**
-Accepted: 2026-09-13; day-selector and Primetime behaviour amended 2026-09-15; accepted visual refinement amended 2026-09-17
+Accepted: 2026-09-13; day-selector and Primetime behaviour amended 2026-09-15; accepted visual refinement amended 2026-09-17; selected-channel-heading removal accepted 2026-09-18
 
 ## Canonical asset
 - Light + dark reference: `/Teevee/TV-gids app in licht en donker thema.png`
@@ -13,7 +13,7 @@ Accepted: 2026-09-13; day-selector and Primetime behaviour amended 2026-09-15; a
   - `/Teevee/Teevee Guide day selector - sticky scroll behavior.png`
   - file id: `file_00000000314481f69f6a34d18ece1c21`
 
-The 2026-09-17 owner-approved refinement in this document supersedes the older visual references only for the explicitly listed refined details below. All other accepted composition remains unchanged.
+The 2026-09-17 owner-approved refinement in this document supersedes the older visual references only for the explicitly listed refined details below. The 2026-09-18 owner-approved refinement additionally removes the large textual selected-channel heading from the expanded/rest state. All other accepted composition remains unchanged.
 
 Detailed shared day-selector contract: `design/current/guide/GUIDE_DAY_SELECTOR.md`.
 Development-ready visual-convergence handoff: `docs/PER_ZENDER_VISUAL_CONVERGENCE.md`.
@@ -42,7 +42,8 @@ Development-ready visual-convergence handoff: `docs/PER_ZENDER_VISUAL_CONVERGENC
 - `Nu` is distinct from `Primetime`: it restores the actual current instant and corresponding television day.
 - During vertical schedule scrolling, non-functional brand/header chrome condenses away.
 - The channel-logo strip remains sticky and is followed by one compact sticky channel/date context row with `Primetime` and `Nu` available.
-- Do not keep a duplicate large channel heading in the condensed state.
+- Do not render a large textual selected-channel heading in the expanded/rest state; the selected channel is identified there by the selected logo in the rail.
+- In the condensed channel/date context, retain the compact textual channel name for orientation; this is not the removed large rest-state heading.
 - Date/time utilities must not intercept the accepted horizontal schedule swipe for adjacent channels.
 - Do not reintroduce the earlier full time-picker (`Vanmiddag`, `Vooravond`, `Kies tijd…`) as part of this decision; only the direct `Primetime` shortcut is accepted.
 
@@ -99,14 +100,23 @@ Do not add arrows, fade masks, gradients, page dots or permanent swipe-help text
 - Press fill clears on release/cancel.
 - Do not use strong whole-row opacity reduction as the primary pressed treatment.
 
+## Accepted refinement — 2026-09-18
+
+### Remove the large rest-state selected-channel heading
+- The separate large textual selected-channel heading below the channel-logo strip (`NPO 1`, `NPO 3`, etc.) is removed completely from the expanded/rest state.
+- The selected channel logo in the rail is the primary and sufficient channel identity in the expanded/rest state.
+- Do not replace the removed heading with another large label, badge or duplicate identity treatment.
+- The compact textual channel name in the condensed channel/date context (`NPO 3 · Do 17 sep`, etc.) remains accepted and required for orientation.
+- This refinement removes only the large rest-state heading; it does not reopen spacing, channel-strip, temporal-control, programme-list or gesture decisions.
+
 ## Explicitly not accepted in this refinement
 - No one-time horizontal swipe nudge/peek is canonical yet; it remains a separate interaction refinement requiring explicit acceptance after physical/interaction validation.
 - No `•••` overflow entry is added here; that remains a future shared-header/application-IA decision rather than a Per-zender-only refinement.
 
 ## Screenshot authority note
-The exact historical date choices shown in the original 13 September image are **SUPERSEDED** by `GUIDE_DAY_SELECTOR.md` and the two accepted day-selector assets above. The rest of the Per-zender list/strip composition remains canonical except for the explicit 2026-09-17 refinements documented above.
+The exact historical date choices shown in the original 13 September image are **SUPERSEDED** by `GUIDE_DAY_SELECTOR.md` and the two accepted day-selector assets above. The rest of the Per-zender list/strip composition remains canonical except for the explicit 2026-09-17 refinements and the 2026-09-18 removal of the large rest-state selected-channel heading documented above.
 
-The `Primetime` shortcut visible in the original Per-zender visual is **ACCEPTED** again by owner decision on 2026-09-15. The historical expanded time-picker is not accepted. The sticky/condensed day-selector board predates this amendment and is stale where its Per-zender condensed row omits `Primetime`, and is additionally stale for the 72-pt condensed channel-strip height and old static utility treatments; the written rules above win for those details.
+The `Primetime` shortcut visible in the original Per-zender visual is **ACCEPTED** again by owner decision on 2026-09-15. The historical expanded time-picker is not accepted. Any accepted historical Per-zender visual that shows a separate large textual selected-channel heading in expanded/rest state is stale for that element only. The sticky/condensed day-selector board also predates later amendments and is stale where its Per-zender condensed row omits `Primetime`, and for the 72-pt condensed channel-strip height and old static utility treatments; the written rules above win for those details.
 
 ## Superseded
 Earlier Per-zender mock-ups with programme imagery, genre descriptions, card-heavy programme rows or explicit previous/next channel arrows are not current and must not be used as a starting point.
@@ -122,4 +132,5 @@ Also superseded by the 2026-09-17 refinement:
 - treating `Nu` and `Primetime` only as static button visuals regardless of temporal context;
 - a permanently 72-pt channel strip in settled condensed state;
 - 18/22 standard programme-title calibration and 20/24 current-title calibration for Per zender;
-- programme-row interaction feedback that relies only on generic opacity rather than the accepted temporary surface fill.
+- programme-row interaction feedback that relies only on generic opacity rather than the accepted temporary surface fill;
+- the separate large textual selected-channel heading in expanded/rest state. The compact textual channel name in condensed context remains accepted.
