@@ -13,8 +13,7 @@ export const GUIDE_VISUAL_METRICS = {
   presentationIndicatorRadius: 1.25,
   controlPressOpacity: 0.64,
   disabledOpacity: 0.4,
-  touchTargetIos: 44,
-  touchTargetAndroid: 48,
+  minimumTouchTarget: 48,
 } as const;
 
 export const PER_CHANNEL_VISUAL_METRICS = {
@@ -127,12 +126,6 @@ export const GUIDE_TYPOGRAPHY = {
     lineHeight: 18,
   },
 } as const;
-
-export function minimumTouchTargetForPlatform(platform: string = 'ios') {
-  return platform === 'android'
-    ? GUIDE_VISUAL_METRICS.touchTargetAndroid
-    : GUIDE_VISUAL_METRICS.touchTargetIos;
-}
 
 export function standardProgrammeRowHeight(fontScale = 1) {
   const contentScale = Number.isFinite(fontScale) ? Math.max(1, fontScale) : 1;
