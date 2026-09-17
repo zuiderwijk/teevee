@@ -2,7 +2,7 @@
 
 Status: **IMPLEMENTATION HANDOFF — accepted baseline, no redesign**
 Date: 2026-09-15
-Owner-approved sources: `design/current/guide/TOTAAL.md`, `design/current/guide/GUIDE_DAY_SELECTOR.md`, `docs/VISUAL_BASELINE.md`, `docs/UX.md`, `docs/DESIGN_SYSTEM.md`.
+Owner-approved sources: `design/current/guide/TOTAAL.md`, `design/current/guide/GUIDE_DAY_SELECTOR.md`, `design/current/TYPOGRAPHY.md`, `docs/VISUAL_BASELINE.md`, `docs/UX.md`, `docs/DESIGN_SYSTEM.md`.
 
 ## Purpose
 
@@ -191,11 +191,13 @@ Do not let sticky chrome cover programme content or the system safe area.
 
 ## Typography
 
-- Use the repository's approved Söhne visual direction / eventual production equivalent; do not bundle unlicensed font files as part of this convergence task.
+- Use **Instrument Sans** as the accepted Teevee UI typeface, following `design/current/TYPOGRAPHY.md`; do not introduce Inter or another second sans-serif by default.
+- The Söhne-like family visible in historical canonical screenshots is superseded for family choice only; preserve the accepted hierarchy and composition.
 - Programme title hierarchy is more important than exact screenshot font size.
 - Secondary time text uses lower weight/contrast.
-- Avoid excessive boldness across every row.
-- Preserve tabular-number behaviour for times where technically appropriate.
+- Avoid excessive boldness across every row; prefer Regular / Medium / Semibold as the normal hierarchy.
+- Preserve tabular-number behaviour for times where Instrument Sans/runtime support it reliably.
+- Verify exact font source/licence, bundled weights, startup loading/fallback and physical iOS/Android rendering before shipping; do not commit arbitrary font binaries.
 
 ## Larger system text
 
