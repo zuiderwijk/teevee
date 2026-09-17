@@ -9,15 +9,16 @@ import {
   View,
 } from 'react-native';
 
-import { TEEVEE_FONT_FAMILIES } from '@/theme/typography';
+import { TEEVEE_FONT_WEIGHTS } from '@/theme/typography';
 import { useTeeveeTheme } from '@/theme/useTeeveeTheme';
 
 import { guideDayLabel, guideDayOptions } from './guideDaySelection';
 import {
   COMPACT_GUIDE_MAX_FONT_SIZE_MULTIPLIER,
+  GUIDE_TYPOGRAPHY,
+  GUIDE_VISUAL_METRICS,
   minimumTouchTargetForPlatform,
-  PER_CHANNEL_TYPOGRAPHY,
-} from './perChannelVisualMetrics';
+} from './guideVisualMetrics';
 
 type GuideDaySelectorProps = {
   selectedDayStartMs: number;
@@ -27,6 +28,14 @@ type GuideDaySelectorProps = {
   compactPrefix?: string | undefined;
   onSelectDay: (dayStartMs: number) => void;
 };
+
+function DisclosureChevron({ color }: { color: string }) {
+  return (
+    <View accessible={false} style={styles.chevronBox}>
+      <View style={[styles.chevron, { borderColor: color }]} />
+    </View>
+  );
+}
 
 export const GuideDaySelector = memo(function GuideDaySelector({
   selectedDayStartMs,
@@ -63,7 +72,10 @@ export const GuideDaySelector = memo(function GuideDaySelector({
         onPress={() => setOpen(true)}
         style={({ pressed }) => [
           styles.inlineControl,
-          { minHeight: minimumTouchTarget, opacity: pressed ? 0.64 : 1 },
+          {
+            minHeight: minimumTouchTarget,
+            opacity: pressed ? GUIDE_VISUAL_METRICS.controlPressOpacity : 1,
+          },
         ]}
       >
         <View style={styles.inlineTextGroup}>
@@ -77,10 +89,11 @@ export const GuideDaySelector = memo(function GuideDaySelector({
                 {compactPrefix}
               </Text>
               <Text
+                numberOfLines={1}
                 maxFontSizeMultiplier={COMPACT_GUIDE_MAX_FONT_SIZE_MULTIPLIER}
                 style={[styles.compactDate, { color: theme.colors.text }]}
               >
-                {' · '}{selectedLabel}
+                {` · ${selectedLabel}`}
               </Text>
             </>
           ) : (
@@ -93,14 +106,7 @@ export const GuideDaySelector = memo(function GuideDaySelector({
             </Text>
           )}
         </View>
-        <View accessible={false} style={styles.chevronBox}>
-          <Text
-            maxFontSizeMultiplier={1}
-            style={[styles.disclosure, { color: theme.colors.textSecondary }]}
-          >
-            ⌄
-          </Text>
-        </View>
+        <DisclosureChevron color={theme.colors.textSecondary} />
       </Pressable>
 
       <Modal animationType="slide" transparent visible={open} onRequestClose={() => setOpen(false)}>
@@ -125,12 +131,19 @@ export const GuideDaySelector = memo(function GuideDaySelector({
                 accessibilityLabel="Sluit dagkiezer"
                 hitSlop={8}
                 onPress={() => setOpen(false)}
-                style={({ pressed }) => [styles.closeButton, { opacity: pressed ? 0.64 : 1 }]}
+                style={({ pressed }) => [
+                  styles.closeButton,
+                  { opacity: pressed ? GUIDE_VISUAL_METRICS.controlPressOpacity : 1 },
+                ]}
               >
                 <Text accessible={false} style={[styles.closeText, { color: theme.colors.text }]}>×</Text>
               </Pressable>
             </View>
-            <ScrollView bounces={false} showsVerticalScrollIndicator={false} contentContainerStyle={styles.optionList}>
+            <ScrollView
+              bounces={false}
+              showsVerticalScrollIndicator={false}
+              contentContainerStyle={styles.optionList}
+            >
               {options.map((window) => {
                 const selected = window.fromMs === selectedDayStartMs;
                 const label = guideDayLabel(window.fromMs, nowMs);
@@ -147,7 +160,7 @@ export const GuideDaySelector = memo(function GuideDaySelector({
                       {
                         borderBottomColor: theme.colors.border,
                         backgroundColor: selected ? theme.colors.surfaceElevated : theme.colors.surface,
-                        opacity: pressed ? 0.64 : 1,
+                        opacity: pressed ? GUIDE_VISUAL_METRICS.controlPressOpacity : 1,
                       },
                     ]}
                   >
@@ -175,7 +188,7 @@ export const GuideDaySelector = memo(function GuideDaySelector({
 
 const styles = StyleSheet.create({
   inlineControl: {
-    minWidth: 44,
+    minWidth: GUIDE_VISUAL_METRICS.touchTargetIos,
     flexShrink: 1,
     flexDirection: 'row',
     alignItems: 'center',
@@ -188,16 +201,19 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   inlineLabel: {
+    ...GUIDE_TYPOGRAPHY.selectedDate,
     flexShrink: 1,
-    ...PER_CHANNEL_TYPOGRAPHY.daySelector,
+    letterSpacing: 0,
   },
   compactPrefix: {
+    ...GUIDE_TYPOGRAPHY.condensedChannelPrefix,
     flexShrink: 1,
-    ...PER_CHANNEL_TYPOGRAPHY.compactChannelPrefix,
+    letterSpacing: 0,
   },
   compactDate: {
+    ...GUIDE_TYPOGRAPHY.condensedDate,
     flexShrink: 0,
-    ...PER_CHANNEL_TYPOGRAPHY.compactDate,
+    letterSpacing: 0,
   },
   chevronBox: {
     width: 14,
@@ -205,10 +221,13 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  disclosure: {
-    fontFamily: TEEVEE_FONT_FAMILIES.semibold,
-    fontSize: 14,
-    lineHeight: 16,
+  chevron: {
+    width: 7,
+    height: 7,
+    marginTop: -3,
+    borderRightWidth: 1.5,
+    borderBottomWidth: 1.5,
+    transform: [{ rotate: '45deg' }],
   },
   modalRoot: {
     flex: 1,
@@ -242,9 +261,9 @@ const styles = StyleSheet.create({
   },
   sheetTitle: {
     flexShrink: 1,
-    fontFamily: TEEVEE_FONT_FAMILIES.bold,
     fontSize: 18,
     lineHeight: 24,
+    fontWeight: TEEVEE_FONT_WEIGHTS.bold,
   },
   closeButton: {
     width: 48,
@@ -253,9 +272,9 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   closeText: {
-    fontFamily: TEEVEE_FONT_FAMILIES.regular,
     fontSize: 28,
     lineHeight: 30,
+    fontWeight: TEEVEE_FONT_WEIGHTS.regular,
   },
   optionList: {
     paddingHorizontal: 12,
@@ -273,13 +292,13 @@ const styles = StyleSheet.create({
   },
   optionLabel: {
     flexShrink: 1,
-    fontFamily: TEEVEE_FONT_FAMILIES.semibold,
     fontSize: 15,
     lineHeight: 21,
+    fontWeight: TEEVEE_FONT_WEIGHTS.semibold,
   },
   selectedMark: {
-    fontFamily: TEEVEE_FONT_FAMILIES.bold,
     fontSize: 18,
     lineHeight: 22,
+    fontWeight: TEEVEE_FONT_WEIGHTS.bold,
   },
 });
