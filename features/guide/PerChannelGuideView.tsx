@@ -11,7 +11,12 @@ import {
   View,
 } from 'react-native';
 
-import { isProgrammeCurrent, type Channel, type GuideFixture } from '@/data/domain/epg';
+import {
+  isProgrammeCurrent,
+  programmeProgress,
+  type Channel,
+  type GuideFixture,
+} from '@/data/domain/epg';
 import { guideTelevisionDayStart, GUIDE_TIME_ZONE } from '@/data/domain/guideTime';
 import { buildRuntimeGuideFixture } from '@/data/fixtures/runtimeGuideFixture';
 import { useTeeveeTheme } from '@/theme/useTeeveeTheme';
@@ -42,7 +47,6 @@ const CHANNEL_STRIP_HEIGHT = 64;
 const TIME_GUTTER_WIDTH = 62;
 const NOW_TOP_INSET = 132;
 const HEADER_CONDENSE_THRESHOLD = 24;
-const HOUR_MS = 60 * 60 * 1000;
 
 type PerChannelGuideViewProps = {
   guideDataVersion: number;
@@ -68,12 +72,6 @@ function formatTime(timeMs: number) {
   });
 }
 
-function hourTicks(dayStartMs: number, dayEndMs: number) {
-  const ticks: number[] = [];
-  for (let tick = dayStartMs; tick <= dayEndMs; tick += HOUR_MS) ticks.push(tick);
-  return ticks;
-}
-
 function clampTime(timeMs: number, fromMs: number, toMs: number) {
   return Math.min(toMs - 1, Math.max(fromMs, timeMs));
 }
@@ -92,37 +90,21 @@ const SchedulePage = memo(function SchedulePage({
     () => programmesForChannelDay(fixture, channel.id, dayStartMs, dayEndMs),
     [channel.id, dayEndMs, dayStartMs, fixture],
   );
-  const ticks = useMemo(() => hourTicks(dayStartMs, dayEndMs), [dayEndMs, dayStartMs]);
   const height = ((dayEndMs - dayStartMs) / 60_000) * PER_CHANNEL_MINUTE_HEIGHT;
-  const nowInDay = nowMs >= dayStartMs && nowMs < dayEndMs;
 
   return (
     <View style={{ width, height }}>
-      {ticks.map((tick) => (
-        <View
-          key={tick}
-          pointerEvents="none"
-          accessible={false}
-          style={[
-            styles.hourTick,
-            {
-              top: scheduleYForTime(tick, dayStartMs),
-              borderTopColor: theme.colors.border,
-            },
-          ]}
-        >
-          <Text style={[styles.hourLabel, { color: theme.colors.textMuted }]}>{formatTime(tick)}</Text>
-        </View>
-      ))}
-
       {programmes.map((programme) => {
         const frame = programmeVerticalFrame(programme, dayStartMs, dayEndMs);
         const startMs = Date.parse(programme.startAt);
         const endMs = Date.parse(programme.endAt);
         const current = isProgrammeCurrent(programme, nowMs);
+        const progress = current ? programmeProgress(programme, nowMs) : 0;
         const compact = frame.height < 58;
         const veryCompact = frame.height < 42;
-        const timeText = current ? `Nu bezig · tot ${formatTime(endMs)}` : formatTime(startMs);
+        const showDescription =
+          current && frame.height >= 92 && Boolean(programme.description?.trim());
+        const showProgress = current && frame.height >= 58;
 
         return (
           <Pressable
@@ -137,57 +119,63 @@ const SchedulePage = memo(function SchedulePage({
               {
                 top: frame.top,
                 height: frame.height,
-                left: TIME_GUTTER_WIDTH,
-                right: 14,
                 borderBottomColor: theme.colors.border,
-                borderLeftColor: current ? theme.colors.currentTime : 'transparent',
-                backgroundColor: current ? theme.colors.surfaceElevated : 'transparent',
-                opacity: pressed ? 0.58 : 1,
+                backgroundColor: pressed ? theme.colors.surfaceElevated : 'transparent',
               },
             ]}
           >
             <Text
               numberOfLines={1}
-              ellipsizeMode="tail"
               style={[
-                veryCompact ? styles.programmeTitleTiny : styles.programmeTitle,
-                compact && !veryCompact ? styles.programmeTitleCompact : null,
-                { color: theme.colors.text },
+                styles.programmeStart,
+                veryCompact ? styles.programmeStartTiny : null,
+                { color: theme.colors.textMuted },
               ]}
             >
-              {programme.title}
+              {formatTime(startMs)}
             </Text>
-            {!compact ? (
+
+            <View style={styles.programmeContent}>
               <Text
-                numberOfLines={1}
+                numberOfLines={showDescription ? 2 : 1}
+                ellipsizeMode="tail"
                 style={[
-                  styles.programmeTime,
-                  { color: current ? theme.colors.currentTime : theme.colors.textMuted },
+                  veryCompact ? styles.programmeTitleTiny : styles.programmeTitle,
+                  compact && !veryCompact ? styles.programmeTitleCompact : null,
+                  current ? styles.programmeTitleCurrent : null,
+                  { color: theme.colors.text },
                 ]}
               >
-                {timeText}
+                {programme.title}
               </Text>
-            ) : null}
+
+              {showDescription ? (
+                <Text
+                  numberOfLines={1}
+                  ellipsizeMode="tail"
+                  style={[styles.programmeDescription, { color: theme.colors.textSecondary }]}
+                >
+                  {programme.description?.trim()}
+                </Text>
+              ) : null}
+
+              {showProgress ? (
+                <View style={[styles.progressTrack, { backgroundColor: theme.colors.border }]}>
+                  <View
+                    style={[
+                      styles.progressFill,
+                      {
+                        width: `${progress * 100}%`,
+                        backgroundColor: theme.colors.currentTime,
+                      },
+                    ]}
+                  />
+                </View>
+              ) : null}
+            </View>
           </Pressable>
         );
       })}
-
-      {nowInDay ? (
-        <View
-          pointerEvents="none"
-          style={[
-            styles.nowMarker,
-            {
-              top: scheduleYForTime(nowMs, dayStartMs),
-              left: TIME_GUTTER_WIDTH - 5,
-              right: 14,
-              backgroundColor: theme.colors.currentTime,
-            },
-          ]}
-        >
-          <View style={[styles.nowDot, { backgroundColor: theme.colors.currentTime }]} />
-        </View>
-      ) : null}
     </View>
   );
 });
@@ -591,63 +579,65 @@ const styles = StyleSheet.create({
     lineHeight: 16,
     fontWeight: '700',
   },
-  hourTick: {
+  programme: {
     position: 'absolute',
     left: 0,
     right: 0,
-    height: 1,
-    borderTopWidth: StyleSheet.hairlineWidth,
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    paddingVertical: 7,
+    paddingRight: 16,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    overflow: 'hidden',
   },
-  hourLabel: {
-    position: 'absolute',
-    top: -8,
-    left: 12,
-    width: 42,
-    fontSize: 10,
-    fontWeight: '600',
+  programmeStart: {
+    width: TIME_GUTTER_WIDTH,
+    paddingLeft: 14,
+    paddingRight: 8,
+    fontSize: 11,
+    lineHeight: 16,
+    fontWeight: '500',
     fontVariant: ['tabular-nums'],
   },
-  programme: {
-    position: 'absolute',
-    paddingHorizontal: 12,
-    paddingVertical: 7,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderLeftWidth: 2,
-    overflow: 'hidden',
+  programmeStartTiny: {
+    fontSize: 10,
+    lineHeight: 13,
+  },
+  programmeContent: {
+    flex: 1,
+    minWidth: 0,
     justifyContent: 'center',
   },
   programmeTitle: {
-    fontSize: 16,
-    lineHeight: 20,
+    fontSize: 15,
+    lineHeight: 19,
+    fontWeight: '600',
+    letterSpacing: -0.15,
+  },
+  programmeTitleCurrent: {
     fontWeight: '700',
-    letterSpacing: -0.2,
   },
   programmeTitleCompact: {
-    fontSize: 14,
-    lineHeight: 17,
+    fontSize: 13,
+    lineHeight: 16,
   },
   programmeTitleTiny: {
-    fontSize: 12,
-    lineHeight: 14,
+    fontSize: 11,
+    lineHeight: 13,
     fontWeight: '600',
   },
-  programmeTime: {
+  programmeDescription: {
     marginTop: 3,
     fontSize: 11,
-    lineHeight: 14,
-    fontWeight: '600',
-    fontVariant: ['tabular-nums'],
+    lineHeight: 15,
+    fontWeight: '500',
   },
-  nowMarker: {
-    position: 'absolute',
-    height: 1,
+  progressTrack: {
+    height: 2,
+    marginTop: 7,
+    overflow: 'hidden',
   },
-  nowDot: {
-    position: 'absolute',
-    width: 7,
-    height: 7,
-    borderRadius: 4,
-    left: -3,
-    top: -3,
+  progressFill: {
+    height: '100%',
   },
 });
