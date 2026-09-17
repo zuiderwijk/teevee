@@ -1,6 +1,6 @@
 # Teevee Product
 
-Status: product baseline, amended with owner-approved television-day, Guide-horizon, compact Guide day-selector semantics and Per-zender Primetime shortcut on 15 September 2026. These decisions do not claim that the current runtime already implements them.
+Status: product baseline, amended with owner-approved television-day, Guide-horizon, compact Guide day-selector semantics and Per-zender Primetime shortcut on 15 September 2026, and owner-approved Instrument Sans UI typography on 17 September 2026. These decisions do not claim that the current runtime already implements them.
 
 ## Product vision
 Teevee is a new premium, ad-free television guide for iOS and Android, developed under supervision of Bindinc/TVgids.nl. It is a new product rather than a redesign of the existing TVgids.nl app.
@@ -152,10 +152,10 @@ The accepted Guide/Detail direction is premium utility rather than decorative me
 - open canvas rather than stacked programme cards;
 - near-white neutral light canvas and dark-anthracite dark canvas;
 - red used sparingly for meaningful selected/current/primary-action emphasis;
-- Söhne is the preferred typography direction, subject to production licensing/technical verification;
+- **Instrument Sans is the accepted primary UI typeface across Teevee**; use one coherent UI family rather than pairing it with a second sans-serif by default;
 - substantive content must scale for accessibility even if that reduces density.
 
-Exact production design tokens and platform font delivery remain implementation details, not product promises.
+Exact production design tokens, Instrument Sans font-file selection/licensing verification and platform delivery remain implementation details, not product promises.
 
 ## Onboarding
 Maximum three functional steps: welcome, choose/reorder channels, done. No account wall.
@@ -181,6 +181,7 @@ The Phase 1 gate is qualitative and strict: **does the guide itself demonstrably
 - light, dark and system appearance;
 - provider-independent programme-data architecture;
 - autonomous-agent development model;
+- **Instrument Sans as the primary Teevee UI typeface**;
 - three Guide presentations and their interaction roles as described above;
 - television day = 06:00 Europe/Amsterdam to 06:00 next day;
 - Totaal/Per zender minimum horizon = D-2 through D+7 television days;
@@ -194,7 +195,7 @@ The Phase 1 gate is qualitative and strict: **does the guide itself demonstrably
 
 ### Open
 - final product/brand name;
-- exact production design-token values and font licensing/delivery;
+- exact production design-token values and Instrument Sans font-file/licensing/delivery details;
 - initial default Guide presentation and long-term preference/restoration details where not yet proven;
 - pricing and trial/paywall model;
 - final production backend/data supplier;
