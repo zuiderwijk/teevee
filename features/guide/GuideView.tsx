@@ -370,8 +370,6 @@ export const GuideView = memo(function GuideView({
       <GuideChrome
         condensed={condensed}
         presentationNavigation={headerAction}
-        heading="Gids"
-        supportingText="Alle zenders, één overzicht"
       />
 
       <View
