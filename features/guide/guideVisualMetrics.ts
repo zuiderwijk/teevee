@@ -137,7 +137,7 @@ export const GUIDE_TYPOGRAPHY = {
 export const COMPACT_CHROME_MAX_FONT_SIZE_MULTIPLIER = 1.2;
 
 export function platformMinimumTouchTarget(): number {
-  return Platform.OS === 'ios'
+  return Platform?.OS === 'ios'
     ? GUIDE_VISUAL_METRICS.touchTargetIos
     : GUIDE_VISUAL_METRICS.touchTargetAndroid;
 }
