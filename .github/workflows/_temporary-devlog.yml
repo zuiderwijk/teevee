@@ -1,0 +1,35 @@
+name: Temporary Per-zender devlog update
+
+on:
+  push:
+    branches:
+      - feat/per-channel-fixed-row-convergence
+
+permissions:
+  contents: write
+
+jobs:
+  update-devlog:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - name: Record durable development handoff
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          path = Path('docs/DEVLOG.md')
+          entry = '''## 2026-09-17 - Per-zender fixed-row production convergence and Instrument Sans runtime\n- Implemented the owner-corrected `docs/PER_ZENDER_VISUAL_CONVERGENCE.md`: Per zender is now a chronological fixed-row list, with 52 pt standard rows and one 120 pt actual-current row at base text size. Programme duration no longer controls vertical position, row height, gaps, density or content visibility.\n- Replaced pixel/minute time restoration with timestamp -> containing/nearest programme-row anchoring while preserving adjacent-channel swipe, direct channel selection, D-2..D+7, 06:00 television-day, Primetime/Nu and Programme Detail semantics.\n- Centralised Per-zender/Guide visual metrics in `features/guide/guideVisualMetrics.ts`, including schedule columns, Dynamic Type row scaling, channel-strip geometry, current progress, separators and sticky/Reduce Motion metrics.\n- Wired canonical Instrument Sans from the official `@expo-google-fonts/instrument-sans@0.4.2` distribution (MIT AND OFL-1.1 package metadata), loading only Regular/Medium/SemiBold/Bold static weights before mounting the app so installed builds are offline-capable without a visible font swap. Runtime loading is isolated in `theme/useTeeveeFonts.ts`; pure typography tokens remain in `theme/typography.ts`.\n- Added/updated regression coverage for duration-independent fixed rows, Dynamic Type heights, single-current selection/progress, timestamp anchors, collapse semantics and channel-logo fallback. The first CI pass exposed test-runtime coupling to Expo/React Native modules; production/test boundaries were separated rather than weakening tests.\n- Quality status: exact-head CI and physical-device acceptance are still required before Independent QA or merge.\n\n'''
+          current = path.read_text()
+          marker = '# Teevee Development Log\n\n'
+          if current.startswith(marker):
+              current = marker + entry + current[len(marker):]
+          else:
+              current = entry + current
+          path.write_text(current)
+          PY
+          rm .github/workflows/_temporary-devlog.yml
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add docs/DEVLOG.md .github/workflows/_temporary-devlog.yml
+          git commit -m 'Docs: record Per-zender fixed-row convergence'
+          git push origin HEAD:feat/per-channel-fixed-row-convergence
