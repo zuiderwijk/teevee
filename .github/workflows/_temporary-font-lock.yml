@@ -1,0 +1,31 @@
+name: Temporary Instrument Sans lockfile generation
+
+on:
+  push:
+    branches:
+      - feat/per-channel-fixed-row-convergence
+
+permissions:
+  contents: write
+
+jobs:
+  generate-lockfile:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+      - name: Add verified production font dependencies
+        run: |
+          npm pkg set 'dependencies.@expo-google-fonts/instrument-sans=0.4.2'
+          npm pkg set 'dependencies.expo-font=~57.0.4'
+          npm install --package-lock-only --ignore-scripts
+      - name: Remove temporary workflow and commit generated lockfile
+        run: |
+          rm .github/workflows/_temporary-font-lock.yml
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add package.json package-lock.json .github/workflows/_temporary-font-lock.yml
+          git commit -m 'Bundle verified Instrument Sans package'
+          git push origin HEAD:feat/per-channel-fixed-row-convergence
