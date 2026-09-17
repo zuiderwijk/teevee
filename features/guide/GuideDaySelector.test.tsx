@@ -35,6 +35,7 @@ vi.mock('react-native', () => {
 
   return {
     Modal: ({ children, visible }: MockProps) => (visible ? createElement('div', { 'data-modal': 'true' }, children) : null),
+    Platform: { OS: 'ios' },
     Pressable: (props: MockProps) => element('button', props),
     SafeAreaView: (props: MockProps) => element('div', props),
     ScrollView: (props: MockProps) => element('div', props),
