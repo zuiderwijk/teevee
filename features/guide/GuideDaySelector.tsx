@@ -11,6 +11,12 @@ import {
 
 import { useTeeveeTheme } from '@/theme/useTeeveeTheme';
 
+import {
+  COMPACT_CHROME_MAX_FONT_SIZE_MULTIPLIER,
+  GUIDE_TYPOGRAPHY,
+  GUIDE_VISUAL_METRICS,
+  platformMinimumTouchTarget,
+} from './guideVisualMetrics';
 import { guideDayLabel, guideDayOptions } from './guideDaySelection';
 
 type GuideDaySelectorProps = {
@@ -21,6 +27,14 @@ type GuideDaySelectorProps = {
   compactPrefix?: string | undefined;
   onSelectDay: (dayStartMs: number) => void;
 };
+
+function DisclosureChevron({ color }: { color: string }) {
+  return (
+    <View accessible={false} style={styles.disclosureBox}>
+      <View style={[styles.disclosureChevron, { borderColor: color }]} />
+    </View>
+  );
+}
 
 export const GuideDaySelector = memo(function GuideDaySelector({
   selectedDayStartMs,
@@ -35,6 +49,7 @@ export const GuideDaySelector = memo(function GuideDaySelector({
   const options = useMemo(() => guideDayOptions(nowMs), [nowMs]);
   const selectedLabel = guideDayLabel(selectedDayStartMs, nowMs);
   const visibleLabel = compactPrefix ? `${compactPrefix} · ${selectedLabel}` : selectedLabel;
+  const minimumTouchTarget = platformMinimumTouchTarget();
 
   const selectDay = (dayStartMs: number) => {
     setOpen(false);
@@ -54,10 +69,33 @@ export const GuideDaySelector = memo(function GuideDaySelector({
         }
         accessibilityState={{ busy: loading }}
         onPress={() => setOpen(true)}
-        style={({ pressed }) => [styles.inlineControl, { opacity: pressed ? 0.55 : 1 }]}
+        style={({ pressed }) => [
+          styles.inlineControl,
+          { minHeight: minimumTouchTarget, opacity: pressed ? GUIDE_VISUAL_METRICS.controlPressOpacity : 1 },
+        ]}
       >
-        <Text style={[styles.inlineLabel, { color: theme.colors.text }]}>{visibleLabel}</Text>
-        <Text accessible={false} style={[styles.disclosure, { color: theme.colors.textMuted }]}>⌄</Text>
+        <View style={styles.inlineLabelGroup}>
+          {compactPrefix ? (
+            <Text
+              numberOfLines={1}
+              maxFontSizeMultiplier={COMPACT_CHROME_MAX_FONT_SIZE_MULTIPLIER}
+              style={[styles.compactPrefix, { color: theme.colors.text }]}
+            >
+              {compactPrefix}
+            </Text>
+          ) : null}
+          <Text
+            numberOfLines={1}
+            maxFontSizeMultiplier={COMPACT_CHROME_MAX_FONT_SIZE_MULTIPLIER}
+            style={[
+              compactPrefix ? styles.compactDate : styles.inlineLabel,
+              { color: theme.colors.text },
+            ]}
+          >
+            {compactPrefix ? ` · ${selectedLabel}` : selectedLabel}
+          </Text>
+        </View>
+        <DisclosureChevron color={theme.colors.textSecondary} />
       </Pressable>
 
       <Modal
@@ -90,7 +128,10 @@ export const GuideDaySelector = memo(function GuideDaySelector({
                 accessibilityLabel="Sluit dagkiezer"
                 hitSlop={8}
                 onPress={() => setOpen(false)}
-                style={({ pressed }) => [styles.closeButton, { opacity: pressed ? 0.55 : 1 }]}
+                style={({ pressed }) => [
+                  styles.closeButton,
+                  { opacity: pressed ? GUIDE_VISUAL_METRICS.controlPressOpacity : 1 },
+                ]}
               >
                 <Text accessible={false} style={[styles.closeText, { color: theme.colors.text }]}>×</Text>
               </Pressable>
@@ -116,21 +157,15 @@ export const GuideDaySelector = memo(function GuideDaySelector({
                       {
                         borderBottomColor: theme.colors.border,
                         backgroundColor: selected ? theme.colors.surfaceElevated : theme.colors.surface,
-                        opacity: pressed ? 0.65 : 1,
+                        opacity: pressed ? GUIDE_VISUAL_METRICS.controlPressOpacity : 1,
                       },
                     ]}
                   >
-                    <Text
-                      style={[
-                        styles.optionLabel,
-                        { color: selected ? theme.colors.currentTime : theme.colors.text },
-                      ]}
-                    >
-                      {label}
-                    </Text>
+                    <Text style={[styles.optionLabel, { color: theme.colors.text }]}>{label}</Text>
                     {selected ? (
                       <Text
                         accessible={false}
+                        testID="guide-day-option-selected-mark"
                         style={[styles.selectedMark, { color: theme.colors.currentTime }]}
                       >
                         ✓
@@ -149,24 +184,46 @@ export const GuideDaySelector = memo(function GuideDaySelector({
 
 const styles = StyleSheet.create({
   inlineControl: {
-    minHeight: 48,
-    minWidth: 44,
+    minWidth: GUIDE_VISUAL_METRICS.touchTargetIos,
     flexShrink: 1,
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 5,
-    paddingVertical: 8,
-    paddingHorizontal: 2,
+    gap: 6,
+  },
+  inlineLabelGroup: {
+    minWidth: 0,
+    flexShrink: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
   },
   inlineLabel: {
+    ...GUIDE_TYPOGRAPHY.selectedDate,
     flexShrink: 1,
-    fontSize: 14,
-    lineHeight: 19,
-    fontWeight: '700',
+    letterSpacing: 0,
   },
-  disclosure: {
-    fontSize: 15,
-    fontWeight: '700',
+  compactPrefix: {
+    ...GUIDE_TYPOGRAPHY.condensedChannelPrefix,
+    flexShrink: 1,
+    letterSpacing: 0,
+  },
+  compactDate: {
+    ...GUIDE_TYPOGRAPHY.condensedDate,
+    flexShrink: 1,
+    letterSpacing: 0,
+  },
+  disclosureBox: {
+    width: 14,
+    height: 18,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  disclosureChevron: {
+    width: 7,
+    height: 7,
+    marginTop: -3,
+    borderRightWidth: 1.5,
+    borderBottomWidth: 1.5,
+    transform: [{ rotate: '45deg' }],
   },
   modalRoot: {
     flex: 1,
