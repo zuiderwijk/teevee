@@ -42,8 +42,8 @@ import { useGuideDaySelection } from './useGuideDaySelection';
 import { useSelectedGuideDaySchedule } from './useSelectedGuideDaySchedule';
 
 const CONTROL_MAX_FONT_SIZE_MULTIPLIER = 1.2;
-const CHANNEL_ITEM_WIDTH = 78;
-const CHANNEL_STRIP_HEIGHT = 64;
+const CHANNEL_ITEM_WIDTH = 72;
+const CHANNEL_STRIP_HEIGHT = 58;
 const TIME_GUTTER_WIDTH = 62;
 const NOW_TOP_INSET = 132;
 const HEADER_CONDENSE_THRESHOLD = 24;
@@ -378,9 +378,8 @@ export const PerChannelGuideView = memo(function PerChannelGuideView({
                 styles.channelButton,
                 {
                   width: CHANNEL_ITEM_WIDTH,
-                  borderColor: active ? theme.colors.border : 'transparent',
                   backgroundColor: active ? theme.colors.surfaceElevated : 'transparent',
-                  opacity: pressed ? 0.6 : active ? 1 : 0.68,
+                  opacity: pressed ? 0.55 : active ? 1 : 0.6,
                 },
               ]}
             >
@@ -428,6 +427,7 @@ export const PerChannelGuideView = memo(function PerChannelGuideView({
           <Pressable
             accessibilityRole="button"
             accessibilityLabel="Ga naar primetime om 20:30 op de geselecteerde dag"
+            hitSlop={4}
             onPress={scrollToPrimetime}
             style={[styles.utilityButton, { borderColor: theme.colors.border }]}
           >
@@ -449,6 +449,7 @@ export const PerChannelGuideView = memo(function PerChannelGuideView({
           <Pressable
             accessibilityRole="button"
             accessibilityLabel="Ga naar nu"
+            hitSlop={4}
             onPress={() => scrollToNow(true)}
             style={[styles.utilityButton, styles.nowButton, { borderColor: theme.colors.border }]}
           >
@@ -526,33 +527,32 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   channelButton: {
-    height: 54,
+    height: 48,
     marginHorizontal: 2,
-    borderRadius: 13,
-    borderWidth: StyleSheet.hairlineWidth,
+    borderRadius: 10,
     paddingHorizontal: 3,
   },
   channelContext: {
     paddingHorizontal: 18,
-    paddingTop: 10,
-    paddingBottom: 1,
+    paddingTop: 8,
+    paddingBottom: 0,
   },
   channelName: {
-    fontSize: 22,
-    lineHeight: 27,
-    fontWeight: '800',
-    letterSpacing: -0.35,
+    fontSize: 21,
+    lineHeight: 26,
+    fontWeight: '700',
+    letterSpacing: -0.3,
   },
   contextRow: {
-    minHeight: 54,
+    minHeight: 48,
     paddingHorizontal: 14,
-    paddingVertical: 4,
+    paddingVertical: 2,
     flexDirection: 'row',
     flexWrap: 'wrap',
     alignItems: 'center',
     justifyContent: 'space-between',
-    columnGap: 10,
-    rowGap: 4,
+    columnGap: 8,
+    rowGap: 2,
     borderBottomWidth: StyleSheet.hairlineWidth,
   },
   utilityActions: {
@@ -561,29 +561,29 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap',
     alignItems: 'center',
     justifyContent: 'flex-end',
-    gap: 6,
+    gap: 5,
   },
   utilityButton: {
-    minHeight: 44,
-    paddingHorizontal: 11,
-    borderRadius: 10,
+    minHeight: 36,
+    paddingHorizontal: 10,
+    borderRadius: 18,
     borderWidth: StyleSheet.hairlineWidth,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 5,
+    gap: 4,
   },
   nowButton: {
-    minWidth: 48,
+    minWidth: 44,
   },
   utilityIcon: {
-    fontSize: 15,
-    lineHeight: 16,
+    fontSize: 14,
+    lineHeight: 15,
   },
   utilityButtonText: {
-    fontSize: 12,
-    lineHeight: 16,
-    fontWeight: '700',
+    fontSize: 11,
+    lineHeight: 15,
+    fontWeight: '600',
   },
   programme: {
     position: 'absolute',
@@ -617,11 +617,11 @@ const styles = StyleSheet.create({
   programmeTitle: {
     fontSize: 15,
     lineHeight: 19,
-    fontWeight: '600',
+    fontWeight: '500',
     letterSpacing: -0.15,
   },
   programmeTitleCurrent: {
-    fontWeight: '700',
+    fontWeight: '600',
   },
   programmeTitleCompact: {
     fontSize: 13,
@@ -630,13 +630,13 @@ const styles = StyleSheet.create({
   programmeTitleTiny: {
     fontSize: 11,
     lineHeight: 13,
-    fontWeight: '600',
+    fontWeight: '500',
   },
   programmeDescription: {
     marginTop: 2,
     fontSize: 11,
     lineHeight: 14,
-    fontWeight: '500',
+    fontWeight: '400',
   },
   progressTrack: {
     height: 2,
