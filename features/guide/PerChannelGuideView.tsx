@@ -32,7 +32,7 @@ import {
 } from './guideDaySelection';
 import {
   adjacentChannelIndex,
-  PER_CHANNEL_MINUTE_HEIGHT,
+  perChannelMinuteHeightForFontScale,
   programmeVerticalFrame,
   programmesForChannelDay,
   scheduleYForTime,
@@ -60,6 +60,7 @@ type SchedulePageProps = {
   dayStartMs: number;
   dayEndMs: number;
   nowMs: number;
+  minuteHeight: number;
   width: number;
   onSelectProgramme: (selection: ProgrammeSelection) => void;
 };
@@ -82,6 +83,7 @@ const SchedulePage = memo(function SchedulePage({
   dayStartMs,
   dayEndMs,
   nowMs,
+  minuteHeight,
   width,
   onSelectProgramme,
 }: SchedulePageProps) {
@@ -90,12 +92,12 @@ const SchedulePage = memo(function SchedulePage({
     () => programmesForChannelDay(fixture, channel.id, dayStartMs, dayEndMs),
     [channel.id, dayEndMs, dayStartMs, fixture],
   );
-  const height = ((dayEndMs - dayStartMs) / 60_000) * PER_CHANNEL_MINUTE_HEIGHT;
+  const height = ((dayEndMs - dayStartMs) / 60_000) * minuteHeight;
 
   return (
     <View style={{ width, height }}>
       {programmes.map((programme) => {
-        const frame = programmeVerticalFrame(programme, dayStartMs, dayEndMs);
+        const frame = programmeVerticalFrame(programme, dayStartMs, dayEndMs, minuteHeight);
         const startMs = Date.parse(programme.startAt);
         const endMs = Date.parse(programme.endAt);
         const current = isProgrammeCurrent(programme, nowMs);
@@ -103,7 +105,7 @@ const SchedulePage = memo(function SchedulePage({
         const compact = frame.height < 58;
         const veryCompact = frame.height < 42;
         const showDescription =
-          current && frame.height >= 92 && Boolean(programme.description?.trim());
+          current && frame.height >= 64 && Boolean(programme.description?.trim());
         const showProgress = current && frame.height >= 58;
 
         return (
@@ -195,7 +197,11 @@ export const PerChannelGuideView = memo(function PerChannelGuideView({
   headerAction,
 }: PerChannelGuideViewProps) {
   const theme = useTeeveeTheme();
-  const { width: windowWidth } = useWindowDimensions();
+  const { width: windowWidth, fontScale = 1 } = useWindowDimensions();
+  const minuteHeight = useMemo(
+    () => perChannelMinuteHeightForFontScale(fontScale),
+    [fontScale],
+  );
   const channelStripRef = useRef<ScrollView>(null);
   const pagerRef = useRef<ScrollView>(null);
   const scheduleRef = useRef<ScrollView>(null);
@@ -219,7 +225,7 @@ export const PerChannelGuideView = memo(function PerChannelGuideView({
     () => guideTelevisionDayStart(selectedDayStartMs, 1),
     [selectedDayStartMs],
   );
-  const scheduleHeight = ((dayEndMs - dayStartMs) / 60_000) * PER_CHANNEL_MINUTE_HEIGHT;
+  const scheduleHeight = ((dayEndMs - dayStartMs) / 60_000) * minuteHeight;
   const pagerChannels = useMemo(
     () => channelsForPager(channels, safeSelectedIndex),
     [channels, safeSelectedIndex],
@@ -274,22 +280,22 @@ export const PerChannelGuideView = memo(function PerChannelGuideView({
     (timeMs: number, animated: boolean) => {
       const target = clampTime(timeMs, dayStartMs, dayEndMs);
       viewedTimeRef.current = target;
-      const y = Math.max(0, scheduleYForTime(target, dayStartMs) - NOW_TOP_INSET);
+      const y = Math.max(0, scheduleYForTime(target, dayStartMs, minuteHeight) - NOW_TOP_INSET);
       scheduleRef.current?.scrollTo({ y, animated });
     },
-    [dayEndMs, dayStartMs],
+    [dayEndMs, dayStartMs, minuteHeight],
   );
 
   const handleScheduleScroll = useCallback(
     (event: NativeSyntheticEvent<NativeScrollEvent>) => {
       const y = Math.max(0, event.nativeEvent.contentOffset.y);
-      const nextViewedTime = dayStartMs + ((y + NOW_TOP_INSET) / PER_CHANNEL_MINUTE_HEIGHT) * 60_000;
+      const nextViewedTime = dayStartMs + ((y + NOW_TOP_INSET) / minuteHeight) * 60_000;
       viewedTimeRef.current = clampTime(nextViewedTime, dayStartMs, dayEndMs);
       if (!userHasScrolledRef.current) return;
       const nextCondensed = y > HEADER_CONDENSE_THRESHOLD;
       setCondensed((current) => (current === nextCondensed ? current : nextCondensed));
     },
-    [dayEndMs, dayStartMs],
+    [dayEndMs, dayStartMs, minuteHeight],
   );
 
   const changeDay = useCallback(
@@ -496,6 +502,7 @@ export const PerChannelGuideView = memo(function PerChannelGuideView({
               dayStartMs={dayStartMs}
               dayEndMs={dayEndMs}
               nowMs={nowMs}
+              minuteHeight={minuteHeight}
               width={windowWidth}
               onSelectProgramme={onSelectProgramme}
             />
@@ -627,14 +634,14 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   programmeDescription: {
-    marginTop: 3,
+    marginTop: 2,
     fontSize: 11,
-    lineHeight: 15,
+    lineHeight: 14,
     fontWeight: '500',
   },
   progressTrack: {
     height: 2,
-    marginTop: 7,
+    marginTop: 5,
     overflow: 'hidden',
   },
   progressFill: {
