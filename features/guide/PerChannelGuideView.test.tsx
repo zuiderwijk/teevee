@@ -12,7 +12,7 @@ import { PerChannelGuideView } from './PerChannelGuideView';
 const testState = vi.hoisted(() => ({
   reduceMotion: false,
   selectDay: vi.fn(),
-  scrollCalls: [] as Array<{ testID?: string; args: { x?: number; y?: number; animated?: boolean } }>,
+  scrollCalls: [] as Array<{ testID: string | undefined; args: { x?: number; y?: number; animated?: boolean } }>,
   scrollProps: new Map<string, Record<string, unknown>>(),
 }));
 
