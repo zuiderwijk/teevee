@@ -147,3 +147,11 @@ export function currentProgrammeRowHeight(fontScale = 1) {
 export function programmeTitleLineCount(fontScale = 1) {
   return fontScale > 1.35 ? 2 : 1;
 }
+
+export function perChannelCollapseProgress(scrollY: number, reduceMotion = false) {
+  const y = Math.max(0, Number.isFinite(scrollY) ? scrollY : 0);
+  if (reduceMotion) {
+    return y >= PER_CHANNEL_VISUAL_METRICS.reduceMotionSwitchOffset ? 1 : 0;
+  }
+  return Math.min(1, y / PER_CHANNEL_VISUAL_METRICS.collapseDistance);
+}
