@@ -4,6 +4,7 @@ import type { GuideFixture, Programme } from '@/data/domain/epg';
 
 import {
   adjacentChannelIndex,
+  perChannelMinuteHeightForFontScale,
   programmeVerticalFrame,
   programmesForChannelDay,
   scheduleTimeForY,
@@ -54,6 +55,12 @@ describe('per-channel schedule geometry', () => {
     const time = dayStart + 13.5 * 60 * 60_000;
     const y = scheduleYForTime(time, dayStart, 2.2);
     expect(scheduleTimeForY(y, dayStart, 2.2)).toBe(time);
+  });
+
+  it('expands the time scale with system text while preserving the baseline density', () => {
+    expect(perChannelMinuteHeightForFontScale(1)).toBe(0.9);
+    expect(perChannelMinuteHeightForFontScale(1.5)).toBe(1.35);
+    expect(perChannelMinuteHeightForFontScale(Number.NaN)).toBe(0.9);
   });
 
   it('clamps adjacent channel navigation at the lineup edges', () => {
