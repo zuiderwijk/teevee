@@ -1,10 +1,29 @@
 import { useRouter } from 'expo-router';
 import { type ReactNode, memo } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
+import Animated, {
+  Easing,
+  FadeIn,
+  FadeOut,
+  LinearTransition,
+  ReduceMotion,
+} from 'react-native-reanimated';
 
 import { useTeeveeTheme } from '@/theme/useTeeveeTheme';
 
 const CHROME_MAX_FONT_SIZE_MULTIPLIER = 1.15;
+const CHROME_LAYOUT_DURATION_MS = 190;
+const CHROME_FADE_DURATION_MS = 140;
+
+const chromeLayoutTransition = LinearTransition.duration(CHROME_LAYOUT_DURATION_MS)
+  .easing(Easing.out(Easing.cubic))
+  .reduceMotion(ReduceMotion.System);
+const chromeEnterTransition = FadeIn.duration(CHROME_FADE_DURATION_MS)
+  .easing(Easing.out(Easing.cubic))
+  .reduceMotion(ReduceMotion.System);
+const chromeExitTransition = FadeOut.duration(CHROME_FADE_DURATION_MS)
+  .easing(Easing.out(Easing.cubic))
+  .reduceMotion(ReduceMotion.System);
 
 type GuideChromeProps = {
   condensed: boolean;
@@ -32,12 +51,17 @@ export const GuideChrome = memo(function GuideChrome({
   const theme = useTeeveeTheme();
 
   return (
-    <View
+    <Animated.View
       testID={condensed ? 'guide-chrome-condensed' : 'guide-chrome-expanded'}
+      layout={chromeLayoutTransition}
       style={[styles.chrome, { backgroundColor: theme.colors.background }]}
     >
       {!condensed ? (
-        <>
+        <Animated.View
+          entering={chromeEnterTransition}
+          exiting={chromeExitTransition}
+          style={styles.expandedChrome}
+        >
           <View style={styles.brandRow}>
             <View accessible accessibilityRole="text" accessibilityLabel="Teevee" style={styles.brandMark}>
               <Text
@@ -101,15 +125,19 @@ export const GuideChrome = memo(function GuideChrome({
           ) : null}
 
           <View style={styles.presentationNavigation}>{presentationNavigation}</View>
-        </>
+        </Animated.View>
       ) : null}
-    </View>
+    </Animated.View>
   );
 });
 
 const styles = StyleSheet.create({
   chrome: {
     flexGrow: 0,
+    overflow: 'hidden',
+  },
+  expandedChrome: {
+    width: '100%',
   },
   brandRow: {
     minHeight: 54,
