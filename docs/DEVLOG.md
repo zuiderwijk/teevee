@@ -11,6 +11,24 @@ Doel: chronologisch, begrijpelijk overzicht van substantiële milestones, verifi
 
 ---
 
+## 17 september 2026 — PR #78 uitgebreid naar complete Guide visual-convergence candidate
+
+De productscope van PR #78 is bewust verbreed: niet langer losse visuele zones, maar één complete fysieke reviewcandidate voor **Totaal, Per zender en Nu & Straks** tegen de reeds geaccepteerde repository-baselines. De eerdere rood gemarkeerde gebieden zijn daarmee geen scopegrens meer. Programme Detail, Vanavond en Zoeken blijven buiten deze redesignscope.
+
+Gebouwd:
+- **Totaal:** de bestaande programme-windowing, native 2D scroll en real-duration geometry blijven intact, maar de programma-body is omgezet van permanente filled/rounded cards naar een open schedule met subtiele rij- en programmaboundaries. De in-cell current progressbar is verwijderd; de compacte current-time marker op de as blijft het primaire tijdsignaal. De partial-left readability overlay gebruikt dezelfde open canvasbehandeling.
+- **Per zender:** de bewezen channel-strip/pager/vertical-scroll mechanics blijven behouden. Het schedule toont programme-aligned starttijden in een vaste tijdkolom en open typografische programma-inhoud in plaats van current fills, rode zijbalken en een schedule-wide now-line. De huidige uitzending mag één lokale, terughoudende progressbar tonen wanneer de echte programmaduur voldoende ruimte geeft. De standaard minute scale is dichter gemaakt richting de canonical reference; grotere systeemtekst vergroot die schaal proportioneel zodat wall-clock geometry behouden blijft.
+- **Nu & Straks:** de gedeelde `referenceMs`, Live/Primetime/Nu-flow en exact-drie-volgende-programma's blijven hetzelfde. De contentbody is compacter en logo-first; de reference programme blijft dominant, volgende items rustiger, en zichtbare dubbele `Nu`-copy is verwijderd terwijl assistive technology de live-status blijft krijgen.
+- **Shared:** de eerder geconvergeerde Guide chrome, presentation navigation, bottom navigation en semantic light/dark/system theming blijven de gedeelde shell. Er is geen nieuwe dependency, fontbestand, persistent schedule-cache, providercontract of native configuratie toegevoegd.
+
+De bestaande 06:00 television-day, D-2..D+7, Programme Detail restoration, deferred `NowNextGuideView`, Totaal windowing/overscan/native viewport ownership en provider/cache boundaries zijn niet heropend. De relevante automated suites blijven de gedragscontracten bewaken; de PR-body is het mutable evidence-record voor de finale exact-head CI-run.
+
+Deze branch is **niet geaccepteerd en niet mergeklaar** op basis van implementatie alleen. Voor deze visual-convergence fase is de gatevolgorde expliciet: Development -> exact-head CI -> fysieke iPhone product/visual acceptance -> pas daarna Independent QA -> mergebesluit.
+
+**Volgende stap:** voer de complete fysieke iPhone review uit op de exact CI-groene PR #78-head; eventuele findings gaan eerst terug naar Development en doorlopen opnieuw CI + fysieke review voordat Independent QA wordt gevraagd.
+
+---
+
 ## 15 september 2026 — Phase 4 television-day domain foundation gemergd
 
 PR #62 is als eerste Phase 4 runtime-foundation increment gemergd naar `main` als `36468ed19eca7411079d2845763ca8de36c8d10f`. De wijziging legt de gedeelde productsemantiek voor televisiedagen in code vast, maar migreert bewust nog geen Guide UI, hosted loader of runtime lifecycle.
