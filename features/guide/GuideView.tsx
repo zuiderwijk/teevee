@@ -15,7 +15,7 @@ import Animated, {
 } from 'react-native-reanimated';
 import { scheduleOnRN } from 'react-native-worklets';
 
-import { isProgrammeCurrent, programmeProgress } from '@/data/domain/epg';
+import { isProgrammeCurrent } from '@/data/domain/epg';
 import { guideTelevisionDayStart } from '@/data/domain/guideTime';
 import { buildRuntimeGuideFixture } from '@/data/fixtures/runtimeGuideFixture';
 import { useTeeveeTheme } from '@/theme/useTeeveeTheme';
@@ -533,13 +533,15 @@ export const GuideView = memo(function GuideView({
                       const startMs = Date.parse(programme.startAt);
                       const endMs = Date.parse(programme.endAt);
                       const isCurrent = isProgrammeCurrent(programme, nowMs);
-                      const progress = isCurrent ? programmeProgress(programme, nowMs) : 0;
                       const contentMode = programmeContentMode(frame.width);
                       const horizontalPadding = contentMode === 'compact' ? 5 : 8;
                       const programmeTextWidth = Math.max(0, frame.width - horizontalPadding * 2);
-                      const titleLines = layout.largeText ? 1 : contentMode === 'comfortable' ? 2 : 1;
-                      const showProgrammeTime = !layout.largeText && contentMode !== 'compact';
+                      const titleLines = layout.largeText || contentMode === 'comfortable' ? 2 : 1;
+                      const showProgrammeTime = contentMode !== 'compact';
                       const accessibilityStatus = isCurrent ? ', nu bezig' : '';
+                      const timeCopy = isCurrent
+                        ? `tot ${formatGuideTime(endMs)}`
+                        : formatGuideTime(startMs);
 
                       return (
                         <Pressable
@@ -552,28 +554,15 @@ export const GuideView = memo(function GuideView({
                           style={({ pressed }) => [
                             styles.programme,
                             contentMode === 'compact' ? styles.programmeCompact : null,
-                            layout.largeText ? styles.programmeLargeText : null,
                             {
                               left: frame.left,
                               width: frame.width,
-                              backgroundColor: isCurrent ? theme.colors.programmeCurrent : theme.colors.programme,
-                              opacity: pressed ? 0.65 : 1,
+                              paddingHorizontal: horizontalPadding,
+                              borderRightColor: theme.colors.border,
+                              backgroundColor: pressed ? theme.colors.surfaceElevated : 'transparent',
                             },
                           ]}
                         >
-                          {isCurrent && contentMode !== 'compact' ? (
-                            <View style={[styles.progressTrack, { backgroundColor: theme.colors.border }]}>
-                              <View
-                                style={[
-                                  styles.progressFill,
-                                  {
-                                    width: `${progress * 100}%`,
-                                    backgroundColor: theme.colors.currentTime,
-                                  },
-                                ]}
-                              />
-                            </View>
-                          ) : null}
                           <View
                             style={[
                               styles.programmeTextContent,
@@ -586,6 +575,7 @@ export const GuideView = memo(function GuideView({
                               style={[
                                 styles.programmeTitle,
                                 contentMode === 'compact' ? styles.programmeTitleCompact : null,
+                                isCurrent ? styles.programmeTitleCurrent : null,
                                 { color: theme.colors.text },
                               ]}
                             >
@@ -596,7 +586,7 @@ export const GuideView = memo(function GuideView({
                                 numberOfLines={1}
                                 style={[styles.programmeTime, { color: theme.colors.textMuted }]}
                               >
-                                {formatGuideTime(startMs)}
+                                {timeCopy}
                               </Text>
                             ) : null}
                           </View>
@@ -638,7 +628,6 @@ export const GuideView = memo(function GuideView({
             layout={layout}
             windowStart={windowStart}
             viewportWidth={programmeViewportWidth}
-            nowMs={nowMs}
             scrollX={scrollX}
             scrollY={scrollY}
           />
@@ -707,22 +696,39 @@ const styles = StyleSheet.create({
   programmeRow: { position: 'absolute', left: 0, borderBottomWidth: StyleSheet.hairlineWidth },
   programme: {
     position: 'absolute',
-    top: 4,
-    bottom: 4,
-    borderRadius: 8,
-    paddingHorizontal: 8,
-    paddingVertical: 7,
-    justifyContent: 'space-between',
+    top: 0,
+    bottom: 0,
+    paddingVertical: 9,
+    justifyContent: 'center',
     overflow: 'hidden',
+    borderRightWidth: StyleSheet.hairlineWidth,
   },
-  programmeCompact: { paddingHorizontal: 5, paddingVertical: 6, justifyContent: 'center' },
-  programmeLargeText: { justifyContent: 'center' },
-  programmeTextContent: { flexShrink: 1 },
-  programmeTitle: { fontSize: 12, fontWeight: '600' },
-  programmeTitleCompact: { fontSize: 10 },
-  programmeTime: { fontSize: 10, marginTop: 4 },
-  progressTrack: { height: 2, borderRadius: 1, overflow: 'hidden', marginBottom: 4 },
-  progressFill: { height: '100%' },
+  programmeCompact: {
+    paddingVertical: 7,
+  },
+  programmeTextContent: {
+    flexShrink: 1,
+  },
+  programmeTitle: {
+    fontSize: 13,
+    lineHeight: 17,
+    fontWeight: '600',
+    letterSpacing: -0.1,
+  },
+  programmeTitleCurrent: {
+    fontWeight: '700',
+  },
+  programmeTitleCompact: {
+    fontSize: 11,
+    lineHeight: 14,
+  },
+  programmeTime: {
+    fontSize: 11,
+    lineHeight: 15,
+    fontWeight: '500',
+    marginTop: 2,
+    fontVariant: ['tabular-nums'],
+  },
   edgeOverlayFrame: {
     position: 'absolute',
     right: 0,
