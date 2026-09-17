@@ -1,18 +1,17 @@
-import {
-  InstrumentSans_400Regular,
-  InstrumentSans_500Medium,
-  InstrumentSans_600SemiBold,
-  InstrumentSans_700Bold,
-} from '@expo-google-fonts/instrument-sans';
+import { InstrumentSans_400Regular } from '@expo-google-fonts/instrument-sans/400Regular';
+import { InstrumentSans_500Medium } from '@expo-google-fonts/instrument-sans/500Medium';
+import { InstrumentSans_600SemiBold } from '@expo-google-fonts/instrument-sans/600SemiBold';
+import { InstrumentSans_700Bold } from '@expo-google-fonts/instrument-sans/700Bold';
 import { useFonts } from 'expo-font';
 
 import { TEEVEE_FONT_FAMILIES } from './typography';
 
 /**
- * Register the pinned static Instrument Sans assets before app content renders.
- * Metro bundles these package assets into the installed app, so no network is
- * required after installation. Weight-specific family names avoid platform
- * synthesis differences between iOS and Android.
+ * Register only the four canonical static Instrument Sans faces before app
+ * content renders. Importing the individual weight entry points matters: the
+ * package root also references italic faces, which would unnecessarily bundle
+ * assets that Teevee does not use. Metro embeds these four local package assets
+ * in the installed app, so no network is required after installation.
  */
 export function useTeeveeFonts() {
   return useFonts({
