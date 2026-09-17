@@ -99,10 +99,10 @@ export const GuideChrome = memo(function GuideChrome({
               ) : null}
             </View>
           ) : null}
+
+          <View style={styles.presentationNavigation}>{presentationNavigation}</View>
         </>
       ) : null}
-
-      <View style={styles.presentationNavigation}>{presentationNavigation}</View>
     </View>
   );
 });
