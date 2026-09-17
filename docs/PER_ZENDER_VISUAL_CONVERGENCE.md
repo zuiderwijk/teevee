@@ -616,7 +616,15 @@ The 17/21 title scales as substantive content. Do not retain offsets/examples ba
 
 ### 14.2 Current row
 
-`currentRowHeight(fontScale) = round(176 × contentScale)`
+`baseCurrentRowHeight(fontScale) = round(176 × contentScale)`
+
+To preserve the accepted **minimum 20-pt description→progress clearance** when the current title is allowed to wrap to two lines above fontScale 1.35, also calculate a content-safe minimum using the already accepted metrics:
+
+`maxCurrentTitleLines = contentScale <= 1.35 ? 1 : 2`
+
+`contentSafeCurrentRowHeight = ceil(14 + (23 × contentScale × maxCurrentTitleLines) + 10 + (22 × contentScale × 4) + 20 + 4 + 16)`
+
+`currentRowHeight(fontScale) = max(baseCurrentRowHeight(fontScale), contentSafeCurrentRowHeight)`
 
 Rules:
 
@@ -628,7 +636,7 @@ Rules:
 - progress bottom inset stays 16;
 - current top inset stays 14;
 - title→description gap stays 10;
-- maintain at least 20 pt description→progress clearance at base scale; scaled row height naturally provides at least that much at larger sizes;
+- maintain at least 20 pt description→progress clearance at every supported scale; the content-safe minimum above is mandatory when the simple `176 × contentScale` height would violate that clearance;
 - no duration-based content suppression.
 
 Representative heights:
@@ -638,7 +646,7 @@ Representative heights:
 | 1.00 | 176 |
 | 1.10 | 194 |
 | 1.35 | 238 |
-| 1.50 | 264 |
+| 1.50 | 265 |
 | 2.00 | 352 |
 
 The 19/23 title replaces all old 20/24 assumptions.
@@ -659,7 +667,7 @@ If date + Primetime + Nu cannot fit:
 
 - row 1 = date selector;
 - row 2 = Primetime + Nu;
-- compact sticky context minimum becomes 88;
+- both the expanded/rest utility context and the condensed sticky context use the accepted **88-pt** wrapped minimum;
 - never abbreviate Primetime or hide Nu.
 
 ## 15. Sticky / condensed state
@@ -697,9 +705,15 @@ Normal motion:
 
 `progress = clamp(scrollY / 56, 0, 1)`
 
+The heading-less expanded/rest geometry must converge continuously into the settled condensed stack. Use the already accepted rest gaps as the interpolation endpoints:
+
+- channel strip height = `72 - (12 × progress)` pt, ending at 60;
+- strip → functional context gap = `24 × (1 - progress)` pt, ending at 0;
+- functional context → schedule gap = `12 × (1 - progress)` pt, ending at 0;
+- functional context height remains 52 pt base, or the accepted 88 pt wrapped height when Dynamic Type requires two rows;
+- the compact textual channel name is introduced inside that same functional context as it becomes condensed; it never receives a separate vertical heading slot;
 - disappearing non-functional brand/presentation chrome opacity = `1 - progress`;
 - disappearing blocks translate upward by max `12 × progress` pt;
-- channel strip height = `72 - (12 × progress)` pt, ending at 60;
 - 48×48 channel items remain unchanged and vertically centred inside the interpolated rail;
 - no spring;
 - no scroll-direction hide/reveal behaviour.
@@ -708,6 +722,9 @@ Reduce Motion:
 
 - discrete rest/condensed switch at 28 pt schedule offset;
 - strip changes directly 72 → 60;
+- strip→context gap changes directly 24 → 0;
+- context→schedule gap changes directly 12 → 0;
+- rest utility context changes directly to the compact channel/date context without introducing a large channel heading;
 - no height/fade/translation interpolation required;
 - item remains 48×48.
 
@@ -876,9 +893,9 @@ Surface-specific implementation calibrations now frozen for Development handoff:
 7. Programme columns: time X24, programme X100, right24.
 8. Standard row 52, current row **176**.
 9. Standard title 17/21 500, current title 19/23 700, time 16/20 400, current description **15/22 400 max4** — Instrument Sans.
-10. Current top14, title→description gap **10**, description→progress minimum **20**, progress 4 high/radius2/bottom16.
+10. Current top14, title→description gap **10**, description→progress minimum **20 at every Dynamic Type scale**, progress 4 high/radius2/bottom16; current-row scaling uses the content-safe minimum from §14.2.
 11. Separator left20 at bottom of each row.
-12. Sticky context 52/88; collapse distance56; Reduce Motion state switch at28.
+12. Sticky/rest functional context 52/88; collapse distance56; rest gaps interpolate 24→0 above the context and 12→0 below it; Reduce Motion switches those gaps discretely at28.
 
 Development must not choose alternatives locally. A future retune requires new owner-approved evidence and an update to this source of truth.
 
@@ -919,7 +936,7 @@ When Lead schedules Per-zender visual convergence, Development must be able to i
 15. active/current never means disabled;
 16. full programme row pressed = temporary semantic `surface` fill; clear on release/cancel/gesture takeover;
 17. preserve horizontal adjacent-channel swipe, channel-rail browsing, D-2..D+7, 06:00 television-day semantics, Programme Detail round-trip and time-anchor semantics;
-18. implement 72→60 strip collapse without changing 48×48 items; no spring; discrete Reduce Motion state;
+18. implement heading-less rest→condensed convergence exactly as §15.3: strip 72→60, strip→context gap 24→0, context→schedule gap 12→0, 48×48 items unchanged; no spring; discrete Reduce Motion state;
 19. validate light/dark/system, Dynamic Type, VoiceOver, TalkBack and Reduce Motion;
 20. do not add swipe nudge, overflow button, arrows, fade masks or old exploration chrome;
 21. run the implementation's normal automated/physical gates when Development occurs.
@@ -976,7 +993,7 @@ Per-zender visual convergence is ready only when all are true on the exact imple
 - rest strip is 72 and settled condensed strip is **60**;
 - expanded/rest state has no separate large textual selected-channel heading; compact textual channel name remains in condensed context;
 - 48×48 channel items remain unchanged through collapse;
-- base condensed functional stack is **112** (60+52), or 148 when context wraps to 88;
+- base condensed functional stack is **112** (60+52), or 148 when context wraps to 88; heading-less collapse removes the rest-only 24-pt strip→context and 12-pt context→schedule gaps continuously (or discretely with Reduce Motion);
 - date remains typographic;
 - Nu/Primetime states are derived from semantic schedule anchors, not last tap/pixels/tolerance windows;
 - Nu away = elevated return action; Nu current = typographic current state + underline;
@@ -987,7 +1004,7 @@ Per-zender visual convergence is ready only when all are true on the exact imple
 - time is **16/20 400**;
 - description is **15/22 400**, max 4 lines + ellipsis;
 - standard row remains **52** and title is geometrically centred with 21-pt line height;
-- current row is **176**, current top inset 14, title→description gap is 10, full-copy description→progress clearance is at least 20 pt, and progress geometry remains 4 high / bottom16;
+- current row is **176** at fontScale 1.0, current top inset 14, title→description gap is 10, full-copy description→progress clearance stays at least 20 pt at every supported scale via the §14.2 content-safe minimum, and progress geometry remains 4 high / bottom16;
 - all non-current rows remain equal at a given Dynamic Type scale;
 - programme duration has zero effect on row height/spacing;
 - every row uses one bottom separator;
