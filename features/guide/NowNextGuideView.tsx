@@ -30,7 +30,7 @@ import { useGuideClock } from './useGuideClock';
 
 const CONTROL_MAX_FONT_SIZE_MULTIPLIER = 1.2;
 const TIME_SLOT_WIDTH = 76;
-const CHANNEL_WIDTH = 78;
+const CHANNEL_WIDTH = 72;
 const SLOT_MS = 30 * 60 * 1000;
 const HEADER_CONDENSE_THRESHOLD = 24;
 
@@ -161,6 +161,7 @@ export const NowNextGuideView = memo(function NowNextGuideView({
   const theme = useTeeveeTheme();
   const { width: windowWidth } = useWindowDimensions();
   const timeRailRef = useRef<ScrollView>(null);
+  const railGestureActiveRef = useRef(false);
   const nowMs = useGuideClock();
   const currentTelevisionDayStartMs = guideTelevisionDayStart(nowMs);
   const [fixtureDayStartMs, setFixtureDayStartMs] = useState(() =>
@@ -184,6 +185,7 @@ export const NowNextGuideView = memo(function NowNextGuideView({
 
   const centreTime = useCallback(
     (index: number, animated = true) => {
+      railGestureActiveRef.current = false;
       timeRailRef.current?.scrollTo({ x: Math.max(0, index * TIME_SLOT_WIDTH), animated });
     },
     [],
@@ -191,6 +193,7 @@ export const NowNextGuideView = memo(function NowNextGuideView({
 
   const centreReferenceTime = useCallback(
     (timeMs: number, animated = true) => {
+      railGestureActiveRef.current = false;
       const slotPosition = (clampReferenceTime(timeMs, dayStartMs, dayEndMs) - dayStartMs) / SLOT_MS;
       timeRailRef.current?.scrollTo({ x: Math.max(0, slotPosition * TIME_SLOT_WIDTH), animated });
     },
@@ -209,6 +212,7 @@ export const NowNextGuideView = memo(function NowNextGuideView({
 
   const chooseSlot = useCallback(
     (index: number, animated = true) => {
+      railGestureActiveRef.current = false;
       setReferenceSlot(index);
       centreTime(index, animated);
     },
@@ -217,6 +221,8 @@ export const NowNextGuideView = memo(function NowNextGuideView({
 
   const commitRailOffset = useCallback(
     (event: NativeSyntheticEvent<NativeScrollEvent>) => {
+      if (!railGestureActiveRef.current) return;
+      railGestureActiveRef.current = false;
       if (slots.length === 0) return;
       const index = Math.max(
         0,
@@ -238,12 +244,14 @@ export const NowNextGuideView = memo(function NowNextGuideView({
   );
 
   const browseFromLive = useCallback(() => {
+    railGestureActiveRef.current = true;
     if (!live) return;
     setPinnedReferenceMs(referenceMs);
     setLive(false);
   }, [live, referenceMs]);
 
   const goNow = useCallback(() => {
+    railGestureActiveRef.current = false;
     const currentNow = Date.now();
     const currentDayStart = guideTelevisionDayStart(currentNow);
     if (currentDayStart !== fixtureDayStartMs) {
@@ -264,6 +272,7 @@ export const NowNextGuideView = memo(function NowNextGuideView({
 
   useEffect(() => {
     if (currentTelevisionDayStartMs === fixtureDayStartMs) return;
+    railGestureActiveRef.current = false;
     setFixtureDayStartMs(currentTelevisionDayStartMs);
     setPinnedReferenceMs(nowMs);
     setLive(true);
@@ -300,6 +309,7 @@ export const NowNextGuideView = memo(function NowNextGuideView({
       >
         <ScrollView
           ref={timeRailRef}
+          testID="now-next-time-rail"
           horizontal
           bounces
           directionalLockEnabled
@@ -468,7 +478,7 @@ const styles = StyleSheet.create({
   timeSlotText: {
     fontSize: 11,
     lineHeight: 15,
-    fontWeight: '600',
+    fontWeight: '500',
     fontVariant: ['tabular-nums'],
   },
   timeSlotTick: {
@@ -481,13 +491,13 @@ const styles = StyleSheet.create({
     position: 'absolute',
     left: '50%',
     top: 5,
-    width: 56,
-    marginLeft: -28,
+    width: 58,
+    marginLeft: -29,
     alignItems: 'center',
     zIndex: 4,
   },
   referenceBadge: {
-    minWidth: 50,
+    minWidth: 52,
     minHeight: 25,
     paddingHorizontal: 8,
     borderRadius: 13,
@@ -497,7 +507,7 @@ const styles = StyleSheet.create({
   referenceBadgeText: {
     fontSize: 11,
     lineHeight: 14,
-    fontWeight: '800',
+    fontWeight: '700',
     fontVariant: ['tabular-nums'],
   },
   referenceTick: {
@@ -506,78 +516,76 @@ const styles = StyleSheet.create({
     borderRadius: 1,
   },
   shortcutRow: {
-    minHeight: 48,
+    minHeight: 44,
     paddingHorizontal: 14,
-    paddingVertical: 3,
     flexDirection: 'row',
     justifyContent: 'flex-end',
     alignItems: 'center',
     borderBottomWidth: StyleSheet.hairlineWidth,
   },
   shortcutButton: {
-    minHeight: 42,
-    paddingHorizontal: 12,
-    borderRadius: 21,
+    minHeight: 36,
+    paddingHorizontal: 11,
+    borderRadius: 18,
     borderWidth: StyleSheet.hairlineWidth,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 6,
+    gap: 5,
   },
   shortcutIcon: {
-    fontSize: 15,
-    lineHeight: 17,
+    fontSize: 14,
+    lineHeight: 16,
   },
   shortcutText: {
-    fontSize: 12,
-    lineHeight: 16,
-    fontWeight: '700',
+    fontSize: 11,
+    lineHeight: 15,
+    fontWeight: '600',
   },
   channelList: {
     paddingBottom: 96,
   },
   channelRow: {
-    minHeight: 118,
-    paddingVertical: 10,
-    paddingHorizontal: 12,
+    minHeight: 104,
+    paddingVertical: 6,
+    paddingHorizontal: 10,
     flexDirection: 'row',
     borderBottomWidth: StyleSheet.hairlineWidth,
   },
   channelIdentity: {
     width: CHANNEL_WIDTH,
-    paddingRight: 8,
+    paddingRight: 6,
     alignSelf: 'stretch',
   },
   programmesColumn: {
     flex: 1,
     minWidth: 0,
-    paddingLeft: 8,
+    paddingLeft: 6,
   },
   referenceProgramme: {
-    minHeight: 38,
+    minHeight: 32,
     justifyContent: 'center',
     paddingRight: 6,
   },
   referenceTitle: {
-    fontSize: 15,
-    lineHeight: 19,
-    fontWeight: '700',
-    letterSpacing: -0.15,
-  },
-  gapTitle: {
     fontSize: 14,
     lineHeight: 18,
+    fontWeight: '600',
+    letterSpacing: -0.12,
+  },
+  gapTitle: {
+    fontSize: 13,
+    lineHeight: 17,
     fontWeight: '600',
   },
   referenceMeta: {
     marginTop: 1,
-    fontSize: 11,
-    lineHeight: 15,
+    fontSize: 10,
+    lineHeight: 14,
     fontWeight: '500',
   },
   followingList: {
-    marginTop: 6,
-    gap: 1,
+    marginTop: 4,
   },
   followingRow: {
     minHeight: 19,
@@ -585,17 +593,17 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   followingTime: {
-    width: 50,
-    fontSize: 11,
-    lineHeight: 15,
+    width: 48,
+    fontSize: 10,
+    lineHeight: 14,
     fontWeight: '500',
     fontVariant: ['tabular-nums'],
   },
   followingTitle: {
     flex: 1,
     minWidth: 0,
-    fontSize: 12,
-    lineHeight: 16,
-    fontWeight: '500',
+    fontSize: 11,
+    lineHeight: 15,
+    fontWeight: '400',
   },
 });
