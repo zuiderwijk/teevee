@@ -5,9 +5,9 @@ import type { Channel } from '@/data/domain/epg';
 
 import {
   COMPACT_GUIDE_MAX_FONT_SIZE_MULTIPLIER,
-  PER_CHANNEL_TYPOGRAPHY,
+  GUIDE_TYPOGRAPHY,
   PER_CHANNEL_VISUAL_METRICS,
-} from './perChannelVisualMetrics';
+} from './guideVisualMetrics';
 
 type ChannelIdentityProps = {
   channel: Channel;
@@ -99,7 +99,7 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   perChannelFallback: {
-    ...PER_CHANNEL_TYPOGRAPHY.channelFallback,
+    ...GUIDE_TYPOGRAPHY.channelFallback,
     width: PER_CHANNEL_VISUAL_METRICS.logoMaxWidth,
     textAlign: 'center',
     letterSpacing: 0,
