@@ -1,7 +1,7 @@
 # Guide day selector — current accepted interaction and visual direction
 
 Status: **ACCEPTED**
-Accepted: 2026-09-15; Per-zender Primetime amendment accepted 2026-09-15
+Accepted: 2026-09-15; Per-zender Primetime amendment accepted 2026-09-15; Per-zender temporal-state refinement accepted 2026-09-17
 
 Applies to:
 - Totaal;
@@ -32,7 +32,7 @@ Use this reference for:
 - Totaal time-axis stickiness;
 - Per-zender channel-strip + compact channel/date context.
 
-Authority amendment: the sticky/condensed visual predates the accepted Per-zender `Primetime` shortcut. Its Per-zender compact context row is therefore stale only where it omits `Primetime`; the written Per-zender rules below supersede that omission.
+Authority amendment: the sticky/condensed visual predates the accepted Per-zender `Primetime` shortcut and the 2026-09-17 Per-zender refinement. Its Per-zender compact context is therefore stale where it omits `Primetime`, where it implies only static utility-button visuals, or where it implies a 72-pt settled condensed channel strip. The written Per-zender rules below supersede those details.
 
 ## Accepted behaviour
 
@@ -79,12 +79,20 @@ At rest:
 - channel name plus date, `Primetime` and `Nu` form the schedule context;
 - `Primetime` keeps the selected television day and jumps to 20:30 on that day;
 - between 00:00 and 05:59 this means jumping back to the preceding television-day evening at 20:30;
-- `Nu` remains distinct and restores the actual current day and instant.
+- `Nu` remains distinct and restores the actual current day and instant;
+- date remains primarily typographic, not a permanent pill;
+- `Primetime` and `Nu` expose explicit action versus active/current states based on the actual stable schedule context, not merely on the last control tapped;
+- active/current must not be represented by colour alone;
+- when away from now, `Nu` may use the stronger return-action treatment; once at now, it becomes a current-state indicator rather than remaining a CTA-style pill;
+- `Primetime` remains visually lighter while inactive and uses the accepted current-state treatment when the stable schedule context corresponds to the programme/context containing the selected day's 20:30 reference point;
+- active/current is not disabled; disabled is reserved for genuinely unavailable actions.
 
 After vertical scroll:
 - non-functional header chrome condenses away;
 - the channel-logo strip remains sticky;
+- settled condensed Per-zender channel strip is 60 pt high while preserving the 48 × 48 channel touch/item geometry;
 - immediately beneath it, use one compact sticky channel/date context row with both `Primetime` and `Nu` available;
+- the same semantic action/current state rules for `Primetime` and `Nu` continue in condensed state;
 - do not retain a duplicate large channel heading in the condensed state;
 - horizontal schedule swipe continues to change adjacent channel without being intercepted by date/time utilities.
 
@@ -93,6 +101,7 @@ The earlier expanded Per-zender time picker (`Vanmiddag`, `Vooravond`, `Kies tij
 ### Scroll transition
 - condensation should follow the vertical scroll naturally rather than behave like a news-app toolbar that disappears and reappears based on scroll direction;
 - on scrolling back to the top, the full rest-state hierarchy returns naturally;
+- in Per zender with normal motion, the channel strip may interpolate from 72 pt at rest to 60 pt settled condensed while 48 × 48 channel items remain unchanged;
 - reduced-motion mode may use a simpler non-interpolated state transition.
 
 ## Accessibility
@@ -100,7 +109,8 @@ The earlier expanded Per-zender time picker (`Vanmiddag`, `Vooravond`, `Kies tij
 - compact grouping may adapt height or wrap rather than shrink text excessively;
 - date control, `Primetime` where present, and `Nu` retain platform-appropriate touch targets (minimum equivalent of 44 pt on iOS / 48 dp on Android where applicable);
 - expose selected date, relative label where applicable, `Ga naar primetime` and `Ga naar nu` action semantics to VoiceOver/TalkBack;
-- selection cannot rely on colour alone;
+- for Per-zender temporal utilities, expose active/current state semantically when the corresponding stable schedule context is active;
+- selection/current state cannot rely on colour alone;
 - sticky content must not obscure programme content or system safe areas;
 - light, dark and system modes use the same interaction contract.
 
@@ -113,12 +123,16 @@ This accepted selector does **not** reopen:
 - bottom navigation;
 - Nu & Straks interaction model.
 
+## Explicitly not accepted by the 2026-09-17 refinement
+- A one-time horizontal-swipe nudge/peek is not canonical yet; it requires separate explicit acceptance after interaction/physical validation.
+- A `•••` overflow entry is not part of this selector decision and remains a separate shared-header/application-IA question.
+
 ## Superseded
 For Totaal and Per zender, this supersedes:
 - prototype `Vandaag` / `Morgen` permanent day buttons;
 - stale date controls shown in the 13 September canonical Guide images;
 - any exploration using a horizontal ten-day rail, unrestricted calendar, or previous/next-day arrow chrome.
 
-For Per zender specifically, the expanded historical time-picker is superseded, while the direct `Primetime` shortcut is accepted.
+For Per zender specifically, the expanded historical time-picker is superseded, while the direct `Primetime` shortcut is accepted. Static utility-button-only treatment and a permanently 72-pt settled condensed channel strip are superseded by the 2026-09-17 Per-zender refinement.
 
 The rest of the canonical Totaal and Per-zender visual references remain accepted unless explicitly superseded elsewhere.
