@@ -1,7 +1,7 @@
 # Teevee — Canonical Visual Baseline
 
 Status: **ACTIVE VISUAL SOURCE OF TRUTH**
-Last reconciled: 2026-09-15
+Last reconciled: 2026-09-17
 
 This document answers one question unambiguously: **which visual design is the current accepted Teevee design for each product surface?**
 
@@ -28,6 +28,26 @@ Different sources answer different questions:
 - current code defines what is actually implemented, not automatically what is visually approved.
 
 If a canonical image contains a control that has since been superseded by a higher-priority UX/ADR decision, the newer behaviour wins. The affected image remains useful for the rest of its visual composition only when this file explicitly marks that part as stale.
+
+## Canonical shared typography
+
+Status: **ACCEPTED**
+Owner-approved direction: 2026-09-17
+Detailed manifest: `design/current/TYPOGRAPHY.md`
+
+**Instrument Sans** is the canonical primary UI typeface for Teevee across Guide, Programme Detail, Tonight/Vanavond, Search, Settings and secondary product surfaces.
+
+Accepted characteristics:
+- one coherent UI family rather than Instrument Sans plus a second sans-serif;
+- Regular / Medium / Semibold form the default hierarchy; Bold is exceptional;
+- programme titles remain stronger than times and secondary metadata;
+- schedule numerals use tabular numerals where the production build supports them reliably;
+- substantive text continues to respect platform font scaling;
+- a future final wordmark may use separate approved custom lettering without changing the UI family.
+
+Any Söhne/Söhne-like typography visible in previously accepted screenshots is **SUPERSEDED only for the typeface family**. Those screenshots remain canonical for their accepted composition, spacing, hierarchy, controls and other visual relationships unless another written rule says otherwise.
+
+Older surface-specific handoff text that still names Söhne is stale for the family name only. `design/current/TYPOGRAPHY.md` and `docs/DESIGN_SYSTEM.md` define the current choice. Exact font-source/licence verification, weight files and platform delivery remain implementation concerns.
 
 ## Canonical Guide baseline
 
@@ -58,11 +78,11 @@ Accepted characteristics:
 
 The sticky/condensed visual was created before the owner-approved Per-zender Primetime amendment. It remains canonical for condensation, stickiness and layout structure, but its Per-zender compact row is **SUPERSEDED only where it omits `Primetime`**. The written rules in `PER_ZENDER.md`, `GUIDE_DAY_SELECTOR.md` and `UX.md` win for that detail.
 
-These assets **supersede only the stale date/day controls** in the earlier Totaal and Per-zender canonical screenshots. They do not replace the accepted schedule composition, gestures, logo treatment, typography or general visual character of those surfaces.
+These assets **supersede only the stale date/day controls** in the earlier Totaal and Per-zender canonical screenshots. They do not replace the accepted schedule composition, gestures, logo treatment or general visual character of those surfaces. Typography follows the canonical Instrument Sans rule above.
 
 ### Totaal
 Status: **ACCEPTED**
-Owner-approved direction: 2026-09-13; day-navigation amendment 2026-09-15
+Owner-approved direction: 2026-09-13; day-navigation amendment 2026-09-15; typography amendment 2026-09-17
 Detailed manifest: `design/current/guide/TOTAAL.md`
 
 Canonical visual assets in the user's Teevee Library:
@@ -76,7 +96,7 @@ Canonical visual assets in the user's Teevee Library:
   - Library file id: `file_00000000314481f69f6a34d18ece1c21`
 
 Accepted visual characteristics:
-- Söhne visual direction;
+- **Instrument Sans** UI typography; the historical screenshot's Söhne-like family is superseded for family choice only;
 - near-white neutral light canvas and calm dark-anthracite dark canvas;
 - open 2D schedule geometry, not stacked programme cards;
 - channel logos form the left identity rail;
@@ -87,7 +107,7 @@ Accepted visual characteristics:
 - current cells may prioritise useful end-time context;
 - accepted day selector follows `GUIDE_DAY_SELECTOR.md`.
 
-The date/day control in the original 13 September Totaal images is **SUPERSEDED**. Preserve the rest of their visual hierarchy and use the accepted shared day-selector assets for date navigation.
+The date/day control in the original 13 September Totaal images is **SUPERSEDED**. Preserve the rest of their visual hierarchy and use the accepted shared day-selector assets for date navigation. Their typeface family is also superseded by `design/current/TYPOGRAPHY.md` without reopening their composition.
 
 ### Per zender
 Status: **ACCEPTED**
@@ -116,7 +136,8 @@ Accepted visual characteristics:
 - date navigation, `Primetime` and `Nu` are compact utility controls, not visual hero elements;
 - `Primetime` is **required** and jumps to 20:30 on the currently selected television day without changing that selected day;
 - `Nu` remains distinct and restores the actual current instant/day;
-- accepted day selector follows `GUIDE_DAY_SELECTOR.md`.
+- accepted day selector follows `GUIDE_DAY_SELECTOR.md`;
+- shared typography follows `design/current/TYPOGRAPHY.md`: Instrument Sans replaces any historical Söhne reference for family choice only.
 
 The exact date choices in the original 13 September Per-zender image are **SUPERSEDED**. Preserve the rest of the accepted channel-strip/list composition while using the accepted shared day-selector assets.
 
@@ -144,7 +165,8 @@ Accepted visual characteristics:
 - compact shared time rail;
 - `Primetime` from live mode; `Nu` when browsing away from live;
 - horizontal movement changes reference time, vertical movement changes channel context;
-- channel order/vertical position remains stable while reference time changes.
+- channel order/vertical position remains stable while reference time changes;
+- shared typography follows the accepted Instrument Sans system.
 
 ADR 0008 changes the meaning of the active day around midnight: 00:00–05:59 remains part of the preceding television day. Nu & Straks still has no independent date selector.
 
@@ -157,7 +179,7 @@ Current visual reference in the user's Teevee Library:
 - `/Teevee/Teevee Programmadetail: Sticky acties.png`
   - Library file id: `file_00000000242481f4a0e772876f215342`
 
-Canonical behavioural/visual rules remain those in `docs/UX.md` and `docs/DESIGN_SYSTEM.md`: title first, channel/time second, `Herinner mij` + `Bewaar`, optional artwork only, calm information surface, and contextual sticky bottom copies only after the canonical actions scroll away.
+Canonical behavioural/visual rules remain those in `docs/UX.md` and `docs/DESIGN_SYSTEM.md`: title first, channel/time second, `Herinner mij` + `Bewaar`, optional artwork only, calm information surface, contextual sticky bottom copies only after the canonical actions scroll away, and Instrument Sans as the shared UI typeface.
 
 If this Library image conflicts with those written rules, the written accepted rules win until a new visual is explicitly approved and this manifest is updated.
 
@@ -168,7 +190,7 @@ Current exploration reference:
 - `/Teevee/Vanavond: Teevee designvoorstel.png`
   - Library file id: `file_00000000cc4c821099c97384e519c045`
 
-This is direction, not specification. A new design thread may explore it without treating the existing composition as owner-approved final UI.
+This is direction, not specification. A new design thread may explore its module composition without treating the existing composition as owner-approved final UI. The shared Instrument Sans typeface choice **is** accepted and applies to future Tonight exploration.
 
 ## What counts as a new accepted visual baseline
 
