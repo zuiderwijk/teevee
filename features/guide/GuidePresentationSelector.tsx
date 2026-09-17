@@ -43,25 +43,27 @@ export function GuidePresentationSelector({
               { opacity: loading ? 0.5 : pressed ? 0.62 : 1 },
             ]}
           >
-            <Text
-              numberOfLines={1}
-              maxFontSizeMultiplier={PRESENTATION_MAX_FONT_SIZE_MULTIPLIER}
-              style={[
-                styles.label,
-                {
-                  color: active ? theme.colors.text : theme.colors.textSecondary,
-                  fontWeight: active ? '700' : '500',
-                },
-              ]}
-            >
-              {loading ? 'Laden…' : presentation.label}
-            </Text>
-            {active ? (
-              <View
-                pointerEvents="none"
-                style={[styles.activeIndicator, { backgroundColor: theme.colors.currentTime }]}
-              />
-            ) : null}
+            <View style={styles.labelGroup}>
+              <Text
+                numberOfLines={1}
+                maxFontSizeMultiplier={PRESENTATION_MAX_FONT_SIZE_MULTIPLIER}
+                style={[
+                  styles.label,
+                  {
+                    color: active ? theme.colors.text : theme.colors.textSecondary,
+                    fontWeight: active ? '600' : '500',
+                  },
+                ]}
+              >
+                {loading ? 'Laden…' : presentation.label}
+              </Text>
+              {active ? (
+                <View
+                  pointerEvents="none"
+                  style={[styles.activeIndicator, { backgroundColor: theme.colors.currentTime }]}
+                />
+              ) : null}
+            </View>
           </Pressable>
         );
       })}
@@ -79,7 +81,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8,
   },
   item: {
-    position: 'relative',
     flex: 1,
     minHeight: 44,
     paddingHorizontal: 6,
@@ -87,16 +88,20 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
+  labelGroup: {
+    position: 'relative',
+    alignSelf: 'center',
+  },
   label: {
     fontSize: 15,
     lineHeight: 19,
   },
   activeIndicator: {
     position: 'absolute',
-    left: 14,
-    right: 14,
-    bottom: -StyleSheet.hairlineWidth,
-    height: 3,
-    borderRadius: 2,
+    left: 0,
+    right: 0,
+    bottom: -11,
+    height: 2,
+    borderRadius: 1,
   },
 });
