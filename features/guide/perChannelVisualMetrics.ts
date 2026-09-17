@@ -1,118 +1,39 @@
-import { Platform } from 'react-native';
+import {
+  COMPACT_GUIDE_MAX_FONT_SIZE_MULTIPLIER,
+  GUIDE_TYPOGRAPHY,
+  GUIDE_VISUAL_METRICS,
+  minimumTouchTargetForPlatform,
+  PER_CHANNEL_VISUAL_METRICS as CANONICAL_PER_CHANNEL_VISUAL_METRICS,
+} from './guideVisualMetrics';
 
-import { TEEVEE_FONT_FAMILIES } from '@/theme/typography';
-
-export const COMPACT_GUIDE_MAX_FONT_SIZE_MULTIPLIER = 1.2;
+/**
+ * Transitional naming facade for PerChannelGuideView. Values come exclusively
+ * from guideVisualMetrics so there is one numeric/token source of truth. New
+ * Guide code should import guideVisualMetrics directly.
+ */
+export { COMPACT_GUIDE_MAX_FONT_SIZE_MULTIPLIER, minimumTouchTargetForPlatform };
 
 export const PER_CHANNEL_VISUAL_METRICS = {
-  screenInsetX: 20,
-  channelStripHeight: 72,
-  channelStripInsetX: 20,
-  channelItemSize: 48,
-  channelItemGap: 12,
-  channelSelectedRadius: 12,
-  logoMaxWidth: 40,
-  logoMaxHeight: 32,
-  stripToHeadingGap: 24,
-  headingToUtilitiesGap: 8,
-  utilityRowMinHeight: 52,
-  utilityToScheduleGap: 12,
-  utilityVisibleHeight: 36,
-  utilityRadius: 18,
-  utilityGap: 8,
-  primetimePaddingX: 14,
-  nowPaddingX: 12,
-  nowMinWidth: 48,
-  utilityIconSize: 14,
-  utilityIconGap: 7,
-  standardRowHeight: 52,
-  currentRowHeight: 120,
-  timeX: 24,
-  programmeX: 100,
-  programmeRightInset: 24,
-  currentContentTopInset: 14,
-  currentDescriptionGap: 2,
-  progressHeight: 4,
-  progressRadius: 2,
-  progressBottomInset: 16,
-  separatorLeft: 20,
-  stickyContextHeight: 52,
-  stickyContextWrappedHeight: 88,
-  collapseDistance: 56,
-  collapseTranslateY: 12,
-  reduceMotionSwitchOffset: 28,
-  viewportReferenceRows: 2,
-  controlPressedOpacity: 0.64,
+  ...CANONICAL_PER_CHANNEL_VISUAL_METRICS,
+  screenInsetX: GUIDE_VISUAL_METRICS.screenInsetX,
+  timeX: CANONICAL_PER_CHANNEL_VISUAL_METRICS.timeTextX,
+  programmeX: CANONICAL_PER_CHANNEL_VISUAL_METRICS.programmeColumnX,
+  separatorLeft: CANONICAL_PER_CHANNEL_VISUAL_METRICS.separatorLeftInset,
+  controlPressedOpacity: GUIDE_VISUAL_METRICS.controlPressOpacity,
 } as const;
 
 export const PER_CHANNEL_TYPOGRAPHY = {
-  channelFallback: {
-    fontFamily: TEEVEE_FONT_FAMILIES.bold,
-    fontSize: 12,
-    lineHeight: 14,
-  },
-  selectedChannelHeading: {
-    fontFamily: TEEVEE_FONT_FAMILIES.bold,
-    fontSize: 24,
-    lineHeight: 30,
-  },
-  daySelector: {
-    fontFamily: TEEVEE_FONT_FAMILIES.semibold,
-    fontSize: 15,
-    lineHeight: 20,
-  },
-  compactChannelPrefix: {
-    fontFamily: TEEVEE_FONT_FAMILIES.bold,
-    fontSize: 14,
-    lineHeight: 18,
-  },
-  compactDate: {
-    fontFamily: TEEVEE_FONT_FAMILIES.semibold,
-    fontSize: 14,
-    lineHeight: 18,
-  },
-  utility: {
-    fontFamily: TEEVEE_FONT_FAMILIES.semibold,
-    fontSize: 14,
-    lineHeight: 18,
-  },
-  programmeTime: {
-    fontFamily: TEEVEE_FONT_FAMILIES.regular,
-    fontSize: 16,
-    lineHeight: 20,
-  },
-  programmeTitle: {
-    fontFamily: TEEVEE_FONT_FAMILIES.medium,
-    fontSize: 18,
-    lineHeight: 22,
-  },
-  currentProgrammeTitle: {
-    fontFamily: TEEVEE_FONT_FAMILIES.bold,
-    fontSize: 20,
-    lineHeight: 24,
-  },
-  currentDescription: {
-    fontFamily: TEEVEE_FONT_FAMILIES.regular,
-    fontSize: 15,
-    lineHeight: 18,
-  },
-  presentationInactive: {
-    fontFamily: TEEVEE_FONT_FAMILIES.medium,
-    fontSize: 14,
-    lineHeight: 18,
-  },
-  presentationSelected: {
-    fontFamily: TEEVEE_FONT_FAMILIES.semibold,
-    fontSize: 14,
-    lineHeight: 18,
-  },
-  brand: {
-    fontFamily: TEEVEE_FONT_FAMILIES.bold,
-    fontSize: 31,
-    lineHeight: 34,
-  },
+  channelFallback: GUIDE_TYPOGRAPHY.channelFallback,
+  selectedChannelHeading: GUIDE_TYPOGRAPHY.selectedChannelHeading,
+  daySelector: GUIDE_TYPOGRAPHY.selectedDate,
+  compactChannelPrefix: GUIDE_TYPOGRAPHY.condensedChannelPrefix,
+  compactDate: GUIDE_TYPOGRAPHY.condensedDate,
+  utility: GUIDE_TYPOGRAPHY.utility,
+  programmeTime: GUIDE_TYPOGRAPHY.programmeTime,
+  programmeTitle: GUIDE_TYPOGRAPHY.programmeTitle,
+  currentProgrammeTitle: GUIDE_TYPOGRAPHY.currentProgrammeTitle,
+  currentDescription: GUIDE_TYPOGRAPHY.currentDescription,
+  presentationInactive: GUIDE_TYPOGRAPHY.presentationInactive,
+  presentationSelected: GUIDE_TYPOGRAPHY.presentationSelected,
+  brand: GUIDE_TYPOGRAPHY.brandMark,
 } as const;
-
-export function minimumTouchTargetForPlatform() {
-  return Platform?.OS === 'android' ? 48 : 44;
-}
