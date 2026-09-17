@@ -1,5 +1,3 @@
-import { Platform } from 'react-native';
-
 import { TEEVEE_FONT_FAMILIES } from '@/theme/typography';
 
 export const COMPACT_GUIDE_MAX_FONT_SIZE_MULTIPLIER = 1.2;
@@ -128,7 +126,7 @@ export const GUIDE_TYPOGRAPHY = {
   },
 } as const;
 
-export function minimumTouchTargetForPlatform(platform = Platform.OS) {
+export function minimumTouchTargetForPlatform(platform: string) {
   return platform === 'android'
     ? GUIDE_VISUAL_METRICS.touchTargetAndroid
     : GUIDE_VISUAL_METRICS.touchTargetIos;
