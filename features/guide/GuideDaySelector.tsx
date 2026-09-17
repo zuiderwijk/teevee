@@ -15,9 +15,10 @@ import { useTeeveeTheme } from '@/theme/useTeeveeTheme';
 import { guideDayLabel, guideDayOptions } from './guideDaySelection';
 import {
   COMPACT_GUIDE_MAX_FONT_SIZE_MULTIPLIER,
+  GUIDE_TYPOGRAPHY,
+  GUIDE_VISUAL_METRICS,
   minimumTouchTargetForPlatform,
-  PER_CHANNEL_TYPOGRAPHY,
-} from './perChannelVisualMetrics';
+} from './guideVisualMetrics';
 
 type GuideDaySelectorProps = {
   selectedDayStartMs: number;
@@ -63,7 +64,10 @@ export const GuideDaySelector = memo(function GuideDaySelector({
         onPress={() => setOpen(true)}
         style={({ pressed }) => [
           styles.inlineControl,
-          { minHeight: minimumTouchTarget, opacity: pressed ? 0.64 : 1 },
+          {
+            minHeight: minimumTouchTarget,
+            opacity: pressed ? GUIDE_VISUAL_METRICS.controlPressOpacity : 1,
+          },
         ]}
       >
         <View style={styles.inlineTextGroup}>
@@ -125,7 +129,10 @@ export const GuideDaySelector = memo(function GuideDaySelector({
                 accessibilityLabel="Sluit dagkiezer"
                 hitSlop={8}
                 onPress={() => setOpen(false)}
-                style={({ pressed }) => [styles.closeButton, { opacity: pressed ? 0.64 : 1 }]}
+                style={({ pressed }) => [
+                  styles.closeButton,
+                  { opacity: pressed ? GUIDE_VISUAL_METRICS.controlPressOpacity : 1 },
+                ]}
               >
                 <Text accessible={false} style={[styles.closeText, { color: theme.colors.text }]}>×</Text>
               </Pressable>
@@ -147,7 +154,7 @@ export const GuideDaySelector = memo(function GuideDaySelector({
                       {
                         borderBottomColor: theme.colors.border,
                         backgroundColor: selected ? theme.colors.surfaceElevated : theme.colors.surface,
-                        opacity: pressed ? 0.64 : 1,
+                        opacity: pressed ? GUIDE_VISUAL_METRICS.controlPressOpacity : 1,
                       },
                     ]}
                   >
@@ -189,15 +196,15 @@ const styles = StyleSheet.create({
   },
   inlineLabel: {
     flexShrink: 1,
-    ...PER_CHANNEL_TYPOGRAPHY.daySelector,
+    ...GUIDE_TYPOGRAPHY.selectedDate,
   },
   compactPrefix: {
     flexShrink: 1,
-    ...PER_CHANNEL_TYPOGRAPHY.compactChannelPrefix,
+    ...GUIDE_TYPOGRAPHY.condensedChannelPrefix,
   },
   compactDate: {
     flexShrink: 0,
-    ...PER_CHANNEL_TYPOGRAPHY.compactDate,
+    ...GUIDE_TYPOGRAPHY.condensedDate,
   },
   chevronBox: {
     width: 14,
