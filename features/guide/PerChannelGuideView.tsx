@@ -3,6 +3,7 @@ import {
   type LayoutChangeEvent,
   type NativeScrollEvent,
   type NativeSyntheticEvent,
+  Platform,
   Pressable,
   SafeAreaView,
   ScrollView,
@@ -34,6 +35,14 @@ import {
   guideTargetForPrimetime,
 } from './guideDaySelection';
 import {
+  COMPACT_GUIDE_MAX_FONT_SIZE_MULTIPLIER,
+  GUIDE_TYPOGRAPHY,
+  GUIDE_VISUAL_METRICS,
+  minimumTouchTargetForPlatform,
+  PER_CHANNEL_VISUAL_METRICS,
+  programmeTitleLineCount,
+} from './guideVisualMetrics';
+import {
   adjacentChannelIndex,
   buildProgrammeRows,
   type PerChannelProgrammeRow,
@@ -43,12 +52,6 @@ import {
   timestampForScrollOffset,
   viewportReferenceInset,
 } from './perChannel';
-import {
-  COMPACT_GUIDE_MAX_FONT_SIZE_MULTIPLIER,
-  minimumTouchTargetForPlatform,
-  PER_CHANNEL_TYPOGRAPHY,
-  PER_CHANNEL_VISUAL_METRICS,
-} from './perChannelVisualMetrics';
 import { useGuideClock } from './useGuideClock';
 import { useGuideDaySelection } from './useGuideDaySelection';
 import { useSelectedGuideDaySchedule } from './useSelectedGuideDaySchedule';
@@ -101,7 +104,7 @@ function ProgrammeRow({
   const { programme, current, progress } = row;
   const startMs = Date.parse(programme.startAt);
   const endMs = Date.parse(programme.endAt);
-  const titleLines = fontScale > 1.35 ? 2 : 1;
+  const titleLines = programmeTitleLineCount(fontScale);
   const detail = current ? currentDetail(row) : null;
 
   return (
@@ -124,10 +127,7 @@ function ProgrammeRow({
         <>
           <Text
             numberOfLines={1}
-            style={[
-              styles.currentTime,
-              { color: theme.colors.textSecondary },
-            ]}
+            style={[styles.currentTime, { color: theme.colors.textSecondary }]}
           >
             {formatTime(startMs)}
           </Text>
@@ -243,7 +243,7 @@ export const PerChannelGuideView = memo(function PerChannelGuideView({
   const theme = useTeeveeTheme();
   const { width: windowWidth, fontScale = 1 } = useWindowDimensions();
   const effectiveFontScale = Number.isFinite(fontScale) && fontScale > 0 ? Math.max(1, fontScale) : 1;
-  const minimumTouchTarget = minimumTouchTargetForPlatform();
+  const minimumTouchTarget = minimumTouchTargetForPlatform(Platform?.OS);
   const reduceMotion = useReducedMotion();
   const channelStripRef = useRef<ScrollView>(null);
   const pagerRef = useRef<ScrollView>(null);
@@ -289,13 +289,17 @@ export const PerChannelGuideView = memo(function PerChannelGuideView({
   const selectedCurrentId = selectedRows.find(({ current }) => current)?.programme.id ?? 'none';
   const scheduleHeight = Math.max(1, ...pagerPages.map(({ rows }) => scheduleHeightForRows(rows)));
   const referenceInset = viewportReferenceInset(effectiveFontScale);
+  const selectedRowsRef = useRef(selectedRows);
+  const referenceInsetRef = useRef(referenceInset);
+  selectedRowsRef.current = selectedRows;
+  referenceInsetRef.current = referenceInset;
 
   const collapseProgress = useSharedValue(0);
   const collapseAnchorY = useSharedValue(0);
   const collapseEnabled = useSharedValue(0);
   const headingNaturalHeight = useSharedValue(
     PER_CHANNEL_VISUAL_METRICS.stripToHeadingGap +
-      PER_CHANNEL_TYPOGRAPHY.selectedChannelHeading.lineHeight +
+      GUIDE_TYPOGRAPHY.selectedChannelHeading.lineHeight +
       PER_CHANNEL_VISUAL_METRICS.headingToUtilitiesGap,
   );
 
@@ -325,7 +329,10 @@ export const PerChannelGuideView = memo(function PerChannelGuideView({
         channels.length * PER_CHANNEL_VISUAL_METRICS.channelItemSize +
         Math.max(0, channels.length - 1) * PER_CHANNEL_VISUAL_METRICS.channelItemGap;
       const max = Math.max(0, contentWidth - windowWidth);
-      channelStripRef.current?.scrollTo({ x: Math.min(max, Math.max(0, itemCentre - windowWidth / 2)), animated });
+      channelStripRef.current?.scrollTo({
+        x: Math.min(max, Math.max(0, itemCentre - windowWidth / 2)),
+        animated,
+      });
     },
     [channels.length, windowWidth],
   );
@@ -358,29 +365,33 @@ export const PerChannelGuideView = memo(function PerChannelGuideView({
   const scrollToTimestamp = useCallback(
     (timeMs: number, animated: boolean) => {
       viewedTimeRef.current = timeMs;
-      const y = scrollOffsetForTimestamp(selectedRows, timeMs, referenceInset);
+      const y = scrollOffsetForTimestamp(
+        selectedRowsRef.current,
+        timeMs,
+        referenceInsetRef.current,
+      );
       if (!animated) {
         const progress = Math.min(1, Math.max(0, collapseProgress.value));
-        collapseAnchorY.value = Math.max(0, y - progress * PER_CHANNEL_VISUAL_METRICS.collapseDistance);
+        collapseAnchorY.value = Math.max(
+          0,
+          y - progress * PER_CHANNEL_VISUAL_METRICS.collapseDistance,
+        );
       }
       scheduleRef.current?.scrollTo({ y, animated });
     },
-    [collapseAnchorY, collapseProgress, referenceInset, selectedRows],
+    [collapseAnchorY, collapseProgress],
   );
 
-  const syncScheduleScroll = useCallback(
-    (y: number, progress: number) => {
-      viewedTimeRef.current = timestampForScrollOffset(
-        selectedRows,
-        y,
-        referenceInset,
-        viewedTimeRef.current,
-      );
-      const nextCondensed = progress >= 1;
-      setCondensed((current) => (current === nextCondensed ? current : nextCondensed));
-    },
-    [referenceInset, selectedRows],
-  );
+  const syncScheduleScroll = useCallback((y: number, progress: number) => {
+    viewedTimeRef.current = timestampForScrollOffset(
+      selectedRowsRef.current,
+      y,
+      referenceInsetRef.current,
+      viewedTimeRef.current,
+    );
+    const nextCondensed = progress >= 1;
+    setCondensed((current) => (current === nextCondensed ? current : nextCondensed));
+  }, []);
 
   const scheduleScrollHandler = useAnimatedScrollHandler(
     {
@@ -433,14 +444,14 @@ export const PerChannelGuideView = memo(function PerChannelGuideView({
   );
 
   const scrollToNow = useCallback(() => {
-    const target = guideTargetForNow(Date.now());
+    const target = guideTargetForNow(nowMs);
     if (target.dayStartMs === selectedDayStartMs) {
       scrollToTimestamp(target.timeMs, true);
       return;
     }
     pendingTargetTimeRef.current = target.timeMs;
     selectDay(target.dayStartMs);
-  }, [scrollToTimestamp, selectDay, selectedDayStartMs]);
+  }, [nowMs, scrollToTimestamp, selectDay, selectedDayStartMs]);
 
   const scrollToPrimetime = useCallback(() => {
     const target = guideTargetForPrimetime(selectedDayStartMs);
@@ -530,7 +541,7 @@ export const PerChannelGuideView = memo(function PerChannelGuideView({
                   backgroundColor: active ? theme.colors.surfaceElevated : 'transparent',
                   borderColor: active ? theme.colors.border : 'transparent',
                   borderWidth: active ? StyleSheet.hairlineWidth : 0,
-                  opacity: pressed ? PER_CHANNEL_VISUAL_METRICS.controlPressedOpacity : 1,
+                  opacity: pressed ? GUIDE_VISUAL_METRICS.controlPressOpacity : 1,
                 },
               ]}
             >
@@ -602,7 +613,11 @@ export const PerChannelGuideView = memo(function PerChannelGuideView({
             onPress={scrollToPrimetime}
             style={({ pressed }) => [
               styles.utilityTouchTarget,
-              { minHeight: minimumTouchTarget, opacity: pressed ? PER_CHANNEL_VISUAL_METRICS.controlPressedOpacity : 1 },
+              {
+                minHeight: minimumTouchTarget,
+                minWidth: minimumTouchTarget,
+                opacity: pressed ? GUIDE_VISUAL_METRICS.controlPressOpacity : 1,
+              },
             ]}
           >
             <View
@@ -629,7 +644,11 @@ export const PerChannelGuideView = memo(function PerChannelGuideView({
             onPress={scrollToNow}
             style={({ pressed }) => [
               styles.utilityTouchTarget,
-              { minHeight: minimumTouchTarget, opacity: pressed ? PER_CHANNEL_VISUAL_METRICS.controlPressedOpacity : 1 },
+              {
+                minHeight: minimumTouchTarget,
+                minWidth: minimumTouchTarget,
+                opacity: pressed ? GUIDE_VISUAL_METRICS.controlPressOpacity : 1,
+              },
             ]}
           >
             <View style={[styles.nowVisible, { borderColor: theme.colors.border }]}> 
@@ -714,16 +733,16 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
   channelContext: {
-    paddingHorizontal: PER_CHANNEL_VISUAL_METRICS.screenInsetX,
+    paddingHorizontal: GUIDE_VISUAL_METRICS.screenInsetX,
     paddingTop: PER_CHANNEL_VISUAL_METRICS.stripToHeadingGap,
     paddingBottom: PER_CHANNEL_VISUAL_METRICS.headingToUtilitiesGap,
   },
   channelName: {
-    ...PER_CHANNEL_TYPOGRAPHY.selectedChannelHeading,
+    ...GUIDE_TYPOGRAPHY.selectedChannelHeading,
     letterSpacing: 0,
   },
   contextRow: {
-    paddingHorizontal: PER_CHANNEL_VISUAL_METRICS.screenInsetX,
+    paddingHorizontal: GUIDE_VISUAL_METRICS.screenInsetX,
     flexDirection: 'row',
     flexWrap: 'wrap',
     alignItems: 'center',
@@ -749,7 +768,6 @@ const styles = StyleSheet.create({
     marginLeft: 0,
   },
   utilityTouchTarget: {
-    minWidth: 44,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -791,7 +809,7 @@ const styles = StyleSheet.create({
     borderRadius: 5,
   },
   utilityButtonText: {
-    ...PER_CHANNEL_TYPOGRAPHY.utility,
+    ...GUIDE_TYPOGRAPHY.utility,
     letterSpacing: 0,
   },
   programmeRow: {
@@ -802,41 +820,47 @@ const styles = StyleSheet.create({
   },
   standardTimeCell: {
     position: 'absolute',
-    left: PER_CHANNEL_VISUAL_METRICS.timeX,
+    left: PER_CHANNEL_VISUAL_METRICS.timeTextX,
     top: 0,
     bottom: 0,
-    width: PER_CHANNEL_VISUAL_METRICS.programmeX - PER_CHANNEL_VISUAL_METRICS.timeX - 12,
+    width:
+      PER_CHANNEL_VISUAL_METRICS.programmeColumnX -
+      PER_CHANNEL_VISUAL_METRICS.timeTextX -
+      12,
     justifyContent: 'center',
   },
   standardTitleCell: {
     position: 'absolute',
-    left: PER_CHANNEL_VISUAL_METRICS.programmeX,
+    left: PER_CHANNEL_VISUAL_METRICS.programmeColumnX,
     right: PER_CHANNEL_VISUAL_METRICS.programmeRightInset,
     top: 0,
     bottom: 0,
     justifyContent: 'center',
   },
   programmeTime: {
-    ...PER_CHANNEL_TYPOGRAPHY.programmeTime,
+    ...GUIDE_TYPOGRAPHY.programmeTime,
     fontVariant: ['tabular-nums'],
     letterSpacing: 0,
   },
   programmeTitle: {
-    ...PER_CHANNEL_TYPOGRAPHY.programmeTitle,
+    ...GUIDE_TYPOGRAPHY.programmeTitle,
     letterSpacing: 0,
   },
   currentTime: {
     position: 'absolute',
-    left: PER_CHANNEL_VISUAL_METRICS.timeX,
+    left: PER_CHANNEL_VISUAL_METRICS.timeTextX,
     top: PER_CHANNEL_VISUAL_METRICS.currentContentTopInset,
-    width: PER_CHANNEL_VISUAL_METRICS.programmeX - PER_CHANNEL_VISUAL_METRICS.timeX - 12,
-    ...PER_CHANNEL_TYPOGRAPHY.programmeTime,
+    width:
+      PER_CHANNEL_VISUAL_METRICS.programmeColumnX -
+      PER_CHANNEL_VISUAL_METRICS.timeTextX -
+      12,
+    ...GUIDE_TYPOGRAPHY.programmeTime,
     fontVariant: ['tabular-nums'],
     letterSpacing: 0,
   },
   currentContent: {
     position: 'absolute',
-    left: PER_CHANNEL_VISUAL_METRICS.programmeX,
+    left: PER_CHANNEL_VISUAL_METRICS.programmeColumnX,
     right: PER_CHANNEL_VISUAL_METRICS.programmeRightInset,
     top: PER_CHANNEL_VISUAL_METRICS.currentContentTopInset,
     bottom:
@@ -846,17 +870,17 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
   currentTitle: {
-    ...PER_CHANNEL_TYPOGRAPHY.currentProgrammeTitle,
+    ...GUIDE_TYPOGRAPHY.currentProgrammeTitle,
     letterSpacing: 0,
   },
   currentDescription: {
-    ...PER_CHANNEL_TYPOGRAPHY.currentDescription,
+    ...GUIDE_TYPOGRAPHY.currentDescription,
     marginTop: PER_CHANNEL_VISUAL_METRICS.currentDescriptionGap,
     letterSpacing: 0,
   },
   progressTrack: {
     position: 'absolute',
-    left: PER_CHANNEL_VISUAL_METRICS.programmeX,
+    left: PER_CHANNEL_VISUAL_METRICS.programmeColumnX,
     right: PER_CHANNEL_VISUAL_METRICS.programmeRightInset,
     bottom: PER_CHANNEL_VISUAL_METRICS.progressBottomInset,
     height: PER_CHANNEL_VISUAL_METRICS.progressHeight,
@@ -869,7 +893,7 @@ const styles = StyleSheet.create({
   },
   programmeSeparator: {
     position: 'absolute',
-    left: PER_CHANNEL_VISUAL_METRICS.separatorLeft,
+    left: PER_CHANNEL_VISUAL_METRICS.separatorLeftInset,
     right: 0,
     bottom: 0,
     height: StyleSheet.hairlineWidth,
