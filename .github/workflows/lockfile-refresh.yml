@@ -3,7 +3,7 @@ name: Temporary font lockfile refresh
 on:
   push:
     branches:
-      - feat/per-channel-fixed-row-convergence
+      - feat/per-channel-fixed-row-convergence-v2
     paths:
       - .github/workflows/lockfile-refresh.yml
 
@@ -17,7 +17,7 @@ jobs:
     steps:
       - uses: actions/checkout@v7
         with:
-          ref: feat/per-channel-fixed-row-convergence
+          ref: feat/per-channel-fixed-row-convergence-v2
       - uses: actions/setup-node@v7
         with:
           node-version: 22
@@ -32,4 +32,4 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add package.json package-lock.json
           git commit -m "Add Instrument Sans runtime dependencies"
-          git push origin HEAD:feat/per-channel-fixed-row-convergence
+          git push origin HEAD:feat/per-channel-fixed-row-convergence-v2
