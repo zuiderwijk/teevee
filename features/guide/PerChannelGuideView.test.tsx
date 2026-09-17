@@ -44,6 +44,7 @@ const fixture: GuideFixture = {
     {
       id: 'npo2-current', channelId: 'npo-2', title: 'Actueel op NPO 2',
       startAt: '2026-09-17T18:00:00.000Z', endAt: '2026-09-17T19:30:00.000Z',
+      description: 'Lange huidige uitzending met voldoende geometrie voor detail.',
     },
     {
       id: 'npo3-current', channelId: 'npo-3', title: 'Actueel op NPO 3',
@@ -90,7 +91,7 @@ vi.mock('react-native', async () => {
     accessibilityElementsHidden?: boolean;
     importantForAccessibility?: string;
     onPress?: () => void;
-    onLayout?: (event: { nativeEvent: { layout: { height: number } } }) => void;
+    onLayout?: (event: { nativeEvent: { layout: { height: number; y?: number } } }) => void;
     onMomentumScrollEnd?: (event: { nativeEvent: { contentOffset: { x: number; y: number } } }) => void;
     onScroll?: unknown;
     source?: { uri?: string };
@@ -110,7 +111,7 @@ vi.mock('react-native', async () => {
     onClick: props.onPress,
   }, props.children);
   function View(props: HostProps) {
-    useLayoutEffect(() => props.onLayout?.({ nativeEvent: { layout: { height: 62 } } }), [props.onLayout]);
+    useLayoutEffect(() => props.onLayout?.({ nativeEvent: { layout: { height: 62, y: 0 } } }), [props.onLayout]);
     return host('div', props);
   }
   function Text(props: HostProps) {
@@ -198,6 +199,20 @@ async function renderView() {
   });
 }
 
+function scheduleHandler() {
+  const schedule = testState.scrollProps.get('per-channel-schedule-scroll');
+  const handler = schedule?.onScroll as {
+    onBeginDrag?: () => void;
+    onScroll?: (event: { contentOffset: { y: number } }) => void;
+  } | undefined;
+  if (!handler?.onScroll) throw new Error('Missing schedule scroll handler');
+  return handler;
+}
+
+function initialScheduleY() {
+  return testState.scrollCalls.find((call) => call.testID === 'per-channel-schedule-scroll')?.args.y ?? 0;
+}
+
 describe('PerChannelGuideView canonical production contract', () => {
   it('selects channels directly and keeps full channel identity accessible', async () => {
     await renderView();
@@ -249,13 +264,10 @@ describe('PerChannelGuideView canonical production contract', () => {
     });
   });
 
-  it('uses direct 56pt collapse and exposes the condensed context only at the settled state', async () => {
+  it('uses direct 56pt collapse from the expanded anchor and restores without direction-based hide/reveal', async () => {
     await renderView();
-    const initialScheduleCall = testState.scrollCalls.find((call) => call.testID === 'per-channel-schedule-scroll');
-    const anchorY = initialScheduleCall?.args.y ?? 0;
-    const schedule = testState.scrollProps.get('per-channel-schedule-scroll');
-    const handler = schedule?.onScroll as { onBeginDrag?: () => void; onScroll?: (event: { contentOffset: { y: number } }) => void } | undefined;
-    if (!handler?.onScroll) throw new Error('Missing schedule scroll handler');
+    const anchorY = initialScheduleY();
+    const handler = scheduleHandler();
 
     await act(async () => {
       handler.onBeginDrag?.();
@@ -266,16 +278,20 @@ describe('PerChannelGuideView canonical production contract', () => {
     await act(async () => handler.onScroll?.({ contentOffset: { y: anchorY + 56 } }));
     expect(getByTestId('per-channel-context-condensed')).not.toBeNull();
     expect(getByTestId('guide-day-selector').getAttribute('data-compact-prefix')).toBe('NPO 1');
+
+    await act(async () => handler.onScroll?.({ contentOffset: { y: anchorY } }));
+    expect(container.querySelector('[data-testid="per-channel-context-condensed"]')).toBeNull();
+    expect(getByTestId('guide-day-selector').getAttribute('data-compact-prefix')).toBeNull();
+
+    await act(async () => handler.onScroll?.({ contentOffset: { y: Math.max(0, anchorY - 56) } }));
+    expect(container.querySelector('[data-testid="per-channel-context-condensed"]')).toBeNull();
   });
 
   it('uses the discrete 28pt threshold when Reduce Motion is enabled', async () => {
     testState.reduceMotion = true;
     await renderView();
-    const initialScheduleCall = testState.scrollCalls.find((call) => call.testID === 'per-channel-schedule-scroll');
-    const anchorY = initialScheduleCall?.args.y ?? 0;
-    const schedule = testState.scrollProps.get('per-channel-schedule-scroll');
-    const handler = schedule?.onScroll as { onBeginDrag?: () => void; onScroll?: (event: { contentOffset: { y: number } }) => void } | undefined;
-    if (!handler?.onScroll) throw new Error('Missing schedule scroll handler');
+    const anchorY = initialScheduleY();
+    const handler = scheduleHandler();
 
     await act(async () => {
       handler.onBeginDrag?.();
@@ -285,12 +301,20 @@ describe('PerChannelGuideView canonical production contract', () => {
 
     await act(async () => handler.onScroll?.({ contentOffset: { y: anchorY + 28 } }));
     expect(getByTestId('per-channel-context-condensed')).not.toBeNull();
+
+    await act(async () => handler.onScroll?.({ contentOffset: { y: anchorY + 27 } }));
+    expect(container.querySelector('[data-testid="per-channel-context-condensed"]')).toBeNull();
   });
 
-  it('keeps current programme status in accessibility without adding a visible live badge', async () => {
+  it('uses one local current treatment with geometry-gated progress/detail and full accessibility', async () => {
     await renderView();
     const current = getByTestId('per-channel-programme-npo1-current');
     expect(current.getAttribute('aria-label')).toContain('nu bezig');
     expect(current.textContent).not.toContain('Nu bezig');
+    expect(container.querySelector('[data-testid="per-channel-progress-npo1-current"]')).not.toBeNull();
+    expect(container.querySelector('[data-testid="per-channel-description-npo1-current"]')).toBeNull();
+
+    expect(container.querySelector('[data-testid="per-channel-progress-npo2-current"]')).not.toBeNull();
+    expect(container.querySelector('[data-testid="per-channel-description-npo2-current"]')).not.toBeNull();
   });
 });
