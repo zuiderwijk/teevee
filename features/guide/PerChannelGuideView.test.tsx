@@ -5,8 +5,11 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { GuideFixture } from '@/data/domain/epg';
 import { guideTargetForNow, guideTargetForPrimetime } from './guideDaySelection';
-import { PER_CHANNEL_VISUAL_METRICS } from './guideVisualMetrics';
-import { perChannelMinuteHeightForFontScale, scheduleYForTime } from './perChannel';
+import {
+  PER_CHANNEL_VIEWED_TIME_ANCHOR_INSET,
+  perChannelMinuteHeightForFontScale,
+  scheduleYForTime,
+} from './perChannel';
 import { PerChannelGuideView } from './PerChannelGuideView';
 
 const testState = vi.hoisted(() => ({
@@ -226,7 +229,7 @@ describe('PerChannelGuideView canonical production contract', () => {
     const expectedPrimetimeY = Math.max(
       0,
       scheduleYForTime(primetimeTarget, selectedDayStartMs, perChannelMinuteHeightForFontScale(1)) -
-        PER_CHANNEL_VISUAL_METRICS.scrollTargetInsetY,
+        PER_CHANNEL_VIEWED_TIME_ANCHOR_INSET,
     );
     expect(testState.scrollCalls.at(-1)).toEqual({
       testID: 'per-channel-schedule-scroll',
@@ -238,7 +241,7 @@ describe('PerChannelGuideView canonical production contract', () => {
     const expectedNowY = Math.max(
       0,
       scheduleYForTime(nowTarget, selectedDayStartMs, perChannelMinuteHeightForFontScale(1)) -
-        PER_CHANNEL_VISUAL_METRICS.scrollTargetInsetY,
+        PER_CHANNEL_VIEWED_TIME_ANCHOR_INSET,
     );
     expect(testState.scrollCalls.at(-1)).toEqual({
       testID: 'per-channel-schedule-scroll',
