@@ -24,6 +24,7 @@ vi.mock('react-native', () => {
     View,
     Text,
     Image,
+    Platform: { OS: 'ios' },
     StyleSheet: { create: <T,>(value: T) => value },
   };
 });
@@ -62,6 +63,40 @@ describe('ChannelIdentity', () => {
 
     expect(container.querySelector('span')?.getAttribute('data-ellipsize-mode')).toBe('middle');
     expect(container.textContent).toBe('Publiek 1');
+  });
+
+  it('uses shortName inside the fixed Per-zender fallback box while accessibility keeps displayName', async () => {
+    await act(async () => {
+      root.render(
+        <ChannelIdentity
+          channel={{ ...baseChannel, shortName: 'NPO 1' }}
+          textColor="#111"
+          mutedTextColor="#777"
+          variant="per-channel-strip"
+        />,
+      );
+    });
+
+    expect(container.textContent).toBe('NPO 1');
+    expect(container.querySelector('[aria-label="Publiek 1"]')).not.toBeNull();
+    expect(container.querySelector('span')?.getAttribute('data-ellipsize-mode')).toBe('tail');
+  });
+
+  it('does not render a permanent caption under a successful Per-zender logo', async () => {
+    await act(async () => {
+      root.render(
+        <ChannelIdentity
+          channel={{ ...baseChannel, shortName: 'NPO 1', logoUrl: 'https://example.com/npo-1.png' }}
+          textColor="#111"
+          mutedTextColor="#777"
+          variant="per-channel-strip"
+        />,
+      );
+    });
+
+    expect(container.querySelector('img')).not.toBeNull();
+    expect(container.querySelector('span')).toBeNull();
+    expect(container.querySelector('[aria-label="Publiek 1"]')).not.toBeNull();
   });
 
   it('keeps conventional tail truncation when a logo already carries the primary identity', async () => {
