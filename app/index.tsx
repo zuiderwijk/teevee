@@ -1,4 +1,4 @@
-import { type ComponentType, type ReactNode, useCallback, useEffect, useReducer, useRef, useState } from 'react';
+import { type ComponentType, type ReactNode, useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 
 import { SettingsButton } from '@/components/SettingsButton';
@@ -109,13 +109,16 @@ export default function GuideScreen() {
   );
 
   const guideKey = `guide-data-${guideDataVersion}`;
-  const perChannelPresentationNavigation = (
-    <GuidePresentationSelector
-      selected={presentation}
-      loadingPresentation={nowNextLoading ? 'now-next' : null}
-      onSelect={selectPresentation}
-      variant="tabs"
-    />
+  const perChannelPresentationNavigation = useMemo(
+    () => (
+      <GuidePresentationSelector
+        selected={presentation}
+        loadingPresentation={nowNextLoading ? 'now-next' : null}
+        onSelect={selectPresentation}
+        variant="tabs"
+      />
+    ),
+    [nowNextLoading, presentation, selectPresentation],
   );
 
   return (
