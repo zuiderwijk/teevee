@@ -1,4 +1,4 @@
-import { programmeProgress, type GuideFixture, type Programme } from '@/data/domain/epg';
+import { programmeProgress, type Channel, type GuideFixture, type GuideSchedule, type Programme } from '@/data/domain/epg';
 
 import {
   currentProgrammeRowHeight,
@@ -213,6 +213,55 @@ export function channelRailRecenterPlan(
     x: channelRailOffsetForSelection(selectedIndex, channelCount, viewportWidth),
     animated: !reduceMotion,
   } as const;
+}
+
+export type PerChannelSchedulePresentation = {
+  channels: Channel[];
+  schedule: GuideSchedule | null;
+  source: 'selected-schedule' | 'established-channels' | 'fixture';
+};
+
+/**
+ * Keep broadcaster identity and programme ownership separate while a non-current day loads.
+ * Once canonical channels are established, a missing selected-day schedule must never swap
+ * the rail to the generic deterministic fixture. The fixture remains valid only when no
+ * canonical/real channel catalogue has been established in this app session.
+ */
+export function resolvePerChannelSchedulePresentation(
+  selectedSchedule: GuideSchedule | null,
+  establishedChannels: Channel[] | null,
+  fixtureSchedule: GuideFixture | null,
+): PerChannelSchedulePresentation {
+  if (selectedSchedule) {
+    return {
+      channels: selectedSchedule.channels,
+      schedule: selectedSchedule,
+      source: 'selected-schedule',
+    };
+  }
+
+  if (establishedChannels && establishedChannels.length > 0) {
+    return {
+      channels: establishedChannels,
+      schedule: null,
+      source: 'established-channels',
+    };
+  }
+
+  return {
+    channels: fixtureSchedule?.channels ?? [],
+    schedule: fixtureSchedule,
+    source: 'fixture',
+  };
+}
+
+export function selectedChannelIndexForId(
+  channels: Channel[],
+  selectedChannelId: string | null,
+): number {
+  if (channels.length === 0 || !selectedChannelId) return 0;
+  const index = channels.findIndex(({ id }) => id === selectedChannelId);
+  return index >= 0 ? index : 0;
 }
 
 export type PerChannelTemporalControlStates = {

@@ -1,6 +1,6 @@
 # Teevee — Canonical Project State
 
-Last updated: 2026-09-17.
+Last updated: 2026-09-18.
 Status: ACTIVE — **Phase 4 Core Guide MVP hardening**.
 Current phase: **Phase 4 — Core Guide MVP hardening**
 Previous phase: **Phase 3 — Real Data Vertical Slice — CLOSED**
@@ -50,10 +50,12 @@ Do not retune accepted Guide mechanics without concrete regression evidence.
 - programme cells are horizontally windowed around the actual viewport with conservative overscan; programme-window ownership during animated scrolling follows the native viewport rather than jumping ahead of it.
 
 ### Per zender
-- chronological fixed-row schedule: standard rows 52 pt and actual-current row 120 pt at base scale; programme duration never changes row height;
+- chronological fixed-row programme list: standard rows 52 pt and actual-current row 176 pt at base scale; programme duration never changes row height or Y position;
+- expanded/rest state has no separate large textual selected-channel heading; the selected rail logo is the primary identity while condensed context retains the compact channel name;
 - horizontal adjacent-channel paging preserves the semantic viewed-time anchor where practical;
 - persistent/browsable 48×48 channel strip with direct selection; rest rail 72 pt and settled condensed rail 60 pt;
 - canonical local channel-logo registry is wired for NPO 1/2/3, RTL 4/5 and SBS6, with identical text fallback geometry for channels without a local asset;
+- once canonical broadcaster identity is established, non-current day loading/unavailability preserves that channel catalogue and never transiently replaces it with the generic deterministic fixture; the generic catalogue remains valid only in true fixture mode;
 - shared date context plus semantic `Primetime` and `Nu` controls; active/current state derives from the stable programme/timestamp anchor and Nu wins on overlap;
 - `Primetime` = 20:30 on the selected television day;
 - Programme Detail round-trip preserves relevant context.
@@ -117,15 +119,16 @@ Physical Android interaction acceptance remains OPEN/DEFERRED because no Android
 - true offline cold-start validation in a standalone/dev build rather than Expo Go;
 - release-like performance outside Expo Go;
 - production EPG/artwork rights/SLA and D-2..D+7 horizon proof; channel-logo provenance is repository-managed in `docs/CHANNEL_LOGO_ASSETS.md`;
+- provenance-checked dark-background variants for RTL 4, RTL 5 and SBS6 remain required before those marks can pass final dark-mode visual acceptance; do not recolour or fabricate them;
 - pricing/trial/paywall and subscription implementation;
 - production typography licensing;
 - final Tonight composition;
 - physical Android validation.
 
 ## EXACT NEXT STEP
-**Finish PR #81 against canonical main `178d81ba444e1def67e5f123971bd241bbb30581`: require exact-head CI, then perform physical iPhone acceptance of the refined Per-zender screen with real local NPO/RTL/SBS6 logos. Validate expanded 72-pt and settled-condensed 60-pt rails, direct selection/adjacent swipe/recentring, semantic Nu/Primetime states, fixed 52/120 rows, current description/progress, row press feedback, dark mode and accepted bottom navigation. Do not request Independent QA until the owner has physically accepted the exact CI-green head; do not merge from Development.**
+**Complete exact-head CI for the final PR #81 Per-zender candidate, then physically revalidate that exact head on iPhone. The device pass must verify the heading-less rest composition, 52/176 fixed rows and four-line current synopsis geometry, stable canonical NPO/RTL/SBS identity through non-current day loading/unavailable states, no transient generic `Publiek 1`/`Vier` rail, smooth vertical scrolling after a day switch, and the already accepted Nu/Primetime/channel-swipe/collapse/bottom-nav behaviour. RTL 4, RTL 5 and SBS6 dark-mode marks remain an explicit asset-input check. Do not request Independent QA and do not merge before owner physical acceptance.**
 
 Owner checkout: `~/projects/teevee`.
 
 ## Resume instruction
-> Read `AGENTS.md`, this file, `docs/ENGINEERING_QUALITY_POLICY.md`, ADR 0007, ADR 0008 and the visual handoff documents before changing the repository. Phase 1A, Phase 1B, Phase 2 and Phase 3 are closed on iPhone. Phase 4 is active. PRs #62, #64 and #66 established the television-day/runtime/day-navigation foundation. Issues #67/#70/#73 and PRs #71/#74 closed the measured Totaal cold-switch performance problem on iPhone. Preserve the accepted performance architecture and frozen Guide mechanics. PR #81 now contains the canonical Per-zender refinement from main plus the local representative channel-logo layer. The single next gate is exact-head CI followed by physical iPhone acceptance of that PR; do not request Independent QA and do not merge before the owner accepts the exact CI-green head.
+> Read `AGENTS.md`, this file, `docs/ENGINEERING_QUALITY_POLICY.md`, ADR 0007, ADR 0008 and the visual handoff documents before changing the repository. Phase 1A, Phase 1B, Phase 2 and Phase 3 are closed on iPhone. Phase 4 is active. Preserve the accepted Totaal performance architecture and frozen Guide mechanics. PR #81 is the active Per-zender convergence candidate: fixed 52/176 rows, no large rest channel heading, stable canonical channel identity during selected-day loading, local representative logos and semantic Nu/Primetime controls. The single next gate is exact-head CI followed by physical iPhone revalidation; do not request Independent QA and do not merge before owner acceptance.

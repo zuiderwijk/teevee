@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
 
-import type { GuideFixture, Programme } from '@/data/domain/epg';
+import type { Channel, GuideFixture, GuideSchedule, Programme } from '@/data/domain/epg';
 
-import { GUIDE_TYPOGRAPHY, PER_CHANNEL_VISUAL_METRICS } from './guideVisualMetrics';
+import { GUIDE_TYPOGRAPHY, GUIDE_VISUAL_METRICS, PER_CHANNEL_VISUAL_METRICS } from './guideVisualMetrics';
 import {
   adjacentChannelIndex,
   buildProgrammeRows,
@@ -15,9 +15,11 @@ import {
   programmeRowForTimestamp,
   programmesForChannelDay,
   programmeRowPressBackgroundColor,
+  resolvePerChannelSchedulePresentation,
   resolvePerChannelTemporalControlStates,
   scheduleHeightForRows,
   scrollOffsetForTimestamp,
+  selectedChannelIndexForId,
   standardProgrammeRowHeight,
   timestampForScrollOffset,
   viewportReferenceInset,
@@ -79,11 +81,11 @@ describe('per-channel fixed-row schedule', () => {
     expect(standardProgrammeRowHeight(1.5)).toBe(78);
     expect(standardProgrammeRowHeight(2)).toBe(104);
 
-    expect(currentProgrammeRowHeight(1)).toBe(120);
-    expect(currentProgrammeRowHeight(1.1)).toBe(132);
-    expect(currentProgrammeRowHeight(1.35)).toBe(162);
-    expect(currentProgrammeRowHeight(1.5)).toBe(180);
-    expect(currentProgrammeRowHeight(2)).toBe(240);
+    expect(currentProgrammeRowHeight(1)).toBe(176);
+    expect(currentProgrammeRowHeight(1.1)).toBe(194);
+    expect(currentProgrammeRowHeight(1.35)).toBe(238);
+    expect(currentProgrammeRowHeight(1.5)).toBe(265);
+    expect(currentProgrammeRowHeight(2)).toBe(352);
   });
 
   it('resolves at most one current row and uses real start/end time for progress', () => {
@@ -97,7 +99,7 @@ describe('per-channel fixed-row schedule', () => {
 
     expect(currentProgrammeIdAt(programmes, nowMs)).toBe('newer-overlap');
     expect(rows.filter(({ current }) => current)).toHaveLength(1);
-    expect(rows.find(({ current }) => current)?.height).toBe(120);
+    expect(rows.find(({ current }) => current)?.height).toBe(176);
     expect(rows.find(({ current }) => current)?.progress).toBeCloseTo(0.5, 5);
   });
 
@@ -147,11 +149,19 @@ describe('per-channel fixed-row schedule', () => {
     expect(GUIDE_TYPOGRAPHY.programmeTitle).toMatchObject({ fontSize: 17, lineHeight: 21 });
     expect(GUIDE_TYPOGRAPHY.currentProgrammeTitle).toMatchObject({ fontSize: 19, lineHeight: 23 });
     expect(GUIDE_TYPOGRAPHY.programmeTime).toMatchObject({ fontSize: 16, lineHeight: 20 });
-    expect(GUIDE_TYPOGRAPHY.currentDescription).toMatchObject({ fontSize: 15, lineHeight: 18 });
+    expect(GUIDE_TYPOGRAPHY.currentDescription).toMatchObject({ fontSize: 15, lineHeight: 22 });
     expect(PER_CHANNEL_VISUAL_METRICS.channelStripHeight).toBe(72);
     expect(PER_CHANNEL_VISUAL_METRICS.channelStripCondensedHeight).toBe(60);
     expect(PER_CHANNEL_VISUAL_METRICS.channelItemSize).toBe(48);
     expect(PER_CHANNEL_VISUAL_METRICS.channelItemGap).toBe(12);
+    expect(GUIDE_VISUAL_METRICS.controlPressOpacity).toBe(0.72);
+    expect(PER_CHANNEL_VISUAL_METRICS.stripToUtilitiesGap).toBe(24);
+    expect(PER_CHANNEL_VISUAL_METRICS.currentRowHeight).toBe(176);
+    expect(PER_CHANNEL_VISUAL_METRICS.currentDescriptionGap).toBe(10);
+    expect(PER_CHANNEL_VISUAL_METRICS.currentDescriptionToProgressMinGap).toBe(20);
+    expect(PER_CHANNEL_VISUAL_METRICS.currentDescriptionMaxLines).toBe(4);
+    expect(PER_CHANNEL_VISUAL_METRICS.progressHeight).toBe(4);
+    expect(PER_CHANNEL_VISUAL_METRICS.progressBottomInset).toBe(16);
   });
 
   it('recentres a selected channel while keeping rail bounds authoritative', () => {
@@ -251,6 +261,53 @@ describe('per-channel fixed-row schedule', () => {
   it('uses semantic surface fill only while a full programme row is pressed', () => {
     expect(programmeRowPressBackgroundColor(true, '#surface')).toBe('#surface');
     expect(programmeRowPressBackgroundColor(false, '#surface')).toBe('transparent');
+  });
+
+  it('keeps established canonical broadcaster identity while a selected day has no schedule yet', () => {
+    const canonicalChannels: Channel[] = [
+      { id: 'nl-npo-1', name: 'NPO 1', displayName: 'NPO 1', sortOrder: 0, isActive: true },
+      { id: 'nl-rtl-4', name: 'RTL 4', displayName: 'RTL 4', sortOrder: 1, isActive: true },
+    ];
+    const presentation = resolvePerChannelSchedulePresentation(null, canonicalChannels, fixture);
+
+    expect(presentation.source).toBe('established-channels');
+    expect(presentation.channels.map(({ id }) => id)).toEqual(['nl-npo-1', 'nl-rtl-4']);
+    expect(presentation.schedule).toBeNull();
+    expect(presentation.channels.some(({ id }) => id === 'channel-1')).toBe(false);
+  });
+
+  it('replaces only programme ownership when the selected canonical day arrives', () => {
+    const canonicalChannels: Channel[] = [
+      { id: 'nl-npo-1', name: 'NPO 1', displayName: 'NPO 1', sortOrder: 0, isActive: true },
+      { id: 'nl-rtl-4', name: 'RTL 4', displayName: 'RTL 4', sortOrder: 1, isActive: true },
+    ];
+    const selectedSchedule: GuideSchedule = {
+      generatedAt: '2026-09-13T10:00:00.000Z',
+      timezone: 'Europe/Amsterdam',
+      channels: canonicalChannels,
+      programmes: [{
+        id: 'rtl-programme',
+        channelId: 'nl-rtl-4',
+        startAt: '2026-09-13T18:00:00.000Z',
+        endAt: '2026-09-13T19:00:00.000Z',
+        title: 'RTL programme',
+      }],
+    };
+    const presentation = resolvePerChannelSchedulePresentation(selectedSchedule, canonicalChannels, fixture);
+
+    expect(presentation.source).toBe('selected-schedule');
+    expect(presentation.channels).toBe(selectedSchedule.channels);
+    expect(presentation.schedule).toBe(selectedSchedule);
+    expect(selectedChannelIndexForId(presentation.channels, 'nl-rtl-4')).toBe(1);
+  });
+
+  it('keeps the deterministic generic fixture valid only when no canonical catalogue exists', () => {
+    const presentation = resolvePerChannelSchedulePresentation(null, null, fixture);
+
+    expect(presentation.source).toBe('fixture');
+    expect(presentation.schedule).toBe(fixture);
+    expect(presentation.channels[0]?.id).toBe('channel-1');
+    expect(selectedChannelIndexForId(presentation.channels, 'missing')).toBe(0);
   });
 
   it('clamps adjacent channel navigation at the lineup edges', () => {

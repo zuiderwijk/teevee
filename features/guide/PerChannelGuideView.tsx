@@ -21,9 +21,10 @@ import Animated, {
 } from 'react-native-reanimated';
 import { scheduleOnRN } from 'react-native-worklets';
 
-import { type Channel, type GuideFixture } from '@/data/domain/epg';
+import { type Channel } from '@/data/domain/epg';
 import { guideTelevisionDayStart, GUIDE_TIME_ZONE } from '@/data/domain/guideTime';
 import { buildRuntimeGuideFixture } from '@/data/fixtures/runtimeGuideFixture';
+import { runtimeGuideScheduleFor } from '@/data/runtime/guideScheduleRuntime';
 import { useTeeveeTheme } from '@/theme/useTeeveeTheme';
 
 import { ChannelIdentity } from './ChannelIdentity';
@@ -37,6 +38,7 @@ import {
 } from './guideDaySelection';
 import {
   COMPACT_GUIDE_MAX_FONT_SIZE_MULTIPLIER,
+  currentProgrammeTitleLineCount,
   GUIDE_TYPOGRAPHY,
   GUIDE_VISUAL_METRICS,
   minimumTouchTargetForPlatform,
@@ -52,9 +54,11 @@ import {
   type PerChannelProgrammeRow,
   programmesForChannelDay,
   programmeRowPressBackgroundColor,
+  resolvePerChannelSchedulePresentation,
   resolvePerChannelTemporalControlStates,
   scheduleHeightForRows,
   scrollOffsetForTimestamp,
+  selectedChannelIndexForId,
   timestampForScrollOffset,
   viewportReferenceInset,
 } from './perChannel';
@@ -112,7 +116,9 @@ function ProgrammeRow({
   const { programme, current, progress } = row;
   const startMs = Date.parse(programme.startAt);
   const endMs = Date.parse(programme.endAt);
-  const titleLines = programmeTitleLineCount(fontScale);
+  const titleLines = current
+    ? currentProgrammeTitleLineCount(fontScale)
+    : programmeTitleLineCount(fontScale);
   const detail = current ? currentDetail(row) : null;
 
   return (
@@ -154,7 +160,7 @@ function ProgrammeRow({
             {detail ? (
               <Text
                 testID={`per-channel-description-${programme.id}`}
-                numberOfLines={3}
+                numberOfLines={PER_CHANNEL_VISUAL_METRICS.currentDescriptionMaxLines}
                 ellipsizeMode="tail"
                 style={[styles.currentDescription, { color: theme.colors.textSecondary }]}
               >
@@ -271,16 +277,50 @@ export const PerChannelGuideView = memo(function PerChannelGuideView({
   const nowMs = useGuideClock();
   const { selectedDayStartMs, selectDay } = useGuideDaySelection(nowMs);
   const selectedDay = useSelectedGuideDaySchedule(selectedDayStartMs, guideDataVersion);
-  const fixture: GuideFixture = useMemo(
-    () => selectedDay.schedule ?? buildRuntimeGuideFixture(selectedDayStartMs),
-    [guideDataVersion, selectedDay.schedule, selectedDayStartMs],
+  const currentRuntimeSchedule = runtimeGuideScheduleFor(nowMs);
+  const establishedChannelsRef = useRef<Channel[] | null>(
+    currentRuntimeSchedule?.channels.length ? currentRuntimeSchedule.channels : null,
   );
-  const [selectedIndex, setSelectedIndex] = useState(0);
+  const establishedChannels =
+    selectedDay.schedule?.channels.length
+      ? selectedDay.schedule.channels
+      : currentRuntimeSchedule?.channels.length
+        ? currentRuntimeSchedule.channels
+        : establishedChannelsRef.current;
+
+  useEffect(() => {
+    const nextChannels =
+      selectedDay.schedule?.channels.length
+        ? selectedDay.schedule.channels
+        : currentRuntimeSchedule?.channels.length
+          ? currentRuntimeSchedule.channels
+          : null;
+    if (nextChannels) establishedChannelsRef.current = nextChannels;
+  }, [currentRuntimeSchedule, selectedDay.schedule]);
+
+  const fixtureFallback = useMemo(
+    () =>
+      establishedChannels && establishedChannels.length > 0
+        ? null
+        : buildRuntimeGuideFixture(selectedDayStartMs),
+    [establishedChannels, guideDataVersion, selectedDayStartMs],
+  );
+  const schedulePresentation = useMemo(
+    () =>
+      resolvePerChannelSchedulePresentation(
+        selectedDay.schedule,
+        establishedChannels,
+        fixtureFallback,
+      ),
+    [establishedChannels, fixtureFallback, selectedDay.schedule],
+  );
+  const programmeSchedule = schedulePresentation.schedule;
+  const channels = schedulePresentation.channels;
+  const [selectedChannelId, setSelectedChannelId] = useState<string | null>(() => channels[0]?.id ?? null);
   const [condensed, setCondensed] = useState(false);
   const [contextWrapped, setContextWrapped] = useState(false);
   const [stableAnchorTimeMs, setStableAnchorTimeMs] = useState(() => viewedTimeRef.current);
-  const channels = fixture.channels;
-  const safeSelectedIndex = Math.min(Math.max(0, selectedIndex), Math.max(0, channels.length - 1));
+  const safeSelectedIndex = selectedChannelIndexForId(channels, selectedChannelId);
   const selectedChannel = channels[safeSelectedIndex] ?? channels[0];
   const dayStartMs = selectedDayStartMs;
   const dayEndMs = useMemo(
@@ -292,15 +332,18 @@ export const PerChannelGuideView = memo(function PerChannelGuideView({
     [channels, safeSelectedIndex],
   );
   const pagerPages = useMemo(
-    () => pagerChannels.map((channel) => ({
-      channel,
-      rows: buildProgrammeRows(
-        programmesForChannelDay(fixture, channel.id, dayStartMs, dayEndMs),
-        nowMs,
-        effectiveFontScale,
-      ),
-    })),
-    [dayEndMs, dayStartMs, effectiveFontScale, fixture, nowMs, pagerChannels],
+    () =>
+      pagerChannels.map((channel) => ({
+        channel,
+        rows: programmeSchedule
+          ? buildProgrammeRows(
+              programmesForChannelDay(programmeSchedule, channel.id, dayStartMs, dayEndMs),
+              nowMs,
+              effectiveFontScale,
+            )
+          : [],
+      })),
+    [dayEndMs, dayStartMs, effectiveFontScale, nowMs, pagerChannels, programmeSchedule],
   );
   const selectedRows = pagerPages[1]?.rows ?? [];
   const nowTarget = useMemo(() => guideTargetForNow(nowMs), [nowMs]);
@@ -330,7 +373,6 @@ export const PerChannelGuideView = memo(function PerChannelGuideView({
       stableAnchorTimeMs,
     ],
   );
-  const selectedCurrentId = selectedRows.find(({ current }) => current)?.programme.id ?? 'none';
   const scheduleHeight = Math.max(1, ...pagerPages.map(({ rows }) => scheduleHeightForRows(rows)));
   const referenceInset = viewportReferenceInset(effectiveFontScale);
   const selectedRowsRef = useRef(selectedRows);
@@ -341,15 +383,11 @@ export const PerChannelGuideView = memo(function PerChannelGuideView({
   const collapseProgress = useSharedValue(0);
   const collapseAnchorY = useSharedValue(0);
   const collapseEnabled = useSharedValue(0);
-  const headingNaturalHeight = useSharedValue(
-    PER_CHANNEL_VISUAL_METRICS.stripToHeadingGap +
-      GUIDE_TYPOGRAPHY.selectedChannelHeading.lineHeight +
-      PER_CHANNEL_VISUAL_METRICS.headingToUtilitiesGap,
-  );
 
   useEffect(() => {
-    if (selectedIndex !== safeSelectedIndex) setSelectedIndex(safeSelectedIndex);
-  }, [safeSelectedIndex, selectedIndex]);
+    if (!selectedChannel) return;
+    if (selectedChannel.id !== selectedChannelId) setSelectedChannelId(selectedChannel.id);
+  }, [selectedChannel, selectedChannelId]);
 
   useEffect(() => {
     contextDateYRef.current = null;
@@ -376,7 +414,7 @@ export const PerChannelGuideView = memo(function PerChannelGuideView({
   const selectChannel = useCallback(
     (index: number) => {
       if (!channels[index] || index === safeSelectedIndex) return;
-      setSelectedIndex(index);
+      setSelectedChannelId(channels[index]!.id);
       centreSelectedChannel(index);
     },
     [centreSelectedChannel, channels, safeSelectedIndex],
@@ -390,7 +428,7 @@ export const PerChannelGuideView = memo(function PerChannelGuideView({
       const delta: -1 | 1 = page < 1 ? -1 : 1;
       const nextIndex = adjacentChannelIndex(safeSelectedIndex, delta, channels.length);
       const changedChannel = nextIndex !== safeSelectedIndex;
-      if (changedChannel) setSelectedIndex(nextIndex);
+      if (changedChannel) setSelectedChannelId(channels[nextIndex]!.id);
       requestAnimationFrame(() => {
         centrePager(false);
         if (changedChannel) {
@@ -398,7 +436,7 @@ export const PerChannelGuideView = memo(function PerChannelGuideView({
         }
       });
     },
-    [centrePager, centreSelectedChannel, channels.length, safeSelectedIndex, windowWidth],
+    [centrePager, centreSelectedChannel, channels, safeSelectedIndex, windowWidth],
   );
 
   const scrollToTimestamp = useCallback(
@@ -477,14 +515,9 @@ export const PerChannelGuideView = memo(function PerChannelGuideView({
     [reduceMotion, syncViewedTimestamp],
   );
 
-  const restHeadingStyle = useAnimatedStyle(() => {
-    const progress = collapseProgress.value;
-    return {
-      height: headingNaturalHeight.value * (1 - progress),
-      opacity: 1 - progress,
-      transform: [{ translateY: -PER_CHANNEL_VISUAL_METRICS.collapseTranslateY * progress }],
-    };
-  });
+  const contextTopGapStyle = useAnimatedStyle(() => ({
+    height: PER_CHANNEL_VISUAL_METRICS.stripToUtilitiesGap * (1 - collapseProgress.value),
+  }));
 
   const scheduleGapStyle = useAnimatedStyle(() => ({
     height: PER_CHANNEL_VISUAL_METRICS.utilityToScheduleGap * (1 - collapseProgress.value),
@@ -526,21 +559,17 @@ export const PerChannelGuideView = memo(function PerChannelGuideView({
     return () => cancelAnimationFrame(frame);
   }, [centrePager, safeSelectedIndex, selectedDayStartMs]);
 
-  const layoutAnchorKey = `${selectedDayStartMs}:${safeSelectedIndex}:${effectiveFontScale}:${selectedCurrentId}`;
+  const layoutAnchorKey =
+    programmeSchedule && selectedChannel
+      ? `${selectedDayStartMs}:${selectedChannel.id}:${effectiveFontScale}:${programmeSchedule.generatedAt}`
+      : null;
   useEffect(() => {
+    if (!layoutAnchorKey) return;
     const target = pendingTargetTimeRef.current ?? viewedTimeRef.current;
     pendingTargetTimeRef.current = null;
     const frame = requestAnimationFrame(() => scrollToTimestamp(target, false));
     return () => cancelAnimationFrame(frame);
   }, [layoutAnchorKey, scrollToTimestamp]);
-
-  const handleHeadingLayout = useCallback(
-    (event: LayoutChangeEvent) => {
-      const measured = event.nativeEvent.layout.height;
-      if (measured > 0) headingNaturalHeight.value = measured;
-    },
-    [headingNaturalHeight],
-  );
 
   const detectContextWrap = useCallback(() => {
     const dateY = contextDateYRef.current;
@@ -561,9 +590,15 @@ export const PerChannelGuideView = memo(function PerChannelGuideView({
 
   if (!selectedChannel) return null;
 
-  const contextMinHeight = condensed && contextWrapped
+  const contextMinHeight = contextWrapped
     ? PER_CHANNEL_VISUAL_METRICS.stickyContextWrappedHeight
     : PER_CHANNEL_VISUAL_METRICS.stickyContextHeight;
+  const programmeStatus =
+    programmeSchedule === null ? (selectedDay.unavailable ? 'unavailable' : 'loading') : null;
+  const programmeStatusLabel =
+    programmeStatus === 'unavailable'
+      ? 'Geen gidsgegevens beschikbaar voor deze dag.'
+      : 'Gids laden…';
 
   return (
     <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.colors.background }]}>
@@ -618,22 +653,10 @@ export const PerChannelGuideView = memo(function PerChannelGuideView({
       </Animated.View>
 
       <Animated.View
-        testID="per-channel-rest-heading"
-        pointerEvents={condensed ? 'none' : 'auto'}
-        accessibilityElementsHidden={condensed}
-        importantForAccessibility={condensed ? 'no-hide-descendants' : 'auto'}
-        style={[styles.restHeadingClip, restHeadingStyle]}
-      >
-        <View onLayout={handleHeadingLayout} style={styles.channelContext}>
-          <Text
-            accessibilityRole="header"
-            numberOfLines={2}
-            style={[styles.channelName, { color: theme.colors.text }]}
-          >
-            {selectedChannel.displayName}
-          </Text>
-        </View>
-      </Animated.View>
+        testID="per-channel-strip-to-context-gap"
+        pointerEvents="none"
+        style={contextTopGapStyle}
+      />
 
       <View
         testID={condensed ? 'per-channel-context-condensed' : 'per-channel-context-expanded'}
@@ -780,6 +803,7 @@ export const PerChannelGuideView = memo(function PerChannelGuideView({
       <Animated.ScrollView
         ref={scheduleRef}
         testID="per-channel-schedule-scroll"
+        accessibilityState={{ busy: programmeStatus === 'loading' }}
         bounces
         alwaysBounceVertical
         directionalLockEnabled
@@ -790,31 +814,46 @@ export const PerChannelGuideView = memo(function PerChannelGuideView({
         onScroll={scheduleScrollHandler}
         contentContainerStyle={{ minHeight: scheduleHeight }}
       >
-        <ScrollView
-          ref={pagerRef}
-          testID="per-channel-pager"
-          horizontal
-          pagingEnabled
-          bounces
-          directionalLockEnabled
-          nestedScrollEnabled
-          decelerationRate="fast"
-          showsHorizontalScrollIndicator={false}
-          onMomentumScrollEnd={handlePagerEnd}
-          style={{ width: windowWidth, height: scheduleHeight }}
-          contentOffset={{ x: windowWidth, y: 0 }}
-        >
-          {pagerPages.map(({ channel, rows }, pageIndex) => (
-            <SchedulePage
-              key={`${pageIndex}-${channel.id}-${selectedDayStartMs}`}
-              channel={channel}
-              rows={rows}
-              width={windowWidth}
-              fontScale={effectiveFontScale}
-              onSelectProgramme={onSelectProgramme}
-            />
-          ))}
-        </ScrollView>
+        {programmeStatus ? (
+          <View
+            testID={`per-channel-programme-state-${programmeStatus}`}
+            accessible
+            accessibilityRole="text"
+            accessibilityLabel={programmeStatusLabel}
+            accessibilityLiveRegion="polite"
+            style={styles.scheduleStatus}
+          >
+            <Text style={[styles.scheduleStatusText, { color: theme.colors.textSecondary }]}>
+              {programmeStatusLabel}
+            </Text>
+          </View>
+        ) : (
+          <ScrollView
+            ref={pagerRef}
+            testID="per-channel-pager"
+            horizontal
+            pagingEnabled
+            bounces
+            directionalLockEnabled
+            nestedScrollEnabled
+            decelerationRate="fast"
+            showsHorizontalScrollIndicator={false}
+            onMomentumScrollEnd={handlePagerEnd}
+            style={{ width: windowWidth, height: scheduleHeight }}
+            contentOffset={{ x: windowWidth, y: 0 }}
+          >
+            {pagerPages.map(({ channel, rows }, pageIndex) => (
+              <SchedulePage
+                key={`${pageIndex}-${channel.id}`}
+                channel={channel}
+                rows={rows}
+                width={windowWidth}
+                fontScale={effectiveFontScale}
+                onSelectProgramme={onSelectProgramme}
+              />
+            ))}
+          </ScrollView>
+        )}
       </Animated.ScrollView>
     </SafeAreaView>
   );
@@ -842,18 +881,6 @@ const styles = StyleSheet.create({
     borderRadius: PER_CHANNEL_VISUAL_METRICS.channelSelectedRadius,
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  restHeadingClip: {
-    overflow: 'hidden',
-  },
-  channelContext: {
-    paddingHorizontal: GUIDE_VISUAL_METRICS.screenInsetX,
-    paddingTop: PER_CHANNEL_VISUAL_METRICS.stripToHeadingGap,
-    paddingBottom: PER_CHANNEL_VISUAL_METRICS.headingToUtilitiesGap,
-  },
-  channelName: {
-    ...GUIDE_TYPOGRAPHY.selectedChannelHeading,
-    letterSpacing: 0,
   },
   contextRow: {
     paddingHorizontal: GUIDE_VISUAL_METRICS.screenInsetX,
@@ -938,6 +965,15 @@ const styles = StyleSheet.create({
     ...GUIDE_TYPOGRAPHY.utility,
     letterSpacing: 0,
   },
+  scheduleStatus: {
+    minHeight: PER_CHANNEL_VISUAL_METRICS.currentRowHeight,
+    paddingHorizontal: GUIDE_VISUAL_METRICS.screenInsetX,
+    paddingTop: GUIDE_VISUAL_METRICS.screenInsetX,
+  },
+  scheduleStatusText: {
+    ...GUIDE_TYPOGRAPHY.currentDescription,
+    letterSpacing: 0,
+  },
   schedulePage: {
     overflow: 'hidden',
   },
@@ -996,7 +1032,8 @@ const styles = StyleSheet.create({
     top: PER_CHANNEL_VISUAL_METRICS.currentContentTopInset,
     bottom:
       PER_CHANNEL_VISUAL_METRICS.progressBottomInset +
-      PER_CHANNEL_VISUAL_METRICS.progressHeight,
+      PER_CHANNEL_VISUAL_METRICS.progressHeight +
+      PER_CHANNEL_VISUAL_METRICS.currentDescriptionToProgressMinGap,
     overflow: 'hidden',
   },
   currentTitle: {
