@@ -114,5 +114,5 @@ export const PER_CHANNEL_TYPOGRAPHY = {
 } as const;
 
 export function minimumTouchTargetForPlatform() {
-  return Platform.OS === 'android' ? 48 : 44;
+  return Platform?.OS === 'android' ? 48 : 44;
 }
