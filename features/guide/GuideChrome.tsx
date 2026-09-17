@@ -3,18 +3,21 @@ import { type ReactNode, memo } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import Animated, { type SharedValue, useAnimatedStyle } from 'react-native-reanimated';
 
+import { TEEVEE_FONT_WEIGHTS } from '@/theme/typography';
 import { useTeeveeTheme } from '@/theme/useTeeveeTheme';
 
 import {
   COMPACT_GUIDE_MAX_FONT_SIZE_MULTIPLIER,
-  PER_CHANNEL_TYPOGRAPHY,
+  GUIDE_VISUAL_METRICS,
+  minimumTouchTargetForPlatform,
   PER_CHANNEL_VISUAL_METRICS,
-} from './perChannelVisualMetrics';
+} from './guideVisualMetrics';
 
-const BRAND_TOP_INSET = 10;
-const BRAND_ROW_HEIGHT = 50;
-const PRESENTATION_NAV_HEIGHT = 52;
-const EXPANDED_CHROME_HEIGHT = BRAND_TOP_INSET + BRAND_ROW_HEIGHT + PRESENTATION_NAV_HEIGHT;
+const EXPANDED_CHROME_HEIGHT =
+  GUIDE_VISUAL_METRICS.brandTopInset +
+  GUIDE_VISUAL_METRICS.brandMarkBoxHeight +
+  GUIDE_VISUAL_METRICS.presentationNavHeight;
+const CHROME_TOUCH_TARGET = minimumTouchTargetForPlatform();
 
 type GuideChromeProps = {
   condensed: boolean;
@@ -41,9 +44,11 @@ export const GuideChrome = memo(function GuideChrome({
 
   const expandedStyle = useAnimatedStyle(() => {
     const progress = Math.min(1, Math.max(0, collapseProgress.value));
+    const expansion = 1 - progress;
+
     return {
-      height: EXPANDED_CHROME_HEIGHT * (1 - progress),
-      opacity: 1 - progress,
+      height: EXPANDED_CHROME_HEIGHT * expansion,
+      opacity: expansion,
       transform: [
         { translateY: -PER_CHANNEL_VISUAL_METRICS.collapseTranslateY * progress },
       ],
@@ -56,6 +61,7 @@ export const GuideChrome = memo(function GuideChrome({
       style={[styles.root, { backgroundColor: theme.colors.background }]}
     >
       <Animated.View
+        testID="guide-chrome-expanded-content"
         pointerEvents={condensed ? 'none' : 'auto'}
         accessibilityElementsHidden={condensed}
         importantForAccessibility={condensed ? 'no-hide-descendants' : 'auto'}
@@ -81,7 +87,7 @@ export const GuideChrome = memo(function GuideChrome({
               onPress={() => router.push('/search')}
               style={({ pressed }) => [
                 styles.iconButton,
-                { opacity: pressed ? PER_CHANNEL_VISUAL_METRICS.controlPressedOpacity : 1 },
+                { opacity: pressed ? GUIDE_VISUAL_METRICS.controlPressOpacity : 1 },
               ]}
             >
               <SearchGlyph color={theme.colors.textSecondary} />
@@ -93,10 +99,16 @@ export const GuideChrome = memo(function GuideChrome({
               onPress={() => router.push('/settings')}
               style={({ pressed }) => [
                 styles.iconButton,
-                { opacity: pressed ? PER_CHANNEL_VISUAL_METRICS.controlPressedOpacity : 1 },
+                { opacity: pressed ? GUIDE_VISUAL_METRICS.controlPressOpacity : 1 },
               ]}
             >
-              <Text accessible={false} maxFontSizeMultiplier={1} style={[styles.moreGlyph, { color: theme.colors.textSecondary }]}>…</Text>
+              <Text
+                accessible={false}
+                maxFontSizeMultiplier={1}
+                style={[styles.moreGlyph, { color: theme.colors.textSecondary }]}
+              >
+                …
+              </Text>
             </Pressable>
           </View>
         </View>
@@ -116,29 +128,33 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
   brandRow: {
-    height: BRAND_TOP_INSET + BRAND_ROW_HEIGHT,
-    paddingHorizontal: PER_CHANNEL_VISUAL_METRICS.screenInsetX,
-    paddingTop: BRAND_TOP_INSET,
+    height: GUIDE_VISUAL_METRICS.brandTopInset + GUIDE_VISUAL_METRICS.brandMarkBoxHeight,
+    paddingHorizontal: GUIDE_VISUAL_METRICS.screenInsetX,
+    paddingTop: GUIDE_VISUAL_METRICS.brandTopInset,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
   },
   brandMark: {
-    width: 64,
-    height: BRAND_ROW_HEIGHT,
+    width: GUIDE_VISUAL_METRICS.brandMarkBoxWidth,
+    height: GUIDE_VISUAL_METRICS.brandMarkBoxHeight,
     flexDirection: 'row',
-    alignItems: 'center',
+    alignItems: 'flex-end',
+    justifyContent: 'flex-start',
+    paddingVertical: 4,
   },
   brandText: {
-    ...PER_CHANNEL_TYPOGRAPHY.brand,
-    letterSpacing: -1.6,
+    fontSize: 31,
+    lineHeight: 34,
+    fontWeight: TEEVEE_FONT_WEIGHTS.bold,
+    letterSpacing: -1.8,
   },
   brandDot: {
     width: 7,
     height: 7,
     borderRadius: 4,
     marginLeft: 2,
-    marginTop: 15,
+    marginBottom: 5,
   },
   actions: {
     flexDirection: 'row',
@@ -146,8 +162,8 @@ const styles = StyleSheet.create({
     gap: 2,
   },
   iconButton: {
-    width: 44,
-    height: 44,
+    width: CHROME_TOUCH_TARGET,
+    height: CHROME_TOUCH_TARGET,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -176,10 +192,11 @@ const styles = StyleSheet.create({
   moreGlyph: {
     fontSize: 24,
     lineHeight: 26,
+    fontWeight: TEEVEE_FONT_WEIGHTS.bold,
     marginTop: -5,
   },
   presentationNavigation: {
     width: '100%',
-    height: PRESENTATION_NAV_HEIGHT,
+    height: GUIDE_VISUAL_METRICS.presentationNavHeight,
   },
 });
