@@ -1,10 +1,13 @@
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 
 import { useTeeveeTheme } from '@/theme/useTeeveeTheme';
 
+import {
+  COMPACT_CHROME_MAX_FONT_SIZE_MULTIPLIER,
+  GUIDE_TYPOGRAPHY,
+  GUIDE_VISUAL_METRICS,
+} from './guideVisualMetrics';
 import { GUIDE_PRESENTATIONS, type GuidePresentation } from './guidePresentation';
-
-const PRESENTATION_MAX_FONT_SIZE_MULTIPLIER = 1.15;
 
 type GuidePresentationSelectorProps = {
   selected: GuidePresentation;
@@ -18,12 +21,21 @@ export function GuidePresentationSelector({
   onSelect,
 }: GuidePresentationSelectorProps) {
   const theme = useTeeveeTheme();
+  const { width } = useWindowDimensions();
+  const tabWidth = Math.max(
+    0,
+    (width - GUIDE_VISUAL_METRICS.screenInsetX * 2) / GUIDE_PRESENTATIONS.length,
+  );
+  const indicatorWidth = Math.min(
+    GUIDE_VISUAL_METRICS.presentationIndicatorWidth,
+    Math.max(0, tabWidth - 16),
+  );
 
   return (
     <View
       testID="guide-presentation-selector"
       accessibilityRole="tablist"
-      style={[styles.container, { borderBottomColor: theme.colors.border }]}
+      style={styles.container}
     >
       {GUIDE_PRESENTATIONS.map((presentation) => {
         const active = presentation.id === selected;
@@ -40,30 +52,38 @@ export function GuidePresentationSelector({
             onPress={() => onSelect(presentation.id)}
             style={({ pressed }) => [
               styles.item,
-              { opacity: loading ? 0.5 : pressed ? 0.62 : 1 },
+              {
+                opacity: loading
+                  ? GUIDE_VISUAL_METRICS.disabledOpacity
+                  : pressed
+                    ? GUIDE_VISUAL_METRICS.controlPressOpacity
+                    : 1,
+              },
             ]}
           >
-            <View style={styles.labelGroup}>
-              <Text
-                numberOfLines={1}
-                maxFontSizeMultiplier={PRESENTATION_MAX_FONT_SIZE_MULTIPLIER}
+            <Text
+              numberOfLines={1}
+              maxFontSizeMultiplier={COMPACT_CHROME_MAX_FONT_SIZE_MULTIPLIER}
+              style={[
+                active ? styles.selectedLabel : styles.inactiveLabel,
+                { color: active ? theme.colors.text : theme.colors.textSecondary },
+              ]}
+            >
+              {loading ? 'Laden…' : presentation.label}
+            </Text>
+            {active ? (
+              <View
+                pointerEvents="none"
+                testID="guide-presentation-active-indicator"
                 style={[
-                  styles.label,
+                  styles.activeIndicator,
                   {
-                    color: active ? theme.colors.text : theme.colors.textSecondary,
-                    fontWeight: active ? '600' : '500',
+                    width: indicatorWidth,
+                    backgroundColor: theme.colors.currentTime,
                   },
                 ]}
-              >
-                {loading ? 'Laden…' : presentation.label}
-              </Text>
-              {active ? (
-                <View
-                  pointerEvents="none"
-                  style={[styles.activeIndicator, { backgroundColor: theme.colors.currentTime }]}
-                />
-              ) : null}
-            </View>
+              />
+            ) : null}
           </Pressable>
         );
       })}
@@ -74,34 +94,30 @@ export function GuidePresentationSelector({
 const styles = StyleSheet.create({
   container: {
     width: '100%',
-    minHeight: 44,
+    height: GUIDE_VISUAL_METRICS.presentationNavHeight,
     flexDirection: 'row',
     alignItems: 'stretch',
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    paddingHorizontal: 8,
+    paddingHorizontal: GUIDE_VISUAL_METRICS.screenInsetX,
   },
   item: {
+    position: 'relative',
     flex: 1,
-    minHeight: 44,
-    paddingHorizontal: 6,
-    paddingVertical: 9,
+    minHeight: GUIDE_VISUAL_METRICS.presentationNavHeight,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  labelGroup: {
-    position: 'relative',
-    alignSelf: 'center',
+  inactiveLabel: {
+    ...GUIDE_TYPOGRAPHY.presentationInactive,
+    letterSpacing: 0,
   },
-  label: {
-    fontSize: 15,
-    lineHeight: 19,
+  selectedLabel: {
+    ...GUIDE_TYPOGRAPHY.presentationSelected,
+    letterSpacing: 0,
   },
   activeIndicator: {
     position: 'absolute',
-    left: 0,
-    right: 0,
-    bottom: -11,
-    height: 2,
-    borderRadius: 1,
+    bottom: 0,
+    height: GUIDE_VISUAL_METRICS.presentationIndicatorHeight,
+    borderRadius: GUIDE_VISUAL_METRICS.presentationIndicatorRadius,
   },
 });
