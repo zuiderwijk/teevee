@@ -1,15 +1,16 @@
 # Teevee — Per zender production design specification
 
 Status: **CANONICAL PRODUCTION IMPLEMENTATION SPEC — accepted design, no redesign**  
-Date: 2026-09-17
+Date: 2026-09-17  
+Revision: **fixed-row schedule correction — owner approved 2026-09-17**
 
 This document is the implementation-level visual specification for the accepted **Per zender** Guide presentation. It converts the already approved visual/UX baseline into concrete production metrics. It does not create a new design.
 
 For Per-zender visual implementation details that are not already more specifically frozen by higher-priority product/UX/ADR documents, this file is the single canonical developer handoff. Do not maintain a second copy of these measurements elsewhere.
 
-## 1. Authority and inspected baseline
+## 1. Authority and correction note
 
-This specification was calibrated against `main` at commit `5b659c213b697573fc9e41139e7f331214b41661` and the following canonical sources:
+This specification is based on:
 
 - `AGENTS.md`;
 - `docs/PROJECT_STATE.md`;
@@ -20,7 +21,8 @@ This specification was calibrated against `main` at commit `5b659c213b697573fc9e
 - `design/current/guide/PER_ZENDER.md`;
 - `design/current/guide/GUIDE_DAY_SELECTOR.md`;
 - ADR 0005, ADR 0007 and ADR 0008;
-- current `PerChannelGuideView`, `GuideDaySelector`, `GuidePresentationSelector`, `ChannelIdentity`, Per-channel geometry and theme-token implementation.
+- the exact canonical Per-zender visual asset;
+- physical iPhone implementation evidence supplied by the owner.
 
 Exact canonical pixels remain:
 
@@ -28,129 +30,142 @@ Exact canonical pixels remain:
 - Guide day-selector states: `/Teevee/Teevee Guide day selector - states and bottom sheet.png`, Library file id `file_00000000390c8210b76256621721592b`;
 - sticky/condensed behaviour: `/Teevee/Teevee Guide day selector - sticky scroll behavior.png`, Library file id `file_00000000314481f69f6a34d18ece1c21`.
 
-The physical iPhone screenshot supplied for this specification is **current-state evidence only**. It does not supersede the canonical visual.
+### 1.1 Owner correction: Per-zender is not duration-geometric
 
-### Source precedence
+The first implementation against the previous revision exposed a fundamental interpretation error in this handoff. The accepted Per-zender design is a **chronological fixed-row programme list**, not a vertical duration-proportional time axis.
+
+The following rule is now canonical and supersedes every earlier statement in this document that implied proportional vertical programme geometry:
+
+- every non-current programme uses the same standard programme-row height, independent of duration;
+- the programme airing at the actual current instant uses one separate, taller current-programme row;
+- programme start/end timestamps remain the source of truth for ordering, labels, current-state calculation, navigation anchors and progress;
+- programme duration **does not determine Y position or row height**;
+- schedule gaps do not create duration-proportional blank vertical space;
+- do not use pt/minute, `normalizedHeight`, duration-driven frame height or minimum-height exceptions in Per zender.
+
+The phrase `vertical wall-clock schedule` elsewhere in project documentation must therefore be read for Per zender as **chronological schedule browsing with truthful wall-clock timestamps**, not as a spatial minute-to-pixel scale. This owner correction is the more specific canonical visual rule.
+
+### 1.2 Source precedence
 
 1. Product behaviour, television-day semantics and gestures: `PROJECT_STATE.md`, `PRODUCT.md`, `UX.md`, accepted ADRs.
-2. Accepted visual composition: `VISUAL_BASELINE.md` + `design/current/guide/PER_ZENDER.md` + exact canonical assets above.
-3. Exact Per-zender implementation metrics where the accepted sources were previously non-specific: **this document**.
+2. Accepted visual composition: `VISUAL_BASELINE.md` + `design/current/guide/PER_ZENDER.md` + exact canonical visual assets.
+3. Exact Per-zender implementation metrics and the fixed-row correction above: **this document**.
 4. Reusable visual-system principles: `DESIGN_SYSTEM.md`.
 5. Current runtime/code: evidence of implementation state, never authority for an intentional visual difference.
 
-The historical date/time-picker shown on the original Per-zender board is superseded. The accepted model is one bounded D-2..D+7 day selector plus separate `Primetime` and `Nu`; the old `Vanmiddag` / `Vooravond` / `Kies tijd…` picker must not return.
+The historical expanded date/time picker remains superseded. The accepted model is one bounded D-2..D+7 day selector plus separate `Primetime` and `Nu`.
 
 ## 2. Metric status and units
 
-All dimensions below are React Native logical **pt/dp** unless stated otherwise. A `hairline` means `StyleSheet.hairlineWidth`, not a fixed physical pixel.
+All dimensions below are React Native logical **pt/dp** unless stated otherwise. A `hairline` means `StyleSheet.hairlineWidth`.
 
 Values have one of three origins:
 
-- **FROZEN** — already explicitly defined by product/UX/ADR or existing canonical system behaviour.
+- **FROZEN** — already explicitly defined by product/UX/ADR.
 - **CANONICAL** — directly expresses an approved visible relationship from the canonical Per-zender visual.
-- **IMPLEMENTATION CALIBRATION** — an exact production value was not previously specified in a vector design system. The value below is chosen to reproduce the accepted composition consistently on real devices without changing the product decision. Calibration values are implementation constraints, not new product choices.
+- **IMPLEMENTATION CALIBRATION** — an exact production value was not previously available as a vector token; the value below reproduces the approved composition without changing the product design.
 
-Do not replace a calibration value with an ad-hoc local number during implementation. If physical-device evidence proves a calibration materially wrong, update this specification first and record the evidence.
+Do not replace calibration values with local magic numbers. If physical evidence proves a calibration materially wrong, update this document first.
 
 ## 3. Visual breakdown by component zone
 
 | Zone | Function | Visual hierarchy and layout relation | Relevant component/state |
 | --- | --- | --- | --- |
-| 1. Shared Guide chrome / presentation navigation | Identifies Teevee and switches Guide presentation | Brand context first; `Totaal / Per zender / Nu & Straks` directly below. `Per zender` is selected with a restrained red underline, never a filled segmented pill. | Shared Guide shell + `GuidePresentationSelector`; rest state only for non-functional brand chrome. |
-| 2. Channel-logo strip | Primary channel navigation | Directly below presentation navigation; horizontally browsable; logos dominate; selected item is a quiet surface/border treatment. | Per-channel channel strip; persistent in rest and condensed states. |
-| 3. Selected-channel heading/context | Confirms the channel whose schedule is shown | Large `NPO 1`-style heading below the strip at rest. It is secondary to the logo strip as navigation and disappears in condensed state. | Selected channel rest heading. |
-| 4. Day selector | Selects one D-2..D+7 television day | Primarily typographic, left side of the utility row; no large pill. | Shared `GuideDaySelector`. |
-| 5. Primetime | Jump to 20:30 on the selected television day | Compact secondary utility, visually stronger than a text link but not a hero control. | Per-zender utility action. |
-| 6. Nu | Restore actual current instant and its television day | Compact sibling to Primetime, visually distinct and always available. | Per-zender utility action. |
-| 7. Schedule container | Time-geometric vertical programme surface | Open canvas below the context row; no cards or hour-grid dominance. | Outer vertical schedule + horizontal adjacent-channel pager. |
-| 8. Time gutter | Gives programme start-time orientation | Left aligned, quiet, tabular numerals; substantive enough to pass text contrast. | Programme-aligned start-time labels. |
-| 9. Programme content column | Carries title and conditional current detail | Starts at one stable X coordinate across all rows. | Programme content. |
-| 10. Normal programme row | Shows one scheduled programme | Time + title only by default; open surface; real duration determines height. | Normal programme state. |
-| 11. Current programme | Communicates the programme airing at the real current instant | Title emphasis + one local progress treatment; optional description only when geometry permits. No filled card, red side bar, global now line or extra `Nu bezig` label. | Current programme state. |
-| 12. Separators/reference cues | Supports scanning without becoming a grid | One restrained programme-end hairline where useful. No full-width hourly grid as primary structure. | Programme boundary; schedule-start boundary. |
-| 13. Sticky/condensed state | Keeps functional context while returning vertical space | Channel strip stays sticky; immediately below it one compact channel/date/Primetime/Nu row. Brand/presentation chrome and the large channel heading are absent after collapse. | Scroll-driven condensed Guide chrome. |
-| 14. Bottom-navigation boundary | Separates Guide from primary navigation | Existing stable app-shell tab bar remains outside Per-zender schedule; one quiet top boundary only. | Existing Expo/router tab bar; unchanged IA. |
+| 1. Shared Guide chrome / presentation navigation | Identifies Teevee and switches Guide presentation | Brand context first; `Totaal / Per zender / Nu & Straks` directly below. `Per zender` selected with restrained red underline, never a filled segmented pill. | Shared Guide shell + presentation selector. |
+| 2. Channel-logo strip | Primary channel navigation | Directly below presentation navigation; horizontally browsable; logos dominate; selected item receives a quiet surface/border. | Persistent channel strip. |
+| 3. Selected-channel heading/context | Confirms selected channel | Large contextual channel name below strip at rest; absent from settled condensed state. | Rest selected-channel heading. |
+| 4. Day selector | Selects D-2..D+7 television day | Primarily typographic, left side of context/utilities. | Shared day selector. |
+| 5. Primetime | Jump to 20:30 on selected television day | Compact secondary utility. | Per-zender utility action. |
+| 6. Nu | Restore actual current instant/day | Compact sibling utility. | Per-zender utility action. |
+| 7. Schedule container | Chronological one-channel programme list | Open canvas below context; fixed programme rows; no duration-proportional vertical axis. | Vertical list + adjacent-channel paging. |
+| 8. Time gutter | Programme start-time orientation | Stable left column; quiet tabular numerals. | Programme row time column. |
+| 9. Programme content column | Title and current detail | Stable X coordinate across all row types. | Programme row content. |
+| 10. Standard programme row | Normal programme before/after current | Fixed equal height; vertically centered time + title. | Standard row. |
+| 11. Current programme row | Programme airing at actual current instant | Taller row; title + optional short description + mandatory local progress bar. | Current row. |
+| 12. Separators | Supports scanning | One restrained row-bottom hairline. | Standard/current row bottom. |
+| 13. Sticky/condensed state | Keeps functional context | Channel strip + compact channel/date/Primetime/Nu; non-functional chrome removed. | Scroll-driven condensed state. |
+| 14. Bottom-navigation boundary | Separates Guide from primary nav | Existing stable app-shell tab bar. | Router tab bar. |
 
 ## 4. Production metric tokens
 
-Implementation must define these values once as named Guide/Per-zender metrics. Do not scatter literal copies through components.
+Implementation must define these values once as named metrics. Do not scatter literal copies through components.
 
-### 4.1 Shared Guide chrome metrics
+### 4.1 Shared Guide chrome
+
+| Token | Value | Status |
+| --- | ---: | --- |
+| `guide.screenInsetX` | 20 | IMPLEMENTATION CALIBRATION |
+| `guide.brandTopInset` | 8 | IMPLEMENTATION CALIBRATION |
+| `guide.brandMarkBoxWidth` | 56 | IMPLEMENTATION CALIBRATION |
+| `guide.brandMarkBoxHeight` | 44 | IMPLEMENTATION CALIBRATION |
+| `guide.presentationNavHeight` | 48 | IMPLEMENTATION CALIBRATION |
+| `guide.presentationIndicatorWidth` | 88 | IMPLEMENTATION CALIBRATION |
+| `guide.presentationIndicatorHeight` | 2.5 | IMPLEMENTATION CALIBRATION |
+| `guide.presentationIndicatorRadius` | 1.25 | IMPLEMENTATION CALIBRATION |
+| `guide.controlPressOpacity` | 0.64 | IMPLEMENTATION CALIBRATION |
+| `guide.disabledOpacity` | 0.40 | IMPLEMENTATION CALIBRATION |
+
+Presentation tabs divide available width equally. The selected indicator is centred and uses `min(88, tabWidth - 16)`.
+
+### 4.2 Channel strip and context
+
+| Token | Value | Status |
+| --- | ---: | --- |
+| `perChannel.channelStripInsetX` | 20 | IMPLEMENTATION CALIBRATION |
+| `perChannel.channelItemSize` | 48 | IMPLEMENTATION CALIBRATION |
+| `perChannel.channelItemGap` | 12 | IMPLEMENTATION CALIBRATION |
+| `perChannel.logoMaxWidth` | 40 | IMPLEMENTATION CALIBRATION |
+| `perChannel.logoMaxHeight` | 32 | IMPLEMENTATION CALIBRATION |
+| `perChannel.channelStripHeight` | 72 | IMPLEMENTATION CALIBRATION |
+| `perChannel.stripToHeadingGap` | 24 | IMPLEMENTATION CALIBRATION |
+| `perChannel.headingToUtilitiesGap` | 8 | IMPLEMENTATION CALIBRATION |
+| `perChannel.utilityRowMinHeight` | 52 | IMPLEMENTATION CALIBRATION |
+| `perChannel.utilityVisibleHeight` | 36 | IMPLEMENTATION CALIBRATION |
+| `perChannel.utilityGap` | 8 | IMPLEMENTATION CALIBRATION |
+| `perChannel.utilityToScheduleGap` | 12 | IMPLEMENTATION CALIBRATION |
+| `perChannel.stickyContextHeight` | 52 | IMPLEMENTATION CALIBRATION |
+| `perChannel.stickyContextWrappedHeight` | 88 | IMPLEMENTATION CALIBRATION |
+| `perChannel.collapseDistance` | 56 | IMPLEMENTATION CALIBRATION |
+
+### 4.3 Programme-list metrics — canonical corrected values
 
 | Token | Value | Status | Rule |
 | --- | ---: | --- | --- |
-| `guide.screenInsetX` | 20 | IMPLEMENTATION CALIBRATION | Primary horizontal content inset in Guide chrome. |
-| `guide.brandTopInset` | 8 | IMPLEMENTATION CALIBRATION | Applied after the platform top safe-area inset. |
-| `guide.brandMarkBoxWidth` | 56 | IMPLEMENTATION CALIBRATION | Aspect-fit box for the accepted `tv.` mark; never stretch the mark. |
-| `guide.brandMarkBoxHeight` | 44 | IMPLEMENTATION CALIBRATION | As above. |
-| `guide.presentationNavHeight` | 48 | IMPLEMENTATION CALIBRATION | Visible/touch row below brand context. |
-| `guide.presentationIndicatorWidth` | 88 | IMPLEMENTATION CALIBRATION | Base selected underline width; responsive rule below. |
-| `guide.presentationIndicatorHeight` | 2.5 | IMPLEMENTATION CALIBRATION | Red selected indicator. |
-| `guide.presentationIndicatorRadius` | 1.25 | IMPLEMENTATION CALIBRATION | Half-height. |
-| `guide.controlPressOpacity` | 0.64 | IMPLEMENTATION CALIBRATION | Temporary press feedback for text-led chrome. |
-| `guide.disabledOpacity` | 0.40 | IMPLEMENTATION CALIBRATION | Disabled/busy visual state where required. |
+| `perChannel.standardRowHeight` | **52** | CANONICAL CALIBRATION | Every non-current programme at base text size. Duration-independent. |
+| `perChannel.currentRowHeight` | **120** | CANONICAL CALIBRATION | Programme airing at actual current instant at base text size. Duration-independent. |
+| `perChannel.timeGutterWidth` | 64 | IMPLEMENTATION CALIBRATION | Stable time column. |
+| `perChannel.timeTextX` | 24 | IMPLEMENTATION CALIBRATION | Start-time text X. |
+| `perChannel.programmeColumnX` | 100 | IMPLEMENTATION CALIBRATION | Title/description/progress X. |
+| `perChannel.programmeRightInset` | 24 | IMPLEMENTATION CALIBRATION | Title/description/progress right edge. |
+| `perChannel.currentContentTopInset` | 14 | IMPLEMENTATION CALIBRATION | Current title content top. |
+| `perChannel.currentDescriptionGap` | 2 | IMPLEMENTATION CALIBRATION | Current title → description. |
+| `perChannel.progressHeight` | 4 | CANONICAL CALIBRATION | Local current progress track. |
+| `perChannel.progressRadius` | 2 | IMPLEMENTATION CALIBRATION | Half track height. |
+| `perChannel.progressBottomInset` | 16 | IMPLEMENTATION CALIBRATION | Current-row bottom → progress bottom. |
+| `perChannel.separatorLeftInset` | 20 | CANONICAL CALIBRATION | Separator starts at primary content inset. |
 
-Presentation tabs divide the available width equally. The selected indicator is centered beneath its tab and uses `min(88, tabWidth - 16)` so compact screens do not clip it. Do not replace this treatment with a filled pill.
+There is intentionally **no** `minuteHeight`, pt/minute scale, duration frame height, compact-duration threshold or normalized-height token in Per zender.
 
-The Per-zender surface adds no Per-zender-specific search/overflow icons to the brand row. Any separately accepted shared shell action may occupy the trailing brand slot, but current runtime chrome is not authority to add new header actions.
+Key X geometry:
 
-### 4.2 Per-zender structural metrics
-
-| Token | Value | Status | Rule |
-| --- | ---: | --- | --- |
-| `perChannel.channelStripInsetX` | 20 | IMPLEMENTATION CALIBRATION | First/last channel-item edge inset. |
-| `perChannel.channelItemSize` | 48 | IMPLEMENTATION CALIBRATION | Visible selection box and minimum iOS touch box. Android touch wrapper expands to at least 48 dp. |
-| `perChannel.channelItemGap` | 12 | IMPLEMENTATION CALIBRATION | Gap between 48-pt item boxes. |
-| `perChannel.logoMaxWidth` | 40 | IMPLEMENTATION CALIBRATION | Aspect-fit; never upscale/distort beyond box. |
-| `perChannel.logoMaxHeight` | 32 | IMPLEMENTATION CALIBRATION | Aspect-fit. |
-| `perChannel.channelStripHeight` | 72 | IMPLEMENTATION CALIBRATION | Rest and condensed state. |
-| `perChannel.stripToHeadingGap` | 24 | IMPLEMENTATION CALIBRATION | Bottom of strip to heading top. |
-| `perChannel.headingToUtilitiesGap` | 8 | IMPLEMENTATION CALIBRATION | Heading block to rest utility row. |
-| `perChannel.utilityRowMinHeight` | 52 | IMPLEMENTATION CALIBRATION | Base one-row context. |
-| `perChannel.utilityVisibleHeight` | 36 | IMPLEMENTATION CALIBRATION | Visible Primetime/Nu treatment inside larger touch wrapper. |
-| `perChannel.utilityGap` | 8 | IMPLEMENTATION CALIBRATION | Primetime ↔ Nu; date ↔ trailing utilities uses available flex space, never less than 8. |
-| `perChannel.utilityToScheduleGap` | 12 | IMPLEMENTATION CALIBRATION | Bottom of utility row to schedule boundary. |
-| `perChannel.timeGutterWidth` | 64 | IMPLEMENTATION CALIBRATION | Starts at `guide.screenInsetX`. |
-| `perChannel.timeTextInsetX` | 4 | IMPLEMENTATION CALIBRATION | Time text X = 20 + 4 = 24. |
-| `perChannel.timeToProgrammeGap` | 16 | IMPLEMENTATION CALIBRATION | Gap after 64-pt gutter. |
-| `perChannel.programmeColumnX` | 100 | DERIVED | `20 + 64 + 16`; one stable title/progress X. |
-| `perChannel.programmeRightInset` | 24 | IMPLEMENTATION CALIBRATION | Programme text/progress right edge. |
-| `perChannel.minuteHeightBase` | 1.30 pt/min | IMPLEMENTATION CALIBRATION | Real wall-clock vertical scale at fontScale 1.0. |
-| `perChannel.programmeContentInsetY` | 8 | IMPLEMENTATION CALIBRATION | Standard programme content top inset. |
-| `perChannel.programmeCompactInsetY` | 4 | IMPLEMENTATION CALIBRATION | For compact 20–31-pt normalized frames. |
-| `perChannel.progressHeight` | 4 | IMPLEMENTATION CALIBRATION | Current-programme local progress track. |
-| `perChannel.progressRadius` | 2 | IMPLEMENTATION CALIBRATION | Half-height. |
-| `perChannel.currentProgressMinNormalizedHeight` | 56 | IMPLEMENTATION CALIBRATION | Below this, omit progress. |
-| `perChannel.currentDescriptionMinNormalizedHeight` | 92 | IMPLEMENTATION CALIBRATION | Below this, omit description/subtitle. |
-| `perChannel.normalTitleMinNormalizedHeight` | 20 | IMPLEMENTATION CALIBRATION | Below this, omit visible programme title rather than falsifying height. |
-| `perChannel.normalFullTitleMinNormalizedHeight` | 32 | IMPLEMENTATION CALIBRATION | 20–31 uses compact title typography. |
-| `perChannel.stickyContextHeight` | 52 | IMPLEMENTATION CALIBRATION | Base condensed row beneath sticky channel strip. |
-| `perChannel.stickyContextWrappedHeight` | 88 | IMPLEMENTATION CALIBRATION | Two-row compact context when width/text size requires wrap. |
-| `perChannel.collapseDistance` | 56 | IMPLEMENTATION CALIBRATION | Scroll distance over which non-functional rest chrome condenses. |
-
-The key schedule X geometry is therefore:
-
-- screen/content left: **20**;
-- start-time text left: **24**;
-- time gutter: **64**;
-- time/title whitespace: **16**;
-- programme title/progress start: **100**;
-- programme title/progress right inset: **24**.
-
-These values intentionally move programme titles materially farther right than the supplied current physical runtime, where title content begins too close to the time gutter.
+- screen/content left = **20**;
+- start-time text left = **24**;
+- programme title/description/progress left = **100**;
+- programme content right inset = **24**;
+- progress width = `screenWidth - 100 - 24`.
 
 ## 5. Typography
 
-### 5.1 Typeface and fallback
+### 5.1 Typeface and production-safe fallback
 
-Preferred family: **Söhne**, subject to a valid production licence and agreed mobile delivery. Until that is available, use the platform system UI font by leaving React Native `fontFamily` unset:
+Preferred family: **Söhne**, subject to valid production licensing and mobile delivery.
 
-- iOS: system San Francisco family selected by iOS;
-- Android: system Roboto family selected by Android.
+Until that is available, leave React Native `fontFamily` unset so the platform system UI font is used:
 
-Do not hard-code private platform font names and do not bundle unlicensed Söhne files.
+- iOS: system San Francisco family;
+- Android: system Roboto family.
 
-Numeric `fontWeight` below is the semantic target. If licensed Söhne uses named face files, map those files to the same weight hierarchy; do not change hierarchy to fit available font files.
+Do not bundle unlicensed Söhne files or hard-code private platform font names.
 
 ### 5.2 Type tokens
 
@@ -158,707 +173,658 @@ Numeric `fontWeight` below is the semantic target. If licensed Söhne uses named
 | --- | --- | ---: | --- | --- |
 | Presentation tab — inactive | 16 / 22 | 400 | `textSecondary` | compact chrome; max multiplier 1.20 |
 | Presentation tab — selected | 16 / 22 | 600 | `text` | compact chrome; max multiplier 1.20 |
-| Channel-strip text fallback | 12 / 14 | 700 | selected: `text`; unselected: `textSecondary` | compact; max multiplier 1.20 |
-| Selected-channel heading | 24 / 30 | 700 | `text` | substantive/contextual; no multiplier cap; may wrap to 2 lines |
-| Selected date | 15 / 20 | 600 | `text` | compact chrome; max multiplier 1.20 |
-| Date disclosure | 14 / 18 equivalent icon box | 600-equivalent stroke | `textSecondary` | icon does not independently scale beyond control layout |
-| Primetime | 14 / 18 | 600 | `textSecondary` | compact chrome; max multiplier 1.20 |
-| Nu | 14 / 18 | 600 | `text` | compact chrome; max multiplier 1.20 |
-| Condensed channel prefix | 14 / 18 | 700 | `text` | compact chrome; max multiplier 1.20 |
-| Condensed date | 14 / 18 | 600 | `text` | compact chrome; max multiplier 1.20 |
-| Programme start time | 15 / 20 | 400 | `textSecondary` | substantive; no cap; `tabular-nums` |
-| Normal programme title | 16 / 20 | 500 | `text` | substantive; no cap |
-| Compact programme title | 14 / 17 | 500 | `text` | substantive; no cap; only when normalized frame is 20–31 |
-| Current programme title | 16 / 20 | 700 | `text` | substantive; no cap |
-| Current description/subtitle | 14 / 19 | 400 | `textSecondary` | substantive but conditional; no cap; max 3 visible lines when geometry permits |
+| Channel-strip fallback | 12 / 14 | 700 | selected `text`, unselected `textSecondary` | compact; max 1.20 |
+| Selected-channel heading | 24 / 30 | 700 | `text` | substantive; uncapped |
+| Selected date | 15 / 20 | 600 | `text` | compact chrome; max 1.20 |
+| Primetime | 14 / 18 | 600 | `textSecondary` | compact chrome; max 1.20 |
+| Nu | 14 / 18 | 600 | `text` | compact chrome; max 1.20 |
+| Condensed channel prefix | 14 / 18 | 700 | `text` | compact chrome; max 1.20 |
+| Programme start time | **16 / 20** | **400** | `textSecondary` | substantive; uncapped; tabular numerals |
+| Standard programme title | **18 / 22** | **500** | `text` | substantive; uncapped |
+| Current programme title | **20 / 24** | **700** | `text` | substantive; uncapped |
+| Current description | **15 / 18** | **400** | `textSecondary` | substantive; uncapped; max 3 lines |
 
-Letter spacing is **0** for normal body/chrome text. Do not reproduce generated-image kerning by adding arbitrary tracking. Tabular numerals are required for programme times.
+The previous `16/20` standard programme-title specification is superseded. Physical iPhone evidence showed it was materially too small relative to the accepted visual hierarchy. **18/22 weight 500 is canonical for standard programme titles.**
 
-`textMuted` is deliberately **not** used for 15-pt schedule start times in light mode: the current light `textMuted` token has insufficient contrast for normal-size body text against `background`. Use `textSecondary` for substantive schedule times.
+Letter spacing = **0** for programme/time/body text. Programme times use `tabular-nums`.
+
+Do not use light-mode `textMuted` for substantive programme times; use `textSecondary`.
 
 ## 6. Colour and semantic tokens
 
-No new brand palette is introduced by this specification. Per zender uses the existing repository theme tokens as the production colour source.
+No new brand palette is introduced.
 
 | Semantic use | Light | Dark | Repository token |
 | --- | --- | --- | --- |
 | Guide canvas / sticky background | `#F7F7F5` | `#10100F` | `background` |
-| Raised sheet/base surface | `#FFFFFF` | `#191918` | `surface` |
-| Subtle selected/utility surface | `#FFFFFF` | `#222220` | `surfaceElevated` |
+| Raised/base surface | `#FFFFFF` | `#191918` | `surface` |
+| Selected/utility surface | `#FFFFFF` | `#222220` | `surfaceElevated` |
 | Primary text | `#171717` | `#F4F4F1` | `text` |
-| Secondary/substantive grey text | `#565656` | `#C2C2BD` | `textSecondary` |
-| Muted/decorative text | `#7A7A78` | `#8E8E88` | `textMuted` |
-| Separator / subtle border / progress track | `#E4E4E0` | `#30302D` | `border` |
-| General neutral interactive accent | `#202020` | `#F4F4F1` | `accent` |
+| Secondary/substantive grey | `#565656` | `#C2C2BD` | `textSecondary` |
+| Muted/decorative grey | `#7A7A78` | `#8E8E88` | `textMuted` |
+| Separator / progress track | `#E4E4E0` | `#30302D` | `border` |
+| Neutral interactive accent | `#202020` | `#F4F4F1` | `accent` |
 | Selected/current/progress red | `#D64B42` | `#F06B61` | `currentTime` |
 
-Rules:
+Programme rows remain on the Guide canvas. Do not use `programme` / `programmeCurrent` as permanent Per-zender row fills.
 
-- Per-zender schedule rows use `background`; do not use `programme` / `programmeCurrent` as permanent row fills.
-- Selected channel item and Primetime may use `surfaceElevated` plus the subtle `border` token.
-- `Nu` uses a transparent/background-coloured visible surface plus `border`.
-- Presentation underline and current progress fill use `currentTime`.
-- `currentTime` is not used for normal-size body copy in light mode; it is a graphic accent. Selected day copy in the bottom sheet remains primary text, with a non-colour selected state and accent checkmark.
-- Press feedback uses opacity `0.64`; do not create another permanent pressed colour token for this surface.
-- Disabled/busy uses opacity `0.40` plus semantic disabled state; never indicate disabled state with colour alone.
-- Do not suppress native accessibility focus. Where a custom visible focus ring is required, use a 2-pt `currentTime` ring outside the visible control with 2-pt clearance.
-
-System mode resolves to the same light/dark token sets according to the operating-system appearance; layout metrics never change because of theme.
-
-## 7. Shared Guide chrome / presentation navigation
+## 7. Shared Guide presentation navigation
 
 At rest:
 
 1. platform top safe area;
-2. `guide.brandTopInset = 8`;
-3. accepted `tv.` brand mark in a `56 × 44` aspect-fit box at X = 20;
-4. presentation navigation, height 48;
+2. 8-pt brand top inset;
+3. accepted `tv.` mark in a 56 × 44 aspect-fit box at X=20;
+4. presentation navigation, 48 high;
 5. channel strip.
 
 Presentation navigation:
 
-- three equal-width press zones within 20-pt left/right screen insets;
-- label centered in each zone;
-- inactive `16/22 400 textSecondary`;
-- selected `16/22 600 text`;
-- selected indicator centered at bottom: base `88 × 2.5`, radius `1.25`, colour `currentTime`;
+- three equal-width press zones within 20-pt screen insets;
+- inactive label `16/22 400 textSecondary`;
+- selected label `16/22 600 text`;
+- selected underline base `88 × 2.5`, radius 1.25, `currentTime`;
 - no filled/outlined segmented container;
-- entire tab remains at least 44 pt high on iOS and 48 dp high on Android;
-- selected state is also exposed semantically (`tab`, `selected=true`), not only through the red underline.
-
-The presentation selector is shared Guide chrome. Development must reuse one component rather than create a Per-zender-only copy. This spec does not alter deferred loading or presentation-switch state semantics.
+- at least 44 pt iOS / 48 dp Android touch height;
+- semantic selected tab state.
 
 ## 8. Channel-logo strip
 
-The channel strip is the primary channel-navigation affordance.
+### Geometry
 
-### 8.1 Geometry
+- strip height **72**;
+- horizontal content inset **20**;
+- item **48 × 48**;
+- item gap **12**;
+- logo max **40 × 32**;
+- logo resize mode `contain`;
+- no caption beneath a successful logo.
 
-- strip height: **72**;
-- horizontal content inset: **20**;
-- each item: **48 × 48** visible/touch box;
-- gap between item boxes: **12**;
-- logo artwork max box: **40 × 32**;
-- logos use `contain` / aspect-fit;
-- never crop, recolour, stretch or force equal aspect ratios;
-- no permanent caption beneath a successful logo.
-
-Six 48-pt items plus five 12-pt gaps occupy 348 pt, intentionally allowing six common channels to read as a coherent set on a 390-pt screen while preserving 20-pt edge insets. Larger channel sets scroll horizontally.
-
-### 8.2 Selected, unselected and pressed state
-
-Selected:
+Selected item:
 
 - 48 × 48 wrapper;
-- radius **12**;
-- `surfaceElevated` background;
-- one `hairline` `border` outline;
+- radius 12;
+- `surfaceElevated`;
+- one hairline `border`;
 - full logo opacity;
-- `accessibilityState.selected = true`.
+- semantic selected state.
 
-Unselected:
+Unselected item:
 
 - transparent background;
-- no decorative underline;
-- full logo opacity; do **not** dim licensed channel marks as a state mechanism.
+- no underline;
+- full channel-mark opacity.
 
-Pressed:
+Pressed: temporary opacity 0.64.
 
-- temporary wrapper opacity `0.64`;
-- no scale animation required.
+Strip remains horizontally free-scrollable. Selecting/swiping channels must keep the selected item fully visible and centre it where practical. No previous/next arrow buttons.
 
-### 8.3 Scrolling
+### Missing-logo fallback
 
-- horizontal free scrolling with platform-standard bounce/inertia where supported;
-- no snap-to-item requirement;
-- selected item must be fully visible after a channel change and should be centred when enough scroll range exists;
-- tapping an item selects directly;
-- strip horizontal scrolling remains independent from horizontal schedule paging;
-- no previous/next arrow buttons.
+When `logoUrl` is missing/fails:
 
-### 8.4 Missing-logo placeholder
+- keep the exact same 48 × 48 item box;
+- fallback content box 40 × 32;
+- `channel.shortName ?? channel.displayName`;
+- one line, `12/14 700`;
+- selected `text`, unselected `textSecondary`;
+- tail ellipsis;
+- no second caption.
 
-Production logos are not guaranteed in deterministic fixtures today. Missing assets must not force the old large text-tab layout.
+Accessibility always exposes the full `channel.displayName`.
 
-When `logoUrl` is missing or fails:
+## 9. Selected channel, date and utilities
 
-- keep the **same 48 × 48 item box** and selected-state wrapper;
-- use a centered `40 × 32` fallback content box;
-- visible fallback = `channel.shortName ?? channel.displayName`, one line, `12/14 700`;
-- selected fallback colour = `text`; unselected = `textSecondary`;
-- ellipsize at the end if the short name still exceeds the box;
-- do not add a second caption beneath the fallback.
+### Rest selected channel
 
-This makes fixture/device validation representative of the final channel-strip geometry before production logo rights/assets are available.
-
-Accessibility label is always the complete `channel.displayName`, independent of visible logo/fallback.
-
-## 9. Selected channel, day selector and utilities
-
-### 9.1 Rest-state selected channel
-
-- heading starts **24 pt below** the channel strip;
-- left/right content inset = 20;
+- 24 pt below channel strip;
+- left/right inset 20;
 - `24/30 700 text`;
-- no subtitle such as “Veeg horizontaal…”;
-- no decorative channel arrows;
-- one line when it fits; may wrap to a maximum of two lines rather than shrink below the specified size.
+- max two lines;
+- no permanent swipe-help text;
+- no decorative channel arrows.
 
-### 9.2 Rest utility row
+### Utility row
 
-- begins **8 pt below** the heading block;
-- horizontal inset = 20;
-- minimum row height = **52**;
-- base layout: date control on the left; Primetime + Nu grouped on the right;
-- minimum visual gap between controls = **8**;
-- schedule begins **12 pt below** the utility row.
+- 8 pt below heading;
+- horizontal inset 20;
+- min height 52;
+- date control left, Primetime + Nu right;
+- min control gap 8;
+- schedule begins 12 pt below the utility row.
 
-If measured content does not fit in one row, use the Dynamic Type/wrapping rules in section 14; never reduce substantive labels below the specified compact-chrome scaling cap.
+### Day selector
 
-### 9.3 Day selector
-
-Visible treatment:
-
-- no pill/background in rest state;
+- no visible pill/background in rest state;
 - `15/20 600 text`;
-- chevron-down visual box **14 × 18**, gap **6** after the date label;
-- use a real/simple vector chevron or equivalent platform-safe drawing, not a font glyph whose baseline varies by device;
-- full press target min 44 pt iOS / 48 dp Android;
-- press opacity 0.64.
+- vector/simple chevron box 14 × 18, gap 6;
+- whole press target min 44/48;
+- copy follows bounded D-2..D+7 television-day semantics;
+- 00:00–05:59 must not falsely call the preceding television day `Vandaag`.
 
-Copy follows `GUIDE_DAY_SELECTOR.md` exactly, e.g. `Vandaag · do 17 sep`, `Morgen · vr 18 sep`, or `Za 19 sep`; 00:00–05:59 never falsely labels the preceding television day as `Vandaag`.
+### Primetime
 
-Bottom sheet remains exactly the bounded ten-day D-2..D+7 selector. For its selected option:
+Semantics remain FROZEN: jump to **20:30 Europe/Amsterdam on the selected television day**, without changing that day.
 
-- selected row uses `surfaceElevated`;
-- label remains primary `text`, semibold;
-- accent checkmark uses `currentTime`;
-- accessibility selected state is explicit;
-- do not rely on red body text alone.
+- visible height 36;
+- touch wrapper min 44/48;
+- horizontal padding 14;
+- radius 18;
+- `surfaceElevated` + hairline `border`;
+- moon icon 14 × 14;
+- icon/text gap 7;
+- `14/18 600 textSecondary`;
+- no shadow/elevation.
 
-### 9.4 Primetime
+### Nu
 
-Semantics are FROZEN: jump to **20:30 Europe/Amsterdam on the currently selected television day**; do not change selected day.
+Semantics remain FROZEN: restore actual current instant and its containing television day.
 
-Visible control:
+- visible height 36;
+- min visible width 48;
+- touch wrapper min 44/48;
+- horizontal padding 12;
+- radius 18;
+- transparent/background fill + hairline `border`;
+- `14/18 600 text`.
 
-- visible height **36**;
-- touch wrapper min 44 pt iOS / 48 dp Android;
-- horizontal padding **14**;
-- radius **18**;
-- `surfaceElevated` background;
-- `hairline` `border` outline;
-- moon icon **14 × 14**;
-- icon/text gap **7**;
-- label `14/18 600 textSecondary`;
-- no heavy shadow/elevation.
+## 10. Programme schedule model — fixed rows
 
-A tiny local/vector moon icon is sufficient; do not introduce a third-party icon dependency solely for this control.
+Per zender renders programmes in **chronological start-time order**. It does not render a spatial wall-clock axis.
 
-### 9.5 Nu
+For a selected channel/day:
 
-Semantics are FROZEN: restore the actual current instant **and** the television day containing it.
+1. order programmes by real `startAt`;
+2. identify the programme current at the actual current instant using `startAt <= now < endAt`;
+3. render every non-current programme with `standardRowHeight`;
+4. render the current programme with `currentRowHeight`;
+5. show truthful programme start time in the time gutter;
+6. use real start/end timestamps for current progress and navigation semantics;
+7. never derive row Y or row height from duration.
 
-Visible control:
+A 10-minute programme and a 120-minute programme therefore occupy the same standard row when neither is current.
 
-- visible height **36**;
-- minimum visible width **48**;
-- touch wrapper min 44 pt iOS / 48 dp Android;
-- horizontal padding **12**;
-- radius **18**;
-- transparent/background-coloured fill;
-- `hairline` `border` outline;
-- label `14/18 600 text`;
-- no icon required.
+A real schedule gap does **not** become proportional blank vertical space. Do not create filler rows or fake programme content; the next real programme simply follows as the next fixed row with its truthful start time.
 
-Primetime and Nu must remain visibly separate actions; neither is nested inside the day selector.
+This correction intentionally removes the previous duration-driven geometry even if current implementation helpers still expose `scheduleYForTime` / `programmeVerticalFrame`. Those helpers are not the target for Per-zender list layout after this revision.
 
-## 10. Open vertical programme schedule
+## 11. Standard programme row
 
-The schedule is a continuous time surface. It is **not** an equal-height list.
+### 11.1 Base geometry
 
-### 10.1 Wall-clock geometry
+At default text size:
 
-At fontScale 1.0:
+- row height = **52** exactly;
+- time text X = **24**;
+- programme title X = **100**;
+- programme right inset = **24**;
+- separator at row bottom;
+- no card/background/radius;
+- no genre, thumbnail, duration or end-time metadata.
 
-`Y = elapsedMinutesFromTelevisionDayStart × 1.30`
+### 11.2 Vertical alignment
 
-and:
+Time and title are vertically centred independently inside the 52-pt row:
 
-`programmeHeight = visibleProgrammeDurationMinutes × 1.30`.
+- time line box: 20 high → top = **16**;
+- title line box: 22 high → top = **15**.
 
-The programme frame is clipped only to the selected television-day window where required by the existing runtime. Start/end timestamps remain real UTC instants; timezone grouping remains Europe/Amsterdam per ADR 0008.
+Do not top-align standard rows. The accepted list rhythm depends on centred programme rows.
 
-No artificial minimum row height may alter programme start/end geometry.
+### 11.3 Content
 
-### 10.2 Horizontal geometry
+Time:
 
-- row interaction/visual canvas can span the full screen;
-- time gutter starts at X = 20 and is width 64;
-- start-time text X = **24**;
-- programme-content X = **100**;
-- programme-content right edge = `screenWidth - 24`;
-- time → programme blank gap = 16.
+- programme `startAt` only;
+- `16/20 400 textSecondary`;
+- tabular numerals;
+- one line.
 
-### 10.3 Programme boundary
+Title:
 
-- use one `hairline` separator at a programme end where it improves scanning;
-- separator colour = `border`;
-- separator left = **20**;
-- separator right = **0** (screen edge);
-- do not add a second separator because another programme begins at the same timestamp;
-- remove the heavy schedule-wide hourly grid from the normal visual hierarchy.
+- `18/22 500 text`;
+- one line at normal text sizes;
+- tail ellipsis when it does not fit horizontally;
+- full untruncated title remains available to accessibility APIs.
 
-A schedule-start boundary may use the same hairline. Hour/reference lines are not rendered as a second structural grid.
+Historical and future normal programmes use the same visual treatment. Programme duration does not alter typography or row density.
 
-## 11. Normal programme treatment
+## 12. Current programme row
 
-For every non-current programme:
+The programme airing at the actual current instant receives exactly one taller row in the chronological list.
 
-- left: programme start time only;
-- right: programme title;
-- no thumbnail;
-- no genre;
-- no end-time duplicate;
-- no permanent fill/card/radius;
-- no past/future colour distinction.
+### 12.1 Base geometry
 
-### 11.1 Vertical content rules
+At default text size:
 
-Use `normalizedHeight = frameHeight / max(1, fontScale)` to choose content density. The time geometry itself scales with fontScale as specified in section 14.
-
-- normalized height **>= 32**: normal title, `16/20 500`, top inset 8;
-- normalized height **20–31**: compact title, `14/17 500`, inset 4, one line;
-- normalized height **< 20**: do not force visible title/time into an impossible frame; preserve the exact time block and full accessibility label.
-
-For normal title wrapping:
-
-- one line is the default baseline;
-- allow a second line only when measured text needs it **and** normalized frame height is at least 48;
-- otherwise tail-ellipsize;
-- never reduce below compact 14-pt title solely to fit a real short programme.
-
-Start-time label follows the same visibility principle: if the frame cannot contain its scaled line height without overlap, omit the visible time for that frame. Full start/end times remain in accessibility semantics.
-
-## 12. Current programme treatment
-
-The accepted Per-zender design allows one restrained, **row-local** current treatment. It must not become a collection of live indicators.
-
-For the programme for which `startAt <= now < endAt`:
-
-1. keep its start time in the normal time gutter;
-2. title uses `16/20 700 text` (or the compact equivalent when geometry forces compact title);
-3. optional detail uses the first non-empty `description ?? subtitle`;
-4. local progress track is allowed when geometry permits;
-5. semantic accessibility label appends `nu bezig`.
-
-Do **not** additionally render:
-
-- a filled current-programme card;
-- a red left border;
-- a full-width/schedule-wide current-time line;
-- a current-time dot;
-- a visible `Nu bezig` badge or duplicate “tot …” row when the local progress treatment is present.
-
-### 12.1 Current detail thresholds
-
-Using `normalizedHeight`:
-
-- **< 20**: no forced visible text; semantics only;
-- **20–31**: compact current title only;
-- **32–55**: current title only;
-- **56–91**: current title + progress; no description;
-- **>= 92**: current title + conditional description/subtitle + progress.
-
-For `>= 92`:
-
-- title begins at the standard 8-pt inset;
-- description gap after title = **3**;
-- description max = **3 lines**;
-- progress is anchored **10 pt above the programme frame bottom**;
-- minimum clear gap between the last rendered text line and progress = **6**;
-- if text measurement would violate that gap, reduce description by one line at a time, then omit it; never compress the title.
-
-For `56–91`:
-
-- progress is anchored 10 pt above frame bottom;
-- title remains top aligned;
-- no description.
-
-Progress geometry:
-
-- X = 100;
+- row height = **120** exactly;
+- time X = 24;
+- content/progress X = 100;
 - right inset = 24;
-- height = 4;
-- radius = 2;
-- track = `border`;
-- fill = `currentTime`;
-- fill width = clamped programme progress `0…1` × track width.
+- current title/content top inset = **14**;
+- bottom separator at row bottom.
 
-The title-weight change plus local progress constitutes one coherent current-state treatment. Do not add another colour block or timeline marker.
+Time and current title both begin at the current content top region; no separate `Nu bezig` text is required visually.
 
-## 13. Long programmes, short programmes, missing metadata and gaps
+### 12.2 Current title
 
-### Very short programmes
+- `20/24 700 text`;
+- one line at normal text sizes;
+- tail ellipsis when needed;
+- full title in accessibility label.
 
-Real duration always wins. Never inflate a 5/10/15-minute item to a fake minimum visual row. Density degrades in this order:
+### 12.3 Description
 
-1. description absent;
-2. progress absent if current and below threshold;
-3. title becomes compact;
-4. visible start time/title may disappear if the exact frame cannot contain them safely;
-5. accessibility still exposes channel, full title, start/end and current status.
+If a programme description exists, show it. If `description` is absent but a useful `subtitle` exists, `subtitle` may be used as fallback.
 
-### Long titles
+- margin top from title line box = **2**;
+- `15/18 400 textSecondary`;
+- maximum **3 lines**;
+- `numberOfLines={3}` / equivalent;
+- tail ellipsis on overflow;
+- never hide it because the programme itself is short — duration has no layout role.
 
-- use normal title size, not a smaller ad-hoc font;
-- two lines are permitted only when real geometry provides the room;
-- otherwise tail-ellipsize;
-- VoiceOver/TalkBack receives the untruncated full title.
+If neither description nor usable subtitle exists, leave the area open; do not fabricate metadata.
 
-### Long programmes
+### 12.4 Mandatory local progress bar
 
-Extra duration creates real whitespace. Do not vertically centre the title through a multi-hour frame. Content remains top aligned so chronological scanning remains predictable.
+The current row **always** shows a local red progress bar.
 
-### Missing description
+Geometry:
 
-Do not fabricate metadata or leave a placeholder line. Current progress keeps its defined bottom anchor; the space between title and progress simply remains open.
+- left = **100**;
+- right = **24**;
+- width = `screenWidth - 124`;
+- height = **4**;
+- radius = **2**;
+- bottom inset = **16**;
+- track colour = `border`;
+- fill colour = `currentTime`.
 
-### Schedule gaps
+Progress calculation:
 
-A real schedule gap remains a blank time-geometric canvas for exactly that duration. Do not collapse it and do not pretend the preceding programme remains current. This specification adds no new “Geen programma” copy.
+`progress = clamp((nowMs - startMs) / (endMs - startMs), 0, 1)`
 
-## 14. Vertical density and Dynamic Type
+The fill width equals `progress × trackWidth`.
 
-The accepted visual is more spacious than the supplied current physical runtime while retaining real time geometry. Base vertical scale is therefore **1.30 pt/minute** at fontScale 1.0.
+This is the only visual live/current progress treatment. Do **not** additionally render:
 
-Programme-content font scaling and schedule geometry remain coupled:
+- a current card fill;
+- a red left rail;
+- a schedule-wide current-time line;
+- a now-dot;
+- a visible `Nu bezig` badge;
+- a second progress indicator.
 
-`minuteHeight(fontScale) = 1.30 × max(1, fontScale)`.
+The title weight + taller current row + local progress bar form one coherent current treatment.
 
-Do not cap this geometry to preserve screenshot density. This ensures a 60-minute programme grows from 78 pt at 100% to 105.3 pt at 135% while retaining the same wall-clock proportion.
+## 13. Separators
 
-Representative behaviour:
+Every visible programme row has one row-bottom separator:
 
-| Text setting | Effective minute scale | Chrome behaviour | Programme behaviour |
-| --- | ---: | --- | --- |
-| 100% (`fontScale ≈ 1.00`) | 1.30 | One-row context on normal phone widths | Base typography/density. |
-| ~110% (`≈ 1.10`) | 1.43 | One row when measured content fits | Substantive programme text scales normally. |
-| ~135% (`≈ 1.35`) | 1.755 | Rest/condensed utility context may use two rows; do not shrink below chrome cap | Programme title/time/description scale without max multiplier. |
-| Accessibility size (`> 1.45`) | `1.30 × actual fontScale` | Use wrapped/taller context; sticky row min 88 when wrapped | Preserve time geometry; drop optional description before title; allow title wrap when real frame permits. |
+- position = `bottom: 0` of the standard/current row;
+- left = **20**;
+- right = **0**;
+- thickness = `StyleSheet.hairlineWidth`;
+- colour = `border`.
 
-### Compact chrome scaling caps
+Do not render an independent hourly grid. Do not add a second separator because two programmes are adjacent.
 
-`maxFontSizeMultiplier = 1.20` is permitted only for:
+The separator location follows fixed row boundaries, not programme start/end duration.
 
-- presentation-tab labels;
+## 14. Dynamic Type — fixed-row rules
+
+Dynamic Type remains required for substantive schedule content. The fixed-row correction changes **how** Per zender adapts: every row of a given type grows consistently with text size rather than using duration geometry.
+
+Let:
+
+`contentScale = max(1, systemFontScale)`
+
+### 14.1 Standard rows
+
+`standardRowHeight(fontScale) = round(52 × contentScale)`
+
+Rules:
+
+- all non-current programme rows use exactly this same computed height;
+- time/title font sizes and line heights follow platform Dynamic Type normally; no `maximumFontSizeMultiplier`;
+- time remains one line and vertically centred;
+- for `fontScale <= 1.35`, title remains max 1 line;
+- for `fontScale > 1.35`, title may use max 2 lines;
+- a two-line title block is vertically centred inside the same equal row height;
+- do not vary an individual row height because its title is longer or its programme duration differs.
+
+Representative heights:
+
+| Font scale | Standard row |
+| ---: | ---: |
+| 1.00 | 52 |
+| 1.10 | 57 |
+| 1.35 | 70 |
+| 1.50 | 78 |
+| 2.00 | 104 |
+
+### 14.2 Current row
+
+`currentRowHeight(fontScale) = round(120 × contentScale)`
+
+Rules:
+
+- current title and description scale normally; no multiplier cap;
+- description remains max 3 lines and tail-ellipsized;
+- current title remains max 1 line through `fontScale <= 1.35`; above 1.35 it may use max 2 lines;
+- progress track stays **4 pt high** and full specified width; it does not scale into a heavy bar;
+- progress bottom inset remains **16 pt**;
+- current top inset remains **14 pt**;
+- description gap remains **2 pt**;
+- description is not removed because of programme duration;
+- if accessibility text becomes extremely large, text is constrained only by its defined line count/ellipsis, not by duration-based thresholds.
+
+Representative heights:
+
+| Font scale | Current row |
+| ---: | ---: |
+| 1.00 | 120 |
+| 1.10 | 132 |
+| 1.35 | 162 |
+| 1.50 | 180 |
+| 2.00 | 240 |
+
+### 14.3 Compact chrome remains separately capped
+
+`maximumFontSizeMultiplier = 1.20` remains allowed only for compact Guide chrome:
+
+- presentation tabs;
 - channel-strip text fallback;
-- day-selector visible label;
-- Primetime / Nu labels;
+- day-selector label;
+- Primetime/Nu labels;
 - condensed channel/date row.
 
-These controls compensate by growing/wrapping containers where needed. The cap must not be applied globally.
+Selected-channel heading, programme times, programme titles and current description remain uncapped.
 
-### Substantive content
+If date + Primetime + Nu no longer fit:
 
-No `maximumFontSizeMultiplier` cap for:
-
-- selected-channel rest heading;
-- programme start times;
-- normal/current programme titles;
-- current description/subtitle.
-
-### Utility wrapping
-
-If date + Primetime + Nu cannot fit with 20-pt screen insets and minimum 8-pt gaps:
-
-- row 1: full-width day selector;
-- row 2: Primetime + Nu aligned to the trailing edge;
-- rest context height grows intrinsically;
-- condensed context uses `stickyContextWrappedHeight = 88` as its minimum;
-- do not truncate `Primetime` to an abbreviation and do not hide `Nu`.
+- row 1 = day selector;
+- row 2 = Primetime + Nu;
+- condensed context min height becomes 88;
+- do not abbreviate `Primetime` or hide `Nu`.
 
 ## 15. Sticky / condensed state
 
-The sticky state preserves only functional context.
+Settled condensed stack:
 
-### 15.1 Final condensed stack
+1. platform safe area;
+2. channel strip — 72 high;
+3. compact channel/date/Primetime/Nu context — 52 high base, 88 minimum when wrapped;
+4. fixed-row schedule list.
 
-From the top:
-
-1. platform safe-area inset;
-2. channel strip — **72** high;
-3. compact channel/date/Primetime/Nu context — **52** high at base size, **88** minimum when wrapped;
-4. schedule viewport.
-
-Absent in settled condensed state:
+Absent when settled condensed:
 
 - brand mark/header chrome;
 - large presentation-navigation row;
 - large selected-channel heading.
 
-Do not show the large `NPO 1` heading and the compact `NPO 1 · date` row simultaneously after collapse.
-
-### 15.2 Compact context composition
-
-Left group:
+Compact context left group:
 
 - channel prefix `14/18 700`;
-- separator copy ` · `;
+- ` · `;
 - selected date `14/18 600`;
 - disclosure chevron.
 
 Trailing group:
 
-- Primetime and Nu retain the same **36-pt visible** treatments and 44/48 minimum touch targets;
-- minimum gap 8.
+- Primetime + Nu, same visible 36-pt treatment;
+- min gap 8.
 
-If width does not permit one row, use the two-row 88-pt minimum pattern from section 14.
+Surface:
 
-### 15.3 Surface and boundary
+- `background`;
+- no card/shadow/elevation;
+- bottom hairline `border`.
 
-- background = `background`;
-- no floating card;
-- no shadow;
-- Android elevation = 0;
-- bottom border = one `hairline` `border`;
-- sticky container z-index/elevation ordering must place it above scrolling schedule content without introducing a visible shadow.
-
-### 15.4 Collapse motion
-
-The canonical requirement is scroll-coupled condensation, not a toolbar spring.
+### Collapse motion
 
 Normal motion:
 
-- `progress = clamp(scrollY / 56, 0, 1)`;
-- non-functional brand/presentation/large-channel context opacity = `1 - progress`;
-- translate those disappearing blocks upward by at most **12 pt × progress**;
-- channel strip and functional compact context settle into the sticky stack as the vacated height collapses;
-- use direct scroll interpolation; **no spring and no scroll-direction hide/reveal behaviour**.
+`progress = clamp(scrollY / 56, 0, 1)`
 
-Any implementation that changes header height during this transition must compensate the schedule viewport/content inset so the viewed wall-clock anchor does not jump.
+- disappearing brand/presentation/large-channel context opacity = `1 - progress`;
+- translate disappearing content upward by max 12 pt × progress;
+- no spring;
+- no scroll-direction toolbar hide/reveal behaviour.
 
 Reduce Motion:
 
-- no interpolated fade/translation;
-- switch from rest to condensed state discretely at **28 pt** vertical schedule offset;
-- switch back when scrolling above that same threshold;
-- preserve the same final rest/condensed geometry.
+- discrete rest/condensed switch at 28 pt scroll offset;
+- no fade/translation interpolation.
 
-## 16. Light, dark and system
+Because Per zender is now fixed-row based, header condensation must preserve the visible programme-row/list anchor; it must not infer a wall-clock instant from pixel distance.
 
-All layout metrics, typography hierarchy, touch geometry and schedule density are identical across themes.
+## 16. Time-anchor semantics after the fixed-row correction
+
+Existing product behaviour still requires preserving the viewed time anchor where practical when changing channel/day.
+
+That requirement remains, but implementation must no longer calculate it as `scrollY / ptPerMinute`.
+
+The semantic anchor is derived from the real timestamps of the programme at/nearest the stable viewport anchor. When switching channel/day, resolve that timestamp against the target schedule and restore the corresponding/nearest programme context. Exact implementation remains a Development concern; the visual requirement is that fixed row heights are never distorted to preserve an old pixel-to-time mapping.
+
+`Primetime` and `Nu` likewise target real timestamps first, then scroll the fixed-row list to the programme containing/nearest that instant.
+
+## 17. Light / Dark / System
+
+Layout metrics, fixed row heights, type hierarchy and touch geometry are identical across themes.
 
 Light:
 
 - canvas `#F7F7F5`;
 - selected/utility surface `#FFFFFF`;
-- dark primary copy `#171717`;
+- primary `#171717`;
 - no grey programme cards.
 
 Dark:
 
 - canvas `#10100F`;
 - selected/utility surface `#222220`;
-- primary copy `#F4F4F1`;
-- same open schedule and separator hierarchy;
-- channel logos keep their own brand colours.
+- primary `#F4F4F1`;
+- same open fixed-row list;
+- channel marks keep brand colours.
 
-System:
+System follows OS appearance through existing semantic theme resolution. No alternate layout branch.
 
-- follows OS appearance through the existing appearance provider;
-- no layout branch and no alternate component hierarchy.
-
-Do not tune spacing separately for dark mode.
-
-## 17. Accessibility specification
+## 18. Accessibility
 
 ### Touch targets
 
-- channel item: minimum 44 pt iOS / 48 dp Android; specified visible box is 48;
-- day selector: minimum 44/48;
-- Primetime: visible 36, invisible/touch wrapper minimum 44/48;
-- Nu: visible 36, invisible/touch wrapper minimum 44/48;
-- presentation tabs: minimum 44/48 in height.
+- channel item: min 44 pt iOS / 48 dp Android; visible box is 48;
+- day selector: min 44/48;
+- Primetime/Nu: visible 36, touch wrapper min 44/48;
+- presentation tabs: min 44/48;
+- **standard programme row base height 52 already satisfies the minimum row target**;
+- current row base height 120.
 
-Programme frames are an explicit time-geometry exception: short real programmes can be physically shorter than 44/48. Do **not** distort time geometry to meet a generic row-height rule. The programme press target may expand vertically only into non-overlapping free space, bounded by the midpoint to adjacent programme targets. Never create overlapping tap targets. Screen readers must still enumerate every programme as a distinct accessible button.
+Unlike the superseded duration-geometric interpretation, Per zender no longer needs overlapping/non-overlapping touch-target exceptions for short programmes. Every standard programme row is a full fixed-row press target.
 
 ### Semantics
 
 Channel:
 
-- label = full `channel.displayName`;
-- role = button;
-- selected state explicit.
+- button;
+- full channel name;
+- explicit selected state.
 
 Programme:
 
-- role = button;
-- label contains full channel name, full programme title, start and end time;
+- button;
+- full channel, title, start and end time;
 - append `nu bezig` when current;
 - hint may state that it opens Programme Detail.
 
 Day selector:
 
-- label exposes the complete selected date and `Kies een dag` action;
-- busy/unavailable states remain semantic;
-- selected day in sheet has explicit selected state and checkmark.
+- full selected date;
+- `Kies een dag` action;
+- selected sheet option has explicit selected state and checkmark.
 
 Primetime:
 
-- accessibility label equivalent to `Ga naar primetime, 20:30 op geselecteerde dag`.
+- label equivalent to `Ga naar primetime, 20:30 op geselecteerde dag`.
 
 Nu:
 
-- accessibility label `Ga naar nu`.
+- label `Ga naar nu`.
 
-### Colour and contrast
+Contrast:
 
-- normal/substantive text targets at least **4.5:1** against its active background;
-- large text and essential graphical/UI boundaries target at least **3:1** where WCAG size rules apply;
-- current/selected state cannot be colour-only;
-- use `textSecondary`, not light-mode `textMuted`, for programme times and inactive presentation labels because they are substantive normal-size text;
-- `currentTime` is a graphical accent in light mode, not a small body-copy colour.
+- normal/substantive text >= 4.5:1 target;
+- essential UI/large text >= 3:1 where applicable;
+- state is never colour-only;
+- programme times use `textSecondary`, not light `textMuted`.
 
-## 18. Bottom-navigation boundary
+## 19. Physical runtime comparison after correction
 
-Per zender does not redesign the primary tab bar.
+The owner-supplied first implementation demonstrates why the duration interpretation is invalid.
 
-Preserve the existing app-shell boundary:
-
-- tab bar is outside the schedule scroll container;
-- current shell height remains **66** plus the platform's bottom safe-area handling as implemented by the router/platform;
-- top padding 7, bottom padding 7 in the existing shell;
-- surface = `surface`;
-- top border = `hairline border`;
-- Per-zender content must not be obscured by the tab bar and must not introduce a floating control over the schedule/tab boundary.
-
-Runtime-only debug/development overlays are not part of visual acceptance evidence.
-
-## 19. Current runtime ↔ accepted design comparison
-
-The supplied physical iPhone capture is useful evidence, but the exact target is defined above.
-
-| Part | Accepted production target | Supplied physical runtime | Required implementation change |
+| Part | Accepted target | First physical implementation | Required correction |
 | --- | --- | --- | --- |
-| Canvas colour | `background`: light `#F7F7F5` | Capture already uses the current light background token | **No palette change** for the canvas. |
-| Outer margins | 20-pt Guide content inset | Roughly 18 pt in several visible blocks | Standardise to 20 via one Guide metric. |
-| Presentation selector | Upper typographic 3-tab row; 16/22; selected 88×2.5 underline | Structurally already moved to top in the supplied capture, but spacing/typography/indicator are still implementation-defined | Apply exact shared-chrome metrics; no filled/floating selector. |
-| Channel strip | 48-pt logo items, 12 gap, 20 inset, 72 high | Large text tabs (`NPO 1`, `NPO 2`…) with a prominent selected block | Replace text-tab presentation with final logo-box geometry; use specified fallback inside the same box until logos exist. |
-| Logo sizing | max 40×32 aspect-fit | No representative logo boxes in capture | Add logo/fallback variant; preserve mark proportions. |
-| Selected channel treatment | Quiet 48×48 surface/border in strip; no underline | Large selected text block | Use subtle selected wrapper only. |
-| Selected-channel heading | 24/30 700, 20-pt inset, 24 below strip | Heading is present but composition is compressed relative to canonical strip/heading hierarchy | Apply exact strip→heading spacing and type token. |
-| Day selector | 15/20 600 typographic control; no visible pill | Current date copy is heavier/larger and its spacing is tied to current utility layout | Apply exact type, chevron and touch-area spec. |
-| Primetime | 36-high subtle surface, radius18, moon 14, 14/18 label | Large outlined pill is visually more dominant | Reduce visible treatment; use subtle surface/border and exact icon/text geometry. |
-| Nu | 36-high, min 48 wide, quiet outline | Large sibling pill | Use compact visible size while preserving 44/48 touch target. |
-| Time gutter | left 20, width64; time text X=24 | Time and title columns sit materially closer together; measured title X is about 63 pt on the 390-pt capture | Move programme column to X=100 and preserve 16-pt gap after gutter. |
-| Programme-title X | 100 | ≈63 in supplied capture | Shift to canonical two-column geometry. |
-| Programme typography | normal 16/20 500; current 16/20 700 | Normal titles appear comparatively dominant and spatially close to times | Apply weight hierarchy and content-column geometry. |
-| Current programme | Local title emphasis + optional description + one progress bar when space permits | Captured current row does not show the canonical local description/progress hierarchy. Current `main` still contains additional fill/left-border/global-now-line code. | Converge to the single treatment in section 12; remove both missing and duplicate-signal cases. |
-| Vertical density | real-time geometry at 1.30 pt/min base | Physical capture is visibly denser; sampled start-time spacing is about 0.95 pt/min | Increase base minute scale while keeping exact wall-clock proportionality. |
-| Separators | one quiet programme-end hairline; no hour grid | Multiple/higher-salience schedule reference lines remain visible | Keep programme-end hairline only; remove hourly grid dominance. |
-| Overall hierarchy | logo strip → selected channel → date/utilities → calm schedule | channel text tabs and utility chrome compete strongly with the schedule | Re-establish canonical hierarchy through the exact metrics above. |
-| Bottom-navigation boundary | stable existing shell, quiet hairline | Broadly aligned; capture also contains a non-product floating blue development/accessibility overlay | Preserve shell; exclude runtime-only overlays from acceptance captures. |
+| Standard rows | Every non-current programme exactly 52 pt at base text size | Row Y/spacing follows programme duration, producing visibly irregular density and large gaps | Replace duration frames with equal fixed rows. |
+| Current row | One 120-pt row with title, description when available and local progress | Current programme is effectively another duration-driven row; canonical expanded current treatment is missing/incomplete | Render explicit 120-pt current row. |
+| Programme title | 18/22 weight 500 | Previous spec's 16/20 reads materially too small on physical iPhone | Increase to 18/22 weight 500. |
+| Current title | 20/24 weight 700 | Current title emphasis exists but without full canonical row treatment | Use 20/24 in the 120-pt row. |
+| Time | 16/20 weight 400 | Broadly close but participates in duration-spaced layout | Keep type; vertically centre per fixed standard row. |
+| Current description | 15/18, max 3, ellipsis | Not consistently present as canonical current detail | Show whenever description/fallback subtitle exists. |
+| Progress | Mandatory local 4-pt bar, X=100 → right24, bottom16 | Missing from the physically shown current programme state | Always render for actual current programme. |
+| Separators | One hairline at every fixed row bottom, left20→right edge | Separators inherit duration-driven frame positions | Position by fixed row boundaries. |
+| Sticky list | Same fixed-row list beneath compact sticky context | Sticky screenshot exposes especially large duration-derived blank gaps | Fixed rows continue unchanged in sticky state. |
+| Vertical time model | Chronological list; timestamps truthful; duration not spatial | pt/minute/time-axis model | Remove pt/minute mapping from Per-zender layout. |
 
-Note: the supplied physical runtime can be ahead of or different from `main`. Development must implement the **target**, not reconcile appearance by blindly copying either source. Frozen interaction/data mechanics in `main` remain protected.
+The supplied physical runtime may differ from `main`; Development implements the canonical target in this document, not either incidental implementation state.
 
-## 20. Implementation calibration register
+## 20. Explicitly superseded rules from the previous revision
 
-The following exact values were not previously available as vector design tokens and are therefore explicitly **IMPLEMENTATION CALIBRATION**, not new product/UX decisions:
+The following rules are **deleted and must not survive implementation**:
+
+- `perChannel.minuteHeightBase = 1.30 pt/min`;
+- any formula mapping elapsed minutes to Y position;
+- `programmeHeight = durationMinutes × minuteHeight`;
+- `normalizedHeight`;
+- 20 / 32 / 56 / 92 duration-height content thresholds;
+- compact title mode chosen because a programme duration creates a short frame;
+- hiding programme time/title because the programme is too short;
+- hiding current progress because the programme is too short;
+- hiding current description because the programme is too short;
+- duration-proportional schedule gaps;
+- Dynamic Type rules that increase a minute-to-height scale;
+- accessibility exceptions caused by programme frames shorter than the minimum touch target;
+- Development instructions to preserve the existing duration-geometric Per-channel schedule rendering.
+
+Any code/helper that implements those concepts may remain elsewhere for another presentation only if genuinely needed there, but it is not part of the Per-zender visual target.
+
+## 21. Current implementation calibration register
+
+Values still classified as implementation calibration rather than a new product decision:
 
 1. Guide screen inset 20 and brand box 56×44.
-2. Presentation row 48 and selected indicator base 88×2.5.
-3. Channel strip: 72 high; 20 inset; 48 item; 12 gap; 40×32 logo max; radius12 selected wrapper.
-4. Rest-context spacing: 24 strip→heading, 8 heading→utility, 52 utility-row minimum, 12 utility→schedule.
-5. Utility visible height/radius: 36/18; utility gap8; icon14; Primetime padding14; Nu min width48/padding12.
-6. Schedule columns: 64 time gutter, time X24, 16 gap, programme X100, right inset24.
-7. Base vertical scale: **1.30 pt/minute**.
-8. Content thresholds: normalized 20 / 32 / 56 / 92 pt and 8/4 vertical content insets.
-9. Current progress: 4 high, radius2, bottom inset10, minimum 6 text clearance.
-10. Sticky context 52 (88 wrapped), collapse distance56, Reduce Motion switch threshold28.
-11. Exact typography sizes/line-heights in section 5 where previous repository documents specified hierarchy but not numeric values.
+2. Presentation row 48 and selected indicator 88×2.5.
+3. Channel strip: 72 high; 20 inset; 48 item; 12 gap; 40×32 logo max.
+4. Context spacing: 24 strip→heading, 8 heading→utilities, 52 utility-row min, 12 utility→schedule.
+5. Utility treatment: 36 high, radius18, gap8, icon14.
+6. Schedule columns: time X24, programme X100, right24.
+7. **Standard row 52 and current row 120**, calibrated directly from the accepted visual composition and now owner-confirmed as fixed-row semantics.
+8. Standard title `18/22 500`, current title `20/24 700`, time `16/20 400`, description `15/18 400`.
+9. Current content top14, description gap2, progress 4 high / bottom16.
+10. Separator left20, bottom of row.
+11. Sticky context 52/88 and collapse distance56.
 12. Press opacity0.64 and disabled opacity0.40.
 
-These values are now the production handoff. Development does not choose alternatives locally. A future retune requires physical evidence and a documentation update before code drift.
+Development does not choose alternate values locally. Physical retuning requires evidence and a documentation update first.
 
-## 21. Missing assets / licensing inputs
+## 22. Missing asset/licensing inputs
 
 ### Söhne
 
-Production font licensing/delivery is still unresolved in `PROJECT_STATE.md` / `DESIGN_SYSTEM.md`. This does **not** block visual convergence: use the system-font fallback while keeping the exact numeric hierarchy in this spec. Do not commit font binaries without licence approval.
+Production font licensing/delivery remains unresolved. Use system-font fallback while preserving the numeric hierarchy above. Do not commit font binaries without licence approval.
 
 ### Channel logos
 
-Deterministic fixtures currently do not guarantee licensed `logoUrl` values. Production logo rights/assets remain an input. This does **not** justify large text tabs: use the exact fallback geometry from section 8.4 so physical visual validation remains representative.
+Fixtures may not have licensed production logos. Use the exact 48×48 fallback geometry; do not revert to large text tabs.
 
 ### Brand mark
 
-The canonical `tv.` visual exists in accepted visual references, but the repository does not currently establish a canonical distributable brand binary/vector in this Per-zender handoff. Reuse an already approved implementation asset if one exists when Development starts; otherwise an approved brand asset is required for final pixel acceptance. The 56×44 layout box is already specified.
+Reuse an approved distributable `tv.` asset if present when Development starts; otherwise final pixel acceptance requires the approved asset. The 56×44 layout box is already fixed.
 
-No new third-party icon dependency is required for chevron or moon glyphs.
+No third-party icon dependency is required solely for the moon or chevron.
 
-## 22. Development handoff
+## 23. Development handoff
 
-When Lead schedules Per-zender visual convergence, Development should implement this as visual convergence over the existing interaction architecture, not as a rewrite.
+When Lead schedules Per-zender convergence, Development must treat this revision as a correction to the prior handoff.
 
-Required sequence:
+Required implementation intent:
 
-1. Re-read `PROJECT_STATE.md`, this file and the exact canonical assets immediately before implementation.
-2. Reuse the shared upper Guide presentation selector produced by the Totaal/shared-chrome work if it has landed; do not fork another selector.
-3. Centralise the named metrics from section 4; do not scatter magic numbers.
-4. Give `ChannelIdentity` or its caller an explicit Per-zender logo-only/fallback variant; do not globally remove identity behaviour used by other Guide presentations.
-5. Preserve the existing outer vertical time scroll + three-page adjacent-channel pager + channel-strip direct-selection architecture.
-6. Preserve D-2..D+7, 06:00 television-day, Primetime and Nu semantics exactly.
-7. Change Per-zender schedule rendering to the X/Y geometry, typography, separator and current-programme rules in this document.
-8. Remove duplicate current-state signals and hour-grid dominance; do not introduce programme cards.
-9. Implement the scroll-coupled rest→condensed states without changing the viewed wall-clock anchor.
-10. Validate light, dark and system appearance; fontScale ~1.0, ~1.1, ~1.35 and a representative accessibility size.
-11. Verify horizontal channel swipe, strip browse/tap, direction lock, day changes, Primetime, Nu and Programme Detail round-trip after the visual changes.
-12. Run applicable TypeScript/lint/tests/export/native checks and perform focused physical iPhone visual/interaction acceptance. Android physical interaction acceptance remains a separate open gate when hardware is available.
+1. Keep shared Guide chrome/channel/date/Primetime/Nu decisions unchanged.
+2. Replace Per-zender duration-driven vertical frames with a chronological fixed-row list.
+3. Define **52 pt standard row** and **120 pt current row** at fontScale1 as tokens.
+4. Render every non-current programme with the same row height regardless of 5/30/60/120-minute duration.
+5. Render the actual current programme with the dedicated current row.
+6. Use standard title **18/22 weight500**, current title **20/24 weight700**, time **16/20 weight400**, description **15/18 weight400**.
+7. Current description: max 3 lines, tail ellipsis, shown whenever data exists; no duration-based suppression.
+8. Current progress: mandatory 4-pt local bar, X100 to right24, bottom16; fill from real start/end/now.
+9. Separator: hairline at bottom of each fixed row, left20 to right edge.
+10. Remove Per-zender pt/minute, `normalizedHeight`, duration-frame and short-programme visibility logic from rendering.
+11. Rework time-anchor restoration so timestamps remain semantic anchors without relying on pixel-to-minute geometry.
+12. Preserve adjacent-channel swipe, direct strip selection, D-2..D+7, 06:00 television day, Primetime/Nu semantics and Programme Detail context.
+13. Validate rest and sticky states on physical iPhone against the exact canonical visual.
+14. Validate light/dark/system plus fontScale around 1.0, 1.1, 1.35 and a representative accessibility size.
+15. Run normal automated/physical gates when implementation occurs.
 
-This specification does **not** change `PROJECT_STATE.md` sequencing. At the time of writing, Lead still owns the repository's single exact next step and shared Guide/Totaal convergence may land before Per-zender implementation.
+This documentation change performs **no Development implementation**.
 
-## 23. Non-goals / frozen decisions explicitly preserved
+## 24. Frozen decisions explicitly preserved
 
-This specification does not reopen or change:
+This correction does not reopen:
 
 - horizontal adjacent-channel swipe;
-- vertical wall-clock schedule navigation;
+- chronological vertical programme browsing;
 - channel-strip direct selection;
-- preservation of viewed time when changing channel/day where practical;
+- preserving viewed time context where practical;
 - television day = 06:00 Europe/Amsterdam → 06:00 next day;
 - D-2..D+7 horizon;
 - `Primetime` = 20:30 on selected television day;
 - `Nu` = actual current instant + containing television day;
-- Programme Detail direct navigation/context round-trip;
+- direct Programme Detail/context round-trip;
 - provider-independent data architecture;
-- fixture-first/hosted-data runtime boundary;
+- fixture-first/hosted-data boundary;
 - primary bottom navigation;
-- light/dark/system requirement;
+- light/dark/system;
 - no programme thumbnails;
 - no genre labels;
 - no decorative channel arrows;
-- no expanded historical time picker;
-- no equal-height programme list.
+- no expanded historical time picker.
 
-## 24. Visual acceptance checklist
+The only corrected interpretation is the Per-zender schedule's vertical layout model plus the resulting programme typography calibration.
 
-Per-zender visual convergence is visually ready only when all of the following are true on the exact implementation head:
+## 25. Visual acceptance checklist
 
-- top presentation navigation is typographic and matches the specified shared Guide chrome;
-- channel navigation reads as a logo strip, including fixture fallback geometry;
-- selected channel is clear without a large text-tab block or decorative underline;
-- rest-state selected channel + date/Primetime/Nu hierarchy matches the canonical composition;
-- sticky state contains channel strip + one compact channel/date/Primetime/Nu row and no duplicate large heading;
-- programme title starts at X=100 on a 390-pt class screen using the same tokenised geometry on other widths;
-- vertical scale is 1.30 pt/min at fontScale1 and remains proportional at larger font scales;
-- programme boundaries follow real time; gaps remain gaps;
-- normal rows remain open and typographic;
-- current row has at most the single local progress/current treatment defined here;
-- no schedule-wide now line, current card fill, red left rail or hourly grid dominance remains;
-- light/dark/system use the exact semantic token mapping;
-- substantive time/title text is not forced to `textMuted` in light mode;
-- representative Dynamic Type settings remain usable;
-- all utility controls meet touch/semantic requirements;
-- interactions and Programme Detail context remain unchanged;
-- final iPhone comparison is made against the exact canonical file id, not against the current physical screenshot.
+Per-zender visual convergence is ready only when all are true on the exact implementation head:
+
+- presentation navigation matches shared Guide chrome;
+- channel navigation reads as a logo strip/final fallback geometry;
+- rest and sticky channel/date/utility hierarchy matches the canonical visual;
+- every non-current programme row is exactly the same computed height for the active Dynamic Type scale;
+- at default scale every non-current row is **52 pt**;
+- programme duration has zero effect on standard row height or Y spacing;
+- actual current programme alone is **120 pt** at default scale;
+- current row always contains the mandatory local progress bar;
+- current description appears when data exists, max 3 lines with tail ellipsis;
+- standard programme title is **18/22 weight500**;
+- current title is **20/24 weight700**;
+- time is **16/20 weight400**, tabular;
+- standard row time/title are vertically centred;
+- progress geometry is X100 → right24, height4, bottom16;
+- every row separator is a bottom hairline from X20 to the right edge;
+- no pt/minute, `normalizedHeight`, duration frame or duration-based content suppression remains in Per-zender rendering;
+- no schedule-wide now line, current card fill, red left rail, now-dot or hourly grid dominance is used;
+- sticky mode retains the same fixed-row schedule model;
+- Dynamic Type grows both row types consistently without making individual programme durations affect height;
+- light/dark/system use semantic tokens;
+- channel/day/time/navigation semantics remain unchanged;
+- final physical comparison is made against the exact canonical asset, not the superseded first implementation.
