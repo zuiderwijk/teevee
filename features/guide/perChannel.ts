@@ -6,7 +6,7 @@ import type { GuideFixture, Programme } from '@/data/domain/epg';
  * open Per-zender schedule; larger system text expands this scale rather than
  * clipping substantive programme content into a fixed-height presentation.
  */
-export const PER_CHANNEL_MINUTE_HEIGHT = 0.78;
+export const PER_CHANNEL_MINUTE_HEIGHT = 0.9;
 
 export function perChannelMinuteHeightForFontScale(fontScale: number): number {
   const scale = Number.isFinite(fontScale) && fontScale > 0 ? Math.max(1, fontScale) : 1;
