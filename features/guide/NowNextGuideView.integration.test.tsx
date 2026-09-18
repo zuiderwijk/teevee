@@ -467,6 +467,12 @@ describe('Nu & Straks production interaction boundary', () => {
     expect(getByTestId(container, 'now-next-channel-scroll')).toBe(channelScroll);
     expect(channelScroll.scrollTop).toBe(420);
 
+    const settledRail = getByTestId(container, 'now-next-time-rail');
+    settledRail.scrollLeft = 28 * 76;
+    expect(getByTestId(container, 'now-next-reference-time').textContent).toBe(
+      'Nu · 20:15',
+    );
+
     await act(async () => {
       getByTestId(container, 'now-next-reference-one-one-ref').click();
     });
@@ -475,6 +481,11 @@ describe('Nu & Straks production interaction boundary', () => {
     await act(async () => getByTestId(container, 'mock-detail-close').click());
     expect(getByTestId(container, 'now-next-channel-scroll')).toBe(channelScroll);
     expect(channelScroll.scrollTop).toBe(420);
+    expect(getByTestId(container, 'now-next-time-rail')).toBe(settledRail);
+    expect(settledRail.scrollLeft).toBe(28 * 76);
+    expect(getByTestId(container, 'now-next-reference-time').textContent).toBe(
+      'Nu · 20:15',
+    );
 
     for (const [slot, id] of [
       [0, 'one-follow-1'],
@@ -488,6 +499,11 @@ describe('Nu & Straks production interaction boundary', () => {
       await act(async () => getByTestId(container, 'mock-detail-close').click());
       expect(getByTestId(container, 'now-next-channel-scroll')).toBe(channelScroll);
       expect(channelScroll.scrollTop).toBe(420);
+      expect(getByTestId(container, 'now-next-time-rail')).toBe(settledRail);
+      expect(settledRail.scrollLeft).toBe(28 * 76);
+      expect(getByTestId(container, 'now-next-reference-time').textContent).toBe(
+        'Nu · 20:15',
+      );
     }
   });
 
