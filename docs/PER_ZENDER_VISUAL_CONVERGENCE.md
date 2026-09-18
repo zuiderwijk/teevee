@@ -718,6 +718,14 @@ The heading-less expanded/rest geometry must converge continuously into the sett
 - no spring;
 - no scroll-direction hide/reveal behaviour.
 
+Production scroll-layout invariant:
+
+- the active vertical schedule ScrollView keeps a fixed native viewport while collapse is in progress;
+- scroll-driven rest→condensed geometry is visual overlay/transform geometry and must not mutate normal-flow sibling heights above that same ScrollView;
+- the full unwrapped visual contraction is 148 pt (100 Guide chrome + 12 rail + 24 + 12 gaps), while native collapse consumes 56 pt; the remaining 92 pt is visual content compensation;
+- semantic programme/timestamp anchors use explicit native↔schedule offset conversion so this isolation does not change Nu, Primetime, day/channel continuity or fixed-row semantics;
+- do not reintroduce a contentOffset → collapse → normal-flow height → compensated contentOffset feedback path. Physical iPhone tracing on PR #81 proved that architecture causes post-fling forward/back oscillation.
+
 Reduce Motion:
 
 - discrete rest/condensed switch at 28 pt schedule offset;

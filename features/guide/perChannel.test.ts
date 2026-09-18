@@ -189,6 +189,16 @@ describe('per-channel fixed-row schedule', () => {
     expect(wrappedRest.contentTranslateY).toBe(36);
     expect(wrappedCondensed.contentTranslateY).toBe(-56);
 
+    const totalVisualContraction =
+      PER_CHANNEL_VISUAL_METRICS.collapseDistance +
+      PER_CHANNEL_STABLE_SCROLL_GEOMETRY.scrollCompensation;
+    expect(rest.overlayBottom - condensed.overlayBottom).toBe(totalVisualContraction);
+    expect(wrappedRest.overlayBottom - wrappedCondensed.overlayBottom).toBe(
+      totalVisualContraction,
+    );
+    expect(PER_CHANNEL_STABLE_SCROLL_GEOMETRY.contentTopInset).toBe(
+      totalVisualContraction,
+    );
     for (const contextWrapped of [false, true]) {
       for (const progress of [0, 0.25, 0.5, 0.75, 1]) {
         const visuals = perChannelStableScrollVisuals(progress, contextWrapped);
