@@ -15,7 +15,10 @@
       "bundleIdentifier": "nl.bindinc.teevee"
     },
     "android": {
-      "package": "nl.bindinc.teevee"
+      "package": "nl.bindinc.teevee",
+      "permissions": [
+        "android.permission.SCHEDULE_EXACT_ALARM"
+      ]
     },
     "experiments": {
       "typedRoutes": true
