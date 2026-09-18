@@ -187,6 +187,18 @@ describe('per-channel fixed-row schedule', () => {
     expect(wrappedCondensed.overlayBottom).toBe(148);
     expect(wrappedRest.contentTranslateY).toBe(36);
     expect(wrappedCondensed.contentTranslateY).toBe(-56);
+
+    for (const contextWrapped of [false, true]) {
+      for (const progress of [0, 0.25, 0.5, 0.75, 1]) {
+        const visuals = perChannelStableScrollVisuals(progress, contextWrapped);
+        const scheduleVisualTop =
+          PER_CHANNEL_STABLE_SCROLL_GEOMETRY.viewportTop +
+          PER_CHANNEL_STABLE_SCROLL_GEOMETRY.contentTopInset +
+          visuals.contentTranslateY -
+          PER_CHANNEL_VISUAL_METRICS.collapseDistance * progress;
+        expect(scheduleVisualTop).toBeCloseTo(visuals.overlayBottom, 8);
+      }
+    }
   });
 
   it('round-trips semantic schedule offsets through the stable native viewport geometry', () => {
