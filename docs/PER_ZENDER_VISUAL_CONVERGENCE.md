@@ -724,6 +724,8 @@ Production scroll-layout invariant:
 - scroll-driven rest→condensed geometry is visual overlay/transform geometry and must not mutate normal-flow sibling heights above that same ScrollView;
 - the full unwrapped visual contraction is 148 pt (100 Guide chrome + 12 rail + 24 + 12 gaps), while native collapse consumes 56 pt; the remaining 92 pt is visual content compensation;
 - semantic programme/timestamp anchors use explicit native↔schedule offset conversion so this isolation does not change Nu, Primetime, day/channel continuity or fixed-row semantics;
+- the accepted 52↔88 pt context-height transition is discrete overlay geometry: when wrap mode changes, shift native schedule offset and collapse anchor once by the same ±36 pt on the UI thread, and include that wrap delta in native↔semantic conversion so the visible programme anchor and collapse progress remain invariant;
+- context wrapping is measured from the natural date/utility flex layout. Do not reset the live wrap mode merely to remeasure after channel, day, Dynamic Type or viewport-width changes, and do not let wrap-state styles force their own measurement result;
 - do not reintroduce a contentOffset → collapse → normal-flow height → compensated contentOffset feedback path. Physical iPhone tracing on PR #81 proved that architecture causes post-fling forward/back oscillation.
 
 Reduce Motion:
