@@ -26,3 +26,18 @@ export function shouldPreStackProgrammeDetailActions(
   if (!Number.isFinite(availableWidth) || !Number.isFinite(fontScale)) return true;
   return availableWidth < 300 || fontScale >= 1.3;
 }
+
+export function programmeDetailStickyBottomPadding(bottomSafeAreaInset: number): number {
+  const safeInset = Number.isFinite(bottomSafeAreaInset) ? Math.max(0, bottomSafeAreaInset) : 0;
+  return Math.max(10, safeInset);
+}
+
+export function programmeDetailBodyBottomPadding(
+  stickyEligible: boolean,
+  stickyBarHeight: number,
+  bottomSafeAreaInset: number,
+): number {
+  const safeBarHeight = Number.isFinite(stickyBarHeight) ? Math.max(0, stickyBarHeight) : 0;
+  const safeInset = Number.isFinite(bottomSafeAreaInset) ? Math.max(0, bottomSafeAreaInset) : 0;
+  return stickyEligible ? safeBarHeight + 16 : Math.max(28, safeInset + 16);
+}
