@@ -10,7 +10,11 @@ import { guideFixture } from '@/data/fixtures/guideFixture';
 import { useGuideClock } from '@/features/guide/useGuideClock';
 
 import { ProgrammeDetail } from './ProgrammeDetail';
-import { EMPTY_PROGRAMME_PERSONAL_STATE } from './programmePersonalState';
+import {
+  EMPTY_PROGRAMME_PERSONAL_STATE,
+  programmeSnapshot,
+  withProgrammeReminder,
+} from './programmePersonalState';
 import { readProgrammePersonalState, writeProgrammePersonalState } from '@/services/storage/programmePersonalStateStorage';
 
 type PanEvent = { translationY: number; velocityY: number; numberOfPointers: number };
@@ -23,6 +27,15 @@ type GestureCallbacks = {
   touches?: (event: { numberOfTouches: number }) => void;
 };
 type TestGesture = { config: Record<string, unknown>; handlers: GestureCallbacks };
+const reminderService = vi.hoisted(() => ({
+  schedule: vi.fn(),
+  cancel: vi.fn(),
+  reconcile: vi.fn(),
+}));
+const appState = vi.hoisted(() => ({
+  currentState: 'active',
+  listeners: new Set<(state: string) => void>(),
+}));
 const motion = vi.hoisted(() => ({
   gesture: null as TestGesture | null,
   readStyle: null as (() => { transform: { translateY: number }[] }) | null,
@@ -31,6 +44,11 @@ const motion = vi.hoisted(() => ({
 }));
 
 vi.mock('expo-router', () => ({ useRouter: () => ({ push: vi.fn() }) }));
+vi.mock('@/services/notifications/programmeReminder', () => ({
+  scheduleProgrammeReminder: reminderService.schedule,
+  cancelProgrammeReminder: reminderService.cancel,
+  reconcileProgrammeReminder: reminderService.reconcile,
+}));
 
 vi.mock('react-native-safe-area-context', () => ({
   useSafeAreaInsets: () => ({ top: 59, right: 0, bottom: 34, left: 0 }),
@@ -108,7 +126,16 @@ vi.mock('react-native', async () => {
     ) : null;
   }
   const AppState = {
-    addEventListener: () => ({ remove: () => undefined }),
+    get currentState() {
+      return appState.currentState;
+    },
+    addEventListener: (
+      _event: string,
+      listener: (state: string) => void,
+    ) => {
+      appState.listeners.add(listener);
+      return { remove: () => appState.listeners.delete(listener) };
+    },
   };
   return {
     AppState, View, Text, Image, Pressable, ScrollView, Modal, SafeAreaView: View,
@@ -177,6 +204,16 @@ beforeEach(() => {
   vi.stubGlobal('cancelAnimationFrame', vi.fn());
   vi.spyOn(Date, 'now').mockReturnValue(Date.parse('2026-09-13T08:00:00+02:00'));
   vi.mocked(useGuideClock).mockClear();
+  appState.currentState = 'active';
+  appState.listeners.clear();
+  reminderService.schedule.mockReset().mockResolvedValue({
+    ok: false,
+    reason: 'unsupported',
+  });
+  reminderService.cancel.mockReset().mockResolvedValue(false);
+  reminderService.reconcile.mockReset().mockResolvedValue({
+    status: 'verified-valid',
+  });
   motion.gesture = null;
   motion.readStyle = null;
   motion.spring.mockClear();
@@ -205,6 +242,13 @@ function getGesture(): TestGesture {
   return motion.gesture;
 }
 function offsetY() { return motion.readStyle?.().transform[0]?.translateY; }
+async function emitAppState(state: string) {
+  appState.currentState = state;
+  await act(async () => {
+    for (const listener of [...appState.listeners]) listener(state);
+    await Promise.resolve();
+  });
+}
 async function swipe(distance: number, velocity = 0, success = true, pointers = 1) {
   const { handlers } = getGesture();
   const event = { translationY: distance, velocityY: velocity, numberOfPointers: pointers };
@@ -366,6 +410,76 @@ describe('programme detail production actions', () => {
     );
     await act(async () => root.render(<ProgrammeDetail state={pastState} onClose={vi.fn()} />));
     expect(container.querySelector('[data-testid="programme-detail-reminder"]')).toBeNull();
+  });
+
+  it('does not persist or present an active reminder when exact-alarm capability is unavailable', async () => {
+    const futureState = detailState(
+      '2026-09-13T18:00:00Z',
+      '2026-09-13T19:00:00Z',
+      'exact-alarm-unavailable-detail',
+    );
+    reminderService.schedule.mockResolvedValueOnce({
+      ok: false,
+      reason: 'exact-alarm',
+    });
+
+    await act(async () =>
+      root.render(<ProgrammeDetail state={futureState} onClose={vi.fn()} />),
+    );
+    await click('programme-detail-reminder');
+
+    expect(getByTestId('programme-detail-reminder').textContent).toBe('Herinner mij');
+    expect(
+      readProgrammePersonalState().reminders['exact-alarm-unavailable-detail'],
+    ).toBeUndefined();
+    expect(getByTestId('programme-detail-sheet').textContent).toContain(
+      'Alarmen en herinneringen',
+    );
+  });
+
+  it('reconciles and clears an outstanding reminder after exact-alarm access is revoked on resume', async () => {
+    const futureState = detailState(
+      '2026-09-13T18:00:00Z',
+      '2026-09-13T19:00:00Z',
+      'revoked-exact-alarm-detail',
+    );
+    const programme = futureState.selection.programme;
+    const reminder = {
+      ...programmeSnapshot(programme),
+      notificationId: 'revoked-reminder',
+      fireAtMs: Date.parse(programme.startAt) - 5 * 60 * 1000,
+      programmeStartAt: programme.startAt,
+    };
+    writeProgrammePersonalState(
+      withProgrammeReminder(
+        EMPTY_PROGRAMME_PERSONAL_STATE,
+        programme,
+        reminder,
+      ),
+    );
+    reminderService.reconcile
+      .mockResolvedValueOnce({ status: 'verified-valid' })
+      .mockResolvedValueOnce({ status: 'verified-invalid' });
+
+    await act(async () =>
+      root.render(<ProgrammeDetail state={futureState} onClose={vi.fn()} />),
+    );
+    await vi.waitFor(() => {
+      expect(getByTestId('programme-detail-reminder').textContent).toBe(
+        'Herinnering aan',
+      );
+    });
+
+    await emitAppState('background');
+    await emitAppState('active');
+
+    await vi.waitFor(() => {
+      expect(getByTestId('programme-detail-reminder').textContent).toBe(
+        'Herinner mij',
+      );
+    });
+    expect(readProgrammePersonalState().reminders[programme.id]).toBeUndefined();
+    expect(reminderService.reconcile).toHaveBeenCalledTimes(2);
   });
 
   it('persists Bewaar state across detail close and reopen', async () => {
