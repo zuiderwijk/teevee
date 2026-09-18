@@ -295,6 +295,30 @@ export function perChannelScheduleOffsetForNativeOffset(
   );
 }
 
+export function perChannelAnimatedTargetForScheduleOffset(
+  scheduleOffset: number,
+  collapseAnchorScheduleOffset: number,
+  currentProgress: number,
+) {
+  const safeScheduleOffset = Math.max(0, scheduleOffset);
+  const safeAnchor = Math.max(0, collapseAnchorScheduleOffset);
+  const clampedCurrent = Math.min(1, Math.max(0, currentProgress));
+  const targetProgress =
+    safeScheduleOffset < safeAnchor
+      ? 0
+      : safeScheduleOffset > safeAnchor
+        ? 1
+        : clampedCurrent;
+
+  return {
+    progress: targetProgress,
+    nativeOffset: perChannelNativeOffsetForScheduleOffset(
+      safeScheduleOffset,
+      targetProgress,
+    ),
+  } as const;
+}
+
 export function perChannelLayoutAnchorKey(
   selectedDayStartMs: number,
   selectedChannelId: string | null,
