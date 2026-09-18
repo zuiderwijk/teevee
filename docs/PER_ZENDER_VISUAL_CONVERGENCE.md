@@ -317,15 +317,15 @@ Accessibility focus must remain on the selected/focused logical channel; animate
 
 ### 9.2 Rest utility row
 
-- **16 pt** below the rest channel strip;
+- **4 pt** below the rest channel strip;
 - horizontal inset 20;
 - minimum height 52;
 - date is the leading context;
 - Primetime + Nu occupy the trailing utility area;
 - minimum 8-pt separation between adjacent touch frames;
-- schedule begins 12 pt below the row.
+- schedule begins **24 pt** below the row.
 
-The zone must read as **context + light temporal navigation**, not `[date pill] [Primetime pill] [Nu pill]`.
+The zone must read as **context + light temporal navigation**, not `[date pill] [Primetime pill] [Nu pill]`. With the fixed 72-pt rail / centred 48×48 item and 52-pt context / centred 36-pt visible controls, the accepted 4/24 calibration yields approximately **24 pt visible selected-item→controls whitespace** and **32 pt controls→schedule whitespace**. This is intentional: temporal context belongs optically with the channel rail, while programme content receives the larger separation.
 
 ### 9.3 Date selector
 
@@ -687,7 +687,7 @@ On supported phone widths, a Per-zender temporal row that wraps or truncates at 
 - channel strip **72**;
 - channel item **48×48**;
 - no separate large textual selected-channel heading; the selected logo carries channel identity;
-- rest utility row starts **16 pt** below the channel strip;
+- rest utility row starts **4 pt** below the channel strip;
 - date / Primetime / Nu use the refined temporal hierarchy;
 - brand/presentation chrome may be visible.
 
@@ -719,8 +719,8 @@ Normal motion:
 The heading-less expanded/rest geometry must converge continuously into the settled condensed stack. Use the accepted rest gaps as interpolation endpoints:
 
 - channel strip height = `72 - (12 × progress)` pt, ending at 60;
-- strip → functional context gap = `16 × (1 - progress)` pt, ending at 0;
-- functional context → schedule gap = `12 × (1 - progress)` pt, ending at 0;
+- strip → functional context gap = `4 × (1 - progress)` pt, ending at 0;
+- functional context → schedule gap = `24 × (1 - progress)` pt, ending at 0;
 - functional temporal context remains **52 pt** throughout; there is no canonical 52↔88 wrap transition;
 - context content remains date + Primetime + Nu throughout collapse; do not inject selected-channel text;
 - disappearing non-functional brand/presentation chrome opacity = `1 - progress`;
@@ -737,7 +737,7 @@ Production scroll-layout invariant — **PR #81 architecture is frozen**:
 - native scrolling consumes exactly **56 pt** over the collapse;
 - visual content compensation supplies exactly **84 pt** = `140 - 56`;
 - at collapse progress `p`, native collapse contribution = `56 × p` and visual content translation = `-84 × p`; together they account for the full `140 × p` visual contraction;
-- rest overlay bottom = **252 pt** = 100 Guide chrome + 72 rail + 16 gap + 52 context + 12 gap; settled overlay bottom = **112 pt** = 60 rail + 52 context;
+- rest overlay bottom = **252 pt** = 100 Guide chrome + 72 rail + 4 gap + 52 context + 24 gap; settled overlay bottom = **112 pt** = 60 rail + 52 context;
 - scroll-driven rest→condensed geometry is visual overlay/transform geometry and must not mutate normal-flow sibling heights above that same ScrollView;
 - semantic programme/timestamp anchors use explicit native↔schedule offset conversion so isolation does not change Nu, Primetime, day/channel continuity or fixed-row semantics;
 - temporal context is always 52 pt, so **no wrap delta exists** in visual geometry or native↔semantic conversion;
@@ -748,8 +748,8 @@ Reduce Motion:
 
 - discrete rest/condensed switch at 28 pt schedule offset;
 - strip changes directly 72 → 60;
-- strip→context gap changes directly **16 → 0**;
-- context→schedule gap changes directly 12 → 0;
+- strip→context gap changes directly **4 → 0**;
+- context→schedule gap changes directly **24 → 0**;
 - rest temporal context remains date + Primetime + Nu; no selected-channel text is introduced;
 - no height/fade/translation interpolation required;
 - item remains 48×48.
@@ -883,7 +883,7 @@ The accepted refinement explicitly corrects the previous production calibration;
 | Programme press | Generic opacity reduction | **temporary full-row semantic `surface` fill** |
 | Selected-channel text | Large rest heading / compact condensed channel name | **removed outside the persistent rail; selected logo is sufficient visible identity in both states** |
 | Current internal spacing | 2-pt title→description gap; ~7 pt before progress at max copy | **10-pt title→description gap; minimum 20 pt before progress at max four-line copy** |
-| Rest rail→utilities gap | 24 | **16** after physical iPhone validation |
+| Expanded/rest spacing distribution | 24 rail→utilities, then 16/12 | **4 rail→context / 24 context→schedule** after PR #88 physical iPhone validation; total gap sum remains 28 |
 | Per-zender relative day label | `Vandaag/Morgen · weekday date` | **`Vandaag` / `Morgen` only from 06:00–23:59; explicit weekday + date otherwise** |
 | Per-zender compact Dynamic Type | Could wrap to 88-pt context | **hard 1.20 cap; one-row 52-pt temporal context** |
 
@@ -904,7 +904,7 @@ The following must not survive as current rules:
 - channel selection merely being just-visible without the centering priority;
 - no intentional continuation cue in the rail;
 - selected-channel text outside the persistent logo rail, including the former compact condensed channel name;
-- 24-pt rest rail→utilities spacing;
+- 24-pt rest rail→utilities spacing and the later physically rejected 16/12 expanded spacing distribution;
 - long Per-zender relative date labels (`Vandaag/Morgen · weekday date`);
 - Per-zender `Vandaag`/`Morgen` labels between 00:00–05:59;
 - Dynamic-Type-driven 88-pt wrapped Per-zender temporal context;
@@ -930,7 +930,7 @@ Explicitly superseded in Per-zender runtime:
 - the pre-PR #86 rest gap value `stripToUtilitiesGap = 24`;
 - comments/tests/calculations that describe **148 pt** visual contraction or **92 pt** visual compensation.
 
-Development must replace those old endpoints with the single fixed 52-pt context and **16/12 expanded → 0/0 condensed** gaps, yielding **140 pt contraction / 56 pt native collapse / 84 pt visual compensation**. This is a convergence of accepted values inside the existing architecture, not permission to redesign collapse or move it back into normal flow.
+Development must use the single fixed 52-pt context and **4/24 expanded → 0/0 condensed** gaps, yielding the same **140 pt contraction / 56 pt native collapse / 84 pt visual compensation** because the total expanded gap sum remains 28 pt. This is a convergence of accepted values inside the existing architecture, not permission to redesign collapse or move it back into normal flow.
 
 ## 22. Implementation calibration register
 
@@ -940,14 +940,14 @@ Surface-specific implementation calibrations now frozen for Development handoff:
 2. Presentation row 48 and selected indicator 88×2.5.
 3. Channel rail: 72 rest / 60 condensed, 48×48 item, 12 gap, 40×32 logo max, 20 edge inset.
 4. Preferred trailing continuation cue target 12 pt where it does not disturb centering/visibility.
-5. Context geometry: expanded **16 / 52 / 12** (strip→context / context height / context→schedule); condensed **0 / 52 / 0**; no selected-channel text outside the rail and no wrapped context.
+5. Context geometry: expanded **4 / 52 / 24** (strip→context / context height / context→schedule); condensed **0 / 52 / 0**; no selected-channel text outside the rail and no wrapped context.
 6. Temporal visible frame 36, active underline 24×2/bottom2, icon14/gap7, Nu return-action padding12/min width48.
 7. Programme columns: time X24, programme X100, right24.
 8. Standard row 52, current row **176**.
 9. Standard title 17/21 500, current title 19/23 700, time 16/20 400, current description **15/22 400 max4** — Instrument Sans.
 10. Current top14, title→description gap **10**, description→progress minimum **20 at every Dynamic Type scale**, progress 4 high/radius2/bottom16; current-row scaling uses the content-safe minimum from §14.2.
 11. Separator left20 at bottom of each row.
-12. Collapse isolation: temporal context **52 only**; hard compact-label multiplier 1.20; fixed viewport top112; full visual contraction140; native collapse56; visual compensation84; rest gaps interpolate **16→0** above the context and **12→0** below it; Reduce Motion switches endpoints discretely at28.
+12. Collapse isolation: temporal context **52 only**; hard compact-label multiplier 1.20; fixed viewport top112; full visual contraction140; native collapse56; visual compensation84; rest gaps interpolate **4→0** above the context and **24→0** below it; Reduce Motion switches endpoints discretely at28.
 
 Development must not choose alternatives locally. A future retune requires new owner-approved evidence and an update to this source of truth.
 
@@ -988,7 +988,7 @@ When Lead schedules Per-zender visual convergence, Development must be able to i
 15. active/current never means disabled;
 16. full programme row pressed = temporary semantic `surface` fill; clear on release/cancel/gesture takeover;
 17. preserve horizontal adjacent-channel swipe, channel-rail browsing, D-2..D+7, 06:00 television-day semantics, Programme Detail round-trip and time-anchor semantics;
-18. preserve the PR #81 fixed-native-viewport/collapse-isolation architecture: strip 72→60, strip→context **16→0**, context→schedule **12→0**, one fixed 52-pt temporal context, 48×48 items unchanged, native collapse56, full visual contraction140 and visual compensation84; no per-frame normal-flow mutation above the active schedule ScrollView;
+18. preserve the PR #81 fixed-native-viewport/collapse-isolation architecture: strip 72→60, strip→context **4→0**, context→schedule **24→0**, one fixed 52-pt temporal context, 48×48 items unchanged, native collapse56, full visual contraction140 and visual compensation84; no per-frame normal-flow mutation above the active schedule ScrollView;
 19. remove the obsolete wrapped-context runtime paths listed in §21 while preserving semantic native↔schedule anchor conversion;
 20. enforce `maximumFontSizeMultiplier = 1.20` for Per-zender date/Primetime/Nu labels, keep them one line in the 52-pt context, and validate light/dark/system, substantive programme Dynamic Type, VoiceOver, TalkBack and Reduce Motion;
 21. do not add swipe nudge, overflow button, arrows, fade masks or old exploration chrome;
@@ -1046,7 +1046,7 @@ Per-zender visual convergence is ready only when all are true on the exact imple
 - rest strip is 72 and settled condensed strip is **60**;
 - neither expanded/rest nor condensed state renders selected-channel text outside the persistent logo rail;
 - 48×48 channel items remain unchanged through collapse;
-- base condensed functional stack is **112** (60+52); temporal context remains exactly 52 pt; expanded gaps are **16/12**, condensed gaps are **0/0**; full visual contraction is **140**, native collapse is **56** and visual compensation is **84** under the fixed-native-viewport architecture;
+- base condensed functional stack is **112** (60+52); temporal context remains exactly 52 pt; expanded gaps are **4/24**, condensed gaps are **0/0**; full visual contraction remains **140**, native collapse **56** and visual compensation **84** under the fixed-native-viewport architecture;
 - date remains typographic and follows the accepted 06:00 label rule: `Vandaag`/`Morgen` only from 06:00–23:59, explicit weekday + date otherwise;
 - Nu/Primetime states are derived from semantic schedule anchors, not last tap/pixels/tolerance windows;
 - Nu away = elevated return action; Nu current = typographic current state + underline;
