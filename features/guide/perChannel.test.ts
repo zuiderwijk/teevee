@@ -11,6 +11,7 @@ import {
   collapseProgressForScrollOffset,
   compactContextForCollapseProgress,
   currentProgrammeIdAt,
+  perChannelAnimatedTargetForScheduleOffset,
   perChannelFunctionalGapsForCollapseProgress,
   perChannelLayoutAnchorKey,
   perChannelNativeOffsetForScheduleOffset,
@@ -212,6 +213,31 @@ describe('per-channel fixed-row schedule', () => {
 
     expect(perChannelNativeOffsetForScheduleOffset(0, 0)).toBe(0);
     expect(perChannelNativeOffsetForScheduleOffset(0, 1)).toBe(56);
+  });
+
+  it('lands animated semantic targets at a collapse-consistent native endpoint', () => {
+    expect(perChannelAnimatedTargetForScheduleOffset(500, 640, 1)).toEqual({
+      progress: 0,
+      nativeOffset: 500,
+    });
+    expect(perChannelAnimatedTargetForScheduleOffset(700, 640, 0)).toEqual({
+      progress: 1,
+      nativeOffset: 756,
+    });
+    expect(perChannelAnimatedTargetForScheduleOffset(640, 640, 0.5)).toEqual({
+      progress: 0.5,
+      nativeOffset: 668,
+    });
+
+    for (const target of [500, 640, 700]) {
+      const resolved = perChannelAnimatedTargetForScheduleOffset(target, 640, 0.5);
+      expect(
+        perChannelScheduleOffsetForNativeOffset(
+          resolved.nativeOffset,
+          resolved.progress,
+        ),
+      ).toBe(target);
+    }
   });
 
   it('uses the accepted Per-zender typography and 72/60 rail geometry', () => {
