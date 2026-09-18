@@ -193,6 +193,7 @@ export function ProgrammeDetail({ state, onClose }: ProgrammeDetailProps) {
   const scrollYRef = useRef(0);
   const stickyVisibleRef = useRef(false);
   const activeProgrammeIdRef = useRef<string | null>(null);
+  const reminderBusyRef = useRef(false);
 
   useLayoutEffect(() => {
     if (!state.visible) return;
@@ -218,6 +219,7 @@ export function ProgrammeDetail({ state, onClose }: ProgrammeDetailProps) {
     setStickyEligible(false);
     setStickyBarHeight(0);
     setActionMessage(null);
+    reminderBusyRef.current = false;
     setReminderBusy(false);
     setStackedActions(
       shouldPreStackProgrammeDetailActions(availableContentWidth, fontScale),
@@ -404,67 +406,70 @@ export function ProgrammeDetail({ state, onClose }: ProgrammeDetailProps) {
   }, [programme]);
 
   const toggleReminder = useCallback(async () => {
-    if (!programme || !channel || reminderBusy) return;
+    if (!programme || !channel || reminderBusyRef.current) return;
+    reminderBusyRef.current = true;
     setReminderBusy(true);
     setActionMessage(null);
 
-    const current = readProgrammePersonalState();
-    const existing = current.reminders[programme.id];
+    try {
+      const current = readProgrammePersonalState();
+      const existing = current.reminders[programme.id];
 
-    if (existing) {
-      const cancelledReminder = await cancelProgrammeReminder(existing.notificationId);
-      if (!cancelledReminder) {
+      if (existing) {
+        const cancelledReminder = await cancelProgrammeReminder(existing.notificationId);
+        if (!cancelledReminder) {
+          if (activeProgrammeIdRef.current === programme.id) {
+            setActionMessage('De herinnering kon niet worden uitgezet. Probeer het opnieuw.');
+          }
+          return;
+        }
+        const next = withProgrammeReminder(current, programme, null);
+        const persisted = writeProgrammePersonalState(next);
         if (activeProgrammeIdRef.current === programme.id) {
-          setActionMessage('De herinnering kon niet worden uitgezet. Probeer het opnieuw.');
-          setReminderBusy(false);
+          setPersonalState(next);
+          if (!persisted) {
+            setActionMessage(
+              'De herinnering is uitgezet, maar de lokale status kon niet worden opgeslagen.',
+            );
+          }
         }
         return;
       }
-      const next = withProgrammeReminder(current, programme, null);
-      const persisted = writeProgrammePersonalState(next);
+
+      const result = await scheduleProgrammeReminder(programme, channel);
+      if (!result.ok) {
+        if (activeProgrammeIdRef.current === programme.id) {
+          setActionMessage(reminderFailureCopy(result));
+        }
+        return;
+      }
+
+      const reminder: ProgrammeReminderRecord = {
+        ...programmeSnapshot(programme),
+        notificationId: result.notificationId,
+        fireAtMs: result.fireAtMs,
+        programmeStartAt: programme.startAt,
+      };
+      const fresh = readProgrammePersonalState();
+      const next = withProgrammeReminder(fresh, programme, reminder);
+      if (!writeProgrammePersonalState(next)) {
+        await cancelProgrammeReminder(result.notificationId);
+        if (activeProgrammeIdRef.current === programme.id) {
+          setActionMessage('De herinnering kon niet worden opgeslagen. Probeer het opnieuw.');
+        }
+        return;
+      }
+
       if (activeProgrammeIdRef.current === programme.id) {
         setPersonalState(next);
-        if (!persisted) {
-          setActionMessage(
-            'De herinnering is uitgezet, maar de lokale status kon niet worden opgeslagen.',
-          );
-        }
-        setReminderBusy(false);
       }
-      return;
-    }
-
-    const result = await scheduleProgrammeReminder(programme, channel);
-    if (!result.ok) {
+    } finally {
+      reminderBusyRef.current = false;
       if (activeProgrammeIdRef.current === programme.id) {
-        setActionMessage(reminderFailureCopy(result));
         setReminderBusy(false);
       }
-      return;
     }
-
-    const reminder: ProgrammeReminderRecord = {
-      ...programmeSnapshot(programme),
-      notificationId: result.notificationId,
-      fireAtMs: result.fireAtMs,
-      programmeStartAt: programme.startAt,
-    };
-    const fresh = readProgrammePersonalState();
-    const next = withProgrammeReminder(fresh, programme, reminder);
-    if (!writeProgrammePersonalState(next)) {
-      await cancelProgrammeReminder(result.notificationId);
-      if (activeProgrammeIdRef.current === programme.id) {
-        setActionMessage('De herinnering kon niet worden opgeslagen. Probeer het opnieuw.');
-        setReminderBusy(false);
-      }
-      return;
-    }
-
-    if (activeProgrammeIdRef.current === programme.id) {
-      setPersonalState(next);
-      setReminderBusy(false);
-    }
-  }, [channel, programme, reminderBusy]);
+  }, [channel, programme]);
 
   const nowMs = Date.now();
   const reminderAvailable = Boolean(programme && Date.parse(programme.startAt) > nowMs);
