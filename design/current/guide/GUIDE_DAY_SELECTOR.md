@@ -1,7 +1,7 @@
 # Guide day selector — current accepted interaction and visual direction
 
 Status: **ACCEPTED**
-Accepted: 2026-09-15; Per-zender Primetime amendment accepted 2026-09-15; Per-zender temporal-state refinement accepted 2026-09-17; Per-zender rest-heading removal accepted 2026-09-18
+Accepted: 2026-09-15; Per-zender Primetime amendment accepted 2026-09-15; Per-zender temporal-state refinement accepted 2026-09-17; Per-zender rest-heading removal and compact temporal-context refinement accepted 2026-09-18
 
 Applies to:
 - Totaal;
@@ -30,9 +30,11 @@ Use this reference for:
 - non-functional header condensation;
 - persistent date / `Nu` context;
 - Totaal time-axis stickiness;
-- Per-zender channel-strip + compact channel/date context.
+- Per-zender channel-strip + compact temporal context.
 
-Authority amendment: the sticky/condensed visual predates the accepted Per-zender `Primetime` shortcut and later refinements. Its Per-zender representation is stale where it omits `Primetime`, implies only static utility-button visuals, implies a 72-pt settled condensed channel strip, or shows a separate large textual selected-channel heading in expanded/rest state. The written Per-zender rules below supersede those details.
+The reference is structural only for Per zender where later written refinements supersede its exact label content/spacing.
+
+Authority amendment: the sticky/condensed visual predates the accepted Per-zender `Primetime` shortcut and later refinements. Its Per-zender representation is stale where it omits `Primetime`, implies only static utility-button visuals, implies a 72-pt settled condensed channel strip, shows selected-channel text outside the logo rail, uses the older long relative date labels, or implies wrapped temporal chrome. The written Per-zender rules below supersede those details.
 
 ## Accepted behaviour
 
@@ -44,8 +46,10 @@ Authority amendment: the sticky/condensed visual predates the accepted Per-zende
 
 ### Inline control
 - show one compact, primarily typographic date control rather than ten permanent day buttons or a horizontal date rail;
-- use human-readable labels such as `Vandaag · ma 15 sep`, `Morgen · di 16 sep`, or `Do 18 sep` as space permits;
-- when the active television day is the preceding calendar date between 00:00 and 05:59, prefer the actual date label (for example `Ma 15 sep`) rather than calling it `Vandaag`;
+- use human-readable labels; Totaal may continue its existing shared formatting, while Per zender uses the compact-label override below;
+- **Per zender 06:00–23:59:** current television day = `Vandaag`, next television day = `Morgen`, with no redundant weekday/date suffix; all other days use an explicit weekday + date such as `Zo 20 sep`;
+- **Per zender 00:00–05:59:** use only explicit weekday + date labels for every television-day option, including the current and next television day. Do not show `Vandaag` or `Morgen` in this window;
+- these Per-zender rules are based on the canonical 06:00 Europe/Amsterdam television-day boundary, not calendar midnight;
 - the complete control remains a platform-appropriate touch target even when its visible treatment is only text plus chevron;
 - `Nu` remains a separate persistent action and is not folded into the date selector;
 - in Per zender, `Primetime` is an additional sibling utility action; it is not part of the date selector itself.
@@ -54,7 +58,7 @@ Authority amendment: the sticky/condensed visual predates the accepted Per-zende
 Tapping the date control opens a bounded bottom sheet containing the ten available television days in chronological order.
 
 - current selection is explicit and not colour-only;
-- relative wording (`Vandaag`, `Morgen`) may be used when semantically correct;
+- for Per zender, bottom-sheet labels follow the same compact-label rule as the inline selector: `Vandaag`/`Morgen` only from 06:00–23:59; from 00:00–05:59 all options use explicit weekday + date labels;
 - no month grid, arbitrary calendar navigation or unavailable dates;
 - selecting a day closes the sheet and moves the Guide to that television day.
 
@@ -92,10 +96,9 @@ After vertical scroll:
 - non-functional header chrome condenses away;
 - the channel-logo strip remains sticky;
 - settled condensed Per-zender channel strip is 60 pt high while preserving the 48 × 48 channel touch/item geometry;
-- immediately beneath it, use one compact sticky channel/date context row with both `Primetime` and `Nu` available;
-- retain the compact textual channel name in that condensed channel/date context for orientation;
+- immediately beneath it, keep the same compact one-row temporal context: date + `Primetime` + `Nu`;
+- do **not** add the selected channel name in condensed state; the persistently selected logo in the rail remains sufficient visible identity;
 - the same semantic action/current state rules for `Primetime` and `Nu` continue in condensed state;
-- do not introduce any separate large channel heading;
 - horizontal schedule swipe continues to change adjacent channel without being intercepted by date/time utilities.
 
 The earlier expanded Per-zender time picker (`Vanmiddag`, `Vooravond`, `Kies tijd…`) is not part of this accepted pattern.
@@ -107,8 +110,8 @@ The earlier expanded Per-zender time picker (`Vanmiddag`, `Vooravond`, `Kies tij
 - reduced-motion mode may use a simpler non-interpolated state transition.
 
 ## Accessibility
-- substantive labels follow platform text scaling;
-- compact grouping may adapt height or wrap rather than shrink text excessively;
+- substantive programme labels follow platform text scaling;
+- for **Per-zender compact temporal chrome only**, date, `Primetime` and `Nu` use a hard `maximumFontSizeMultiplier = 1.20` and remain one line; this prevents functional chrome from destabilising while programme content remains substantively scalable;
 - date control, `Primetime` where present, and `Nu` retain platform-appropriate touch targets (minimum equivalent of 44 pt on iOS / 48 dp on Android where applicable);
 - expose selected date, relative label where applicable, `Ga naar primetime` and `Ga naar nu` action semantics to VoiceOver/TalkBack;
 - for Per-zender temporal utilities, expose active/current state semantically when the corresponding stable schedule context is active;
@@ -135,6 +138,6 @@ For Totaal and Per zender, this supersedes:
 - stale date controls shown in the 13 September canonical Guide images;
 - any exploration using a horizontal ten-day rail, unrestricted calendar, or previous/next-day arrow chrome.
 
-For Per zender specifically, the expanded historical time-picker is superseded, while the direct `Primetime` shortcut is accepted. Static utility-button-only treatment and a permanently 72-pt settled condensed channel strip are superseded by the 2026-09-17 Per-zender refinement. The separate large textual selected-channel heading in expanded/rest state is superseded by the owner-approved 2026-09-18 refinement; the compact textual channel name in condensed context remains accepted.
+For Per zender specifically, the expanded historical time-picker is superseded, while the direct `Primetime` shortcut is accepted. Static utility-button-only treatment and a permanently 72-pt settled condensed channel strip are superseded by the 2026-09-17 Per-zender refinement. The 2026-09-18 physical-validation refinement supersedes all selected-channel text outside the persistent logo rail, the older long `Vandaag/Morgen · weekday date` labels, relative `Vandaag/Morgen` wording between 00:00–05:59, 24-pt rail→utilities spacing, and Dynamic-Type-driven wrapped temporal chrome.
 
 The rest of the canonical Totaal and Per-zender visual references remain accepted unless explicitly superseded elsewhere.

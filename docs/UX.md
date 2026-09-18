@@ -50,8 +50,7 @@ Totaal and Per zender share one compact day-navigation model. Nu & Straks has no
 - show one primarily typographic date selector rather than ten permanent date buttons;
 - tapping the selector opens a bounded bottom sheet containing exactly the available D-2..D+7 television days in chronological order;
 - do not expose an unrestricted calendar, disabled out-of-range dates or technical D-offset notation;
-- use human-readable labels such as `Vandaag · ma 15 sep`, `Morgen · di 16 sep` or `Do 18 sep` as space permits;
-- between 00:00 and 05:59, when the active television day is the preceding calendar date, prefer that actual date label rather than falsely calling it `Vandaag`;
+- use human-readable date labels; Per zender applies a compact override: from 06:00–23:59 the current/next television days are simply `Vandaag` / `Morgen`, other days use explicit weekday + date, and from 00:00–05:59 **all** Per-zender day labels use explicit weekday + date with no `Vandaag`/`Morgen`;
 - `Nu` remains a separate, persistent action rather than being folded into the date selector;
 - changing day preserves the currently viewed wall-clock time where practical (for example 20:35 -> another day around 20:35);
 - `Nu` is the explicit reset that restores both the actual current instant and its television-day context;
@@ -60,8 +59,8 @@ Totaal and Per zender share one compact day-navigation model. Nu & Straks has no
 Sticky behaviour:
 - essential day/time context remains available during vertical Guide scrolling while non-functional brand/header chrome may condense away;
 - in Totaal, the date selector, `Nu` and time axis remain available;
-- in Per zender, the horizontal channel-logo strip remains sticky and is followed by one compact sticky channel/date context row with the compact textual channel name, `Primetime` and `Nu` available;
-- Per-zender expanded/rest state does not render a separate large textual selected-channel heading; the selected logo in the rail carries channel identity there;
+- in Per zender, the horizontal channel-logo strip remains sticky and is followed by one compact sticky temporal row with date, `Primetime` and `Nu` available;
+- Per-zender does not render selected-channel text outside the persistent logo rail in either expanded/rest or condensed state; the selected logo carries visible identity throughout;
 - scrolling back to the top restores the full rest-state hierarchy naturally;
 - reduced-motion mode may use a simpler non-interpolated transition.
 
@@ -107,8 +106,8 @@ Purpose: inspect the schedule of one channel while making adjacent-channel compa
 - the logo strip itself can be horizontally browsed; tapping a logo selects that channel directly;
 - no previous/next arrow buttons are required around the logo strip when swipe/scroll affordance is clear;
 - active channel remains visible and may be centred automatically after a channel change;
-- channel logo is primary; channel name is contextual/secondary;
-- do not duplicate the selected channel logo with a separate large textual selected-channel heading in expanded/rest state; retain the compact textual channel name only in the condensed channel/date context for orientation;
+- channel logo is primary; channel name remains available contextually through accessibility and missing-logo fallback;
+- do not duplicate the selected channel logo with textual selected-channel identity outside the persistent rail in either expanded/rest or condensed state;
 - changing channel preserves the viewed time anchor rather than blindly preserving a pixel offset;
 - use the accepted shared Guide day selector for D-2..D+7 navigation;
 - date remains secondary to channel context;
@@ -117,10 +116,11 @@ Purpose: inspect the schedule of one channel while making adjacent-channel compa
 - selecting another day and then choosing `Primetime` therefore goes to 20:30 on that selected historical/future television day rather than returning to today;
 - between 00:00 and 05:59, when the selected/current television day is the preceding date, `Primetime` jumps back to 20:30 on that preceding evening;
 - `Nu` remains semantically distinct: it restores both the actual current instant and the television day containing it;
-- `Primetime` and `Nu` remain available in the compact sticky channel/date context during vertical schedule browsing;
+- date, `Primetime` and `Nu` remain available in one compact sticky temporal row during vertical schedule browsing;
+- Per-zender date/Primetime/Nu labels use a hard `maximumFontSizeMultiplier = 1.20` and remain one line; programme content continues to follow its substantive Dynamic Type rules;
 - do not reintroduce the older expanded time picker with `Vanmiddag`, `Vooravond` or arbitrary `Kies tijd…` options; the accepted requirement is the direct Primetime shortcut only;
 - the schedule continues naturally through midnight within the same television-day context;
-- give deliberate visual breathing room between the channel selector and schedule content;
+- use the accepted **16-pt** expanded/rest spacing between the channel rail and temporal utilities; keep the existing 12-pt utilities→schedule separation;
 - programme rows remain open and typographic rather than stacked cards;
 - do not add genre chips or thumbnails merely to increase information density.
 

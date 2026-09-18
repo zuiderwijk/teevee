@@ -2,7 +2,7 @@
 
 Status: **CANONICAL PRODUCTION IMPLEMENTATION SPEC — accepted design, no redesign**  
 Date: 2026-09-18  
-Revision: **owner-approved Per-zender refinement — rest-state heading removed and current-programme spacing expanded; prior accepted refinements preserved**
+Revision: **owner-approved Per-zender refinement — compact temporal context after physical iPhone validation; prior accepted refinements preserved**
 
 This document is the production implementation specification for the accepted **Per zender** Guide presentation. It converts the owner-approved visual/UX baseline into concrete metrics and state rules. It is accepted-design convergence, not exploration or Development implementation.
 
@@ -35,7 +35,7 @@ Exact canonical pixels remain:
 - Guide day-selector states: `/Teevee/Teevee Guide day selector - states and bottom sheet.png`, Library file id `file_00000000390c8210b76256621721592b`;
 - sticky/condensed behaviour: `/Teevee/Teevee Guide day selector - sticky scroll behavior.png`, Library file id `file_00000000314481f69f6a34d18ece1c21`.
 
-The 2026-09-17 written refinement supersedes those historical pixels only for the explicitly changed details in this document: temporal utility states, programme-title calibration, settled condensed channel-strip height, channel-rail positioning behaviour and programme-row pressed feedback. The 2026-09-18 owner refinements additionally supersede any separate large textual selected-channel heading shown in expanded/rest state and the former compressed current-programme treatment. All other accepted composition remains intact.
+The 2026-09-17 written refinement supersedes those historical pixels only for the explicitly changed details in this document: temporal utility states, programme-title calibration, settled condensed channel-strip height, channel-rail positioning behaviour and programme-row pressed feedback. The 2026-09-18 owner refinements additionally supersede selected-channel text outside the rail, the former compressed current-programme treatment, the 24-pt rest rail→utilities gap, long Per-zender relative date labels and Dynamic-Type-driven wrapped temporal chrome. All other accepted composition remains intact.
 
 ### Source precedence
 
@@ -83,7 +83,7 @@ The phrase `vertical wall-clock schedule` in older broad project documentation m
 | Current row | Actual current programme | Spacious fixed **176 pt** base row; title + up to four description lines + mandatory local progress with deliberate vertical breathing room. |
 | Row separator | Scanning cue | One quiet row-bottom hairline. |
 | Pressed row | Interaction feedback | Temporary full-row semantic `surface` fill only while pressed. |
-| Sticky/condensed state | Functional context while scrolling | 60-pt channel strip + 52-pt compact context, 88 pt when wrapped. |
+| Sticky/condensed state | Functional context while scrolling | 60-pt channel strip + one **52-pt** compact date/Primetime/Nu context row; no selected-channel text is added. |
 | Bottom navigation | Primary app navigation boundary | Existing stable shell; outside Per-zender list. |
 
 ## 4. Production metric tokens
@@ -119,16 +119,15 @@ Presentation tabs divide available width equally. Selected indicator width is `m
 | `perChannel.channelStripRestHeight` | **72** | ACCEPTED | Full rest rail. |
 | `perChannel.channelStripCondensedHeight` | **60** | ACCEPTED | Settled sticky rail. |
 | `perChannel.channelContinuationCueTarget` | **12** | IMPLEMENTATION CALIBRATION | Preferred visible trailing sliver where practical; never overrides correct selection visibility/centering. |
-| `perChannel.stripToUtilitiesGap` | **24** | ACCEPTED CALIBRATION | Rest channel strip → utility row after removal of the large selected-channel heading. |
+| `perChannel.stripToUtilitiesGap` | **16** | ACCEPTED | Rest channel strip → temporal utility row after physical iPhone validation. |
 | `perChannel.utilityRowMinHeight` | 52 | IMPLEMENTATION CALIBRATION | Rest context base. |
 | `perChannel.utilityVisibleHeight` | 36 | IMPLEMENTATION CALIBRATION | Temporal-control visual frame; touch target remains 44/48. |
 | `perChannel.utilityGap` | 8 | IMPLEMENTATION CALIBRATION | Minimum control gap. |
 | `perChannel.utilityToScheduleGap` | 12 | IMPLEMENTATION CALIBRATION | Rest context → schedule. |
-| `perChannel.stickyContextHeight` | **52** | ACCEPTED CALIBRATION | Base compact sticky context. |
-| `perChannel.stickyContextWrappedHeight` | **88** | ACCEPTED CALIBRATION | Minimum when Dynamic Type forces two rows. |
+| `perChannel.stickyContextHeight` | **52** | ACCEPTED | One-row compact temporal context; Per-zender Dynamic Type does not create an 88-pt wrapped state. |
 | `perChannel.collapseDistance` | 56 | IMPLEMENTATION CALIBRATION | Rest → condensed interpolation distance. |
 
-Base settled condensed functional chrome = **60 + 52 = 112 pt**, excluding platform safe area. With wrapped compact context it becomes 148 pt.
+Base settled condensed functional chrome = **60 + 52 = 112 pt**, excluding platform safe area. The former 88-pt wrapped Per-zender context is superseded.
 
 ### 4.3 Temporal-state metrics
 
@@ -186,7 +185,6 @@ Use Instrument Sans as one coherent UI family for Per zender. Do not introduce a
 | Selected date | 15 / 20 | 600 | `text` | compact chrome; max 1.20 |
 | Primetime | 14 / 18 | 600 | inactive `textSecondary`, active `text` | compact chrome; max 1.20 |
 | Nu | 14 / 18 | 600 | `text` | compact chrome; max 1.20 |
-| Condensed channel prefix | 14 / 18 | 700 | `text` | compact chrome; max 1.20 |
 | Programme start time | **16 / 20** | **400** | `textSecondary` | substantive; uncapped; tabular numerals |
 | Standard programme title | **17 / 21** | **500** | `text` | substantive; uncapped |
 | Current programme title | **19 / 23** | **700** | `text` | substantive; uncapped |
@@ -308,11 +306,11 @@ Accessibility focus must remain on the selected/focused logical channel; animate
 - Do **not** render a separate large textual selected-channel heading below the channel-logo strip.
 - The selected channel logo in the rail is the primary and sufficient channel identity in expanded/rest state.
 - Do not replace the removed heading with another large label, badge or duplicate identity treatment.
-- The compact textual channel name remains reserved for the condensed channel/date context, where it is required for orientation.
+- Do **not** introduce a compact textual channel name in condensed state; the selected logo remains sufficient visible channel identity throughout collapse.
 
 ### 9.2 Rest utility row
 
-- 24 pt below the rest channel strip;
+- **16 pt** below the rest channel strip;
 - horizontal inset 20;
 - minimum height 52;
 - date is the leading context;
@@ -335,7 +333,13 @@ Visible treatment is always primarily typographic:
 - focused keyboard/switch-access state: platform focus affordance or 2-pt `currentTime` focus ring around the touch frame; focus does not turn the control into a permanent pill;
 - disabled only if day selection is genuinely unavailable; apply `disabledOpacity=0.40` and semantic disabled state.
 
-Date labels and D-2..D+7 behaviour follow `GUIDE_DAY_SELECTOR.md`. Between 00:00 and 05:59, the preceding television-day date is never falsely labelled `Vandaag`.
+Date labels and D-2..D+7 behaviour follow `GUIDE_DAY_SELECTOR.md`. Per zender uses these frozen visible labels:
+
+- **06:00–23:59:** current television day = `Vandaag`; next television day = `Morgen`; no weekday/date suffix on those two labels;
+- all other television days = explicit localized weekday + date, for example `Zo 20 sep`;
+- **00:00–05:59:** every television-day label is explicit weekday + date; `Vandaag` and `Morgen` are not shown in either the inline selector or Per-zender day-sheet options.
+
+Accessibility labels still expose the full selected date even when the visible label is only `Vandaag` or `Morgen`.
 
 ## 10. Temporal controls — canonical state model
 
@@ -653,22 +657,21 @@ The 19/23 title replaces all old 20/24 assumptions.
 
 ### 14.3 Compact chrome scaling
 
-`maximumFontSizeMultiplier = 1.20` remains allowed only for documented compact chrome:
+For **Per-zender temporal chrome**, `maximumFontSizeMultiplier = 1.20` is a **hard cap**:
 
-- presentation tabs;
-- channel fallback;
-- date label;
-- Primetime/Nu labels;
-- condensed channel/date context.
+- selected date: base 15/20 → maximum **18/24**;
+- Primetime: base 14/18 → maximum **16.8/21.6**;
+- Nu: base 14/18 → maximum **16.8/21.6**.
 
-Programme times, programme titles and current description remain uncapped.
+These three visible labels remain **one line** in both expanded/rest and condensed state. The temporal context remains 52 pt high and does not enter the former 88-pt wrap state because of system text size.
 
-If date + Primetime + Nu cannot fit:
+Touch targets remain minimum 44 pt iOS / 48 dp Android; the cap applies to visible compact-label scaling, not hit areas or accessibility semantics. VoiceOver/TalkBack receive the full selected date and action labels.
 
-- row 1 = date selector;
-- row 2 = Primetime + Nu;
-- both the expanded/rest utility context and the condensed sticky context use the accepted **88-pt** wrapped minimum;
-- never abbreviate Primetime or hide Nu.
+Programme times, programme titles and current description remain uncapped substantive content and continue to follow §§14.1–14.2.
+
+Presentation tabs and channel fallback retain their existing compact-chrome scaling rules; this refinement does not change them.
+
+On supported phone widths, a Per-zender temporal row that wraps or truncates at the documented 1.20 cap is an implementation/convergence defect, not an instruction to grow the context to 88 pt. Do not abbreviate `Primetime` or hide `Nu`; use the accepted compact date labels instead.
 
 ## 15. Sticky / condensed state
 
@@ -677,7 +680,7 @@ If date + Primetime + Nu cannot fit:
 - channel strip **72**;
 - channel item **48×48**;
 - no separate large textual selected-channel heading; the selected logo carries channel identity;
-- rest utility row starts 24 pt below the channel strip;
+- rest utility row starts **16 pt** below the channel strip;
 - date / Primetime / Nu use the refined temporal hierarchy;
 - brand/presentation chrome may be visible.
 
@@ -687,7 +690,7 @@ Functional stack:
 
 1. platform safe area;
 2. channel strip **60**;
-3. compact channel/date/Primetime/Nu context **52** base, **88** when wrapped;
+3. compact date/Primetime/Nu context **52**;
 4. fixed-row schedule.
 
 Base functional chrome = **112 pt**.
@@ -695,9 +698,10 @@ Base functional chrome = **112 pt**.
 Absent:
 
 - brand/header identity chrome;
-- presentation selector.
+- presentation selector;
+- selected-channel text outside the persistent logo rail.
 
-The compact textual channel name remains in the condensed channel/date context for orientation. The same temporal state machine remains live in condensed state. Do not revert to static pills after collapse.
+The condensed row keeps the same temporal information as expanded/rest: date + Primetime + Nu. The selected rail logo remains sufficient visible channel identity. The same temporal state machine remains live in condensed state. Do not revert to static pills after collapse.
 
 ### 15.3 Collapse motion
 
@@ -705,13 +709,13 @@ Normal motion:
 
 `progress = clamp(scrollY / 56, 0, 1)`
 
-The heading-less expanded/rest geometry must converge continuously into the settled condensed stack. Use the already accepted rest gaps as the interpolation endpoints:
+The heading-less expanded/rest geometry must converge continuously into the settled condensed stack. Use the accepted rest gaps as interpolation endpoints:
 
 - channel strip height = `72 - (12 × progress)` pt, ending at 60;
-- strip → functional context gap = `24 × (1 - progress)` pt, ending at 0;
+- strip → functional context gap = `16 × (1 - progress)` pt, ending at 0;
 - functional context → schedule gap = `12 × (1 - progress)` pt, ending at 0;
-- functional context height remains 52 pt base, or the accepted 88 pt wrapped height when Dynamic Type requires two rows;
-- the compact textual channel name is introduced inside that same functional context as it becomes condensed; it never receives a separate vertical heading slot;
+- functional temporal context remains **52 pt** throughout; there is no canonical 52↔88 wrap transition;
+- context content remains date + Primetime + Nu throughout collapse; do not inject selected-channel text;
 - disappearing non-functional brand/presentation chrome opacity = `1 - progress`;
 - disappearing blocks translate upward by max `12 × progress` pt;
 - 48×48 channel items remain unchanged and vertically centred inside the interpolated rail;
@@ -722,19 +726,19 @@ Production scroll-layout invariant:
 
 - the active vertical schedule ScrollView keeps a fixed native viewport while collapse is in progress;
 - scroll-driven rest→condensed geometry is visual overlay/transform geometry and must not mutate normal-flow sibling heights above that same ScrollView;
-- the full unwrapped visual contraction is 148 pt (100 Guide chrome + 12 rail + 24 + 12 gaps), while native collapse consumes 56 pt; the remaining 92 pt is visual content compensation;
+- the full unwrapped visual contraction is **140 pt** (100 Guide chrome + 12 rail + 16 + 12 gaps), while native collapse consumes 56 pt; the remaining **84 pt** is visual content compensation;
 - semantic programme/timestamp anchors use explicit native↔schedule offset conversion so this isolation does not change Nu, Primetime, day/channel continuity or fixed-row semantics;
-- the accepted 52↔88 pt context-height transition is discrete overlay geometry: when wrap mode changes, shift native schedule offset and collapse anchor once by the same ±36 pt on the UI thread, and include that wrap delta in native↔semantic conversion so the visible programme anchor and collapse progress remain invariant;
-- context wrapping is measured from the natural date/utility flex layout. Do not reset the live wrap mode merely to remeasure after channel, day, Dynamic Type or viewport-width changes, and do not let wrap-state styles force their own measurement result;
+- the canonical temporal context is fixed at 52 pt, so no 52↔88 wrap delta participates in native↔semantic conversion;
+- do not reintroduce a Dynamic-Type-driven wrap state merely to preserve the old implementation path;
 - do not reintroduce a contentOffset → collapse → normal-flow height → compensated contentOffset feedback path. Physical iPhone tracing on PR #81 proved that architecture causes post-fling forward/back oscillation.
 
 Reduce Motion:
 
 - discrete rest/condensed switch at 28 pt schedule offset;
 - strip changes directly 72 → 60;
-- strip→context gap changes directly 24 → 0;
+- strip→context gap changes directly **16 → 0**;
 - context→schedule gap changes directly 12 → 0;
-- rest utility context changes directly to the compact channel/date context without introducing a large channel heading;
+- rest temporal context remains date + Primetime + Nu; no selected-channel text is introduced;
 - no height/fade/translation interpolation required;
 - item remains 48×48.
 
@@ -865,8 +869,11 @@ The accepted refinement explicitly corrects the previous production calibration;
 | Temporal state | Static buttons / last action could be inferred | **semantic target/anchor state; active ≠ disabled** |
 | Channel selection positioning | Fully visible/centre where practical, underspecified | **fully visible → comfortably centred → trailing continuation cue where practical** |
 | Programme press | Generic opacity reduction | **temporary full-row semantic `surface` fill** |
-| Rest selected-channel heading | Large 24/30 textual channel name below rail | **removed; selected logo is sufficient identity, compact textual channel name remains only in condensed context** |
+| Selected-channel text | Large rest heading / compact condensed channel name | **removed outside the persistent rail; selected logo is sufficient visible identity in both states** |
 | Current internal spacing | 2-pt title→description gap; ~7 pt before progress at max copy | **10-pt title→description gap; minimum 20 pt before progress at max four-line copy** |
+| Rest rail→utilities gap | 24 | **16** after physical iPhone validation |
+| Per-zender relative day label | `Vandaag/Morgen · weekday date` | **`Vandaag` / `Morgen` only from 06:00–23:59; explicit weekday + date otherwise** |
+| Per-zender compact Dynamic Type | Could wrap to 88-pt context | **hard 1.20 cap; one-row 52-pt temporal context** |
 
 All fixed-row schedule corrections from the previous owner decision remain in force: no pt/minute, duration-proportional rows, normalizedHeight or duration-based content suppression.
 
@@ -884,7 +891,11 @@ The following must not survive as current rules:
 - programme-row primary pressed feedback through whole-row opacity reduction;
 - channel selection merely being just-visible without the centering priority;
 - no intentional continuation cue in the rail;
-- a separate large textual selected-channel heading in expanded/rest state;
+- selected-channel text outside the persistent logo rail, including the former compact condensed channel name;
+- 24-pt rest rail→utilities spacing;
+- long Per-zender relative date labels (`Vandaag/Morgen · weekday date`);
+- Per-zender `Vandaag`/`Morgen` labels between 00:00–05:59;
+- Dynamic-Type-driven 88-pt wrapped Per-zender temporal context;
 - current row height 120 pt;
 - current description 15/18 capped at three lines;
 - 2-pt current title→description gap and the compressed description→progress spacing it produced;
@@ -898,14 +909,14 @@ Surface-specific implementation calibrations now frozen for Development handoff:
 2. Presentation row 48 and selected indicator 88×2.5.
 3. Channel rail: 72 rest / 60 condensed, 48×48 item, 12 gap, 40×32 logo max, 20 edge inset.
 4. Preferred trailing continuation cue target 12 pt where it does not disturb centering/visibility.
-5. Context spacing: 24 strip→utilities, 52 utility-row minimum, 12 utility→schedule; no large rest-state selected-channel heading.
+5. Context spacing: **16** strip→utilities, **52** temporal context, 12 utilities→schedule; no selected-channel text outside the rail.
 6. Temporal visible frame 36, active underline 24×2/bottom2, icon14/gap7, Nu return-action padding12/min width48.
 7. Programme columns: time X24, programme X100, right24.
 8. Standard row 52, current row **176**.
 9. Standard title 17/21 500, current title 19/23 700, time 16/20 400, current description **15/22 400 max4** — Instrument Sans.
 10. Current top14, title→description gap **10**, description→progress minimum **20 at every Dynamic Type scale**, progress 4 high/radius2/bottom16; current-row scaling uses the content-safe minimum from §14.2.
 11. Separator left20 at bottom of each row.
-12. Sticky/rest functional context 52/88; collapse distance56; rest gaps interpolate 24→0 above the context and 12→0 below it; Reduce Motion switches those gaps discretely at28.
+12. Sticky/rest temporal context **52 only**; hard compact-label multiplier 1.20; collapse distance56; rest gaps interpolate **16→0** above the context and 12→0 below it; Reduce Motion switches those gaps discretely at28.
 
 Development must not choose alternatives locally. A future retune requires new owner-approved evidence and an update to this source of truth.
 
@@ -937,17 +948,17 @@ When Lead schedules Per-zender visual convergence, Development must be able to i
 6. preserve fixed rows: 52 standard / **176 current** at fontScale1;
 7. preserve time X24 / programme X100 / right24; current top14; title→description gap10; minimum 20 pt description→progress clearance; progress 4 high / bottom16;
 8. rest channel strip **72**, settled condensed **60**, item **48×48** throughout;
-9. do not render a separate large textual selected-channel heading in expanded/rest state; selected logo is sufficient identity there, while compact textual channel name remains in condensed context;
+9. do not render selected-channel text outside the persistent rail in either expanded/rest or condensed state; selected logo is sufficient visible identity;
 10. after channel change: fully visible → comfortably centred → trailing ~12-pt continuation cue where practical;
-11. date remains typographic, not a pill;
+11. date remains typographic, not a pill; from 06:00–23:59 use only `Vandaag` / `Morgen` for current/next TV day, other days use weekday + date, and from 00:00–05:59 use explicit weekday + date for all day labels;
 12. derive `Nu` and `Primetime` action/current states from semantic timestamp/programme anchors, with Nu precedence at actual Now;
 13. `Nu` away from Now = strongest elevated return action; at Now = typographic active/current + short underline;
 14. `Primetime` inactive = light transparent secondary action; active = primary text + short underline;
 15. active/current never means disabled;
 16. full programme row pressed = temporary semantic `surface` fill; clear on release/cancel/gesture takeover;
 17. preserve horizontal adjacent-channel swipe, channel-rail browsing, D-2..D+7, 06:00 television-day semantics, Programme Detail round-trip and time-anchor semantics;
-18. implement heading-less rest→condensed convergence exactly as §15.3: strip 72→60, strip→context gap 24→0, context→schedule gap 12→0, 48×48 items unchanged; no spring; discrete Reduce Motion state;
-19. validate light/dark/system, Dynamic Type, VoiceOver, TalkBack and Reduce Motion;
+18. implement heading-less rest→condensed convergence exactly as §15.3: strip 72→60, strip→context gap **16→0**, context→schedule gap 12→0, fixed 52-pt temporal context, 48×48 items unchanged; no spring; discrete Reduce Motion state;
+19. enforce `maximumFontSizeMultiplier = 1.20` for Per-zender date/Primetime/Nu labels, keep them one line in the 52-pt context, and validate light/dark/system, Dynamic Type, VoiceOver, TalkBack and Reduce Motion;
 20. do not add swipe nudge, overflow button, arrows, fade masks or old exploration chrome;
 21. run the implementation's normal automated/physical gates when Development occurs.
 
@@ -977,7 +988,7 @@ This refinement does not reopen:
 - no decorative channel arrows;
 - no expanded historical time picker;
 - no duration-driven programme geometry;
-- selected logo as sufficient expanded/rest channel identity, with compact textual channel name retained in condensed context.
+- selected logo as sufficient visible channel identity in both expanded/rest and condensed states; no duplicate selected-channel text outside the rail.
 
 ## 26. Explicitly outside this accepted refinement
 
@@ -1001,10 +1012,10 @@ Per-zender visual convergence is ready only when all are true on the exact imple
 - trailing continuation cue appears where practical without breaking centering/clamping;
 - no arrows/fades/text swipe-help are added;
 - rest strip is 72 and settled condensed strip is **60**;
-- expanded/rest state has no separate large textual selected-channel heading; compact textual channel name remains in condensed context;
+- neither expanded/rest nor condensed state renders selected-channel text outside the persistent logo rail;
 - 48×48 channel items remain unchanged through collapse;
-- base condensed functional stack is **112** (60+52), or 148 when context wraps to 88; heading-less collapse removes the rest-only 24-pt strip→context and 12-pt context→schedule gaps continuously (or discretely with Reduce Motion);
-- date remains typographic;
+- base condensed functional stack is **112** (60+52); the temporal context remains one 52-pt row; collapse removes the rest-only **16-pt** strip→context and 12-pt context→schedule gaps continuously (or discretely with Reduce Motion);
+- date remains typographic and follows the accepted 06:00 label rule: `Vandaag`/`Morgen` only from 06:00–23:59, explicit weekday + date otherwise;
 - Nu/Primetime states are derived from semantic schedule anchors, not last tap/pixels/tolerance windows;
 - Nu away = elevated return action; Nu current = typographic current state + underline;
 - Primetime inactive = light secondary action; Primetime current = primary current state + underline;
@@ -1021,6 +1032,6 @@ Per-zender visual convergence is ready only when all are true on the exact imple
 - programme press uses temporary `surface` fill without card/radius/elevation;
 - no schedule-wide now line, current card fill, red left rail, now-dot or hourly-grid dominance;
 - light/dark/system use semantic tokens;
-- Dynamic Type, VoiceOver, TalkBack and Reduce Motion follow this specification;
+- Per-zender date/Primetime/Nu compact chrome is hard-capped at 1.20 and remains one line; programme content retains substantive Dynamic Type; VoiceOver, TalkBack and Reduce Motion follow this specification;
 - one-time swipe nudge and `•••` overflow remain absent;
 - final physical comparison uses the exact canonical references plus the written 2026-09-17 and 2026-09-18 refinements, never a superseded runtime screenshot.
