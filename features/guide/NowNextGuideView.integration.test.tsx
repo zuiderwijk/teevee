@@ -27,6 +27,7 @@ type ScrollProps = {
 
 const runtime = vi.hoisted(() => ({
   schedule: null as GuideSchedule | null,
+  fixture: null as GuideSchedule | null,
 }));
 const clock = vi.hoisted(() => ({
   nowMs: Date.parse('2026-09-18T18:15:00.000Z'),
@@ -46,7 +47,7 @@ vi.mock('@/data/runtime/guideScheduleRuntime', () => ({
   runtimeGuideScheduleFor: () => runtime.schedule,
 }));
 vi.mock('@/data/fixtures/runtimeGuideFixture', () => ({
-  buildRuntimeGuideFixture: () => runtime.schedule,
+  buildRuntimeGuideFixture: () => runtime.fixture,
 }));
 vi.mock('./useGuideClock', () => ({
   useGuideClock: () => clock.nowMs,
@@ -315,6 +316,7 @@ beforeEach(() => {
   });
   vi.stubGlobal('cancelAnimationFrame', vi.fn());
   runtime.schedule = schedule;
+  runtime.fixture = schedule;
   clock.nowMs = Date.parse('2026-09-18T18:15:00.000Z');
   viewport.width = 390;
   viewport.fontScale = 1;
@@ -474,17 +476,77 @@ describe('Nu & Straks production interaction boundary', () => {
     expect(getByTestId(container, 'now-next-channel-scroll')).toBe(channelScroll);
     expect(channelScroll.scrollTop).toBe(420);
 
+    for (const [slot, id] of [
+      [0, 'one-follow-1'],
+      [1, 'one-follow-2'],
+      [2, 'one-follow-3'],
+    ] as const) {
+      await act(async () => {
+        getByTestId(container, `now-next-following-one-${slot}-${id}`).click();
+      });
+      expect(selected.at(-1)?.id).toBe(id);
+      await act(async () => getByTestId(container, 'mock-detail-close').click());
+      expect(getByTestId(container, 'now-next-channel-scroll')).toBe(channelScroll);
+      expect(channelScroll.scrollTop).toBe(420);
+    }
+  });
+
+  it('preserves browse/reference and vertical channel context across fixture-to-hosted replacement', async () => {
+    runtime.schedule = null;
+    runtime.fixture = schedule;
+
+    const onSelectProgramme = vi.fn();
+    const navigation = <span data-testid="shared-presentation-nav">Shared navigation</span>;
+    await act(async () =>
+      root.render(
+        <NowNextGuideView
+          guideDataVersion={0}
+          presentationNavigation={navigation}
+          onSelectProgramme={onSelectProgramme}
+        />,
+      ),
+    );
+
+    const channelScroll = getByTestId(container, 'now-next-channel-scroll');
+    channelScroll.scrollTop = 360;
+    const rail = native.scrollProps.get('now-next-time-rail');
+    if (!rail?.onScrollBeginDrag || !rail.onMomentumScrollEnd) {
+      throw new Error('Rail interaction handlers missing');
+    }
     await act(async () => {
-      getByTestId(container, 'now-next-following-one-0-one-follow-1').click();
+      rail.onScrollBeginDrag?.();
+      rail.onMomentumScrollEnd?.(scrollEvent(29 * 76, 1));
     });
-    expect(selected.at(-1)?.id).toBe('one-follow-1');
-    await act(async () => getByTestId(container, 'mock-detail-close').click());
+    expect(getByTestId(container, 'now-next-reference-time').textContent).toBe('20:30');
+
+    runtime.schedule = {
+      ...schedule,
+      generatedAt: '2026-09-18T18:20:00.000Z',
+      programmes: schedule.programmes.map((programme) =>
+        programme.id === 'one-follow-1'
+          ? { ...programme, title: 'Gecorrigeerd volgend programma' }
+          : programme,
+      ),
+    };
+    await act(async () =>
+      root.render(
+        <NowNextGuideView
+          guideDataVersion={1}
+          presentationNavigation={navigation}
+          onSelectProgramme={onSelectProgramme}
+        />,
+      ),
+    );
+
+    expect(getByTestId(container, 'now-next-reference-time').textContent).toBe('20:30');
     expect(getByTestId(container, 'now-next-channel-scroll')).toBe(channelScroll);
-    expect(channelScroll.scrollTop).toBe(420);
+    expect(channelScroll.scrollTop).toBe(360);
+    expect(container.textContent).toContain('Gecorrigeerd volgend programma');
   });
 
   it('keeps production shell and a single calm data state when canonical programme data is unavailable', async () => {
     runtime.schedule = null;
+    runtime.fixture = null;
 
     await act(async () =>
       root.render(
