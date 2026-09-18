@@ -13,7 +13,9 @@ import {
   View,
 } from 'react-native';
 import Animated, {
+  scrollTo,
   useAnimatedReaction,
+  useAnimatedRef,
   useAnimatedScrollHandler,
   useAnimatedStyle,
   useReducedMotion,
@@ -52,6 +54,7 @@ import {
   collapseProgressForScrollOffset,
   compactContextForCollapseProgress,
   perChannelAnimatedTargetForScheduleOffset,
+  perChannelContextWrapAnchorTransition,
   perChannelFunctionalGapsForCollapseProgress,
   perChannelLayoutAnchorKey,
   perChannelNativeOffsetForScheduleOffset,
@@ -275,9 +278,10 @@ export const PerChannelGuideView = memo(function PerChannelGuideView({
   const reduceMotion = useReducedMotion();
   const channelStripRef = useRef<ScrollView>(null);
   const pagerRef = useRef<ScrollView>(null);
-  const scheduleRef = useRef<Animated.ScrollView>(null);
+  const scheduleRef = useAnimatedRef<ScrollView>();
   const contextDateYRef = useRef<number | null>(null);
   const contextUtilitiesYRef = useRef<number | null>(null);
+  const contextWrappedRef = useRef(false);
   const viewedTimeRef = useRef(Date.now());
   const pendingTargetTimeRef = useRef<number | null>(null);
   const nowMs = useGuideClock();
@@ -389,17 +393,40 @@ export const PerChannelGuideView = memo(function PerChannelGuideView({
   const collapseProgress = useSharedValue(0);
   const collapseAnchorY = useSharedValue(0);
   const collapseEnabled = useSharedValue(0);
+  const scheduleNativeOffset = useSharedValue(0);
+  const contextWrappedValue = useSharedValue(0);
+
+  const setMeasuredContextWrapped = useCallback(
+    (nextWrapped: boolean) => {
+      if (contextWrappedRef.current === nextWrapped) return;
+      contextWrappedRef.current = nextWrapped;
+      contextWrappedValue.value = nextWrapped ? 1 : 0;
+      setContextWrapped(nextWrapped);
+    },
+    [contextWrappedValue],
+  );
+
+  useAnimatedReaction(
+    () => contextWrappedValue.value,
+    (nextWrappedValue, previousWrappedValue) => {
+      if (previousWrappedValue === null || nextWrappedValue === previousWrappedValue) return;
+      const transition = perChannelContextWrapAnchorTransition(
+        scheduleNativeOffset.value,
+        collapseAnchorY.value,
+        previousWrappedValue !== 0,
+        nextWrappedValue !== 0,
+      );
+      scheduleNativeOffset.value = transition.nativeOffset;
+      collapseAnchorY.value = transition.collapseAnchorY;
+      scrollTo(scheduleRef, 0, transition.nativeOffset, false);
+    },
+    [scheduleRef],
+  );
 
   useEffect(() => {
     if (!selectedChannel) return;
     if (selectedChannel.id !== selectedChannelId) setSelectedChannelId(selectedChannel.id);
   }, [selectedChannel, selectedChannelId]);
-
-  useEffect(() => {
-    contextDateYRef.current = null;
-    contextUtilitiesYRef.current = null;
-    setContextWrapped(false);
-  }, [effectiveFontScale, safeSelectedIndex, selectedDayStartMs, windowWidth]);
 
   const centrePager = useCallback(
     (animated = false) => pagerRef.current?.scrollTo({ x: windowWidth, animated }),
@@ -455,18 +482,26 @@ export const PerChannelGuideView = memo(function PerChannelGuideView({
         timeMs,
         referenceInsetRef.current,
       );
+      const contextWrappedNow = contextWrappedRef.current;
+      const collapseAnchorScheduleOffset = perChannelScheduleOffsetForNativeOffset(
+        collapseAnchorY.value,
+        0,
+        contextWrappedNow,
+      );
       const target =
         animated && collapseEnabled.value !== 0
           ? perChannelAnimatedTargetForScheduleOffset(
               scheduleOffset,
-              collapseAnchorY.value,
+              collapseAnchorScheduleOffset,
               progress,
+              contextWrappedNow,
             )
           : {
               progress,
               nativeOffset: perChannelNativeOffsetForScheduleOffset(
                 scheduleOffset,
                 progress,
+                contextWrappedNow,
               ),
             };
       if (!animated) {
@@ -476,14 +511,19 @@ export const PerChannelGuideView = memo(function PerChannelGuideView({
             target.progress * PER_CHANNEL_VISUAL_METRICS.collapseDistance,
         );
         collapseEnabled.value = 1;
+        scheduleNativeOffset.value = target.nativeOffset;
       }
       scheduleRef.current?.scrollTo({ y: target.nativeOffset, animated });
     },
-    [collapseAnchorY, collapseEnabled, collapseProgress],
+    [collapseAnchorY, collapseEnabled, collapseProgress, scheduleNativeOffset, scheduleRef],
   );
 
   const syncViewedTimestamp = useCallback((y: number, progress: number) => {
-    const scheduleOffset = perChannelScheduleOffsetForNativeOffset(y, progress);
+    const scheduleOffset = perChannelScheduleOffsetForNativeOffset(
+      y,
+      progress,
+      contextWrappedRef.current,
+    );
     const nextTimeMs = timestampForScrollOffset(
       selectedRowsRef.current,
       scheduleOffset,
@@ -512,6 +552,7 @@ export const PerChannelGuideView = memo(function PerChannelGuideView({
     {
       onBeginDrag: (event) => {
         const y = Math.max(0, event.contentOffset.y);
+        scheduleNativeOffset.value = y;
         if (collapseEnabled.value !== 0) return;
         collapseAnchorY.value = Math.max(
           0,
@@ -521,6 +562,7 @@ export const PerChannelGuideView = memo(function PerChannelGuideView({
       },
       onScroll: (event) => {
         const y = Math.max(0, event.contentOffset.y);
+        scheduleNativeOffset.value = y;
         collapseProgress.value = collapseProgressForScrollOffset(
           y,
           collapseEnabled.value ? collapseAnchorY.value : y,
@@ -529,10 +571,12 @@ export const PerChannelGuideView = memo(function PerChannelGuideView({
       },
       onEndDrag: (event) => {
         const y = Math.max(0, event.contentOffset.y);
+        scheduleNativeOffset.value = y;
         scheduleOnRN(syncViewedTimestamp, y, collapseProgress.value);
       },
       onMomentumEnd: (event) => {
         const y = Math.max(0, event.contentOffset.y);
+        scheduleNativeOffset.value = y;
         scheduleOnRN(syncViewedTimestamp, y, collapseProgress.value);
       },
     },
@@ -560,7 +604,7 @@ export const PerChannelGuideView = memo(function PerChannelGuideView({
       {
         translateY: perChannelStableScrollVisuals(
           collapseProgress.value,
-          contextWrapped,
+          contextWrappedValue.value !== 0,
         ).contentTranslateY,
       },
     ],
@@ -612,8 +656,8 @@ export const PerChannelGuideView = memo(function PerChannelGuideView({
     const dateY = contextDateYRef.current;
     const utilitiesY = contextUtilitiesYRef.current;
     if (dateY === null || utilitiesY === null) return;
-    setContextWrapped(Math.abs(dateY - utilitiesY) > CONTEXT_WRAP_Y_EPSILON);
-  }, []);
+    setMeasuredContextWrapped(Math.abs(dateY - utilitiesY) > CONTEXT_WRAP_Y_EPSILON);
+  }, [setMeasuredContextWrapped]);
 
   const handleDateContextLayout = useCallback((event: LayoutChangeEvent) => {
     contextDateYRef.current = event.nativeEvent.layout.y;
@@ -714,7 +758,7 @@ export const PerChannelGuideView = memo(function PerChannelGuideView({
         <View
           testID="per-channel-date-group"
           onLayout={handleDateContextLayout}
-          style={[styles.dateControlWrap, contextWrapped ? styles.contextFullWidth : null]}
+          style={styles.dateControlWrap}
         >
           <GuideDaySelector
             selectedDayStartMs={selectedDayStartMs}
@@ -729,7 +773,7 @@ export const PerChannelGuideView = memo(function PerChannelGuideView({
         <View
           testID="per-channel-utility-group"
           onLayout={handleUtilitiesLayout}
-          style={[styles.utilityActions, contextWrapped ? styles.utilityActionsWrapped : null]}
+          style={styles.utilityActions}
         >
           <Pressable
             testID="per-channel-primetime"
@@ -973,19 +1017,12 @@ const styles = StyleSheet.create({
   dateControlWrap: {
     flexShrink: 0,
   },
-  contextFullWidth: {
-    width: '100%',
-  },
   utilityActions: {
     marginLeft: 'auto',
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'flex-end',
     gap: PER_CHANNEL_VISUAL_METRICS.utilityGap,
-  },
-  utilityActionsWrapped: {
-    width: '100%',
-    marginLeft: 0,
   },
   utilityTouchTarget: {
     alignItems: 'center',
