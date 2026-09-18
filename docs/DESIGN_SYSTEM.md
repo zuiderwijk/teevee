@@ -90,7 +90,7 @@ All three Guide presentations share one visual shell.
 
 At rest the shell may show brand identity and the Guide-view selector. During vertical scrolling, nonessential brand chrome may condense to return space to schedule content. Essential context is view-specific:
 - Totaal: selected day, `Nu`, and time axis/context;
-- Per zender: channel-logo strip plus compact channel/date context and `Nu`; expanded/rest state does not duplicate selected channel identity with a large textual heading;
+- Per zender: channel-logo strip plus compact date/Primetime/Nu temporal context; selected-channel identity is not duplicated in text outside the persistent rail;
 - Nu & Straks: reference-time context/selector.
 
 Bottom navigation remains stable. Avoid making the `tv.` brand mark consume permanent vertical space when it is no longer functionally useful during scroll.
@@ -105,15 +105,15 @@ System rules:
 - opening the selector uses a bounded bottom sheet rather than an unrestricted calendar;
 - selection uses semantic selected state plus an explicit non-colour indicator;
 - labels may use `Vandaag` / `Morgen` only when semantically correct for the active television day;
-- when larger text requires more space, increase control/header height or wrap before aggressively shrinking labels;
+- Per zender uses the accepted compact override: `Vandaag`/`Morgen` only from 06:00–23:59; from 00:00–05:59 use explicit weekday + date labels only;
+- Per-zender date/Primetime/Nu chrome uses a documented hard 1.20 font-size multiplier cap and remains one line; this exception does not apply to substantive programme content;
 - light/dark/system use semantic surface, border and text tokens rather than separate interaction variants.
 
 Sticky/condensed rules:
 - condensation removes non-functional chrome; it must not remove essential Guide context;
 - Totaal keeps date + `Nu` + time axis available while the Guide scrolls vertically;
-- Per zender keeps the channel-logo strip and one compact channel/date row available while the schedule scrolls vertically;
-- Per-zender expanded/rest state does not show a separate large textual selected-channel heading; the selected logo is sufficient channel identity there;
-- the compact textual channel name remains in the condensed channel/date row for orientation;
+- Per zender keeps the channel-logo strip and one compact date/Primetime/Nu row available while the schedule scrolls vertically;
+- Per-zender does not show separate selected-channel text in expanded/rest or condensed state; the persistent selected logo is sufficient visible channel identity;
 - prefer whitespace and, only when needed, a subtle hairline/theme surface to separate sticky context from scrolling content;
 - avoid heavy floating cards and shadows;
 - reduced-motion preferences may replace interpolated condensation with a simpler state change.
@@ -125,7 +125,7 @@ Exact canonical assets and state semantics are defined by `design/current/guide/
 This is the densest presentation because spatial geometry itself communicates schedule information. Keep cells typographic and restrained. Do not add genres or artwork. Current programme context may prioritise end time; future cells prioritise start time.
 
 ### Per zender
-Use an open vertical schedule, not a card stack. Keep the sticky horizontal channel-logo strip visually separated from programme content with breathing room. Horizontal schedule swipe changes channel; no decorative previous/next arrows are required when gesture behaviour and logo strip make navigation understandable.
+Use an open vertical schedule, not a card stack. Keep the sticky horizontal channel-logo strip visually separated from temporal controls and programme content with restrained whitespace: 16 pt rail→utilities in expanded/rest, then the existing 12 pt utilities→schedule. Horizontal schedule swipe changes channel; no decorative previous/next arrows are required when gesture behaviour and logo strip make navigation understandable.
 
 ### Nu & Straks
 Each channel presents one dominant programme at the selected reference time plus three quieter following programmes. No progress bars, genre chips, artwork, chevrons or `Daarna` labels. The hierarchy itself communicates current/reference versus following content.
