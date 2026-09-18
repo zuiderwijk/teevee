@@ -533,7 +533,7 @@ export const GuideView = memo(function GuideView({
                           accessibilityRole="button"
                           accessibilityLabel={`${channel.displayName}, ${programme.title}, ${formatGuideTime(startMs)} tot ${formatGuideTime(endMs)}${accessibilityStatus}`}
                           accessibilityHint="Opent programmadetails"
-                          onPress={() => onSelectProgramme({ programme, channelName: channel.displayName })}
+                          onPress={() => onSelectProgramme({ programme, channel })}
                           style={({ pressed }) => [
                             styles.programme,
                             contentMode === 'compact' ? styles.programmeCompact : null,
