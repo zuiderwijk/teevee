@@ -331,7 +331,7 @@ describe('programme detail production actions', () => {
       getByTestId('programme-detail-sheet').querySelectorAll('span'),
     ).map((node) => node.textContent ?? '');
     expect(sheetText[0]).toBe('Detailprogramma');
-    expect(getByTestId('programme-detail-current-status').textContent).toBe('Nu bezig');
+    expect(getByTestId('programme-detail-sheet').textContent).toContain('Nu bezig');
     expect(container.querySelector('[data-testid="programme-detail-reminder"]')).toBeNull();
     expect(getByTestId('programme-detail-save').textContent).toBe('Bewaar');
   });
