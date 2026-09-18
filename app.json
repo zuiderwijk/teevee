@@ -6,13 +6,19 @@
     "orientation": "portrait",
     "userInterfaceStyle": "automatic",
     "scheme": "teevee",
-    "plugins": ["expo-router"],
+    "plugins": [
+      "expo-router",
+      "expo-notifications"
+    ],
     "ios": {
       "supportsTablet": false,
       "bundleIdentifier": "nl.bindinc.teevee"
     },
     "android": {
-      "package": "nl.bindinc.teevee"
+      "package": "nl.bindinc.teevee",
+      "permissions": [
+        "android.permission.SCHEDULE_EXACT_ALARM"
+      ]
     },
     "experiments": {
       "typedRoutes": true

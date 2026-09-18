@@ -1,0 +1,6 @@
+{
+  "platforms": ["android"],
+  "android": {
+    "modules": ["nl.bindinc.teevee.exactalarm.TeeveeExactAlarmModule"]
+  }
+}

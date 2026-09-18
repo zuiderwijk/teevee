@@ -11,6 +11,34 @@ Doel: chronologisch, begrijpelijk overzicht van substantiële milestones, verifi
 
 ---
 
+## 18 september 2026 — PR #92 final QA fix: Android exact-alarm special-access lifecycle
+
+Independent QA re-review bevestigde de eerdere vijf Programme Detail/reminder-fixes en vond nog één Android-blocker: `SCHEDULE_EXACT_ALARM` stond correct in de manifest, maar runtime kon niet bewijzen dat Android 12+ de speciale “Alarmen en herinneringen”-toegang daadwerkelijk had verleend voordat een reminder als actief werd opgeslagen.
+
+De fix houdt bewust `SCHEDULE_EXACT_ALARM` aan. Teevee schakelt niet naar `USE_EXACT_ALARM`; deze reminderfunctie is een secundaire user-facing feature en de bredere, user-controlled special-access route past bij de Android/Play-policygrens. Een kleine lokale Android Expo-module exposeert exact twee platformprimitives: `AlarmManager.canScheduleExactAlarms()` en de app-specifieke `ACTION_REQUEST_SCHEDULE_EXACT_ALARM` settings-intent. Er is geen brede native abstraction of database/state-framework toegevoegd.
+
+Scheduling op Android 12+ is nu fail-closed: na notification-permission/channel setup moet exact-alarm capability aantoonbaar beschikbaar zijn. Ontbreekt de toegang, dan opent Teevee vanuit de expliciete `Herinner mij`-actie de relevante Android-instelling, wacht op app-resume en controleert opnieuw. Direct vóór `scheduleNotificationAsync` volgt nog een tweede capability-check tegen revocation/races. Alleen een succesvolle native schedule-call ná bewezen capability mag persisted/visible `Herinnering aan` state opleveren. iOS en de canonical vijf-minutentiming blijven ongewijzigd.
+
+Reconciliation behandelt revocation eveneens expliciet. Voor een nog niet afgevuurde reminder met `canScheduleExactAlarms() == false` probeert Teevee eerst de onderliggende Expo scheduled notification via het bestaande notification-id te annuleren. Alleen bevestigde native cancellation levert `verified-invalid` op, waarna Programme Detail de lokale metadata mag verwijderen. Als cancellation niet bevestigd kan worden, blijft het notification-id als cleanup-handle bewaard in een inactieve `indeterminate` state; ook een indeterminate capability-check blijft metadata behouden zonder de reminder actief te presenteren. Programme Detail voert reconciliation opnieuw uit bij app-resume, zodat intrekking tijdens settings/background direct wordt verwerkt zonder een orphan native request bewust achter te laten.
+
+Deterministische coverage dekt capability available/unavailable, settings round-trip na grant, native-boundary failure, revocation vlak vóór scheduling, confirmed native cancellation vóór lokale revocation-cleanup, cancellation failure met behoud van persisted notification-id, revocation bij reconciliation/resume, geen persisted/active reminder bij ontbrekende capability en ongewijzigde iOS scheduling. Native CI verifieert naast manifest-permission ook Expo autolinking van `TeeveeExactAlarmModule`, clean prebuild en Android APK compile.
+
+**Volgende stap:** exact-head CI volledig groen; daarna alleen niet-Android fysieke smoke waar zinvol. Android exact-time delivery blijft conform projectstatus deferred totdat Android-hardware beschikbaar is. Independent QA moet de nieuwe exact head opnieuw beoordelen; niet mergen vóór QA PASS.
+
+---
+
+## 18 september 2026 — PR #92 Independent QA required-fix pass
+
+Independent QA op Programme Detail head `22fa7a36de071a528da0192f91e7c615d37f060b` vond vijf blocking lifecycle/concurrency-contracten. De fix-pass verandert geen producttiming of Guide-architectuur: de Guide blijft gemount onder de modal en de reminder blijft exact vijf minuten vóór start, met immediate fallback binnen vijf minuten.
+
+Android declareert nu expliciet `android.permission.SCHEDULE_EXACT_ALARM`; de native CI-gate controleert na een schone Expo prebuild dat deze permission daadwerkelijk in de gegenereerde AndroidManifest staat. Programme Detail gebruikt een boundary-driven clock die op programmastart, programma-einde en app-resume ververst, zodat `Herinner mij` en `Nu bezig` niet op een oude render bevriezen. De native reminder-service herberekent de actuele fire instant na permission/channel-awaits en weigert scheduling wanneer de programmastart inmiddels is gepasseerd.
+
+Reminder reconciliation heeft voortaan drie expliciete uitkomsten: verified-valid, verified-invalid en indeterminate. Native query/cancel failures verwijderen het persistente notification-id niet; een aantoonbaar stale maar niet bevestigbaar gecancelde reminder wordt tegelijk niet als actief gepresenteerd. Bij async cancellation wordt na de native await altijd verse personal state gelezen en alleen de nog-identieke reminder compare-and-apply verwijderd, zodat een gelijktijdige `Bewaar`-mutatie behouden blijft.
+
+Deterministische regressies dekken start/eind/resume, permission-prompt crossings van vijf-minutengrens en programmastart, native reconciliation failure paths en de reminder-cancel-versus-Bewaar interleaving. **Volgende stap:** exact-head CI; daarna gerichte fysieke revalidatie van de gewijzigde reminder/lifecyclepaden en Independent QA re-review. Niet mergen.
+
+---
+
 ## 18 september 2026 — PR #88 rebased onto accepted PR #89 4/24 spacing calibration
 
 Accepted Design Refinement PR #89 is merged on `main` and supersedes only the expanded/rest Per-zender gap distribution. PR #88 is rebased onto that canonical baseline rather than carrying its pre-#89 design documentation forward.

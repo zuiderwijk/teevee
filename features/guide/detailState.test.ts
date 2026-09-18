@@ -3,8 +3,20 @@ import { describe, expect, it } from 'vitest';
 import { detailReducer, initialDetailState, type ProgrammeSelection } from './detailState';
 
 const selection: ProgrammeSelection = {
-  channelName: 'Testzender',
-  programme: { id: 'one', channelId: 'test', title: 'Programma', startAt: '2026-09-13T18:00:00Z', endAt: '2026-09-13T19:00:00Z' },
+  channel: {
+    id: 'test',
+    name: 'Testzender',
+    displayName: 'Testzender',
+    sortOrder: 0,
+    isActive: true,
+  },
+  programme: {
+    id: 'one',
+    channelId: 'test',
+    title: 'Programma',
+    startAt: '2026-09-13T18:00:00Z',
+    endAt: '2026-09-13T19:00:00Z',
+  },
 };
 
 describe('detail state', () => {

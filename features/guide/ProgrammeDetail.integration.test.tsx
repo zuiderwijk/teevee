@@ -9,7 +9,13 @@ import GuideScreen from '@/app/index';
 import { guideFixture } from '@/data/fixtures/guideFixture';
 import { useGuideClock } from '@/features/guide/useGuideClock';
 
-import { MISSING_DESCRIPTION, ProgrammeDetail } from './ProgrammeDetail';
+import { ProgrammeDetail } from './ProgrammeDetail';
+import {
+  EMPTY_PROGRAMME_PERSONAL_STATE,
+  programmeSnapshot,
+  withProgrammeReminder,
+} from './programmePersonalState';
+import { readProgrammePersonalState, writeProgrammePersonalState } from '@/services/storage/programmePersonalStateStorage';
 
 type PanEvent = { translationY: number; velocityY: number; numberOfPointers: number };
 type GestureCallbacks = {
@@ -21,6 +27,15 @@ type GestureCallbacks = {
   touches?: (event: { numberOfTouches: number }) => void;
 };
 type TestGesture = { config: Record<string, unknown>; handlers: GestureCallbacks };
+const reminderService = vi.hoisted(() => ({
+  schedule: vi.fn(),
+  cancel: vi.fn(),
+  reconcile: vi.fn(),
+}));
+const appState = vi.hoisted(() => ({
+  currentState: 'active',
+  listeners: new Set<(state: string) => void>(),
+}));
 const motion = vi.hoisted(() => ({
   gesture: null as TestGesture | null,
   readStyle: null as (() => { transform: { translateY: number }[] }) | null,
@@ -29,6 +44,11 @@ const motion = vi.hoisted(() => ({
 }));
 
 vi.mock('expo-router', () => ({ useRouter: () => ({ push: vi.fn() }) }));
+vi.mock('@/services/notifications/programmeReminder', () => ({
+  scheduleProgrammeReminder: reminderService.schedule,
+  cancelProgrammeReminder: reminderService.cancel,
+  reconcileProgrammeReminder: reminderService.reconcile,
+}));
 
 vi.mock('react-native-safe-area-context', () => ({
   useSafeAreaInsets: () => ({ top: 59, right: 0, bottom: 34, left: 0 }),
@@ -105,8 +125,20 @@ vi.mock('react-native', async () => {
       children,
     ) : null;
   }
+  const AppState = {
+    get currentState() {
+      return appState.currentState;
+    },
+    addEventListener: (
+      _event: string,
+      listener: (state: string) => void,
+    ) => {
+      appState.listeners.add(listener);
+      return { remove: () => appState.listeners.delete(listener) };
+    },
+  };
   return {
-    View, Text, Image, Pressable, ScrollView, Modal, SafeAreaView: View,
+    AppState, View, Text, Image, Pressable, ScrollView, Modal, SafeAreaView: View,
     useWindowDimensions: () => ({ width: 390, height: 844, scale: 3, fontScale: 1 }),
     StyleSheet: { create: <T,>(value: T) => value, hairlineWidth: 1, absoluteFill: {} },
   };
@@ -172,10 +204,21 @@ beforeEach(() => {
   vi.stubGlobal('cancelAnimationFrame', vi.fn());
   vi.spyOn(Date, 'now').mockReturnValue(Date.parse('2026-09-13T08:00:00+02:00'));
   vi.mocked(useGuideClock).mockClear();
+  appState.currentState = 'active';
+  appState.listeners.clear();
+  reminderService.schedule.mockReset().mockResolvedValue({
+    ok: false,
+    reason: 'unsupported',
+  });
+  reminderService.cancel.mockReset().mockResolvedValue(false);
+  reminderService.reconcile.mockReset().mockResolvedValue({
+    status: 'verified-valid',
+  });
   motion.gesture = null;
   motion.readStyle = null;
   motion.spring.mockClear();
   motion.cancel.mockClear();
+  writeProgrammePersonalState(EMPTY_PROGRAMME_PERSONAL_STATE);
   container = document.createElement('div');
   document.body.appendChild(container);
   root = createRoot(container);
@@ -199,6 +242,20 @@ function getGesture(): TestGesture {
   return motion.gesture;
 }
 function offsetY() { return motion.readStyle?.().transform[0]?.translateY; }
+function deferred<T>() {
+  let resolve!: (value: T) => void;
+  const promise = new Promise<T>((nextResolve) => {
+    resolve = nextResolve;
+  });
+  return { promise, resolve };
+}
+async function emitAppState(state: string) {
+  appState.currentState = state;
+  await act(async () => {
+    for (const listener of [...appState.listeners]) listener(state);
+    await Promise.resolve();
+  });
+}
 async function swipe(distance: number, velocity = 0, success = true, pointers = 1) {
   const { handlers } = getGesture();
   const event = { translationY: distance, velocityY: velocity, numberOfPointers: pointers };
@@ -228,13 +285,13 @@ describe('programme detail rendering boundary', () => {
     expect(mountedProgrammeCount).toBeLessThan(guideFixture.programmes.length);
 
     const first = guideFixture.programmes[0]!;
-    for (const closeId of ['programme-detail-close', 'programme-detail-backdrop', 'native-request-close', 'swipe']) {
+    for (const closeId of ['programme-detail-backdrop', 'native-request-close', 'swipe']) {
       await click(`programme-${first.id}`);
       expect(container.querySelector('[role="dialog"]')).not.toBeNull();
       expect(container.querySelector('[role="dialog"]')?.getAttribute('data-animation')).toBe('slide');
       expect(offsetY()).toBe(0);
       expect(getByTestId('programme-detail-sheet').textContent).toContain(first.title);
-      expect(getByTestId('programme-detail-sheet').textContent).toContain(MISSING_DESCRIPTION);
+      expect(container.querySelector('[data-testid="programme-detail-description"]')).toBeNull();
       expect(vi.mocked(useGuideClock)).toHaveBeenCalledTimes(renderCount);
       if (closeId === 'swipe') await swipe(100); else await click(closeId);
       expect(container.querySelector('[role="dialog"]')).toBeNull();
@@ -273,7 +330,7 @@ describe('programme detail rendering boundary', () => {
     const first = guideFixture.programmes[0]!;
     const second = guideFixture.programmes.find((programme) => programme.description !== undefined)!;
     await click(`programme-${first.id}`);
-    await click('programme-detail-close');
+    await click('programme-detail-backdrop');
     await click(`programme-${second.id}`);
     const sheet = getByTestId('programme-detail-sheet');
     expect(sheet.textContent).toContain(second.title);
@@ -284,14 +341,246 @@ describe('programme detail rendering boundary', () => {
 
   it.each([undefined, '', '   '])('handles absent or blank descriptions: %s', async (description) => {
     const programme = { id: 'missing', channelId: 'test', title: 'Zonder tekst', startAt: '2026-09-13T18:00:00Z', endAt: '2026-09-13T19:00:00Z', ...(description === undefined ? {} : { description }) };
-    await act(async () => root.render(<ProgrammeDetail state={{ visible: true, selection: { programme, channelName: 'Testzender' } }} onClose={vi.fn()} />));
-    expect(getByTestId('programme-detail-sheet').textContent).toContain(MISSING_DESCRIPTION);
+    const channel = { id: 'test', name: 'Testzender', displayName: 'Testzender', sortOrder: 0, isActive: true };
+    await act(async () => root.render(<ProgrammeDetail state={{ visible: true, selection: { programme, channel } }} onClose={vi.fn()} />));
+    expect(container.querySelector('[data-testid="programme-detail-description"]')).toBeNull();
+  });
+});
+
+
+describe('programme detail production actions', () => {
+  const channel = {
+    id: 'test',
+    name: 'Testzender',
+    displayName: 'Testzender',
+    sortOrder: 0,
+    isActive: true,
+  };
+
+  function detailState(startAt: string, endAt: string, id = 'detail-action') {
+    return {
+      visible: true,
+      selection: {
+        channel,
+        programme: {
+          id,
+          channelId: channel.id,
+          title: 'Detailprogramma',
+          description: 'Een beschrijving voor de productiedetail.',
+          startAt,
+          endAt,
+        },
+      },
+    };
+  }
+
+  it('renders title before channel/time and exposes current status only while current', async () => {
+    const currentState = detailState(
+      '2026-09-13T05:30:00Z',
+      '2026-09-13T06:30:00Z',
+      'current-detail',
+    );
+    await act(async () => root.render(<ProgrammeDetail state={currentState} onClose={vi.fn()} />));
+    const sheetText = Array.from(
+      getByTestId('programme-detail-sheet').querySelectorAll('span'),
+    ).map((node) => node.textContent ?? '');
+    expect(sheetText[0]).toBe('Detailprogramma');
+    expect(getByTestId('programme-detail-sheet').textContent).toContain('Nu bezig');
+    expect(container.querySelector('[data-testid="programme-detail-reminder"]')).toBeNull();
+    expect(getByTestId('programme-detail-save').textContent).toBe('Bewaar');
+  });
+
+  it('offers reminders only for future programmes and fails closed when scheduling is unsupported', async () => {
+    const futureState = detailState(
+      '2026-09-13T18:00:00Z',
+      '2026-09-13T19:00:00Z',
+      'future-detail',
+    );
+    await act(async () => root.render(<ProgrammeDetail state={futureState} onClose={vi.fn()} />));
+    expect(getByTestId('programme-detail-reminder').textContent).toBe('Herinner mij');
+
+    await act(async () => {
+      getByTestId('programme-detail-reminder').click();
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
+    expect(getByTestId('programme-detail-reminder').textContent).toBe('Herinner mij');
+    expect(getByTestId('programme-detail-sheet').textContent).toContain(
+      'Programmaherinneringen zijn op dit apparaat niet beschikbaar.',
+    );
+
+    const pastState = detailState(
+      '2026-09-13T04:00:00Z',
+      '2026-09-13T05:00:00Z',
+      'past-detail',
+    );
+    await act(async () => root.render(<ProgrammeDetail state={pastState} onClose={vi.fn()} />));
+    expect(container.querySelector('[data-testid="programme-detail-reminder"]')).toBeNull();
+  });
+
+  it('does not persist or present an active reminder when exact-alarm capability is unavailable', async () => {
+    const futureState = detailState(
+      '2026-09-13T18:00:00Z',
+      '2026-09-13T19:00:00Z',
+      'exact-alarm-unavailable-detail',
+    );
+    reminderService.schedule.mockResolvedValueOnce({
+      ok: false,
+      reason: 'exact-alarm',
+    });
+
+    await act(async () =>
+      root.render(<ProgrammeDetail state={futureState} onClose={vi.fn()} />),
+    );
+    await click('programme-detail-reminder');
+
+    expect(getByTestId('programme-detail-reminder').textContent).toBe('Herinner mij');
+    expect(
+      readProgrammePersonalState().reminders['exact-alarm-unavailable-detail'],
+    ).toBeUndefined();
+    expect(getByTestId('programme-detail-sheet').textContent).toContain(
+      'Alarmen en herinneringen',
+    );
+  });
+
+  it('deletes local reminder metadata only after revocation reconciliation confirms native cleanup', async () => {
+    const futureState = detailState(
+      '2026-09-13T18:00:00Z',
+      '2026-09-13T19:00:00Z',
+      'revoked-exact-alarm-detail',
+    );
+    const programme = futureState.selection.programme;
+    const reminder = {
+      ...programmeSnapshot(programme),
+      notificationId: 'revoked-reminder',
+      fireAtMs: Date.parse(programme.startAt) - 5 * 60 * 1000,
+      programmeStartAt: programme.startAt,
+    };
+    const revocation = deferred<{ status: 'verified-invalid' }>();
+    writeProgrammePersonalState(
+      withProgrammeReminder(
+        EMPTY_PROGRAMME_PERSONAL_STATE,
+        programme,
+        reminder,
+      ),
+    );
+    reminderService.reconcile
+      .mockResolvedValueOnce({ status: 'verified-valid' })
+      .mockReturnValueOnce(revocation.promise);
+
+    await act(async () =>
+      root.render(<ProgrammeDetail state={futureState} onClose={vi.fn()} />),
+    );
+    await vi.waitFor(() => {
+      expect(getByTestId('programme-detail-reminder').textContent).toBe(
+        'Herinnering aan',
+      );
+    });
+
+    await emitAppState('background');
+    await emitAppState('active');
+
+    await vi.waitFor(() => {
+      expect(reminderService.reconcile).toHaveBeenCalledTimes(2);
+    });
+    expect(
+      readProgrammePersonalState().reminders[programme.id]?.notificationId,
+    ).toBe('revoked-reminder');
+
+    revocation.resolve({ status: 'verified-invalid' });
+
+    await vi.waitFor(() => {
+      expect(getByTestId('programme-detail-reminder').textContent).toBe(
+        'Herinner mij',
+      );
+    });
+    expect(readProgrammePersonalState().reminders[programme.id]).toBeUndefined();
+  });
+
+  it('keeps the persisted notification identifier inactive when revocation cleanup is unconfirmed', async () => {
+    const futureState = detailState(
+      '2026-09-13T18:00:00Z',
+      '2026-09-13T19:00:00Z',
+      'revoked-cleanup-failed-detail',
+    );
+    const programme = futureState.selection.programme;
+    const reminder = {
+      ...programmeSnapshot(programme),
+      notificationId: 'cleanup-handle-reminder',
+      fireAtMs: Date.parse(programme.startAt) - 5 * 60 * 1000,
+      programmeStartAt: programme.startAt,
+    };
+    writeProgrammePersonalState(
+      withProgrammeReminder(
+        EMPTY_PROGRAMME_PERSONAL_STATE,
+        programme,
+        reminder,
+      ),
+    );
+    reminderService.reconcile
+      .mockResolvedValueOnce({ status: 'verified-valid' })
+      .mockResolvedValueOnce({
+        status: 'indeterminate',
+        reason: 'cancellation-unconfirmed',
+        presentActive: false,
+      });
+
+    await act(async () =>
+      root.render(<ProgrammeDetail state={futureState} onClose={vi.fn()} />),
+    );
+    await vi.waitFor(() => {
+      expect(getByTestId('programme-detail-reminder').textContent).toBe(
+        'Herinnering aan',
+      );
+    });
+
+    await emitAppState('background');
+    await emitAppState('active');
+
+    await vi.waitFor(() => {
+      expect(getByTestId('programme-detail-reminder').textContent).toBe(
+        'Herinner mij',
+      );
+    });
+    expect(
+      readProgrammePersonalState().reminders[programme.id]?.notificationId,
+    ).toBe('cleanup-handle-reminder');
+    expect(getByTestId('programme-detail-sheet').textContent).toContain(
+      'De eerdere herinnering kon niet veilig worden gecontroleerd.',
+    );
+  });
+
+  it('persists Bewaar state across detail close and reopen', async () => {
+    const futureState = detailState(
+      '2026-09-13T18:00:00Z',
+      '2026-09-13T19:00:00Z',
+      'saved-detail',
+    );
+    const onClose = vi.fn();
+    await act(async () => root.render(<ProgrammeDetail state={futureState} onClose={onClose} />));
+    await click('programme-detail-save');
+    expect(getByTestId('programme-detail-save').textContent).toBe('Bewaard');
+    expect(readProgrammePersonalState().saved['saved-detail']).toBeDefined();
+
+    await act(async () =>
+      root.render(
+        <ProgrammeDetail
+          state={{ ...futureState, visible: false }}
+          onClose={onClose}
+        />,
+      ),
+    );
+    await act(async () => root.render(<ProgrammeDetail state={futureState} onClose={onClose} />));
+    expect(getByTestId('programme-detail-save').textContent).toBe('Bewaard');
   });
 });
 
 describe('detail swipe wiring with mocked gesture events', () => {
   async function openDetail(onClose = vi.fn()) {
-    await act(async () => root.render(<ProgrammeDetail state={{ visible: true, selection: { programme: guideFixture.programmes[0]!, channelName: 'Testzender' } }} onClose={onClose} />));
+    const programme = guideFixture.programmes[0]!;
+    const channel = guideFixture.channels.find((candidate) => candidate.id === programme.channelId)!;
+    await act(async () => root.render(<ProgrammeDetail state={{ visible: true, selection: { programme, channel } }} onClose={onClose} />));
     return onClose;
   }
 
@@ -333,7 +622,7 @@ describe('detail swipe wiring with mocked gesture events', () => {
     expect(onClose).toHaveBeenCalledTimes(1);
     expect(offsetY()).toBe(30);
     expect(motion.spring).not.toHaveBeenCalled();
-    await click('programme-detail-close');
+    await click('programme-detail-backdrop');
     expect(onClose).toHaveBeenCalledTimes(1);
   });
 
