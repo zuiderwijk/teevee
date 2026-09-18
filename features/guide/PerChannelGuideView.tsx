@@ -73,6 +73,58 @@ const TIME_COLUMN_CONTENT_WIDTH =
   PER_CHANNEL_VISUAL_METRICS.timeGutterWidth -
   PER_CHANNEL_VISUAL_METRICS.timeTextX;
 const CONTEXT_WRAP_Y_EPSILON = 1;
+const SCROLL_DIAGNOSTICS_ENABLED = __DEV__;
+const SCROLL_DIAGNOSTIC_MAX_SAMPLES = 240;
+const GUIDE_CHROME_EXPANDED_HEIGHT =
+  GUIDE_VISUAL_METRICS.brandTopInset +
+  GUIDE_VISUAL_METRICS.brandMarkBoxHeight +
+  GUIDE_VISUAL_METRICS.presentationNavHeight;
+
+type ScrollDiagnosticContext = {
+  samples: number[][];
+  frame: number;
+};
+
+function reportScrollDiagnosticEvent(
+  event: string,
+  y: number,
+  collapseProgress: number,
+  reactCommit: number,
+) {
+  if (!SCROLL_DIAGNOSTICS_ENABLED) return;
+  console.log(
+    '[TEEVEE_SCROLL_EVENT]',
+    JSON.stringify({
+      event,
+      timestampMs: Date.now(),
+      y,
+      collapseProgress,
+      reactCommit,
+    }),
+  );
+}
+
+function reportScrollDiagnosticTrace(samples: number[][]) {
+  if (!SCROLL_DIAGNOSTICS_ENABLED || samples.length === 0) return;
+  console.log(
+    '[TEEVEE_SCROLL_TRACE]',
+    JSON.stringify({
+      columns: [
+        'frame',
+        'contentOffsetY',
+        'collapseProgress',
+        'guideChromeHeight',
+        'channelStripHeight',
+        'stripToContextGap',
+        'contextToScheduleGap',
+        'scheduleViewportY',
+        'scheduleViewportHeight',
+        'reactCommit',
+      ],
+      samples,
+    }),
+  );
+}
 
 type PerChannelGuideViewProps = {
   guideDataVersion: number;
@@ -276,6 +328,11 @@ export const PerChannelGuideView = memo(function PerChannelGuideView({
   const contextUtilitiesYRef = useRef<number | null>(null);
   const viewedTimeRef = useRef(Date.now());
   const pendingTargetTimeRef = useRef<number | null>(null);
+  const renderCountRef = useRef(0);
+  renderCountRef.current += 1;
+  const reactCommitCount = useSharedValue(0);
+  const scheduleViewportY = useSharedValue(0);
+  const scheduleViewportHeight = useSharedValue(0);
   const nowMs = useGuideClock();
   const { selectedDayStartMs, selectDay } = useGuideDaySelection(nowMs);
   const selectedDay = useSelectedGuideDaySchedule(selectedDayStartMs, guideDataVersion);
@@ -387,6 +444,24 @@ export const PerChannelGuideView = memo(function PerChannelGuideView({
   const collapseEnabled = useSharedValue(0);
 
   useEffect(() => {
+    reactCommitCount.value = renderCountRef.current;
+    if (SCROLL_DIAGNOSTICS_ENABLED) {
+      console.log(
+        '[TEEVEE_SCROLL_COMMIT]',
+        JSON.stringify({
+          timestampMs: Date.now(),
+          commit: renderCountRef.current,
+          condensed,
+          contextWrapped,
+          selectedDayStartMs,
+          selectedChannelId,
+          hasProgrammeSchedule: programmeSchedule !== null,
+        }),
+      );
+    }
+  });
+
+  useEffect(() => {
     if (!selectedChannel) return;
     if (selectedChannel.id !== selectedChannelId) setSelectedChannelId(selectedChannel.id);
   }, [selectedChannel, selectedChannelId]);
@@ -488,30 +563,97 @@ export const PerChannelGuideView = memo(function PerChannelGuideView({
     [syncCondensedState],
   );
 
-  const scheduleScrollHandler = useAnimatedScrollHandler(
+  const scheduleScrollHandler = useAnimatedScrollHandler<ScrollDiagnosticContext>(
     {
-      onBeginDrag: (event) => {
-        if (collapseEnabled.value !== 0) return;
+      onBeginDrag: (event, context) => {
         const y = Math.max(0, event.contentOffset.y);
+        if (SCROLL_DIAGNOSTICS_ENABLED) {
+          context.samples = [];
+          context.frame = 0;
+          scheduleOnRN(
+            reportScrollDiagnosticEvent,
+            'beginDrag',
+            y,
+            collapseProgress.value,
+            reactCommitCount.value,
+          );
+        }
+        if (collapseEnabled.value !== 0) return;
         collapseAnchorY.value = Math.max(
           0,
           y - collapseProgress.value * PER_CHANNEL_VISUAL_METRICS.collapseDistance,
         );
         collapseEnabled.value = 1;
       },
-      onScroll: (event) => {
+      onScroll: (event, context) => {
         const y = Math.max(0, event.contentOffset.y);
-        collapseProgress.value = collapseProgressForScrollOffset(
+        const nextProgress = collapseProgressForScrollOffset(
           y,
           collapseEnabled.value ? collapseAnchorY.value : y,
           reduceMotion,
         );
+        collapseProgress.value = nextProgress;
+
+        if (
+          SCROLL_DIAGNOSTICS_ENABLED &&
+          context.samples &&
+          context.samples.length < SCROLL_DIAGNOSTIC_MAX_SAMPLES
+        ) {
+          const gaps = perChannelFunctionalGapsForCollapseProgress(nextProgress);
+          context.samples.push([
+            context.frame ?? 0,
+            y,
+            nextProgress,
+            GUIDE_CHROME_EXPANDED_HEIGHT * (1 - nextProgress),
+            PER_CHANNEL_VISUAL_METRICS.channelStripHeight -
+              (PER_CHANNEL_VISUAL_METRICS.channelStripHeight -
+                PER_CHANNEL_VISUAL_METRICS.channelStripCondensedHeight) *
+                nextProgress,
+            gaps.stripToContext,
+            gaps.contextToSchedule,
+            scheduleViewportY.value,
+            scheduleViewportHeight.value,
+            reactCommitCount.value,
+          ]);
+          context.frame = (context.frame ?? 0) + 1;
+        }
       },
       onEndDrag: (event) => {
-        scheduleOnRN(syncViewedTimestamp, Math.max(0, event.contentOffset.y));
+        const y = Math.max(0, event.contentOffset.y);
+        if (SCROLL_DIAGNOSTICS_ENABLED) {
+          scheduleOnRN(
+            reportScrollDiagnosticEvent,
+            'endDrag',
+            y,
+            collapseProgress.value,
+            reactCommitCount.value,
+          );
+        }
+        scheduleOnRN(syncViewedTimestamp, y);
       },
-      onMomentumEnd: (event) => {
-        scheduleOnRN(syncViewedTimestamp, Math.max(0, event.contentOffset.y));
+      onMomentumBegin: (event) => {
+        if (!SCROLL_DIAGNOSTICS_ENABLED) return;
+        scheduleOnRN(
+          reportScrollDiagnosticEvent,
+          'momentumBegin',
+          Math.max(0, event.contentOffset.y),
+          collapseProgress.value,
+          reactCommitCount.value,
+        );
+      },
+      onMomentumEnd: (event, context) => {
+        const y = Math.max(0, event.contentOffset.y);
+        if (SCROLL_DIAGNOSTICS_ENABLED) {
+          scheduleOnRN(
+            reportScrollDiagnosticEvent,
+            'momentumEnd',
+            y,
+            collapseProgress.value,
+            reactCommitCount.value,
+          );
+          scheduleOnRN(reportScrollDiagnosticTrace, context.samples ?? []);
+        }
+        scheduleOnRN(syncViewedTimestamp, y);
       },
     },
     [reduceMotion, syncViewedTimestamp],
@@ -591,6 +733,23 @@ export const PerChannelGuideView = memo(function PerChannelGuideView({
     contextUtilitiesYRef.current = event.nativeEvent.layout.y;
     detectContextWrap();
   }, [detectContextWrap]);
+
+  const handleScheduleViewportLayout = useCallback((event: LayoutChangeEvent) => {
+    const { y, height } = event.nativeEvent.layout;
+    scheduleViewportY.value = y;
+    scheduleViewportHeight.value = height;
+    if (SCROLL_DIAGNOSTICS_ENABLED) {
+      console.log(
+        '[TEEVEE_SCROLL_LAYOUT]',
+        JSON.stringify({
+          timestampMs: Date.now(),
+          y,
+          height,
+          commit: renderCountRef.current,
+        }),
+      );
+    }
+  }, [scheduleViewportHeight, scheduleViewportY]);
 
   if (!selectedChannel) return null;
 
@@ -816,6 +975,7 @@ export const PerChannelGuideView = memo(function PerChannelGuideView({
         showsVerticalScrollIndicator
         scrollEventThrottle={16}
         onScroll={scheduleScrollHandler}
+        onLayout={handleScheduleViewportLayout}
         contentContainerStyle={{ minHeight: scheduleHeight }}
       >
         {programmeStatus ? (
