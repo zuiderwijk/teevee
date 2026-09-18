@@ -137,7 +137,7 @@ describe('GuideDaySelector', () => {
     expect(container.textContent).not.toContain('Kies datum');
   });
 
-  it('renders the compact channel prefix only when condensed context supplies it', async () => {
+  it('uses Per-zender compact date semantics without injecting selected-channel text', async () => {
     const nowMs = Date.parse('2026-09-15T17:00:00Z');
     const selectedDay = guideTelevisionDayHorizon(nowMs).find(({ offset }) => offset === 0)!;
 
@@ -146,15 +146,15 @@ describe('GuideDaySelector', () => {
         <GuideDaySelector
           selectedDayStartMs={selectedDay.fromMs}
           nowMs={nowMs}
-          compactPrefix="NPO 3"
+          labelVariant="per-channel"
           onSelectDay={() => undefined}
         />,
       );
     });
 
     const selector = container.querySelector<HTMLElement>('[data-testid="guide-day-selector"]');
-    expect(selector?.getAttribute('aria-label')).toContain('NPO 3');
-    expect(container.textContent).toContain('NPO 3');
+    expect(selector?.getAttribute('aria-label')).toBe('Vandaag. Kies een dag');
+    expect(container.textContent).not.toContain('NPO');
   });
 
   it('announces loading state and commits the chosen day from the whole option row', async () => {
