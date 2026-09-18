@@ -242,6 +242,13 @@ function getGesture(): TestGesture {
   return motion.gesture;
 }
 function offsetY() { return motion.readStyle?.().transform[0]?.translateY; }
+function deferred<T>() {
+  let resolve!: (value: T) => void;
+  const promise = new Promise<T>((nextResolve) => {
+    resolve = nextResolve;
+  });
+  return { promise, resolve };
+}
 async function emitAppState(state: string) {
   appState.currentState = state;
   await act(async () => {
@@ -437,7 +444,7 @@ describe('programme detail production actions', () => {
     );
   });
 
-  it('reconciles and clears an outstanding reminder after exact-alarm access is revoked on resume', async () => {
+  it('deletes local reminder metadata only after revocation reconciliation confirms native cleanup', async () => {
     const futureState = detailState(
       '2026-09-13T18:00:00Z',
       '2026-09-13T19:00:00Z',
@@ -450,6 +457,7 @@ describe('programme detail production actions', () => {
       fireAtMs: Date.parse(programme.startAt) - 5 * 60 * 1000,
       programmeStartAt: programme.startAt,
     };
+    const revocation = deferred<{ status: 'verified-invalid' }>();
     writeProgrammePersonalState(
       withProgrammeReminder(
         EMPTY_PROGRAMME_PERSONAL_STATE,
@@ -459,7 +467,64 @@ describe('programme detail production actions', () => {
     );
     reminderService.reconcile
       .mockResolvedValueOnce({ status: 'verified-valid' })
-      .mockResolvedValueOnce({ status: 'verified-invalid' });
+      .mockReturnValueOnce(revocation.promise);
+
+    await act(async () =>
+      root.render(<ProgrammeDetail state={futureState} onClose={vi.fn()} />),
+    );
+    await vi.waitFor(() => {
+      expect(getByTestId('programme-detail-reminder').textContent).toBe(
+        'Herinnering aan',
+      );
+    });
+
+    await emitAppState('background');
+    await emitAppState('active');
+
+    await vi.waitFor(() => {
+      expect(reminderService.reconcile).toHaveBeenCalledTimes(2);
+    });
+    expect(
+      readProgrammePersonalState().reminders[programme.id]?.notificationId,
+    ).toBe('revoked-reminder');
+
+    revocation.resolve({ status: 'verified-invalid' });
+
+    await vi.waitFor(() => {
+      expect(getByTestId('programme-detail-reminder').textContent).toBe(
+        'Herinner mij',
+      );
+    });
+    expect(readProgrammePersonalState().reminders[programme.id]).toBeUndefined();
+  });
+
+  it('keeps the persisted notification identifier inactive when revocation cleanup is unconfirmed', async () => {
+    const futureState = detailState(
+      '2026-09-13T18:00:00Z',
+      '2026-09-13T19:00:00Z',
+      'revoked-cleanup-failed-detail',
+    );
+    const programme = futureState.selection.programme;
+    const reminder = {
+      ...programmeSnapshot(programme),
+      notificationId: 'cleanup-handle-reminder',
+      fireAtMs: Date.parse(programme.startAt) - 5 * 60 * 1000,
+      programmeStartAt: programme.startAt,
+    };
+    writeProgrammePersonalState(
+      withProgrammeReminder(
+        EMPTY_PROGRAMME_PERSONAL_STATE,
+        programme,
+        reminder,
+      ),
+    );
+    reminderService.reconcile
+      .mockResolvedValueOnce({ status: 'verified-valid' })
+      .mockResolvedValueOnce({
+        status: 'indeterminate',
+        reason: 'cancellation-unconfirmed',
+        presentActive: false,
+      });
 
     await act(async () =>
       root.render(<ProgrammeDetail state={futureState} onClose={vi.fn()} />),
@@ -478,8 +543,12 @@ describe('programme detail production actions', () => {
         'Herinner mij',
       );
     });
-    expect(readProgrammePersonalState().reminders[programme.id]).toBeUndefined();
-    expect(reminderService.reconcile).toHaveBeenCalledTimes(2);
+    expect(
+      readProgrammePersonalState().reminders[programme.id]?.notificationId,
+    ).toBe('cleanup-handle-reminder');
+    expect(getByTestId('programme-detail-sheet').textContent).toContain(
+      'De eerdere herinnering kon niet veilig worden gecontroleerd.',
+    );
   });
 
   it('persists Bewaar state across detail close and reopen', async () => {
