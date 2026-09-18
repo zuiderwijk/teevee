@@ -4,6 +4,7 @@ import { darkTheme, lightTheme } from '@/theme/tokens';
 
 import {
   NOW_NEXT_STABLE_SCROLL_GEOMETRY,
+  NOW_NEXT_TYPOGRAPHY,
   NOW_NEXT_VISUAL_METRICS,
   nowNextChannelRowLayout,
   nowNextChromeCondensedForProgress,
@@ -24,6 +25,25 @@ describe('Nu & Straks deterministic channel geometry', () => {
     const missingDataRow = nowNextChannelRowLayout('ios', 1);
     const longTitleRow = nowNextChannelRowLayout('ios', 1);
     expect(missingDataRow).toEqual(longTitleRow);
+  });
+
+  it('locks the canonical horizontal programme and rail geometry', () => {
+    expect(
+      NOW_NEXT_VISUAL_METRICS.channelLeftInset +
+        NOW_NEXT_VISUAL_METRICS.channelIdentityWidth +
+        NOW_NEXT_VISUAL_METRICS.channelProgrammeGap,
+    ).toBe(NOW_NEXT_VISUAL_METRICS.programmeColumnX);
+    expect(NOW_NEXT_VISUAL_METRICS.programmeColumnX).toBe(100);
+    expect(NOW_NEXT_VISUAL_METRICS.programmeRightInset).toBe(24);
+    expect(NOW_NEXT_VISUAL_METRICS.timeSlotWidth).toBe(76);
+    expect(NOW_NEXT_VISUAL_METRICS.timeSlotHeight).toBe(48);
+    expect(NOW_NEXT_VISUAL_METRICS.bottomClearance).toBe(16);
+  });
+
+  it('uses Instrument Sans static families for all Nu & Straks production typography', () => {
+    for (const typography of Object.values(NOW_NEXT_TYPOGRAPHY)) {
+      expect(typography.fontFamily).toMatch(/^InstrumentSans_/);
+    }
   });
 
   it('enforces the platform following-programme target minima', () => {
