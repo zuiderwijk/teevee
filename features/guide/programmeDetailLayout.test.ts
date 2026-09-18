@@ -4,6 +4,8 @@ import {
   DETAIL_STICKY_HIDE_REENTRY,
   DETAIL_STICKY_SHOW_CLEARANCE,
   nextProgrammeDetailStickyVisible,
+  programmeDetailBodyBottomPadding,
+  programmeDetailStickyBottomPadding,
   shouldPreStackProgrammeDetailActions,
 } from './programmeDetailLayout';
 
@@ -58,5 +60,17 @@ describe('Programme Detail action stacking', () => {
     expect(shouldPreStackProgrammeDetailActions(299, 1)).toBe(true);
     expect(shouldPreStackProgrammeDetailActions(350, 1.3)).toBe(true);
     expect(shouldPreStackProgrammeDetailActions(350, 1)).toBe(false);
+  });
+});
+
+describe('Programme Detail bottom safe-area geometry', () => {
+  it('applies the bottom safe area exactly once in the sticky bar', () => {
+    expect(programmeDetailStickyBottomPadding(34)).toBe(34);
+    expect(programmeDetailStickyBottomPadding(0)).toBe(10);
+  });
+
+  it('reserves sticky height plus clearance without adding the safe area twice', () => {
+    expect(programmeDetailBodyBottomPadding(true, 92, 34)).toBe(108);
+    expect(programmeDetailBodyBottomPadding(false, 0, 34)).toBe(50);
   });
 });
