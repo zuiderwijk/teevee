@@ -102,14 +102,14 @@ Accepted interaction direction:
 - tap a logo to select that channel;
 - horizontal swipe across the schedule moves to previous/next channel;
 - changing channel preserves the viewed time anchor where practical;
-- channel name remains as context while the logo is the primary identifier;
+- channel logo is the visible selected-channel identity; channel name remains available through accessibility semantics and the missing-logo fallback, not as separate selected-channel text outside the rail;
 - programme list prioritises time + title and avoids low-value genre/artwork clutter;
 - D-2 through D+7 television-day navigation uses the accepted shared compact day selector;
 - `Primetime` is a direct fast-navigation shortcut to **20:30 Europe/Amsterdam on the currently selected television day**;
 - `Primetime` never switches the selected day: after choosing a historical/future day, it goes to 20:30 on that day;
 - between 00:00 and 05:59 it can therefore jump back to 20:30 on the preceding television-day evening;
 - `Nu` remains distinct from Primetime and restores the actual current instant plus its television-day context;
-- during vertical schedule browsing, the sticky channel strip plus compact channel/date/Primetime/Nu context preserve orientation without keeping duplicate large header content;
+- during vertical schedule browsing, the sticky channel strip plus one compact date/Primetime/Nu temporal context preserve orientation; no selected-channel text is injected outside the rail;
 - the older expanded time picker (`Vanmiddag`, `Vooravond`, `Kies tijd…`) is not part of the accepted MVP interaction.
 
 ### Nu & Straks
