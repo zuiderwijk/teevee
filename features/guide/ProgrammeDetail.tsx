@@ -108,6 +108,9 @@ function reminderFailureCopy(result: ProgrammeReminderScheduleResult): string | 
   if (result.reason === 'permission') {
     return 'Sta meldingen toe om programmaherinneringen te gebruiken.';
   }
+  if (result.reason === 'exact-alarm') {
+    return 'Sta Alarmen en herinneringen toe in Android-instellingen om deze herinnering exact te plannen.';
+  }
   if (result.reason === 'unsupported') {
     return 'Programmaherinneringen zijn op dit apparaat niet beschikbaar.';
   }
