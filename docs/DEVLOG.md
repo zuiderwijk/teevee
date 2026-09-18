@@ -11,6 +11,18 @@ Doel: chronologisch, begrijpelijk overzicht van substantiële milestones, verifi
 
 ---
 
+## 18 september 2026 — PR #92 Independent QA required-fix pass
+
+Independent QA op Programme Detail head `22fa7a36de071a528da0192f91e7c615d37f060b` vond vijf blocking lifecycle/concurrency-contracten. De fix-pass verandert geen producttiming of Guide-architectuur: de Guide blijft gemount onder de modal en de reminder blijft exact vijf minuten vóór start, met immediate fallback binnen vijf minuten.
+
+Android declareert nu expliciet `android.permission.SCHEDULE_EXACT_ALARM`; de native CI-gate controleert na een schone Expo prebuild dat deze permission daadwerkelijk in de gegenereerde AndroidManifest staat. Programme Detail gebruikt een boundary-driven clock die op programmastart, programma-einde en app-resume ververst, zodat `Herinner mij` en `Nu bezig` niet op een oude render bevriezen. De native reminder-service herberekent de actuele fire instant na permission/channel-awaits en weigert scheduling wanneer de programmastart inmiddels is gepasseerd.
+
+Reminder reconciliation heeft voortaan drie expliciete uitkomsten: verified-valid, verified-invalid en indeterminate. Native query/cancel failures verwijderen het persistente notification-id niet; een aantoonbaar stale maar niet bevestigbaar gecancelde reminder wordt tegelijk niet als actief gepresenteerd. Bij async cancellation wordt na de native await altijd verse personal state gelezen en alleen de nog-identieke reminder compare-and-apply verwijderd, zodat een gelijktijdige `Bewaar`-mutatie behouden blijft.
+
+Deterministische regressies dekken start/eind/resume, permission-prompt crossings van vijf-minutengrens en programmastart, native reconciliation failure paths en de reminder-cancel-versus-Bewaar interleaving. **Volgende stap:** exact-head CI; daarna gerichte fysieke revalidatie van de gewijzigde reminder/lifecyclepaden en Independent QA re-review. Niet mergen.
+
+---
+
 ## 18 september 2026 — PR #88 rebased onto accepted PR #89 4/24 spacing calibration
 
 Accepted Design Refinement PR #89 is merged on `main` and supersedes only the expanded/rest Per-zender gap distribution. PR #88 is rebased onto that canonical baseline rather than carrying its pre-#89 design documentation forward.
