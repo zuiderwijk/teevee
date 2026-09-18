@@ -69,17 +69,17 @@ Accepted characteristics:
 - tapping opens the bounded D-2..D+7 list; no unrestricted calendar;
 - `Nu` remains a separate persistent action;
 - changing day preserves the viewed wall-clock time where practical;
-- between 00:00 and 05:59, show the preceding television-day date without falsely calling it `Vandaag`;
+- Per zender uses `Vandaag` / `Morgen` only from 06:00–23:59 for the current/next television day; between 00:00 and 05:59 all Per-zender day labels use explicit weekday + date;
 - vertical scrolling preserves essential day/time context while non-functional brand/header chrome condenses;
 - Totaal keeps date + `Nu` + time axis available;
-- Per zender expanded/rest state uses the selected channel logo as sufficient channel identity and does not duplicate it with a large textual selected-channel heading;
-- Per zender keeps the channel-logo strip plus one compact channel/date context row with the compact textual channel name, `Primetime` and `Nu` available after condensation;
+- Per zender uses the selected channel logo as sufficient visible channel identity in both expanded/rest and condensed states; no selected-channel text is added outside the rail;
+- Per zender keeps the channel-logo strip plus one compact **date + Primetime + Nu** row after condensation;
 - in Per zender, `Nu` and `Primetime` use semantic action versus active/current states based on the actual schedule context; active/current is not disabled;
 - in settled condensed Per zender, the channel strip is 60 pt while the 48×48 channel item remains unchanged;
-- larger text adapts height/wrapping instead of forcing tiny labels;
+- Per-zender date/Primetime/Nu labels use a hard 1.20 font-scale cap and stay one line; substantive programme text keeps its normal Dynamic Type behaviour;
 - Nu & Straks has no independent day selector.
 
-The sticky/condensed visual predates the Per-zender Primetime amendment and later owner-approved refinements. It remains canonical for overall condensation, stickiness and structural intent, but its Per-zender state is **SUPERSEDED** where it omits `Primetime`, implies static utility-button treatment, implies a permanently 72-pt settled condensed channel strip, or shows a separate large textual selected-channel heading in expanded/rest state. The written rules in `PER_ZENDER.md`, `GUIDE_DAY_SELECTOR.md` and `docs/PER_ZENDER_VISUAL_CONVERGENCE.md` win for those details.
+The sticky/condensed visual predates the Per-zender Primetime amendment and later owner-approved refinements. It remains canonical for overall condensation, stickiness and structural intent, but its Per-zender state is **SUPERSEDED** where it omits `Primetime`, implies static utility-button treatment, implies a permanently 72-pt settled condensed channel strip, adds selected-channel text outside the rail, uses the old long relative date labels, or implies wrapped temporal chrome. The written rules in `PER_ZENDER.md`, `GUIDE_DAY_SELECTOR.md` and `docs/PER_ZENDER_VISUAL_CONVERGENCE.md` win for those details.
 
 These assets **supersede only the stale date/day controls** in the earlier Totaal and Per-zender canonical screenshots. They do not replace the accepted schedule composition, gestures, logo treatment or general visual character of those surfaces. Typography follows the canonical Instrument Sans rule above.
 
