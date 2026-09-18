@@ -1,6 +1,6 @@
 # Teevee — Canonical Project State
 
-Last updated: 2026-09-16.
+Last updated: 2026-09-18.
 Status: ACTIVE — **Phase 4 Core Guide MVP hardening**.
 Current phase: **Phase 4 — Core Guide MVP hardening**
 Previous phase: **Phase 3 — Real Data Vertical Slice — CLOSED**
@@ -50,10 +50,13 @@ Do not retune accepted Guide mechanics without concrete regression evidence.
 - programme cells are horizontally windowed around the actual viewport with conservative overscan; programme-window ownership during animated scrolling follows the native viewport rather than jumping ahead of it.
 
 ### Per zender
-- vertical wall-clock schedule;
-- horizontal adjacent-channel paging preserves time anchor where practical;
-- persistent/browsable channel strip with direct selection;
-- shared date context plus `Primetime` and `Nu`;
+- chronological fixed-row programme list: standard rows 52 pt and actual-current row 176 pt at base scale; programme duration never changes row height or Y position;
+- expanded/rest state has no separate large textual selected-channel heading; the selected rail logo is the primary identity while condensed context retains the compact channel name;
+- horizontal adjacent-channel paging preserves the semantic viewed-time anchor where practical;
+- persistent/browsable 48×48 channel strip with direct selection; rest rail 72 pt and settled condensed rail 60 pt;
+- canonical local channel-logo registry is wired for NPO 1/2/3, RTL 4/5 and SBS6, with identical text fallback geometry for channels without a local asset;
+- once canonical broadcaster identity is established, non-current day loading/unavailability preserves that channel catalogue and never transiently replaces it with the generic deterministic fixture; the generic catalogue remains valid only in true fixture mode;
+- shared date context plus semantic `Primetime` and `Nu` controls; active/current state derives from the stable programme/timestamp anchor and Nu wins on overlap;
 - `Primetime` = 20:30 on the selected television day;
 - Programme Detail round-trip preserves relevant context.
 
@@ -115,16 +118,17 @@ Physical Android interaction acceptance remains OPEN/DEFERRED because no Android
 ## Deferred / later gates
 - true offline cold-start validation in a standalone/dev build rather than Expo Go;
 - release-like performance outside Expo Go;
-- production EPG/logo/artwork rights/SLA and D-2..D+7 horizon proof;
+- production EPG/artwork rights/SLA and D-2..D+7 horizon proof; channel-logo provenance is repository-managed in `docs/CHANNEL_LOGO_ASSETS.md`;
+- provenance-checked dark-background variants for RTL 4, RTL 5 and SBS6 remain required before those marks can pass final dark-mode visual acceptance; do not recolour or fabricate them;
 - pricing/trial/paywall and subscription implementation;
 - production typography licensing;
 - final Tonight composition;
 - physical Android validation.
 
 ## EXACT NEXT STEP
-**Start the accepted Guide visual-convergence implementation with the smallest coherent Totaal increment. Read `docs/VISUAL_BASELINE.md`, the Totaal manifest under `design/current/`, `docs/TOTAAL_VISUAL_CONVERGENCE.md`, `docs/UX.md` and `docs/DESIGN_SYSTEM.md`, then inspect the current `GuideView` implementation before changing it. Bring the shared/Totaal Guide chrome toward the accepted visual baseline without changing frozen gestures, programme geometry, D-2..D+7 or 06:00 semantics, programme-windowing performance architecture, loading/cache/provider contracts or Programme Detail navigation. Do not incorporate unapproved ongoing brand/color exploration. Keep the increment visually reviewable and small enough to isolate regressions; run the full relevant automated checks and require physical iPhone visual/interaction acceptance before declaring the visual increment complete.**
+**Complete exact-head CI for the final PR #81 Per-zender candidate, then physically revalidate that exact head on iPhone. The device pass must verify the heading-less rest composition, 52/176 fixed rows and four-line current synopsis geometry, stable canonical NPO/RTL/SBS identity through non-current day loading/unavailable states, no transient generic `Publiek 1`/`Vier` rail, smooth vertical scrolling after a day switch, and the already accepted Nu/Primetime/channel-swipe/collapse/bottom-nav behaviour. RTL 4, RTL 5 and SBS6 dark-mode marks remain an explicit asset-input check. Do not request Independent QA and do not merge before owner physical acceptance.**
 
 Owner checkout: `~/projects/teevee`.
 
 ## Resume instruction
-> Read `AGENTS.md`, this file, `docs/ENGINEERING_QUALITY_POLICY.md`, ADR 0007, ADR 0008 and the visual handoff documents before changing the repository. Phase 1A, Phase 1B, Phase 2 and Phase 3 are closed on iPhone. Phase 4 is active. PRs #62, #64 and #66 established the television-day/runtime/day-navigation foundation. Issues #67/#70/#73 and PRs #71/#74 closed the measured Totaal cold-switch performance problem on iPhone. Preserve the accepted performance architecture and frozen Guide mechanics. The single next increment is Totaal visual convergence against the already accepted visual baseline; unapproved brand exploration remains outside production scope.
+> Read `AGENTS.md`, this file, `docs/ENGINEERING_QUALITY_POLICY.md`, ADR 0007, ADR 0008 and the visual handoff documents before changing the repository. Phase 1A, Phase 1B, Phase 2 and Phase 3 are closed on iPhone. Phase 4 is active. Preserve the accepted Totaal performance architecture and frozen Guide mechanics. PR #81 is the active Per-zender convergence candidate: fixed 52/176 rows, no large rest channel heading, stable canonical channel identity during selected-day loading, local representative logos and semantic Nu/Primetime controls. The single next gate is exact-head CI followed by physical iPhone revalidation; do not request Independent QA and do not merge before owner acceptance.
