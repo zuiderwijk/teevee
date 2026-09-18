@@ -90,7 +90,11 @@ vi.mock('react-native', async () => {
     );
 
   const Text = ({ children, testID }: HostProps) =>
-    createElement('span', { 'data-testid': testID }, children);
+    createElement(
+      'span',
+      { 'data-testid': testID },
+      typeof children === 'function' ? children({ pressed: false }) : children,
+    );
 
   const Pressable = ({
     children,
@@ -182,7 +186,9 @@ vi.mock('react-native-reanimated', async () => {
       nativeEvent?: { contentOffset: { x: number; y: number } };
       contentOffset?: { x: number; y: number };
     }) => {
-      const payload = event.nativeEvent ?? event;
+      const payload = event.nativeEvent ?? {
+        contentOffset: event.contentOffset ?? { x: 0, y: 0 },
+      };
       handlers.onScroll?.(payload);
     },
   };
