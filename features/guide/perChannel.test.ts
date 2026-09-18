@@ -215,6 +215,18 @@ describe('per-channel fixed-row schedule', () => {
     expect(perChannelNativeOffsetForScheduleOffset(0, 1)).toBe(56);
   });
 
+  it('keeps the semantic programme anchor stable throughout visual collapse', () => {
+    const anchorScheduleOffset = 640;
+    for (const progress of [0, 0.25, 0.5, 0.75, 1]) {
+      const nativeOffset =
+        anchorScheduleOffset +
+        PER_CHANNEL_VISUAL_METRICS.collapseDistance * progress;
+      expect(
+        perChannelScheduleOffsetForNativeOffset(nativeOffset, progress),
+      ).toBe(anchorScheduleOffset);
+    }
+  });
+
   it('lands animated semantic targets at a collapse-consistent native endpoint', () => {
     expect(perChannelAnimatedTargetForScheduleOffset(500, 640, 1)).toEqual({
       progress: 0,
