@@ -1,6 +1,6 @@
 # Teevee Design System Direction
 
-Status: visual-design baseline updated 17 September 2026. Guide and Programme Detail direction below reflects owner-approved design decisions. Instrument Sans is the accepted UI typeface. Exact production token values still require implementation/device validation. Tonight remains provisional.
+Status: visual-design baseline updated 18 September 2026. Guide and Programme Detail direction below reflects owner-approved design decisions. Instrument Sans is the accepted UI typeface. Exact production token values still require implementation/device validation. Tonight remains provisional.
 
 ## Objective
 Teevee should communicate premium utility: calm, precise, contemporary and highly legible. The Guide can contain substantial schedule information without looking dense or cheap.
