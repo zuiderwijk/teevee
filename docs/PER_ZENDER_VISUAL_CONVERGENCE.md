@@ -29,7 +29,7 @@ This specification is reconciled against:
 - the exact canonical Per-zender visual assets selected by the repository;
 - physical iPhone evidence used only to calibrate implementation fidelity.
 
-PR #83 established the 17 September accepted baseline. PR #81 subsequently merged the production fixed-row implementation and the **fixed-native-viewport / collapse-isolation architecture** that prevents scroll-driven chrome contraction from mutating normal-flow geometry above the active vertical schedule ScrollView. PR #86 is now merged into `main` and is the current accepted 18 September refinement. It removes all selected-channel text outside the persistent logo rail, fixes the temporal context to one 52-pt row, caps Per-zender date/Primetime/Nu at `maximumFontSizeMultiplier = 1.20`, changes the expanded rail→utilities gap to 16 pt, keeps utilities→schedule at 12 pt, collapses both gaps to 0, and recalibrates collapse contraction/compensation to 140/84 pt. No other accepted Per-zender product or interaction decision is reopened.
+PR #83 established the 17 September accepted baseline. PR #81 subsequently merged the production fixed-row implementation and the **fixed-native-viewport / collapse-isolation architecture** that prevents scroll-driven chrome contraction from mutating normal-flow geometry above the active vertical schedule ScrollView. PR #86 established the compact 18 September temporal-context baseline. Physical iPhone validation on PR #88 exact head `18c021b4ccfb36d599d6301dd04f9ec96ab6d66d` then refined **only** the expanded/rest spacing distribution from 16/12 to **4/24**. The total expanded gap sum stays 28 pt, so the accepted 140/56/84 collapse geometry remains unchanged. No other accepted Per-zender product or interaction decision is reopened.
 
 Exact canonical pixels remain:
 
@@ -37,7 +37,7 @@ Exact canonical pixels remain:
 - Guide day-selector states: `/Teevee/Teevee Guide day selector - states and bottom sheet.png`, Library file id `file_00000000390c8210b76256621721592b`;
 - sticky/condensed behaviour: `/Teevee/Teevee Guide day selector - sticky scroll behavior.png`, Library file id `file_00000000314481f69f6a34d18ece1c21`.
 
-The 2026-09-17 written refinement supersedes those historical pixels only for the explicitly changed details in this document: temporal utility states, programme-title calibration, settled condensed channel-strip height, channel-rail positioning behaviour and programme-row pressed feedback. The 2026-09-18 owner refinements additionally supersede selected-channel text outside the rail, the former compressed current-programme treatment, the 24-pt rest rail→utilities gap, long Per-zender relative date labels and Dynamic-Type-driven wrapped temporal chrome. All other accepted composition remains intact.
+The 2026-09-17 written refinement supersedes those historical pixels only for the explicitly changed details in this document: temporal utility states, programme-title calibration, settled condensed channel-strip height, channel-rail positioning behaviour and programme-row pressed feedback. The 2026-09-18 owner refinements additionally supersede selected-channel text outside the rail, the former compressed current-programme treatment, the old 24-pt rail→utilities calibration, the physically rejected 16/12 expanded spacing distribution, long Per-zender relative date labels and Dynamic-Type-driven wrapped temporal chrome. All other accepted composition remains intact.
 
 ### Source precedence
 
@@ -121,15 +121,15 @@ Presentation tabs divide available width equally. Selected indicator width is `m
 | `perChannel.channelStripRestHeight` | **72** | ACCEPTED | Full rest rail. |
 | `perChannel.channelStripCondensedHeight` | **60** | ACCEPTED | Settled sticky rail. |
 | `perChannel.channelContinuationCueTarget` | **12** | IMPLEMENTATION CALIBRATION | Preferred visible trailing sliver where practical; never overrides correct selection visibility/centering. |
-| `perChannel.stripToUtilitiesGapRest` | **16** | ACCEPTED | Expanded/rest channel strip → temporal context. |
+| `perChannel.stripToUtilitiesGapRest` | **4** | ACCEPTED | Expanded/rest channel strip → temporal context after PR #88 physical validation. |
 | `perChannel.stripToUtilitiesGapCondensed` | **0** | ACCEPTED | Settled condensed strip → temporal context. |
 | `perChannel.temporalContextHeight` | **52** | ACCEPTED | Exact height in expanded/rest, throughout interpolation and settled condensed state. No wrapped variant. |
 | `perChannel.utilityVisibleHeight` | 36 | IMPLEMENTATION CALIBRATION | Temporal-control visual frame; touch target remains 44/48. |
 | `perChannel.utilityGap` | 8 | IMPLEMENTATION CALIBRATION | Minimum control gap. |
-| `perChannel.utilityToScheduleGapRest` | **12** | ACCEPTED | Expanded/rest temporal context → schedule. |
+| `perChannel.utilityToScheduleGapRest` | **24** | ACCEPTED | Expanded/rest temporal context → schedule after PR #88 physical validation. |
 | `perChannel.utilityToScheduleGapCondensed` | **0** | ACCEPTED | Settled condensed temporal context → schedule. |
 | `perChannel.nativeCollapseDistance` | **56** | ACCEPTED ARCHITECTURE | Native schedule-scroll distance consumed by the collapse. |
-| `perChannel.fullVisualContraction` | **140** | ACCEPTED ARCHITECTURE | 100 Guide chrome + 12 rail delta + 16 top gap + 12 bottom gap. |
+| `perChannel.fullVisualContraction` | **140** | ACCEPTED ARCHITECTURE | 100 Guide chrome + 12 rail delta + 4 top gap + 24 bottom gap. |
 | `perChannel.visualCompensation` | **84** | ACCEPTED ARCHITECTURE | `140 - 56`; applied visually, never as normal-flow mutation above the active ScrollView. |
 | `perChannel.fixedViewportTop` | **112** | ACCEPTED ARCHITECTURE | Settled functional stack: 60 rail + 52 temporal context. |
 | `perChannel.scheduleContentTopInset` | **140** | ACCEPTED ARCHITECTURE | Static rest-state reservation inside the fixed native schedule viewport. |
