@@ -636,7 +636,7 @@ export function ProgrammeDetail({ state, onClose }: ProgrammeDetailProps) {
 
                 {renderActionGroup(false)}
 
-                {actionMessage ? (
+                {actionMessage && !stickyVisible ? (
                   <Text
                     accessibilityLiveRegion="polite"
                     style={[
@@ -682,6 +682,20 @@ export function ProgrammeDetail({ state, onClose }: ProgrammeDetailProps) {
                   },
                 ]}
               >
+                {actionMessage && stickyVisible ? (
+                  <Text
+                    accessibilityLiveRegion="polite"
+                    style={[
+                      styles.stickyActionMessage,
+                      {
+                        color: theme.colors.textSecondary,
+                        fontFamily: TEEVEE_FONT_FAMILIES.regular,
+                      },
+                    ]}
+                  >
+                    {actionMessage}
+                  </Text>
+                ) : null}
                 {renderActionGroup(true)}
               </View>
             </>
@@ -781,6 +795,11 @@ const styles = StyleSheet.create({
   detailDescription: {
     fontSize: 16,
     lineHeight: 24,
+  },
+  stickyActionMessage: {
+    fontSize: 13,
+    lineHeight: 18,
+    marginBottom: 8,
   },
   stickyBar: {
     position: 'absolute',
