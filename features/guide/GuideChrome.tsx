@@ -9,7 +9,6 @@ import {
   COMPACT_GUIDE_MAX_FONT_SIZE_MULTIPLIER,
   GUIDE_TYPOGRAPHY,
   GUIDE_VISUAL_METRICS,
-  PER_CHANNEL_VISUAL_METRICS,
 } from './guideVisualMetrics';
 
 const EXPANDED_CHROME_HEIGHT =
@@ -46,7 +45,7 @@ export const GuideChrome = memo(function GuideChrome({
       height: EXPANDED_CHROME_HEIGHT * (1 - progress),
       opacity: 1 - progress,
       transform: [
-        { translateY: -PER_CHANNEL_VISUAL_METRICS.collapseTranslateY * progress },
+        { translateY: -GUIDE_VISUAL_METRICS.chromeCollapseTranslateY * progress },
       ],
     };
   });
