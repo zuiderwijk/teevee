@@ -30,6 +30,10 @@ const motion = vi.hoisted(() => ({
 
 vi.mock('expo-router', () => ({ useRouter: () => ({ push: vi.fn() }) }));
 
+vi.mock('react-native-safe-area-context', () => ({
+  useSafeAreaInsets: () => ({ top: 59, right: 0, bottom: 34, left: 0 }),
+}));
+
 vi.mock('@/features/guide/useGuideClock', () => ({
   useGuideClock: vi.fn(() => Date.parse('2026-09-13T08:00:00+02:00')),
 }));
