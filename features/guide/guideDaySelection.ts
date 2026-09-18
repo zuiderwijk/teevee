@@ -53,6 +53,28 @@ export function guideDayLabel(dayStartMs: number, nowMs: number): string {
   return formatted;
 }
 
+function amsterdamHour(nowMs: number): number {
+  const hourPart = new Intl.DateTimeFormat('nl-NL', {
+    hour: '2-digit',
+    hourCycle: 'h23',
+    timeZone: GUIDE_TIME_ZONE,
+  })
+    .formatToParts(new Date(nowMs))
+    .find(({ type }) => type === 'hour')?.value;
+  const hour = Number(hourPart);
+  return Number.isFinite(hour) ? hour : 0;
+}
+
+export function perChannelGuideDayLabel(dayStartMs: number, nowMs: number): string {
+  const formatted = formatNominalDay(dayStartMs);
+  if (amsterdamHour(nowMs) < 6) return formatted;
+
+  const currentTelevisionDayStartMs = guideTelevisionDayStart(nowMs);
+  if (dayStartMs === currentTelevisionDayStartMs) return 'Vandaag';
+  if (dayStartMs === guideTelevisionDayStart(nowMs, 1)) return 'Morgen';
+  return formatted;
+}
+
 export function guideTargetForDaySelection(
   viewedTimeMs: number,
   targetDayStartMs: number,
