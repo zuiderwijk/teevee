@@ -249,6 +249,13 @@ describe('per-channel fixed-row schedule', () => {
           resolved.progress,
         ),
       ).toBe(target);
+      expect(
+        collapseProgressForScrollOffset(
+          resolved.nativeOffset,
+          640,
+          false,
+        ),
+      ).toBe(resolved.progress);
     }
   });
 
