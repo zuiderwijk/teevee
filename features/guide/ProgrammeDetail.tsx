@@ -419,10 +419,16 @@ export function ProgrammeDetail({ state, onClose }: ProgrammeDetailProps) {
         return;
       }
       const next = withProgrammeReminder(current, programme, null);
-      if (writeProgrammePersonalState(next) && activeProgrammeIdRef.current === programme.id) {
+      const persisted = writeProgrammePersonalState(next);
+      if (activeProgrammeIdRef.current === programme.id) {
         setPersonalState(next);
+        if (!persisted) {
+          setActionMessage(
+            'De herinnering is uitgezet, maar de lokale status kon niet worden opgeslagen.',
+          );
+        }
+        setReminderBusy(false);
       }
-      if (activeProgrammeIdRef.current === programme.id) setReminderBusy(false);
       return;
     }
 
@@ -485,6 +491,7 @@ export function ProgrammeDetail({ state, onClose }: ProgrammeDetailProps) {
         onLayout={sticky ? undefined : handleActionLayout}
         style={[
           styles.actionGroup,
+          sticky ? styles.stickyActionGroup : null,
           stackedActions ? styles.actionGroupStacked : styles.actionGroupInline,
         ]}
       >
@@ -731,6 +738,9 @@ const styles = StyleSheet.create({
     width: '100%',
     gap: 12,
     marginBottom: 22,
+  },
+  stickyActionGroup: {
+    marginBottom: 0,
   },
   actionGroupInline: {
     flexDirection: 'row',
