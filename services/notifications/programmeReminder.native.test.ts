@@ -197,14 +197,55 @@ describe('native programme reminder scheduling', () => {
 });
 
 describe('native programme reminder reconciliation', () => {
-  it('invalidates an outstanding reminder when exact-alarm access has been revoked', async () => {
+  it('cancels the native request before invalidating a reminder after exact-alarm revocation', async () => {
     const nowMs = Date.parse(programme.startAt) - 30 * 60 * 1000;
     exactAlarm.get.mockReturnValue('unavailable');
+    const cancellation = deferred<void>();
+    notifications.cancelScheduledNotificationAsync.mockReturnValue(
+      cancellation.promise,
+    );
+
+    let reconciled = false;
+    const pending = reconcileProgrammeReminder(
+      reminderRecord(),
+      programme,
+      () => nowMs,
+    ).then((result) => {
+      reconciled = true;
+      return result;
+    });
+
+    await vi.waitFor(() => {
+      expect(notifications.cancelScheduledNotificationAsync).toHaveBeenCalledWith(
+        'notification-1',
+      );
+    });
+    expect(reconciled).toBe(false);
+
+    cancellation.resolve();
+
+    await expect(pending).resolves.toEqual({ status: 'verified-invalid' });
+    expect(notifications.getAllScheduledNotificationsAsync).not.toHaveBeenCalled();
+  });
+
+  it('keeps a revoked reminder inactive and retains its cleanup handle when native cancellation fails', async () => {
+    const nowMs = Date.parse(programme.startAt) - 30 * 60 * 1000;
+    exactAlarm.get.mockReturnValue('unavailable');
+    notifications.cancelScheduledNotificationAsync.mockRejectedValue(
+      new Error('cancel failed'),
+    );
 
     await expect(
       reconcileProgrammeReminder(reminderRecord(), programme, () => nowMs),
-    ).resolves.toEqual({ status: 'verified-invalid' });
+    ).resolves.toEqual({
+      status: 'indeterminate',
+      reason: 'cancellation-unconfirmed',
+      presentActive: false,
+    });
 
+    expect(notifications.cancelScheduledNotificationAsync).toHaveBeenCalledWith(
+      'notification-1',
+    );
     expect(notifications.getAllScheduledNotificationsAsync).not.toHaveBeenCalled();
   });
 
