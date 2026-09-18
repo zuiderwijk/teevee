@@ -55,6 +55,8 @@ import { ChannelIdentity } from './ChannelIdentity';
 import type { DetailState } from './detailState';
 import {
   nextProgrammeDetailStickyVisible,
+  programmeDetailBodyBottomPadding,
+  programmeDetailStickyBottomPadding,
   shouldPreStackProgrammeDetailActions,
 } from './programmeDetailLayout';
 import { detailDragOffset, shouldDismissDetail } from './detailSwipe';
@@ -476,9 +478,11 @@ export function ProgrammeDetail({ state, onClose }: ProgrammeDetailProps) {
     Date.parse(programme!.startAt) <= nowMs &&
     nowMs < Date.parse(programme!.endAt);
   const sheetMaxHeight = Math.max(240, windowHeight - safeAreaInsets.top - 12);
-  const bodyBottomPadding = stickyEligible
-    ? stickyBarHeight + 16
-    : Math.max(28, safeAreaInsets.bottom + 16);
+  const bodyBottomPadding = programmeDetailBodyBottomPadding(
+    stickyEligible,
+    stickyBarHeight,
+    safeAreaInsets.bottom,
+  );
 
   const renderActionGroup = (sticky: boolean) => {
     if (!programme) return null;
@@ -672,7 +676,7 @@ export function ProgrammeDetail({ state, onClose }: ProgrammeDetailProps) {
                   styles.stickyBar,
                   {
                     opacity: stickyVisible ? 1 : 0,
-                    paddingBottom: Math.max(10, safeAreaInsets.bottom),
+                    paddingBottom: programmeDetailStickyBottomPadding(safeAreaInsets.bottom),
                     backgroundColor: theme.colors.surfaceElevated,
                     borderTopColor: theme.colors.border,
                   },
