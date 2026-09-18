@@ -43,6 +43,7 @@ import {
   scheduleProgrammeReminder,
   type ProgrammeReminderScheduleResult,
 } from '@/services/notifications/programmeReminder';
+import { removeProgrammeReminderIfMatches } from '@/services/storage/programmePersonalStateMutation';
 import {
   readProgrammePersonalState,
   writeProgrammePersonalState,
@@ -60,6 +61,10 @@ import {
   shouldPreStackProgrammeDetailActions,
 } from './programmeDetailLayout';
 import { detailDragOffset, shouldDismissDetail } from './detailSwipe';
+import {
+  programmeDetailTemporalState,
+  useProgrammeDetailNow,
+} from './useProgrammeDetailClock';
 
 type ProgrammeDetailProps = {
   state: DetailState;
@@ -179,6 +184,11 @@ export function ProgrammeDetail({ state, onClose }: ProgrammeDetailProps) {
     EMPTY_PROGRAMME_PERSONAL_STATE,
   );
   const [reminderBusy, setReminderBusy] = useState(false);
+  const [reminderVerification, setReminderVerification] = useState<{
+    notificationId: string;
+    active: boolean;
+    checking: boolean;
+  } | null>(null);
   const [actionMessage, setActionMessage] = useState<string | null>(null);
   const [stackedActions, setStackedActions] = useState(() =>
     shouldPreStackProgrammeDetailActions(availableContentWidth, fontScale),
@@ -219,6 +229,7 @@ export function ProgrammeDetail({ state, onClose }: ProgrammeDetailProps) {
     setStickyEligible(false);
     setStickyBarHeight(0);
     setActionMessage(null);
+    setReminderVerification(null);
     reminderBusyRef.current = false;
     setReminderBusy(false);
     setStackedActions(
@@ -232,16 +243,48 @@ export function ProgrammeDetail({ state, onClose }: ProgrammeDetailProps) {
     const reminder = loaded.reminders[programme.id];
     if (!reminder) return;
 
+    setReminderVerification({
+      notificationId: reminder.notificationId,
+      active: false,
+      checking: true,
+    });
+
     let cancelledEffect = false;
-    void reconcileProgrammeReminder(reminder, programme).then((valid) => {
-      if (cancelledEffect || valid) return;
+    void reconcileProgrammeReminder(reminder, programme).then((result) => {
+      if (cancelledEffect) return;
       const current = readProgrammePersonalState();
-      const stillSameReminder =
-        current.reminders[programme.id]?.notificationId === reminder.notificationId;
-      if (!stillSameReminder) return;
-      const next = withProgrammeReminder(current, programme, null);
-      if (!writeProgrammePersonalState(next)) return;
-      if (activeProgrammeIdRef.current === programme.id) setPersonalState(next);
+      if (current.reminders[programme.id]?.notificationId !== reminder.notificationId) {
+        if (activeProgrammeIdRef.current === programme.id) setPersonalState(current);
+        return;
+      }
+
+      if (result.status === 'verified-invalid') {
+        const removal = removeProgrammeReminderIfMatches(
+          programme,
+          reminder.notificationId,
+        );
+        if (activeProgrammeIdRef.current === programme.id) {
+          setReminderVerification(null);
+          setPersonalState(removal.state);
+        }
+        return;
+      }
+
+      if (activeProgrammeIdRef.current === programme.id) {
+        setPersonalState(current);
+        setReminderVerification({
+          notificationId: reminder.notificationId,
+          active:
+            result.status === 'verified-valid' ||
+            (result.status === 'indeterminate' && result.presentActive),
+          checking: false,
+        });
+        if (result.status === 'indeterminate' && !result.presentActive) {
+          setActionMessage(
+            'De eerdere herinnering kon niet veilig worden gecontroleerd. Probeer het opnieuw.',
+          );
+        }
+      }
     });
 
     return () => {
@@ -416,6 +459,9 @@ export function ProgrammeDetail({ state, onClose }: ProgrammeDetailProps) {
       const existing = current.reminders[programme.id];
 
       if (existing) {
+        const wasPresentedActive =
+          reminderVerification?.notificationId === existing.notificationId &&
+          reminderVerification.active;
         const cancelledReminder = await cancelProgrammeReminder(existing.notificationId);
         if (!cancelledReminder) {
           if (activeProgrammeIdRef.current === programme.id) {
@@ -423,17 +469,27 @@ export function ProgrammeDetail({ state, onClose }: ProgrammeDetailProps) {
           }
           return;
         }
-        const next = withProgrammeReminder(current, programme, null);
-        const persisted = writeProgrammePersonalState(next);
+
+        const removal = removeProgrammeReminderIfMatches(
+          programme,
+          existing.notificationId,
+        );
         if (activeProgrammeIdRef.current === programme.id) {
-          setPersonalState(next);
-          if (!persisted) {
+          setPersonalState(removal.state);
+          if (removal.status === 'removed') {
+            setReminderVerification(null);
+          } else if (removal.status === 'persist-failed') {
+            setReminderVerification({
+              notificationId: existing.notificationId,
+              active: false,
+              checking: false,
+            });
             setActionMessage(
               'De herinnering is uitgezet, maar de lokale status kon niet worden opgeslagen.',
             );
           }
         }
-        return;
+        if (removal.status !== 'removed' || wasPresentedActive) return;
       }
 
       const result = await scheduleProgrammeReminder(programme, channel);
@@ -462,6 +518,11 @@ export function ProgrammeDetail({ state, onClose }: ProgrammeDetailProps) {
 
       if (activeProgrammeIdRef.current === programme.id) {
         setPersonalState(next);
+        setReminderVerification({
+          notificationId: result.notificationId,
+          active: true,
+          checking: false,
+        });
       }
     } finally {
       reminderBusyRef.current = false;
@@ -469,19 +530,28 @@ export function ProgrammeDetail({ state, onClose }: ProgrammeDetailProps) {
         setReminderBusy(false);
       }
     }
-  }, [channel, programme]);
+  }, [channel, programme, reminderVerification]);
 
-  const nowMs = Date.now();
-  const reminderAvailable = Boolean(programme && Date.parse(programme.startAt) > nowMs);
-  const saved = Boolean(programmeId && personalState.saved[programmeId]);
-  const reminderActive = Boolean(
-    reminderAvailable && programmeId && personalState.reminders[programmeId],
+  const nowMs = useProgrammeDetailNow(
+    programme?.startAt ?? null,
+    programme?.endAt ?? null,
+    state.visible,
   );
+  const temporalState = programme
+    ? programmeDetailTemporalState(programme.startAt, programme.endAt, nowMs)
+    : { reminderAvailable: false, current: false, nextBoundaryMs: null };
+  const reminderAvailable = temporalState.reminderAvailable;
+  const saved = Boolean(programmeId && personalState.saved[programmeId]);
+  const persistedReminder = programmeId ? personalState.reminders[programmeId] : undefined;
+  const reminderActive = Boolean(
+    reminderAvailable &&
+      persistedReminder &&
+      reminderVerification?.notificationId === persistedReminder.notificationId &&
+      reminderVerification.active,
+  );
+  const reminderChecking = Boolean(reminderVerification?.checking);
   const description = programme?.description?.trim() ?? '';
-  const current =
-    Boolean(programme) &&
-    Date.parse(programme!.startAt) <= nowMs &&
-    nowMs < Date.parse(programme!.endAt);
+  const current = temporalState.current;
   const sheetMaxHeight = Math.max(240, windowHeight - safeAreaInsets.top - 12);
   const bodyBottomPadding = programmeDetailBodyBottomPadding(
     stickyEligible,
@@ -510,7 +580,7 @@ export function ProgrammeDetail({ state, onClose }: ProgrammeDetailProps) {
             label={reminderLabel}
             active={reminderActive}
             primary
-            busy={reminderBusy}
+            busy={reminderBusy || reminderChecking}
             stacked={stackedActions}
             colors={theme.colors}
             onPress={() => void toggleReminder()}
