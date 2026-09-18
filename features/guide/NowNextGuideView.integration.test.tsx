@@ -3,6 +3,7 @@ import {
   act,
   createElement,
   forwardRef,
+  type ForwardedRef,
   type ReactNode,
   useImperativeHandle,
   useState,
@@ -112,7 +113,7 @@ vi.mock('react-native', async () => {
 
   const ScrollView = forwardRef(function MockScrollView(
     props: ScrollProps,
-    ref: React.ForwardedRef<{ scrollTo: (options: unknown) => void }>,
+    ref: ForwardedRef<{ scrollTo: (options: unknown) => void }>,
   ) {
     if (props.testID) native.scrollProps.set(props.testID, props);
     useImperativeHandle(
@@ -451,6 +452,10 @@ describe('Nu & Straks production interaction boundary', () => {
     expect(channelScroll.scrollTop).toBe(420);
 
     await act(async () => getByTestId(container, 'now-next-primetime').click());
+    expect(getByTestId(container, 'now-next-channel-scroll')).toBe(channelScroll);
+    expect(channelScroll.scrollTop).toBe(420);
+
+    await act(async () => getByTestId(container, 'now-next-now').click());
     expect(getByTestId(container, 'now-next-channel-scroll')).toBe(channelScroll);
     expect(channelScroll.scrollTop).toBe(420);
 
