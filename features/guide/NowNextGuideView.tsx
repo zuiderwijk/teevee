@@ -79,7 +79,7 @@ const ChannelRow = memo(function ChannelRow({
   );
 
   const openProgramme = useCallback(
-    (programme: Programme) => onSelectProgramme({ programme, channelName: channel.displayName }),
+    (programme: Programme) => onSelectProgramme({ programme, channel }),
     [channel.displayName, onSelectProgramme],
   );
 
