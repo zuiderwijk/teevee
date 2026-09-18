@@ -25,6 +25,8 @@ function ensureForegroundHandler() {
   handlerConfigured = true;
 }
 
+ensureForegroundHandler();
+
 async function ensureAndroidChannel() {
   if (Platform.OS !== 'android') return;
   await Notifications.setNotificationChannelAsync(CHANNEL_ID, {
