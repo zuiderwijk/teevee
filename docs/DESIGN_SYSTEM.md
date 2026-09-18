@@ -125,7 +125,7 @@ Exact canonical assets and state semantics are defined by `design/current/guide/
 This is the densest presentation because spatial geometry itself communicates schedule information. Keep cells typographic and restrained. Do not add genres or artwork. Current programme context may prioritise end time; future cells prioritise start time.
 
 ### Per zender
-Use an open vertical schedule, not a card stack. Keep the sticky horizontal channel-logo strip visually separated from temporal controls and programme content with restrained whitespace: 16 pt rail→utilities in expanded/rest, then the existing 12 pt utilities→schedule. Horizontal schedule swipe changes channel; no decorative previous/next arrows are required when gesture behaviour and logo strip make navigation understandable.
+Use an open vertical schedule, not a card stack. Keep the sticky horizontal channel-logo strip visually grouped with temporal controls while giving programme content clearer separation: **4 pt rail→utilities** in expanded/rest, then **24 pt utilities→schedule**. Horizontal schedule swipe changes channel; no decorative previous/next arrows are required when gesture behaviour and logo strip make navigation understandable.
 
 ### Nu & Straks
 Each channel presents one dominant programme at the selected reference time plus three quieter following programmes. No progress bars, genre chips, artwork, chevrons or `Daarna` labels. The hierarchy itself communicates current/reference versus following content.
