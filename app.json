@@ -6,7 +6,10 @@
     "orientation": "portrait",
     "userInterfaceStyle": "automatic",
     "scheme": "teevee",
-    "plugins": ["expo-router"],
+    "plugins": [
+      "expo-router",
+      "expo-notifications"
+    ],
     "ios": {
       "supportsTablet": false,
       "bundleIdentifier": "nl.bindinc.teevee"
