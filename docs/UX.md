@@ -1,6 +1,6 @@
 # Teevee UX and Information Architecture
 
-Status: accepted visual/UX baseline, amended 15 September 2026 with frozen television-day, Guide-horizon, Guide day-selector and Per-zender Primetime behaviour. The repository remains the technical source of truth. This document records the owner-approved UX direction; implementation status may lag behind it.
+Status: accepted visual/UX baseline, amended through 18 September 2026 with frozen television-day/Guide-horizon semantics and accepted Guide presentation refinements. The repository remains the technical source of truth. This document records the owner-approved UX direction; implementation status may lag behind it.
 
 ## Experience objective
 Teevee is a premium, advertising-free TV guide for iOS and Android. The Guide is the primary product. It should feel calm, modern, precise and purpose-built for television schedules: not a content portal, not a streaming catalogue, and not a desktop EPG compressed onto a phone.
@@ -146,7 +146,12 @@ Purpose: answer quickly what is on now/at a chosen time and what follows on each
 - keep channel order and vertical position stable when the reference time changes;
 - schedule semantics are `startAt <= referenceTime < endAt`;
 - at gaps, show an honest no-schedule state rather than pretending the last programme is still current;
-- the selector is bounded to the active television day, while following programmes may naturally cross its 06:00 boundary.
+- the selector is bounded to the active television day, while following programmes may naturally cross its 06:00 boundary;
+- each following programme owns a real, non-overlapping platform-safe touch target: minimum **44 pt on iOS / 48 dp on Android**;
+- the three following slot geometries remain reserved even when programme data is incomplete, so changing reference time does not shift the user's vertical channel context;
+- at effective font scale above **1.35**, following-programme time/title content may stack and rows grow vertically rather than shrinking text or creating overlapping targets;
+- substantive programme content keeps Dynamic Type; only compact functional chrome may use the documented narrow scaling cap;
+- production shell/detail metrics and physical validation criteria are defined in `docs/NU_EN_STRAKS_VISUAL_CONVERGENCE.md`.
 
 The design intentionally differentiates itself from TVgids.nl by showing three following programmes while using less interface and lower visual density.
 
