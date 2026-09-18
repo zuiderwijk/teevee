@@ -109,19 +109,7 @@ export default function GuideScreen() {
     [loadAndShowNowNext, persistPresentationPreference],
   );
 
-  const perChannelPresentationNavigation = useMemo(
-    () => (
-      <GuidePresentationSelector
-        selected={presentation}
-        loadingPresentation={nowNextLoading ? 'now-next' : null}
-        onSelect={selectPresentation}
-        variant="tabs"
-      />
-    ),
-    [nowNextLoading, presentation, selectPresentation],
-  );
-
-  const nowNextPresentationNavigation = useMemo(
+  const sharedPresentationNavigation = useMemo(
     () => (
       <GuidePresentationSelector
         selected={presentation}
@@ -138,14 +126,14 @@ export default function GuideScreen() {
       {showNowNext && NowNextComponent ? (
         <NowNextComponent
           guideDataVersion={guideDataVersion}
-          presentationNavigation={nowNextPresentationNavigation}
+          presentationNavigation={sharedPresentationNavigation}
           onSelectProgramme={openDetail}
         />
       ) : showPerChannel ? (
         <PerChannelGuideView
           guideDataVersion={guideDataVersion}
           onSelectProgramme={openDetail}
-          presentationNavigation={perChannelPresentationNavigation}
+          presentationNavigation={sharedPresentationNavigation}
         />
       ) : (
         <GuideView
