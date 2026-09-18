@@ -306,7 +306,7 @@ Accessibility focus must remain on the selected/focused logical channel; animate
 - Do **not** render a separate large textual selected-channel heading below the channel-logo strip.
 - The selected channel logo in the rail is the primary and sufficient channel identity in expanded/rest state.
 - Do not replace the removed heading with another large label, badge or duplicate identity treatment.
-- The compact textual channel name remains reserved for the condensed channel/date context, where it is required for orientation.
+- Do **not** introduce a compact textual channel name in condensed state; the selected logo remains sufficient visible channel identity throughout collapse.
 
 ### 9.2 Rest utility row
 
