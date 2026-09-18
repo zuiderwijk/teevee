@@ -207,7 +207,10 @@ describe('per-channel fixed-row schedule', () => {
       expect(perChannelScheduleOffsetForNativeOffset(nativeOffset, progress)).toBe(640);
     }
 
-    expect(perChannelNativeOffsetForScheduleOffset(0, 0)).toBe(148);
+    expect(perChannelNativeOffsetForScheduleOffset(640, 0.5)).toBe(668);
+    expect(perChannelScheduleOffsetForNativeOffset(668, 0.5)).toBe(640);
+
+    expect(perChannelNativeOffsetForScheduleOffset(0, 0)).toBe(0);
     expect(perChannelNativeOffsetForScheduleOffset(0, 1)).toBe(56);
   });
 
