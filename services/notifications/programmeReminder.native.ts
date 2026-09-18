@@ -154,7 +154,14 @@ export async function reconcileProgrammeReminder(
 
   const exactAlarmCapability = getExactAlarmCapability();
   if (exactAlarmCapability === 'unavailable') {
-    return { status: 'verified-invalid' };
+    const cancelled = await cancelProgrammeReminder(record.notificationId);
+    return cancelled
+      ? { status: 'verified-invalid' }
+      : {
+          status: 'indeterminate',
+          reason: 'cancellation-unconfirmed',
+          presentActive: false,
+        };
   }
   if (exactAlarmCapability === 'indeterminate') {
     return {
