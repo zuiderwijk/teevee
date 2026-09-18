@@ -12,6 +12,7 @@ import {
   compactContextForCollapseProgress,
   currentProgrammeIdAt,
   perChannelAnimatedTargetForScheduleOffset,
+  perChannelContextWrapAnchorTransition,
   perChannelFunctionalGapsForCollapseProgress,
   perChannelLayoutAnchorKey,
   perChannelNativeOffsetForScheduleOffset,
@@ -220,6 +221,8 @@ describe('per-channel fixed-row schedule', () => {
 
     expect(perChannelNativeOffsetForScheduleOffset(640, 0.5)).toBe(668);
     expect(perChannelScheduleOffsetForNativeOffset(668, 0.5)).toBe(640);
+    expect(perChannelNativeOffsetForScheduleOffset(640, 0.5, true)).toBe(704);
+    expect(perChannelScheduleOffsetForNativeOffset(704, 0.5, true)).toBe(640);
 
     expect(perChannelNativeOffsetForScheduleOffset(0, 0)).toBe(0);
     expect(perChannelNativeOffsetForScheduleOffset(0, 1)).toBe(56);
@@ -236,6 +239,104 @@ describe('per-channel fixed-row schedule', () => {
       ).toBe(anchorScheduleOffset);
     }
   });
+
+  it('keeps the same non-zero programme anchor through condensed-prefix 52 -> 88 -> 52 wrapping', () => {
+    const scheduleOffset = 640;
+    const progress = 0.5;
+    const nativeBefore = perChannelNativeOffsetForScheduleOffset(scheduleOffset, progress, false);
+    const collapseAnchorBefore =
+      nativeBefore - PER_CHANNEL_VISUAL_METRICS.collapseDistance * progress;
+    const wrapped = perChannelContextWrapAnchorTransition(
+      nativeBefore,
+      collapseAnchorBefore,
+      false,
+      true,
+    );
+
+    expect(
+      perChannelScheduleOffsetForNativeOffset(wrapped.nativeOffset, progress, true),
+    ).toBe(scheduleOffset);
+    expect(
+      collapseProgressForScrollOffset(
+        wrapped.nativeOffset,
+        wrapped.collapseAnchorY,
+        false,
+      ),
+    ).toBeCloseTo(progress, 8);
+    expect(
+      perChannelStableScrollVisuals(progress, true).contentTranslateY -
+        wrapped.nativeOffset,
+    ).toBe(
+      perChannelStableScrollVisuals(progress, false).contentTranslateY -
+        nativeBefore,
+    );
+
+    const unwrapped = perChannelContextWrapAnchorTransition(
+      wrapped.nativeOffset,
+      wrapped.collapseAnchorY,
+      true,
+      false,
+    );
+    expect(unwrapped).toEqual({
+      nativeOffset: nativeBefore,
+      collapseAnchorY: collapseAnchorBefore,
+    });
+    expect(
+      perChannelScheduleOffsetForNativeOffset(unwrapped.nativeOffset, progress, false),
+    ).toBe(scheduleOffset);
+  });
+
+  it.each([
+    ['channel change while wrapped', true, true],
+    ['channel change that unwraps', true, false],
+    ['day change while wrapped', true, true],
+    ['day change that unwraps', true, false],
+    ['Dynamic Type increase', false, true],
+    ['Dynamic Type decrease', true, false],
+    ['viewport narrowing', false, true],
+    ['viewport widening', true, false],
+  ])(
+    'preserves a non-zero programme visual anchor after context remeasurement: %s',
+    (_scenario, previousWrapped, nextWrapped) => {
+      const scheduleOffset = 520;
+      const progress = 1;
+      const nativeBefore = perChannelNativeOffsetForScheduleOffset(
+        scheduleOffset,
+        progress,
+        previousWrapped,
+      );
+      const collapseAnchorBefore =
+        nativeBefore - PER_CHANNEL_VISUAL_METRICS.collapseDistance * progress;
+      const transition = perChannelContextWrapAnchorTransition(
+        nativeBefore,
+        collapseAnchorBefore,
+        previousWrapped,
+        nextWrapped,
+      );
+
+      expect(
+        perChannelScheduleOffsetForNativeOffset(
+          transition.nativeOffset,
+          progress,
+          nextWrapped,
+        ),
+      ).toBe(scheduleOffset);
+      expect(
+        collapseProgressForScrollOffset(
+          transition.nativeOffset,
+          transition.collapseAnchorY,
+          false,
+        ),
+      ).toBe(progress);
+      expect(
+        perChannelStableScrollVisuals(progress, nextWrapped).contentTranslateY -
+          transition.nativeOffset,
+      ).toBe(
+        perChannelStableScrollVisuals(progress, previousWrapped).contentTranslateY -
+          nativeBefore,
+      );
+    },
+  );
 
   it('lands animated semantic targets at a collapse-consistent native endpoint', () => {
     expect(perChannelAnimatedTargetForScheduleOffset(500, 640, 1)).toEqual({
