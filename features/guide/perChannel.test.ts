@@ -12,13 +12,15 @@ import {
   compactContextForCollapseProgress,
   currentProgrammeIdAt,
   perChannelAnimatedTargetForScheduleOffset,
-  perChannelContextWrapAnchorTransition,
   perChannelFunctionalGapsForCollapseProgress,
   perChannelLayoutAnchorKey,
   perChannelNativeOffsetForScheduleOffset,
+  perChannelSafeAreaLayout,
   perChannelScheduleOffsetForNativeOffset,
+  perChannelSelectedScheduleHeight,
   PER_CHANNEL_STABLE_SCROLL_GEOMETRY,
   perChannelStableScrollVisuals,
+  perChannelVisibleStackGeometry,
   currentProgrammeRowHeight,
   programmeRowForTimestamp,
   programmesForChannelDay,
@@ -155,8 +157,8 @@ describe('per-channel fixed-row schedule', () => {
 
   it('uses canonical rest and settled-condensed functional gaps', () => {
     expect(perChannelFunctionalGapsForCollapseProgress(0)).toEqual({
-      stripToContext: 24,
-      contextToSchedule: 12,
+      stripToContext: 4,
+      contextToSchedule: 24,
     });
     expect(perChannelFunctionalGapsForCollapseProgress(1)).toEqual({
       stripToContext: 0,
@@ -164,53 +166,93 @@ describe('per-channel fixed-row schedule', () => {
     });
   });
 
-  it('keeps the native schedule viewport fixed while visual chrome converges', () => {
+  it('keeps the native schedule viewport fixed with the canonical 52-only context and 140/56/84 geometry', () => {
     expect(PER_CHANNEL_STABLE_SCROLL_GEOMETRY).toEqual({
       viewportTop: 112,
-      contentTopInset: 148,
-      wrappedContextDelta: 36,
-      scrollCompensation: 92,
+      contentTopInset: 140,
+      scrollCompensation: 84,
     });
+    expect(PER_CHANNEL_STABLE_SCROLL_GEOMETRY).not.toHaveProperty('wrappedContextDelta');
 
-    const rest = perChannelStableScrollVisuals(0, false);
-    const midpoint = perChannelStableScrollVisuals(0.5, false);
-    const condensed = perChannelStableScrollVisuals(1, false);
+    const rest = perChannelStableScrollVisuals(0);
+    const midpoint = perChannelStableScrollVisuals(0.5);
+    const condensed = perChannelStableScrollVisuals(1);
 
-    expect(rest.overlayBottom).toBe(260);
-    expect(midpoint.overlayBottom).toBe(186);
+    expect(rest.overlayBottom).toBe(252);
+    expect(midpoint.overlayBottom).toBe(182);
     expect(condensed.overlayBottom).toBe(112);
     expect(rest.contentTranslateY).toBe(0);
-    expect(midpoint.contentTranslateY).toBe(-46);
-    expect(condensed.contentTranslateY).toBe(-92);
-
-    const wrappedRest = perChannelStableScrollVisuals(0, true);
-    const wrappedCondensed = perChannelStableScrollVisuals(1, true);
-    expect(wrappedRest.overlayBottom).toBe(296);
-    expect(wrappedCondensed.overlayBottom).toBe(148);
-    expect(wrappedRest.contentTranslateY).toBe(36);
-    expect(wrappedCondensed.contentTranslateY).toBe(-56);
+    expect(midpoint.contentTranslateY).toBe(-42);
+    expect(condensed.contentTranslateY).toBe(-84);
 
     const totalVisualContraction =
       PER_CHANNEL_VISUAL_METRICS.collapseDistance +
       PER_CHANNEL_STABLE_SCROLL_GEOMETRY.scrollCompensation;
-    expect(rest.overlayBottom - condensed.overlayBottom).toBe(totalVisualContraction);
-    expect(wrappedRest.overlayBottom - wrappedCondensed.overlayBottom).toBe(
-      totalVisualContraction,
-    );
-    expect(PER_CHANNEL_STABLE_SCROLL_GEOMETRY.contentTopInset).toBe(
-      totalVisualContraction,
-    );
-    for (const contextWrapped of [false, true]) {
-      for (const progress of [0, 0.25, 0.5, 0.75, 1]) {
-        const visuals = perChannelStableScrollVisuals(progress, contextWrapped);
-        const scheduleVisualTop =
-          PER_CHANNEL_STABLE_SCROLL_GEOMETRY.viewportTop +
-          PER_CHANNEL_STABLE_SCROLL_GEOMETRY.contentTopInset +
-          visuals.contentTranslateY -
-          PER_CHANNEL_VISUAL_METRICS.collapseDistance * progress;
-        expect(scheduleVisualTop).toBeCloseTo(visuals.overlayBottom, 8);
-      }
+    expect(rest.overlayBottom - condensed.overlayBottom).toBe(140);
+    expect(totalVisualContraction).toBe(140);
+    expect(PER_CHANNEL_STABLE_SCROLL_GEOMETRY.contentTopInset).toBe(140);
+
+    for (const progress of [0, 0.25, 0.5, 0.75, 1]) {
+      const visuals = perChannelStableScrollVisuals(progress);
+      const scheduleVisualTop =
+        PER_CHANNEL_STABLE_SCROLL_GEOMETRY.viewportTop +
+        PER_CHANNEL_STABLE_SCROLL_GEOMETRY.contentTopInset +
+        visuals.contentTranslateY -
+        PER_CHANNEL_VISUAL_METRICS.collapseDistance * progress;
+      expect(scheduleVisualTop).toBeCloseTo(visuals.overlayBottom, 8);
     }
+  });
+
+  it('proves the visible rest and condensed rail/context/schedule gaps from zone boundaries', () => {
+    const rest = perChannelVisibleStackGeometry(0);
+    expect(rest.railBottom).toBe(172);
+    expect(rest.contextTop - rest.railBottom).toBe(4);
+    expect(rest.contextTop).toBe(176);
+    expect(rest.contextBottom - rest.contextTop).toBe(52);
+    expect(rest.contextBottom).toBe(228);
+    expect(rest.scheduleContentTop - rest.contextBottom).toBe(24);
+    expect(rest.scheduleContentTop).toBe(252);
+
+    const condensed = perChannelVisibleStackGeometry(1);
+    expect(condensed.railBottom).toBe(60);
+    expect(condensed.contextTop - condensed.railBottom).toBe(0);
+    expect(condensed.contextBottom - condensed.contextTop).toBe(52);
+    expect(condensed.scheduleContentTop - condensed.contextBottom).toBe(0);
+    expect(condensed.scheduleContentTop).toBe(112);
+  });
+
+  it('adds the platform top safe-area inset to the fixed Per-zender coordinate space exactly once', () => {
+    expect(perChannelSafeAreaLayout(0)).toEqual({ overlayTop: 0, scheduleViewportTop: 112 });
+    expect(perChannelSafeAreaLayout(59)).toEqual({ overlayTop: 59, scheduleViewportTop: 171 });
+    expect(perChannelSafeAreaLayout(-12)).toEqual({ overlayTop: 0, scheduleViewportTop: 112 });
+  });
+
+  it('owns vertical content height by the selected channel rather than a longer pager neighbour', () => {
+    const selectedRows = buildProgrammeRows(
+      [
+        programme('selected-1', '2026-09-13T08:00:00.000Z', '2026-09-13T09:00:00.000Z'),
+        programme('selected-2', '2026-09-13T09:00:00.000Z', '2026-09-13T10:00:00.000Z'),
+      ],
+      Date.parse('2026-09-13T12:00:00.000Z'),
+      1,
+    );
+    const adjacentRows = buildProgrammeRows(
+      Array.from({ length: 20 }, (_, index) =>
+        programme(
+          `adjacent-${index}`,
+          `2026-09-13T${String(index % 10).padStart(2, '0')}:00:00.000Z`,
+          `2026-09-13T${String((index % 10) + 1).padStart(2, '0')}:00:00.000Z`,
+        ),
+      ),
+      Date.parse('2026-09-14T00:00:00.000Z'),
+      1,
+    );
+
+    expect(perChannelSelectedScheduleHeight(selectedRows)).toBe(104);
+    expect(scheduleHeightForRows(adjacentRows)).toBeGreaterThan(
+      perChannelSelectedScheduleHeight(selectedRows),
+    );
+    expect(perChannelSelectedScheduleHeight([])).toBe(PER_CHANNEL_VISUAL_METRICS.currentRowHeight);
   });
 
   it('round-trips semantic schedule offsets through the stable native viewport geometry', () => {
@@ -221,8 +263,6 @@ describe('per-channel fixed-row schedule', () => {
 
     expect(perChannelNativeOffsetForScheduleOffset(640, 0.5)).toBe(668);
     expect(perChannelScheduleOffsetForNativeOffset(668, 0.5)).toBe(640);
-    expect(perChannelNativeOffsetForScheduleOffset(640, 0.5, true)).toBe(704);
-    expect(perChannelScheduleOffsetForNativeOffset(704, 0.5, true)).toBe(640);
 
     expect(perChannelNativeOffsetForScheduleOffset(0, 0)).toBe(0);
     expect(perChannelNativeOffsetForScheduleOffset(0, 1)).toBe(56);
@@ -240,103 +280,12 @@ describe('per-channel fixed-row schedule', () => {
     }
   });
 
-  it('keeps the same non-zero programme anchor through condensed-prefix 52 -> 88 -> 52 wrapping', () => {
-    const scheduleOffset = 640;
-    const progress = 0.5;
-    const nativeBefore = perChannelNativeOffsetForScheduleOffset(scheduleOffset, progress, false);
-    const collapseAnchorBefore =
-      nativeBefore - PER_CHANNEL_VISUAL_METRICS.collapseDistance * progress;
-    const wrapped = perChannelContextWrapAnchorTransition(
-      nativeBefore,
-      collapseAnchorBefore,
-      false,
-      true,
-    );
-
-    expect(
-      perChannelScheduleOffsetForNativeOffset(wrapped.nativeOffset, progress, true),
-    ).toBe(scheduleOffset);
-    expect(
-      collapseProgressForScrollOffset(
-        wrapped.nativeOffset,
-        wrapped.collapseAnchorY,
-        false,
-      ),
-    ).toBeCloseTo(progress, 8);
-    expect(
-      perChannelStableScrollVisuals(progress, true).contentTranslateY -
-        wrapped.nativeOffset,
-    ).toBe(
-      perChannelStableScrollVisuals(progress, false).contentTranslateY -
-        nativeBefore,
-    );
-
-    const unwrapped = perChannelContextWrapAnchorTransition(
-      wrapped.nativeOffset,
-      wrapped.collapseAnchorY,
-      true,
-      false,
-    );
-    expect(unwrapped).toEqual({
-      nativeOffset: nativeBefore,
-      collapseAnchorY: collapseAnchorBefore,
-    });
-    expect(
-      perChannelScheduleOffsetForNativeOffset(unwrapped.nativeOffset, progress, false),
-    ).toBe(scheduleOffset);
+  it('has no obsolete wrapped-context runtime geometry after PR #86/#87 convergence', () => {
+    expect(PER_CHANNEL_VISUAL_METRICS.stickyContextHeight).toBe(52);
+    expect(PER_CHANNEL_VISUAL_METRICS).not.toHaveProperty('stickyContextWrappedHeight');
+    expect(perChannelStableScrollVisuals(0).overlayBottom).toBe(252);
+    expect(perChannelStableScrollVisuals(1).overlayBottom).toBe(112);
   });
-
-  it.each([
-    ['channel change while wrapped', true, true],
-    ['channel change that unwraps', true, false],
-    ['day change while wrapped', true, true],
-    ['day change that unwraps', true, false],
-    ['Dynamic Type increase', false, true],
-    ['Dynamic Type decrease', true, false],
-    ['viewport narrowing', false, true],
-    ['viewport widening', true, false],
-  ])(
-    'preserves a non-zero programme visual anchor after context remeasurement: %s',
-    (_scenario, previousWrapped, nextWrapped) => {
-      const scheduleOffset = 520;
-      const progress = 1;
-      const nativeBefore = perChannelNativeOffsetForScheduleOffset(
-        scheduleOffset,
-        progress,
-        previousWrapped,
-      );
-      const collapseAnchorBefore =
-        nativeBefore - PER_CHANNEL_VISUAL_METRICS.collapseDistance * progress;
-      const transition = perChannelContextWrapAnchorTransition(
-        nativeBefore,
-        collapseAnchorBefore,
-        previousWrapped,
-        nextWrapped,
-      );
-
-      expect(
-        perChannelScheduleOffsetForNativeOffset(
-          transition.nativeOffset,
-          progress,
-          nextWrapped,
-        ),
-      ).toBe(scheduleOffset);
-      expect(
-        collapseProgressForScrollOffset(
-          transition.nativeOffset,
-          transition.collapseAnchorY,
-          false,
-        ),
-      ).toBe(progress);
-      expect(
-        perChannelStableScrollVisuals(progress, nextWrapped).contentTranslateY -
-          transition.nativeOffset,
-      ).toBe(
-        perChannelStableScrollVisuals(progress, previousWrapped).contentTranslateY -
-          nativeBefore,
-      );
-    },
-  );
 
   it('lands animated semantic targets at a collapse-consistent native endpoint', () => {
     expect(perChannelAnimatedTargetForScheduleOffset(500, 640, 1)).toEqual({
@@ -380,7 +329,8 @@ describe('per-channel fixed-row schedule', () => {
     expect(PER_CHANNEL_VISUAL_METRICS.channelItemSize).toBe(48);
     expect(PER_CHANNEL_VISUAL_METRICS.channelItemGap).toBe(12);
     expect(GUIDE_VISUAL_METRICS.controlPressOpacity).toBe(0.72);
-    expect(PER_CHANNEL_VISUAL_METRICS.stripToUtilitiesGap).toBe(24);
+    expect(PER_CHANNEL_VISUAL_METRICS.stripToUtilitiesGap).toBe(4);
+    expect(PER_CHANNEL_VISUAL_METRICS.utilityToScheduleGap).toBe(24);
     expect(PER_CHANNEL_VISUAL_METRICS.currentRowHeight).toBe(176);
     expect(PER_CHANNEL_VISUAL_METRICS.currentDescriptionGap).toBe(10);
     expect(PER_CHANNEL_VISUAL_METRICS.currentDescriptionToProgressMinGap).toBe(20);
