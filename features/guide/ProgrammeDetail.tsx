@@ -6,6 +6,7 @@ import {
   useState,
 } from 'react';
 import {
+  AppState,
   Modal,
   Pressable,
   ScrollView,
@@ -187,6 +188,7 @@ export function ProgrammeDetail({ state, onClose }: ProgrammeDetailProps) {
     EMPTY_PROGRAMME_PERSONAL_STATE,
   );
   const [reminderBusy, setReminderBusy] = useState(false);
+  const [reminderResumeRevision, setReminderResumeRevision] = useState(0);
   const [reminderVerification, setReminderVerification] = useState<{
     notificationId: string;
     active: boolean;
@@ -240,11 +242,35 @@ export function ProgrammeDetail({ state, onClose }: ProgrammeDetailProps) {
     );
 
     if (!state.visible || !programme) return;
+    setPersonalState(readProgrammePersonalState());
+  }, [
+    availableContentWidth,
+    fontScale,
+    programme,
+    programmeId,
+    state.visible,
+  ]);
+
+  useEffect(() => {
+    if (!state.visible) return;
+    const subscription = AppState.addEventListener('change', (nextState) => {
+      if (nextState === 'active') {
+        setReminderResumeRevision((current) => current + 1);
+      }
+    });
+    return () => subscription.remove();
+  }, [state.visible]);
+
+  useEffect(() => {
+    if (!state.visible || !programme) return;
 
     const loaded = readProgrammePersonalState();
     setPersonalState(loaded);
     const reminder = loaded.reminders[programme.id];
-    if (!reminder) return;
+    if (!reminder) {
+      setReminderVerification(null);
+      return;
+    }
 
     setReminderVerification({
       notificationId: reminder.notificationId,
@@ -284,7 +310,9 @@ export function ProgrammeDetail({ state, onClose }: ProgrammeDetailProps) {
         });
         if (result.status === 'indeterminate' && !result.presentActive) {
           setActionMessage(
-            'De eerdere herinnering kon niet veilig worden gecontroleerd. Probeer het opnieuw.',
+            result.reason === 'exact-alarm-capability-unknown'
+              ? 'De Android-toegang voor exacte herinneringen kon niet worden gecontroleerd. Probeer het opnieuw.'
+              : 'De eerdere herinnering kon niet veilig worden gecontroleerd. Probeer het opnieuw.',
           );
         }
       }
@@ -293,13 +321,7 @@ export function ProgrammeDetail({ state, onClose }: ProgrammeDetailProps) {
     return () => {
       cancelledEffect = true;
     };
-  }, [
-    availableContentWidth,
-    fontScale,
-    programme,
-    programmeId,
-    state.visible,
-  ]);
+  }, [programme, reminderResumeRevision, state.visible]);
 
   const requestClose = useCallback(() => {
     if (closing.value) return;
