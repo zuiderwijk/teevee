@@ -158,8 +158,9 @@ Superseded examples include earlier Per-zender variants with programme imagery, 
 
 ### Nu & Straks
 Status: **ACCEPTED**
-Owner-approved direction: 2026-09-13
+Owner-approved direction: 2026-09-13; production accessibility/density and shell refinement 2026-09-18
 Detailed manifest: `design/current/guide/NU_EN_STRAKS.md`
+Production specification: `docs/NU_EN_STRAKS_VISUAL_CONVERGENCE.md`
 
 Canonical visual asset in the user's Teevee Library:
 - light/dark/live/Primetime reference: `/Teevee/Nu & Straks: Televiegids in beeld.png`
@@ -168,20 +169,25 @@ Canonical visual asset in the user's Teevee Library:
 Accepted visual characteristics:
 - one shared reference instant across every channel;
 - current/reference programme is visually dominant;
-- **exactly three following programmes** are shown more quietly;
+- **exactly three following programme slots** are shown more quietly;
 - no programme artwork;
 - no genre labels;
 - no progress bars;
 - no chevrons or repeated `Daarna` labels;
-- compact shared time rail;
-- `Primetime` from live mode; `Nu` when browsing away from live;
+- compact shared time rail with the physically accepted native fling/settle behaviour;
+- `Primetime` targets 20:30 on the active television day; `Nu` restores live when browsing;
 - horizontal movement changes reference time, vertical movement changes channel context;
 - channel order/vertical position remains stable while reference time changes;
-- shared typography follows the accepted Instrument Sans system.
+- each following programme has a real non-overlapping minimum target of 44 pt on iOS / 48 dp on Android;
+- at font scale above 1.35, following programmes stack time above title and grow vertically instead of shrinking or overlapping;
+- three following slot geometries remain reserved even when programme data is incomplete, preserving vertical channel position across reference-time changes;
+- production Nu & Straks uses the shared Guide shell; reference-time context plus time rail form the persistent **104-pt** functional stack after condensation;
+- shared typography follows the accepted Instrument Sans system;
+- `NowNextGuideView` remains behind the deferred import boundary.
 
 ADR 0008 changes the meaning of the active day around midnight: 00:00–05:59 remains part of the preceding television day. Nu & Straks still has no independent date selector.
 
-Tracked non-blocking debt: compact following-programme rows at larger text sizes require density-aware Phase 4 hardening; do not solve this by reintroducing cards or low-value chrome.
+The exact 13 September visual remains canonical for composition and hierarchy. The written 18 September production specification supersedes it only for the explicit accessibility/density, shared-shell, Dynamic Type, touch-target, safe-area, pressed-state and production-calibration rules documented there. Current runtime prototype values are not automatically canonical.
 
 ## Programme Detail
 Status: **ACCEPTED DIRECTION**
