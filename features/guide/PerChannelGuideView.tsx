@@ -53,6 +53,10 @@ import {
   compactContextForCollapseProgress,
   perChannelFunctionalGapsForCollapseProgress,
   perChannelLayoutAnchorKey,
+  perChannelNativeOffsetForScheduleOffset,
+  perChannelScheduleOffsetForNativeOffset,
+  PER_CHANNEL_STABLE_SCROLL_GEOMETRY,
+  perChannelStableScrollVisuals,
   type PerChannelProgrammeRow,
   programmesForChannelDay,
   programmeRowPressBackgroundColor,
@@ -76,11 +80,6 @@ const CONTEXT_WRAP_Y_EPSILON = 1;
 const SCROLL_DIAGNOSTICS_ENABLED =
   typeof __DEV__ !== 'undefined' && __DEV__;
 const SCROLL_DIAGNOSTIC_MAX_SAMPLES = 240;
-const GUIDE_CHROME_EXPANDED_HEIGHT =
-  GUIDE_VISUAL_METRICS.brandTopInset +
-  GUIDE_VISUAL_METRICS.brandMarkBoxHeight +
-  GUIDE_VISUAL_METRICS.presentationNavHeight;
-
 type ScrollDiagnosticContext = {
   samples: number[][];
   frame: number;
@@ -521,13 +520,14 @@ export const PerChannelGuideView = memo(function PerChannelGuideView({
     (timeMs: number, animated: boolean) => {
       viewedTimeRef.current = timeMs;
       setStableAnchorTimeMs(timeMs);
-      const y = scrollOffsetForTimestamp(
+      const progress = Math.min(1, Math.max(0, collapseProgress.value));
+      const scheduleOffset = scrollOffsetForTimestamp(
         selectedRowsRef.current,
         timeMs,
         referenceInsetRef.current,
       );
+      const y = perChannelNativeOffsetForScheduleOffset(scheduleOffset, progress);
       if (!animated) {
-        const progress = Math.min(1, Math.max(0, collapseProgress.value));
         collapseAnchorY.value = Math.max(
           0,
           y - progress * PER_CHANNEL_VISUAL_METRICS.collapseDistance,
@@ -539,10 +539,11 @@ export const PerChannelGuideView = memo(function PerChannelGuideView({
     [collapseAnchorY, collapseEnabled, collapseProgress],
   );
 
-  const syncViewedTimestamp = useCallback((y: number) => {
+  const syncViewedTimestamp = useCallback((y: number, progress: number) => {
+    const scheduleOffset = perChannelScheduleOffsetForNativeOffset(y, progress);
     const nextTimeMs = timestampForScrollOffset(
       selectedRowsRef.current,
-      y,
+      scheduleOffset,
       referenceInsetRef.current,
       viewedTimeRef.current,
     );
@@ -600,18 +601,15 @@ export const PerChannelGuideView = memo(function PerChannelGuideView({
           context.samples &&
           context.samples.length < SCROLL_DIAGNOSTIC_MAX_SAMPLES
         ) {
-          const gaps = perChannelFunctionalGapsForCollapseProgress(nextProgress);
+          const visuals = perChannelStableScrollVisuals(nextProgress, contextWrapped);
           context.samples.push([
             context.frame ?? 0,
             y,
             nextProgress,
-            GUIDE_CHROME_EXPANDED_HEIGHT * (1 - nextProgress),
-            PER_CHANNEL_VISUAL_METRICS.channelStripHeight -
-              (PER_CHANNEL_VISUAL_METRICS.channelStripHeight -
-                PER_CHANNEL_VISUAL_METRICS.channelStripCondensedHeight) *
-                nextProgress,
-            gaps.stripToContext,
-            gaps.contextToSchedule,
+            visuals.guideChromeHeight,
+            visuals.channelStripHeight,
+            visuals.stripToContextGap,
+            visuals.contextToScheduleGap,
             scheduleViewportY.value,
             scheduleViewportHeight.value,
             reactCommitCount.value,
@@ -630,7 +628,7 @@ export const PerChannelGuideView = memo(function PerChannelGuideView({
             reactCommitCount.value,
           );
         }
-        scheduleOnRN(syncViewedTimestamp, y);
+        scheduleOnRN(syncViewedTimestamp, y, collapseProgress.value);
       },
       onMomentumBegin: (event) => {
         if (!SCROLL_DIAGNOSTICS_ENABLED) return;
@@ -654,10 +652,10 @@ export const PerChannelGuideView = memo(function PerChannelGuideView({
           );
           scheduleOnRN(reportScrollDiagnosticTrace, context.samples ?? []);
         }
-        scheduleOnRN(syncViewedTimestamp, y);
+        scheduleOnRN(syncViewedTimestamp, y, collapseProgress.value);
       },
     },
-    [reduceMotion, syncViewedTimestamp],
+    [contextWrapped, reduceMotion, syncViewedTimestamp],
   );
 
   const contextTopGapStyle = useAnimatedStyle(() => ({
@@ -674,6 +672,17 @@ export const PerChannelGuideView = memo(function PerChannelGuideView({
       (PER_CHANNEL_VISUAL_METRICS.channelStripHeight -
         PER_CHANNEL_VISUAL_METRICS.channelStripCondensedHeight) *
         collapseProgress.value,
+  }));
+
+  const scheduleContentStyle = useAnimatedStyle(() => ({
+    transform: [
+      {
+        translateY: perChannelStableScrollVisuals(
+          collapseProgress.value,
+          contextWrapped,
+        ).contentTranslateY,
+      },
+    ],
   }));
 
   const changeDay = useCallback(
@@ -766,6 +775,10 @@ export const PerChannelGuideView = memo(function PerChannelGuideView({
 
   return (
     <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.colors.background }]}>
+      <View
+        pointerEvents="box-none"
+        style={[styles.guideOverlay, { backgroundColor: theme.colors.background }]}
+      >
       <GuideChrome
         condensed={condensed}
         presentationNavigation={presentationNavigation}
@@ -963,6 +976,7 @@ export const PerChannelGuideView = memo(function PerChannelGuideView({
       </View>
 
       <Animated.View pointerEvents="none" style={scheduleGapStyle} />
+      </View>
 
       <Animated.ScrollView
         ref={scheduleRef}
@@ -977,8 +991,21 @@ export const PerChannelGuideView = memo(function PerChannelGuideView({
         scrollEventThrottle={16}
         onScroll={scheduleScrollHandler}
         onLayout={handleScheduleViewportLayout}
-        contentContainerStyle={{ minHeight: scheduleHeight }}
+        style={styles.scheduleViewport}
+        contentContainerStyle={{
+          minHeight: PER_CHANNEL_STABLE_SCROLL_GEOMETRY.contentTopInset + scheduleHeight,
+        }}
       >
+        <Animated.View
+          style={[
+            styles.scheduleContent,
+            scheduleContentStyle,
+            {
+              minHeight: PER_CHANNEL_STABLE_SCROLL_GEOMETRY.contentTopInset + scheduleHeight,
+            },
+          ]}
+        >
+          <View pointerEvents="none" style={styles.scheduleTopInset} />
         {programmeStatus ? (
           <View
             testID={`per-channel-programme-state-${programmeStatus}`}
@@ -1019,6 +1046,7 @@ export const PerChannelGuideView = memo(function PerChannelGuideView({
             ))}
           </ScrollView>
         )}
+        </Animated.View>
       </Animated.ScrollView>
     </SafeAreaView>
   );
@@ -1027,6 +1055,29 @@ export const PerChannelGuideView = memo(function PerChannelGuideView({
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
+    position: 'relative',
+    overflow: 'hidden',
+  },
+  guideOverlay: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    top: 0,
+    zIndex: 2,
+  },
+  scheduleViewport: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    top: PER_CHANNEL_STABLE_SCROLL_GEOMETRY.viewportTop,
+    bottom: 0,
+    zIndex: 1,
+  },
+  scheduleContent: {
+    width: '100%',
+  },
+  scheduleTopInset: {
+    height: PER_CHANNEL_STABLE_SCROLL_GEOMETRY.contentTopInset,
   },
   channelStripFrame: {
     flexGrow: 0,
