@@ -120,7 +120,7 @@ Purpose: inspect the schedule of one channel while making adjacent-channel compa
 - Per-zender date/Primetime/Nu labels use a hard `maximumFontSizeMultiplier = 1.20` and remain one line; programme content continues to follow its substantive Dynamic Type rules;
 - do not reintroduce the older expanded time picker with `Vanmiddag`, `Vooravond` or arbitrary `Kies tijd…` options; the accepted requirement is the direct Primetime shortcut only;
 - the schedule continues naturally through midnight within the same television-day context;
-- use the accepted **16-pt** expanded/rest spacing between the channel rail and temporal utilities; keep the existing 12-pt utilities→schedule separation;
+- use **16 pt** channel rail→temporal context and **12 pt** temporal context→schedule in expanded/rest; both gaps collapse to **0 pt** in settled condensed state while the temporal context itself remains exactly **52 pt**;
 - programme rows remain open and typographic rather than stacked cards;
 - do not add genre chips or thumbnails merely to increase information density.
 
@@ -220,7 +220,7 @@ Accessibility is a core quality requirement.
 - validate representative larger text sizes on physical devices.
 
 For the Guide day selector specifically:
-- the visible label may wrap or increase sticky-header height rather than shrinking to illegibility;
+- Totaal may wrap/increase header height where its accepted layout requires it; **Per zender is the explicit exception**: date, `Primetime` and `Nu` remain one line at `maximumFontSizeMultiplier = 1.20` inside the fixed 52-pt temporal context and must not recreate an 88-pt wrapped state;
 - the complete date control, `Primetime` where present, and `Nu` remain platform-appropriate touch targets;
 - screen readers receive the full selected date and `Dag kiezen`/equivalent action semantics;
 - Per-zender `Primetime` exposes a meaningful jump-to-20:30 action label;
@@ -238,7 +238,7 @@ The Core Guide MVP is not complete until physical validation confirms at least:
 - in Per zender between 00:00 and 05:59, `Primetime` returns to 20:30 on the preceding television-day evening;
 - `Nu` remains distinct from Primetime and restores the actual current instant/day;
 - Totaal date context updates coherently when the stable time-navigation anchor crosses 06:00;
-- vertical scrolling preserves the accepted sticky day/time context in Totaal and channel/date/Primetime/Nu context in Per zender;
+- vertical scrolling preserves the accepted sticky day/time context in Totaal and the fixed 52-pt date/Primetime/Nu temporal context beneath the persistent channel rail in Per zender;
 - `Nu` correctly restores the actual instant from any selected historical/future day;
 - Programme Detail opens/returns correctly for historical and future broadcasts;
 - refresh/day rollover preserves meaningful channel/time/date context;

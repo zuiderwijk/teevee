@@ -51,9 +51,11 @@ Do not retune accepted Guide mechanics without concrete regression evidence.
 
 ### Per zender
 - chronological fixed-row programme list: standard rows 52 pt and actual-current row 176 pt at base scale; programme duration never changes row height or Y position;
-- expanded/rest state has no separate large textual selected-channel heading; the selected rail logo is the primary identity while condensed context retains the compact channel name;
+- selected rail logo is the sufficient visible channel identity in both expanded/rest and condensed states; no selected-channel text is rendered outside the persistent rail;
 - horizontal adjacent-channel paging preserves the semantic viewed-time anchor where practical;
 - persistent/browsable 48×48 channel strip with direct selection; rest rail 72 pt and settled condensed rail 60 pt;
+- temporal context is always one 52-pt date + `Primetime` + `Nu` row: expanded gaps are 16 pt strip→context and 12 pt context→schedule, settled condensed gaps are 0/0; Per-zender date/Primetime/Nu are one line with `maximumFontSizeMultiplier = 1.20`, while programme content keeps substantive Dynamic Type;
+- PR #81 fixed-native-viewport/collapse-isolation is frozen: full visual contraction 140 pt, native collapse distance 56 pt and visual compensation 84 pt; no per-frame normal-flow mutation above the active vertical schedule ScrollView;
 - canonical local channel-logo registry is wired for NPO 1/2/3, RTL 4/5 and SBS6, with identical text fallback geometry for channels without a local asset;
 - once canonical broadcaster identity is established, non-current day loading/unavailability preserves that channel catalogue and never transiently replaces it with the generic deterministic fixture; the generic catalogue remains valid only in true fixture mode;
 - shared date context plus semantic `Primetime` and `Nu` controls; active/current state derives from the stable programme/timestamp anchor and Nu wins on overlap;
@@ -81,6 +83,8 @@ Do not retune accepted Guide mechanics without concrete regression evidence.
 - **Issue #67** — cold Guide day-switch measurement. Completed. Measurement identified Totaal React/render + large-grid commit/mount work as the dominant bottleneck, not network, fixture alignment or the native selector modal.
 - **PR #71 / issue #70** — removed repeated synchronous Totaal hot-path work by reusing the Amsterdam formatter and indexing programmes by channel. Merged; issue #70 completed.
 - **PR #74 / issue #73** — bounded horizontal Totaal programme-cell windowing. Final exact production head `0a6e98661ec3ca0af9722ab2786146101779cca2` passed independent QA and focused physical iPhone acceptance. Merge commit on `main`: `e2efe46d140b4c56906ba75ef1c8d6d2f66c50b9`. Post-merge CI #420 completed successfully. Issue #73 completed.
+- **PR #81** — Per-zender fixed-row convergence and scroll-jank hardening. Merged after physical iPhone validation and independent QA. Established 52-pt standard rows, 176-pt current row, semantic anchor preservation, stable canonical channel identity and the fixed-native-viewport/collapse-isolation architecture.
+- **PR #86** — accepted Per-zender compact temporal-context refinement. Merged documentation/design baseline: no selected-channel text outside the rail; fixed 52-pt temporal context; one-line 1.20-capped date/Primetime/Nu; 16/12 expanded gaps → 0/0 condensed; 72→60 rail; 140/56/84 contraction architecture endpoints. Runtime convergence remains the next implementation increment.
 
 ## Phase 4 performance evidence
 Original issue #67 physical baseline for cold Totaal day switches:
@@ -100,7 +104,7 @@ Focused PR #74 physical proof before the final animated-`Nu` correction:
 Independent QA then found one blocking animated same-window `Nu` ownership case. Development corrected it so animated programmatic scrolling leaves programme-window ownership tied to actual native scroll offsets. QA re-reviewed the final exact head with the blocker closed. Final focused physical iPhone acceptance passed Totaal day-switch responsiveness, animated same-window `Nu` continuity, hard horizontal fling/bounce and normal Guide scrolling. No persistent cache, eager horizon prefetch, provider/data-contract change, new dependency or full FlatList/FlashList virtualization was introduced.
 
 ## Remaining Phase 4 responsibilities
-- bring implemented Guide surfaces into the already accepted visual baseline without reopening frozen interaction mechanics;
+- converge Per-zender runtime to the merged PR #86 compact temporal-context baseline without reopening the PR #81 fixed-native-viewport/collapse-isolation architecture or frozen interaction mechanics;
 - production-quality Programme Detail actions (`Herinner mij` + `Bewaar`) and contextual sticky bottom copies as a separate coherent increment;
 - revisit known Nu & Straks density/accessibility debt without overlapping touch targets;
 - decide local schedule persistence/cache only if measured MVP/offline requirements justify it;
@@ -126,9 +130,9 @@ Physical Android interaction acceptance remains OPEN/DEFERRED because no Android
 - physical Android validation.
 
 ## EXACT NEXT STEP
-**Complete exact-head CI for the final PR #81 Per-zender candidate, then physically revalidate that exact head on iPhone. The device pass must verify the heading-less rest composition, 52/176 fixed rows and four-line current synopsis geometry, stable canonical NPO/RTL/SBS identity through non-current day loading/unavailable states, no transient generic `Publiek 1`/`Vier` rail, smooth vertical scrolling after a day switch, and the already accepted Nu/Primetime/channel-swipe/collapse/bottom-nav behaviour. RTL 4, RTL 5 and SBS6 dark-mode marks remain an explicit asset-input check. Do not request Independent QA and do not merge before owner physical acceptance.**
+**Implement the merged PR #86 Per-zender compact temporal-context refinement against `docs/PER_ZENDER_VISUAL_CONVERGENCE.md` without changing the PR #81 fixed-native-viewport/collapse-isolation architecture. Remove the obsolete 52↔88/wrapped-context runtime path, use one 52-pt temporal context with 16/12 expanded gaps and 0/0 condensed gaps, update collapse geometry to 140 pt visual contraction / 56 pt native collapse / 84 pt visual compensation, remove selected-channel text outside the rail, and apply the accepted 06:00 date-label rules plus one-line 1.20-capped date/Primetime/Nu. Preserve 52/176 programme rows, semantic anchors, gestures, D-2..D+7, Instrument Sans and themes. Treat this as high-risk Guide scroll work: deterministic regression coverage, exact-head CI, physical iPhone validation and independent QA are required before Lead merge.**
 
 Owner checkout: `~/projects/teevee`.
 
 ## Resume instruction
-> Read `AGENTS.md`, this file, `docs/ENGINEERING_QUALITY_POLICY.md`, ADR 0007, ADR 0008 and the visual handoff documents before changing the repository. Phase 1A, Phase 1B, Phase 2 and Phase 3 are closed on iPhone. Phase 4 is active. Preserve the accepted Totaal performance architecture and frozen Guide mechanics. PR #81 is the active Per-zender convergence candidate: fixed 52/176 rows, no large rest channel heading, stable canonical channel identity during selected-day loading, local representative logos and semantic Nu/Primetime controls. The single next gate is exact-head CI followed by physical iPhone revalidation; do not request Independent QA and do not merge before owner acceptance.
+> Read `AGENTS.md`, this file, `docs/ENGINEERING_QUALITY_POLICY.md`, ADR 0007, ADR 0008 and the Per-zender visual handoff before changing the repository. Phase 1A, Phase 1B, Phase 2 and Phase 3 are closed on iPhone. Phase 4 is active. PR #81 is merged and its fixed-native-viewport/collapse-isolation architecture is frozen. PR #86 is merged and defines the next Per-zender visual runtime delta: one fixed 52-pt date/Primetime/Nu context, no selected-channel text outside the rail, 16/12 expanded gaps → 0/0 condensed, 72→60 rail, one-line 1.20-capped temporal labels and 140/56/84 collapse geometry. Preserve the accepted 52/176 programme rows, semantic anchor behaviour, channel identity stability, gestures, D-2..D+7, Instrument Sans and themes.
