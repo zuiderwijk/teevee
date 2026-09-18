@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { act, createElement, useEffect, type ReactNode } from 'react';
+import { act, createElement, type ReactNode } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -26,9 +26,31 @@ vi.mock('@/features/guide/PerChannelGuideView', () => ({
   PerChannelGuideView: () =>
     createElement('div', { 'data-testid': 'mock-per-channel' }, 'Per zender'),
 }));
-vi.mock('@/features/guide/ProgrammeDetail', () => ({
-  ProgrammeDetail: () => createElement('div', { 'data-testid': 'mock-detail' }),
-}));
+vi.mock('@/features/guide/ProgrammeDetail', async () => {
+  const React = await import('react');
+  return {
+    ProgrammeDetail: ({
+      state,
+      onClose,
+    }: {
+      state: {
+        visible: boolean;
+        selection: { programme: { id: string } } | null;
+      };
+      onClose: () => void;
+    }) =>
+      state.visible
+        ? React.createElement(
+            'button',
+            {
+              'data-testid': 'mock-detail-open',
+              onClick: onClose,
+            },
+            state.selection?.programme.id ?? 'detail',
+          )
+        : React.createElement('div', { 'data-testid': 'mock-detail-closed' }),
+  };
+});
 vi.mock('@/features/guide/NowNextLoadErrorNotice', () => ({
   NowNextLoadErrorNotice: () =>
     createElement('div', { 'data-testid': 'mock-now-next-error' }),
@@ -76,22 +98,68 @@ vi.mock('@/features/guide/GuidePresentationSelector', () => ({
     ),
 }));
 
-vi.mock('@/features/guide/NowNextGuideView', () => ({
-  NowNextGuideView: ({
-    presentationNavigation,
-  }: {
-    presentationNavigation: ReactNode;
-  }) => {
-    useEffect(() => {
-      state.nowNextMounts += 1;
-    }, []);
-    return createElement(
-      'div',
-      { 'data-testid': 'mock-now-next' },
+vi.mock('@/features/guide/NowNextGuideView', async () => {
+  const React = await import('react');
+  const channel = {
+    id: 'one',
+    name: 'NPO 1',
+    displayName: 'NPO 1',
+    sortOrder: 0,
+    isActive: true,
+  };
+  const reference = {
+    id: 'reference',
+    channelId: channel.id,
+    title: 'Reference',
+    startAt: '2026-09-18T18:00:00.000Z',
+    endAt: '2026-09-18T18:30:00.000Z',
+  };
+  const following = {
+    id: 'following',
+    channelId: channel.id,
+    title: 'Following',
+    startAt: '2026-09-18T18:30:00.000Z',
+    endAt: '2026-09-18T19:00:00.000Z',
+  };
+
+  return {
+    NowNextGuideView: ({
       presentationNavigation,
-    );
-  },
-}));
+      onSelectProgramme,
+    }: {
+      presentationNavigation: ReactNode;
+      onSelectProgramme: (selection: {
+        channel: typeof channel;
+        programme: typeof reference;
+      }) => void;
+    }) => {
+      React.useEffect(() => {
+        state.nowNextMounts += 1;
+      }, []);
+      return React.createElement(
+        'div',
+        { 'data-testid': 'mock-now-next' },
+        presentationNavigation,
+        React.createElement(
+          'button',
+          {
+            'data-testid': 'mock-now-next-reference',
+            onClick: () => onSelectProgramme({ channel, programme: reference }),
+          },
+          'Reference',
+        ),
+        React.createElement(
+          'button',
+          {
+            'data-testid': 'mock-now-next-following',
+            onClick: () => onSelectProgramme({ channel, programme: following }),
+          },
+          'Following',
+        ),
+      );
+    },
+  };
+});
 
 import GuideScreen from './index';
 
@@ -151,6 +219,34 @@ describe('GuideScreen Nu & Straks module boundary', () => {
     expect(
       container.querySelectorAll('[data-testid="mock-presentation-selector-pill"]'),
     ).toHaveLength(0);
+  });
+
+  it('keeps the same deferred Nu & Straks instance through reference and following Programme Detail round-trips', async () => {
+    await act(async () => root.render(<GuideScreen />));
+    const frame = state.startupFrame;
+    await act(async () => {
+      frame?.(0);
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
+    const mountedView = getByTestId('mock-now-next');
+    expect(state.nowNextMounts).toBe(1);
+
+    await act(async () => getByTestId('mock-now-next-reference').click());
+    expect(getByTestId('mock-detail-open').textContent).toBe('reference');
+    expect(getByTestId('mock-now-next')).toBe(mountedView);
+    await act(async () => getByTestId('mock-detail-open').click());
+    expect(container.querySelector('[data-testid="mock-detail-open"]')).toBeNull();
+    expect(getByTestId('mock-now-next')).toBe(mountedView);
+    expect(state.nowNextMounts).toBe(1);
+
+    await act(async () => getByTestId('mock-now-next-following').click());
+    expect(getByTestId('mock-detail-open').textContent).toBe('following');
+    expect(getByTestId('mock-now-next')).toBe(mountedView);
+    await act(async () => getByTestId('mock-detail-open').click());
+    expect(getByTestId('mock-now-next')).toBe(mountedView);
+    expect(state.nowNextMounts).toBe(1);
   });
 
   it('does not remount Nu & Straks when hosted guide data version changes', async () => {
