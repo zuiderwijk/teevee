@@ -11,6 +11,18 @@ Doel: chronologisch, begrijpelijk overzicht van substantiële milestones, verifi
 
 ---
 
+## 18 september 2026 — Nu & Straks production design canonical via PR #93
+
+De owner-approved Nu & Straks Accepted Design Refinement is canoniek gemergd. Finale exacte design-head: `18ee2b81357819b39ee35b9196d7f984ad59e9b7`; merge-commit op `main`: `21e1e61b950046fd0e77308be5a64d09721e6310`. Post-merge CI #654 is groen.
+
+De nieuwe production handoff staat in `docs/NU_EN_STRAKS_VISUAL_CONVERGENCE.md`. De reeds geaccepteerde compositie blijft intact: één gedeeld reference instant, dominant reference programme, exact drie following-programme slots, Nu/Primetime, stabiele verticale channel-context, native rail fling/settle, direct Programme Detail en deferred `NowNextGuideView`.
+
+De refinement maakt de bekende accessibility/density debt production-ready: echte niet-overlappende 44-pt iOS / 48-dp Android targets, deterministic row geometry, stacked following time/title boven fontScale 1.35, substantive Dynamic Type, Instrument Sans en expliciete light/dark/system, safe-area, VoiceOver/TalkBack en Reduce Motion-contracten. Daarnaast maakt de spec duidelijk dat strict-midnight day bounds, prototype standalone header/floating selector, 24-pt following rows, system-font styling en opacity-heavy pressed feedback runtime debt zijn en geen designauthority.
+
+**Volgende stap:** implementeer deze production specification als één afzonderlijke HIGH-risk Nu & Straks runtime-convergence increment. Vereist: deterministic tests, exact-head CI, fysieke iPhone-validatie en daarna Independent QA. Geen nieuwe designexploration tenzij concrete implementatie-evidence een fundamentele product/UX-keuze noodzakelijk maakt.
+
+---
+
 ## 18 september 2026 — PR #92 Programme Detail production convergence gesloten
 
 PR #92 is na meerdere gerichte Independent QA-rondes gemergd. Finale exacte implementatie-head: `4a21b36c690aaa0df598dcc5ddf33ada1c790bcf`; merge-commit op `main`: `ba59ea72c41d0ee73c8fea30bb4de8b59454e00b`.
