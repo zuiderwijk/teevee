@@ -71,7 +71,7 @@ export const ChannelIdentity = memo(function ChannelIdentity({
             perChannelStrip ? COMPACT_GUIDE_MAX_FONT_SIZE_MULTIPLIER : undefined
           }
           style={[
-            styles.name,
+            nowNext ? styles.nowNextName : styles.name,
             showLogo ? styles.nameWithLogo : null,
             perChannelStrip ? styles.perChannelFallback : null,
             nowNext ? styles.nowNextFallback : null,
@@ -152,6 +152,10 @@ const styles = StyleSheet.create({
   nameWithLogo: {
     fontSize: 10,
     fontWeight: '600',
+  },
+  nowNextName: {
+    width: '100%',
+    textAlign: 'center',
   },
   detailName: {
     width: 'auto',
