@@ -11,6 +11,24 @@ Doel: chronologisch, begrijpelijk overzicht van substantiële milestones, verifi
 
 ---
 
+## 18 september 2026 — PR #96 Nu & Straks production convergence
+
+De owner-approved Nu & Straks production specification uit `docs/NU_EN_STRAKS_VISUAL_CONVERGENCE.md` is als afzonderlijke HIGH-risk Phase 4 runtime-increment geïmplementeerd. De bestaande shared-reference/live-browse/Nu/Primetime en fysiek geaccepteerde native rail-interactie blijven de productbasis; prototype-era styling en strict-midnight ownership zijn verwijderd.
+
+De tijdsdomain gebruikt nu expliciet de canonical 06:00 Europe/Amsterdam television day. De rail wordt uit de echte 23/24/25-uurs day bounds opgebouwd en bevat daardoor 46/48/50 halfuurslots. Live semantics blijven op het exacte actuele instant; alleen de visuele railoriëntatie gebruikt het dichtstbijzijnde navigatieslot. Primetime resolveert via de television-day wall-clock helper naar 20:30, inclusief de voorafgaande avond tussen 00:00 en 05:59. Rail-originated momentum/no-momentum settle commits muteren alleen de reference state en geven geen tweede `scrollTo`; directe slot-, Nu- en Primetime-acties mogen wel recenteren en doen dat zonder animatie onder Reduce Motion.
+
+Nu & Straks gebruikt nu de canonical shared `GuideChrome` en tabs in plaats van de standalone `TEEVEE / Gids / Nu & Straks` header en floating presentation selector. De persistente functionele stack is 52 pt reference context + 52 pt time rail. De verticale schedule-viewport blijft native vast op deze 104-pt condensed boundary; de 100-pt shared chrome-contraction wordt verdeeld over 56 pt native channel scroll plus 44 pt visuele contentcompensatie. Daarmee verandert normale-flow geometry boven de actieve verticale ScrollView niet per frame en blijft de zichtbare channel anchor coherent tijdens collapse. Reduce Motion gebruikt de canonical discrete switch op 28 pt.
+
+Channel rows zijn deterministic per platform/fontScale: 228 pt iOS en 240 dp Android op normale schaal, 20/64/16 → X100 horizontale programma-geometry, minimaal 72 pt reference block en altijd drie gereserveerde following slots. Following targets zijn minimaal 44 pt iOS / 48 dp Android, overlappen niet en schakelen boven fontScale 1.35 naar de canonical stacked time/title-layout. Reference/following programme content gebruikt Instrument Sans en substantive Dynamic Type; alleen compact functional chrome gebruikt de 1.20 cap. Programme press feedback is een tijdelijke semantic `surface` fill zonder card/opacity-first treatment.
+
+De presentation consumeert de provider-independent shared runtime schedule en indexeert programma's één keer per channel. Zodra canonical channels bekend zijn, worden ze tijdens tijdelijke schedule-unavailability als established catalogue behouden en wordt niet teruggeschakeld naar generieke fixture identity. De deterministic fixture blijft uitsluitend de pre-canonical fallback. Een schedule/data-version update remount Nu & Straks niet meer: de oude `key={guideDataVersion}` boundary is verwijderd zodat live/browse state, exact reference instant, rail state en verticale channel context kunnen overleven. Programme Detail blijft buiten de memoized Guide-view gemount; reference en alle drie following programme taps gebruiken dezelfde direct-selection boundary.
+
+Deterministische coverage bewaakt de volledige canonical §22-contractset: 06:00/midnight/rollover/Primetime/DST, [start,end), gap + three-following semantics, live/Nu/Primetime states, equal-height rows, 44/48 targets en non-overlap, normal/stacked Dynamic Type, native rail settle/no-momentum drag, explicit recenter + Reduce Motion, vertical-context behoud, fixture→hosted replacement, reference/following Detail round-trips, incomplete/unavailable data, light/dark semantic press tokens, Instrument Sans metrics en de deferred `import()` startup boundary.
+
+**Volgende stap:** exact-head CI voor PR #96 volledig groen krijgen en daarna de PR teruggeven aan Lead voor de canonical 21-punts fysieke iPhone-validatie. Geen merge en geen Independent QA vóór Lead/product-visual acceptance.
+
+---
+
 ## 18 september 2026 — Nu & Straks production design canonical via PR #93
 
 De owner-approved Nu & Straks Accepted Design Refinement is canoniek gemergd. Finale exacte design-head: `18ee2b81357819b39ee35b9196d7f984ad59e9b7`; merge-commit op `main`: `21e1e61b950046fd0e77308be5a64d09721e6310`. Post-merge CI #654 is groen.
