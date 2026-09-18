@@ -1,8 +1,8 @@
-import type { Programme } from '@/data/domain/epg';
+import type { Channel, Programme } from '@/data/domain/epg';
 
 export type ProgrammeSelection = {
   programme: Programme;
-  channelName: string;
+  channel: Channel;
 };
 
 export type DetailState = {
