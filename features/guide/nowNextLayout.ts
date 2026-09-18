@@ -215,7 +215,9 @@ export function nowNextStableScrollVisuals(progress: number) {
       GUIDE_CHROME_EXPANDED_HEIGHT * (1 - clamped) +
       NOW_NEXT_VISUAL_METRICS.functionalStackHeight,
     contentTranslateY:
-      -NOW_NEXT_STABLE_SCROLL_GEOMETRY.scrollCompensation * clamped,
+      clamped === 0
+        ? 0
+        : -NOW_NEXT_STABLE_SCROLL_GEOMETRY.scrollCompensation * clamped,
   } as const;
 }
 
