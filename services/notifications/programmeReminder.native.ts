@@ -5,7 +5,10 @@ import type { Channel, Programme } from '@/data/domain/epg';
 import type { ProgrammeReminderRecord } from '@/features/guide/programmePersonalState';
 
 import {
+  PROGRAMME_REMINDER_LEAD_MS,
   programmeReminderFireAtMs,
+  type ProgrammeReminderNow,
+  type ProgrammeReminderReconciliationResult,
   type ProgrammeReminderScheduleResult,
 } from './programmeReminderContract';
 
@@ -56,17 +59,23 @@ async function ensurePermission(): Promise<boolean> {
 export async function scheduleProgrammeReminder(
   programme: Programme,
   channel: Channel,
-  nowMs = Date.now(),
+  now: ProgrammeReminderNow = Date.now,
 ): Promise<ProgrammeReminderScheduleResult> {
-  const fireAtMs = programmeReminderFireAtMs(programme.startAt, nowMs);
-  if (fireAtMs === null) return { ok: false, reason: 'started' };
+  if (programmeReminderFireAtMs(programme.startAt, now()) === null) {
+    return { ok: false, reason: 'started' };
+  }
 
   try {
     ensureForegroundHandler();
     await ensureAndroidChannel();
     if (!(await ensurePermission())) return { ok: false, reason: 'permission' };
 
-    const preferredFireAt = Date.parse(programme.startAt) - 5 * 60 * 1000;
+    const schedulingNowMs = now();
+    const fireAtMs = programmeReminderFireAtMs(programme.startAt, schedulingNowMs);
+    if (fireAtMs === null) return { ok: false, reason: 'started' };
+
+    const preferredFireAt =
+      Date.parse(programme.startAt) - PROGRAMME_REMINDER_LEAD_MS;
     const immediate = fireAtMs > preferredFireAt;
     const notificationId = await Notifications.scheduleNotificationAsync({
       content: {
@@ -105,26 +114,38 @@ export async function cancelProgrammeReminder(notificationId: string): Promise<b
 export async function reconcileProgrammeReminder(
   record: ProgrammeReminderRecord,
   programme: Programme,
-  nowMs = Date.now(),
-): Promise<boolean> {
+  now: ProgrammeReminderNow = Date.now,
+): Promise<ProgrammeReminderReconciliationResult> {
+  const nowMs = now();
   const startMs = Date.parse(programme.startAt);
-  if (
+  const stale =
     !Number.isFinite(startMs) ||
     startMs <= nowMs ||
-    record.programmeStartAt !== programme.startAt
-  ) {
-    await cancelProgrammeReminder(record.notificationId);
-    return false;
+    record.programmeStartAt !== programme.startAt;
+
+  if (stale) {
+    const cancelled = await cancelProgrammeReminder(record.notificationId);
+    return cancelled
+      ? { status: 'verified-invalid' }
+      : {
+          status: 'indeterminate',
+          reason: 'cancellation-unconfirmed',
+          presentActive: false,
+        };
   }
 
-  // Once the five-minute reminder instant has passed, retaining the state until
-  // programme start is intentional: the notification may already have fired.
-  if (record.fireAtMs <= nowMs) return true;
+  if (record.fireAtMs <= nowMs) return { status: 'verified-valid' };
 
   try {
     const scheduled = await Notifications.getAllScheduledNotificationsAsync();
-    return scheduled.some((request) => request.identifier === record.notificationId);
+    return scheduled.some((request) => request.identifier === record.notificationId)
+      ? { status: 'verified-valid' }
+      : { status: 'verified-invalid' };
   } catch {
-    return false;
+    return {
+      status: 'indeterminate',
+      reason: 'native-query-failed',
+      presentActive: true,
+    };
   }
 }
