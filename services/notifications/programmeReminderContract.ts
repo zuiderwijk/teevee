@@ -11,7 +11,10 @@ export type ProgrammeReminderReconciliationResult =
   | { status: 'verified-invalid' }
   | {
       status: 'indeterminate';
-      reason: 'native-query-failed' | 'cancellation-unconfirmed';
+      reason:
+        | 'native-query-failed'
+        | 'cancellation-unconfirmed'
+        | 'exact-alarm-capability-unknown';
       presentActive: boolean;
     };
 
@@ -23,7 +26,12 @@ export type ProgrammeReminderScheduleResult =
     }
   | {
       ok: false;
-      reason: 'started' | 'permission' | 'unsupported' | 'schedule';
+      reason:
+        | 'started'
+        | 'permission'
+        | 'exact-alarm'
+        | 'unsupported'
+        | 'schedule';
     };
 
 export function programmeReminderFireAtMs(
