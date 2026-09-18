@@ -7,7 +7,6 @@ export const NOW_NEXT_VISUAL_METRICS = {
   timeRailHeight: 52,
   functionalStackHeight: 104,
   collapseDistance: 56,
-  collapseTranslateY: 12,
   reduceMotionSwitchOffset: 28,
   timeSlotWidth: 76,
   timeSlotHeight: 48,
