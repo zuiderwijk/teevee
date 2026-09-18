@@ -66,7 +66,7 @@ export const ChannelIdentity = memo(function ChannelIdentity({
       {showVisibleName ? (
         <Text
           numberOfLines={1}
-          ellipsizeMode={perChannelStrip || detail || showLogo ? 'tail' : 'middle'}
+          ellipsizeMode={compactLogoIdentity || detail || showLogo ? 'tail' : 'middle'}
           maxFontSizeMultiplier={
             perChannelStrip ? COMPACT_GUIDE_MAX_FONT_SIZE_MULTIPLIER : undefined
           }
