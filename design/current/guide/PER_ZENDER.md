@@ -106,8 +106,8 @@ Do not add arrows, fade masks, gradients, page dots or permanent swipe-help text
 - The separate large textual selected-channel heading below the channel-logo strip (`NPO 1`, `NPO 3`, etc.) is removed completely from the expanded/rest state.
 - The selected channel logo in the rail is the primary and sufficient channel identity in the expanded/rest state.
 - Do not replace the removed heading with another large label, badge or duplicate identity treatment.
-- The compact textual channel name in the condensed channel/date context (`NPO 3 · Do 17 sep`, etc.) remains accepted and required for orientation.
-- This refinement removes only the large rest-state heading; it does not reopen spacing, channel-strip, temporal-control, programme-list or gesture decisions.
+- This earlier refinement removed the large rest-state heading; the later compact temporal-context refinement below additionally removes the former compact condensed channel name.
+- Channel identity remains available through the selected logo, accessibility label and missing-logo fallback.
 
 ### Current-programme spacing refinement
 The current-programme row intentionally receives substantially more breathing room. This is owner-approved premium-density calibration, not a card treatment.
