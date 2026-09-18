@@ -120,7 +120,7 @@ Purpose: inspect the schedule of one channel while making adjacent-channel compa
 - Per-zender date/Primetime/Nu labels use a hard `maximumFontSizeMultiplier = 1.20` and remain one line; programme content continues to follow its substantive Dynamic Type rules;
 - do not reintroduce the older expanded time picker with `Vanmiddag`, `Vooravond` or arbitrary `Kies tijd…` options; the accepted requirement is the direct Primetime shortcut only;
 - the schedule continues naturally through midnight within the same television-day context;
-- use **16 pt** channel rail→temporal context and **12 pt** temporal context→schedule in expanded/rest; both gaps collapse to **0 pt** in settled condensed state while the temporal context itself remains exactly **52 pt**;
+- use **4 pt** channel rail→temporal context and **24 pt** temporal context→schedule in expanded/rest; both gaps collapse to **0 pt** in settled condensed state while the temporal context itself remains exactly **52 pt**. This deliberately keeps temporal navigation optically closer to the selected-logo rail and gives the programme list more breathing room;
 - programme rows remain open and typographic rather than stacked cards;
 - do not add genre chips or thumbnails merely to increase information density.
 

@@ -136,7 +136,7 @@ Accepted visual characteristics:
 - selected channel identity is carried visually by the persistent selected logo in both expanded/rest and condensed states; do **not** add separate selected-channel text outside the rail;
 - selected channel remains fully visible, centres comfortably where geometry permits and may retain a small trailing continuation cue where practical;
 - rest channel strip is 72 pt; settled condensed strip is 60 pt while channel items remain 48×48;
-- expanded/rest rail → temporal-context spacing is **16 pt** and temporal context → schedule is **12 pt**; in settled condensed state both gaps are **0 pt** while the temporal context remains **52 pt**;
+- expanded/rest rail → temporal-context spacing is **4 pt** and temporal context → schedule is **24 pt**; in settled condensed state both gaps are **0 pt** while the temporal context remains **52 pt**;
 - current programme uses a deliberately spacious **176-pt base row** with 19/23 title, 10-pt title→description gap, 15/22 description up to 4 lines, at least 20 pt clear space before the local progressbar, and no current card, red left rail, global current-time line or now-dot;
 - programme rows prioritise time and title and use a temporary semantic `surface` fill only while pressed;
 - light/dark/system follow the shared Guide shell;
@@ -150,11 +150,11 @@ Accepted visual characteristics:
 - accepted day selector follows `GUIDE_DAY_SELECTOR.md`;
 - shared typography follows `design/current/TYPOGRAPHY.md`: Instrument Sans replaces any historical Söhne reference for family choice only.
 
-The exact date choices in the original 13 September Per-zender image are **SUPERSEDED**. Any selected-channel text outside the persistent logo rail, the old 24-pt rail→utilities gap, the long `Vandaag/Morgen · weekday date` labels, relative labels between 00:00–05:59, Dynamic-Type-driven wrapped temporal chrome and the earlier compact 120-pt current-programme treatment are likewise superseded by the written 18 September refinements. Preserve the rest of the accepted channel-strip/list composition.
+The exact date choices in the original 13 September Per-zender image are **SUPERSEDED**. Any selected-channel text outside the persistent logo rail, the old 24-pt rail→utilities gap, the physically rejected 16/12 expanded spacing distribution, the long `Vandaag/Morgen · weekday date` labels, relative labels between 00:00–05:59, Dynamic-Type-driven wrapped temporal chrome and the earlier compact 120-pt current-programme treatment are likewise superseded by the written 18 September refinements. Preserve the rest of the accepted channel-strip/list composition.
 
 The `Primetime` shortcut visible in the original Per-zender visual is canonical in concept and placement priority. Do not infer from that board that the full `Vanmiddag` / `Vooravond` / `Kies tijd…` sheet is required; that expanded time picker is superseded. The later sticky/condensed board remains useful for structural condensation only: for Per zender it is stale where it omits `Primetime`, shows the old static utility treatment, adds channel text in condensed context, implies wrapped temporal chrome or a 72-pt settled condensed strip.
 
-Superseded examples include earlier Per-zender variants with programme imagery, genre descriptions, card-heavy rows, explicit previous/next channel arrow buttons, the expanded time picker, static temporal-button-only treatment, a permanently 72-pt settled condensed channel strip, any selected-channel text outside the rail, 24-pt rest rail→utilities spacing, long relative date labels, wrapped temporal chrome, or the compressed 120-pt current-programme treatment with 15/18 description capped at three lines.
+Superseded examples include earlier Per-zender variants with programme imagery, genre descriptions, card-heavy rows, explicit previous/next channel arrow buttons, the expanded time picker, static temporal-button-only treatment, a permanently 72-pt settled condensed channel strip, any selected-channel text outside the rail, the older 24-pt and later rejected 16/12 expanded spacing calibrations, long relative date labels, wrapped temporal chrome, or the compressed 120-pt current-programme treatment with 15/18 description capped at three lines.
 
 ### Nu & Straks
 Status: **ACCEPTED**

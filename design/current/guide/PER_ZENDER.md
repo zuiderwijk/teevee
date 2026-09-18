@@ -125,10 +125,10 @@ The current-programme row intentionally receives substantially more breathing ro
 The accepted visual intent is deliberately more spacious and editorial: title, synopsis and progress must read as three distinct layers rather than one compressed block.
 
 ### Compact temporal-context refinement — physical iPhone validation
-The physically validated refinement makes expanded and condensed temporal chrome the same calm one-row composition.
+The physically validated refinement makes expanded and condensed temporal chrome the same calm one-row composition. A subsequent physical iPhone validation on PR #88 exact head `18c021b4ccfb36d599d6301dd04f9ec96ab6d66d` refined only the expanded/rest vertical spacing distribution.
 
 - Do **not** add the selected channel name in condensed state. The persistent selected logo is sufficient visible identity.
-- Rest rail → temporal utilities spacing is **16 pt**, superseding 24 pt.
+- Expanded/rest rail → temporal utilities spacing is **4 pt** and temporal utilities → schedule spacing is **24 pt**, superseding the physically rejected 16/12 distribution. The total expanded gap sum remains 28 pt.
 - From **06:00 through 23:59**, the current television day is shown as **`Vandaag`** and the next television day as **`Morgen`**, with no redundant weekday/date suffix.
 - Other television days use an explicit localized weekday + date label such as **`Zo 20 sep`**.
 - From **00:00 through 05:59**, Per zender uses **only explicit weekday + date labels** for the day selector and day-sheet options; `Vandaag` and `Morgen` are not shown in that window. This preserves the canonical 06:00 television-day boundary without ambiguous calendar-day wording.
@@ -136,6 +136,7 @@ The physically validated refinement makes expanded and condensed temporal chrome
 - At the cap, date is at most 18/24 and Primetime/Nu at most 16.8/21.6. Visible temporal labels remain one line; the 88-pt wrapped Per-zender context is no longer an accepted Dynamic-Type state.
 - Touch targets remain minimum 44 pt iOS / 48 dp Android, and full date/channel semantics remain exposed to VoiceOver/TalkBack.
 - Programme times, titles and current description keep their existing substantive Dynamic Type behaviour; this cap applies only to compact functional chrome.
+- With the fixed 72-pt rail, centred 48×48 item, 52-pt context and centred 36-pt visible controls, the accepted 4/24 calibration yields approximately **24 pt visible logo→controls whitespace** and **32 pt controls→schedule whitespace**, intentionally grouping temporal navigation with the channel rail while giving programme content more breathing room.
 
 ## Explicitly not accepted in this refinement
 - No one-time horizontal swipe nudge/peek is canonical yet; it remains a separate interaction refinement requiring explicit acceptance after physical/interaction validation.
@@ -144,7 +145,7 @@ The physically validated refinement makes expanded and condensed temporal chrome
 ## Screenshot authority note
 The exact historical date choices shown in the original 13 September image are **SUPERSEDED** by `GUIDE_DAY_SELECTOR.md` and the accepted written refinements above. The rest of the Per-zender list/strip composition remains canonical except for the explicit 2026-09-17 refinements and the 2026-09-18 identity, current-programme and compact temporal-context refinements documented above.
 
-The `Primetime` shortcut visible in the original Per-zender visual is **ACCEPTED** again by owner decision on 2026-09-15. The historical expanded time-picker is not accepted. Historical references are stale where they show selected-channel text outside the logo rail, the old long `Vandaag/Morgen · weekday date` labels, 24-pt rail→utilities spacing, a wrapped 88-pt Per-zender temporal context, a 72-pt settled condensed channel strip, or old static utility treatments; the written rules above win for those details.
+The `Primetime` shortcut visible in the original Per-zender visual is **ACCEPTED** again by owner decision on 2026-09-15. The historical expanded time-picker is not accepted. Historical references are stale where they show selected-channel text outside the logo rail, the old long `Vandaag/Morgen · weekday date` labels, the superseded 24-pt or 16/12 expanded spacing calibrations, a wrapped 88-pt Per-zender temporal context, a 72-pt settled condensed channel strip, or old static utility treatments; the written rules above win for those details.
 
 ## Superseded
 Earlier Per-zender mock-ups with programme imagery, genre descriptions, card-heavy programme rows or explicit previous/next channel arrows are not current and must not be used as a starting point.
@@ -162,7 +163,7 @@ Also superseded by the 2026-09-17 refinement:
 - 18/22 standard programme-title calibration and 20/24 current-title calibration for Per zender;
 - programme-row interaction feedback that relies only on generic opacity rather than the accepted temporary surface fill;
 - any separate selected-channel text outside the persistent logo rail, including the former compact channel name in condensed context;
-- 24-pt rail→utilities spacing in expanded/rest state;
+- the earlier 24-pt rail→utilities spacing and the later physically rejected 16/12 expanded spacing distribution;
 - long Per-zender relative labels such as `Vandaag · vr 18 sep` / `Morgen · za 19 sep`;
 - Per-zender use of `Vandaag` or `Morgen` between 00:00 and 05:59;
 - Per-zender temporal chrome wrapping to the former 88-pt context because of Dynamic Type;
