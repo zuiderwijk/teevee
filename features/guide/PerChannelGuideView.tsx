@@ -132,7 +132,7 @@ function ProgrammeRow({
       accessibilityRole="button"
       accessibilityLabel={`${channel.displayName}, ${programme.title}, ${formatTime(startMs)} tot ${formatTime(endMs)}${current ? ', nu bezig' : ''}`}
       accessibilityHint="Opent programmadetails"
-      onPress={() => onSelectProgramme({ programme, channelName: channel.displayName })}
+      onPress={() => onSelectProgramme({ programme, channel })}
       style={({ pressed }) => [
         styles.programmeRow,
         {
