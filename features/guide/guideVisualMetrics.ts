@@ -8,6 +8,7 @@ export const GUIDE_VISUAL_METRICS = {
   brandMarkBoxWidth: 56,
   brandMarkBoxHeight: 44,
   presentationNavHeight: 48,
+  chromeCollapseTranslateY: 12,
   presentationIndicatorWidth: 88,
   presentationIndicatorHeight: 2.5,
   presentationIndicatorRadius: 1.25,
@@ -58,7 +59,6 @@ export const PER_CHANNEL_VISUAL_METRICS = {
   separatorLeftInset: 20,
   stickyContextHeight: 52,
   collapseDistance: 56,
-  collapseTranslateY: 12,
   reduceMotionSwitchOffset: 28,
   viewportReferenceRows: 2,
 } as const;
