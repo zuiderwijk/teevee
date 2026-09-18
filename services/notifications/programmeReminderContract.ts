@@ -4,6 +4,17 @@ import type { ProgrammeReminderRecord } from '@/features/guide/programmePersonal
 export const PROGRAMME_REMINDER_LEAD_MS = 5 * 60 * 1000;
 export const PROGRAMME_REMINDER_IMMEDIATE_DELAY_MS = 1000;
 
+export type ProgrammeReminderNow = () => number;
+
+export type ProgrammeReminderReconciliationResult =
+  | { status: 'verified-valid' }
+  | { status: 'verified-invalid' }
+  | {
+      status: 'indeterminate';
+      reason: 'native-query-failed' | 'cancellation-unconfirmed';
+      presentActive: boolean;
+    };
+
 export type ProgrammeReminderScheduleResult =
   | {
       ok: true;
@@ -29,12 +40,12 @@ export type ProgrammeReminderService = {
   scheduleProgrammeReminder: (
     programme: Programme,
     channel: Channel,
-    nowMs?: number,
+    now?: ProgrammeReminderNow,
   ) => Promise<ProgrammeReminderScheduleResult>;
   cancelProgrammeReminder: (notificationId: string) => Promise<boolean>;
   reconcileProgrammeReminder: (
     record: ProgrammeReminderRecord,
     programme: Programme,
-    nowMs?: number,
-  ) => Promise<boolean>;
+    now?: ProgrammeReminderNow,
+  ) => Promise<ProgrammeReminderReconciliationResult>;
 };
