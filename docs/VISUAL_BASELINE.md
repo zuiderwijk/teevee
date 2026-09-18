@@ -53,7 +53,7 @@ Older surface-specific handoff text that still names Söhne is stale for the fam
 
 ### Shared Guide day selector — Totaal + Per zender
 Status: **ACCEPTED**
-Owner-approved direction: 2026-09-15; Per-zender Primetime amendment 2026-09-15; Per-zender temporal-state refinement 2026-09-17; Per-zender rest-heading removal 2026-09-18
+Owner-approved direction: 2026-09-15; Per-zender Primetime amendment 2026-09-15; Per-zender temporal-state refinement 2026-09-17; Per-zender identity + compact temporal-context refinement 2026-09-18
 Detailed manifest: `design/current/guide/GUIDE_DAY_SELECTOR.md`
 
 Canonical visual assets in the user's Teevee Library:
@@ -136,7 +136,7 @@ Accepted visual characteristics:
 - selected channel identity is carried visually by the persistent selected logo in both expanded/rest and condensed states; do **not** add separate selected-channel text outside the rail;
 - selected channel remains fully visible, centres comfortably where geometry permits and may retain a small trailing continuation cue where practical;
 - rest channel strip is 72 pt; settled condensed strip is 60 pt while channel items remain 48×48;
-- expanded/rest rail → temporal-utilities spacing is **16 pt**; temporal utilities → schedule remains 12 pt;
+- expanded/rest rail → temporal-context spacing is **16 pt** and temporal context → schedule is **12 pt**; in settled condensed state both gaps are **0 pt** while the temporal context remains **52 pt**;
 - current programme uses a deliberately spacious **176-pt base row** with 19/23 title, 10-pt title→description gap, 15/22 description up to 4 lines, at least 20 pt clear space before the local progressbar, and no current card, red left rail, global current-time line or now-dot;
 - programme rows prioritise time and title and use a temporary semantic `surface` fill only while pressed;
 - light/dark/system follow the shared Guide shell;
