@@ -2,6 +2,8 @@
 
 Status: **ACCEPTED DIRECTION**
 
+Production specification: `docs/PROGRAMME_DETAIL_VISUAL_CONVERGENCE.md`
+
 ## Current visual reference
 - `/Teevee/Teevee Programmadetail: Sticky acties.png`
   - file id: `file_00000000242481f4a0e772876f215342`

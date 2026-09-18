@@ -186,6 +186,8 @@ Tracked non-blocking debt: compact following-programme rows at larger text sizes
 ## Programme Detail
 Status: **ACCEPTED DIRECTION**
 
+Production specification: `docs/PROGRAMME_DETAIL_VISUAL_CONVERGENCE.md`
+
 Current visual reference in the user's Teevee Library:
 - `/Teevee/Teevee Programmadetail: Sticky acties.png`
   - Library file id: `file_00000000242481f4a0e772876f215342`
