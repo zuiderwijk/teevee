@@ -271,34 +271,70 @@ export function perChannelStableScrollVisuals(
   } as const;
 }
 
+function perChannelContextWrapOffset(contextWrapped: boolean) {
+  'worklet';
+  return contextWrapped ? PER_CHANNEL_STABLE_SCROLL_GEOMETRY.wrappedContextDelta : 0;
+}
+
 export function perChannelNativeOffsetForScheduleOffset(
   scheduleOffset: number,
   collapseProgress: number,
+  contextWrapped = false,
 ) {
+  'worklet';
   const clamped = Math.min(1, Math.max(0, collapseProgress));
   return Math.max(
     0,
     Math.max(0, scheduleOffset) +
-      PER_CHANNEL_VISUAL_METRICS.collapseDistance * clamped,
+      PER_CHANNEL_VISUAL_METRICS.collapseDistance * clamped +
+      perChannelContextWrapOffset(contextWrapped),
   );
 }
 
 export function perChannelScheduleOffsetForNativeOffset(
   nativeOffset: number,
   collapseProgress: number,
+  contextWrapped = false,
 ) {
+  'worklet';
   const clamped = Math.min(1, Math.max(0, collapseProgress));
   return Math.max(
     0,
     Math.max(0, nativeOffset) -
-      PER_CHANNEL_VISUAL_METRICS.collapseDistance * clamped,
+      PER_CHANNEL_VISUAL_METRICS.collapseDistance * clamped -
+      perChannelContextWrapOffset(contextWrapped),
   );
+}
+
+/**
+ * Preserve both the semantic programme anchor and collapse progress when the
+ * canonical context changes discretely between 52 and 88 pt.
+ */
+export function perChannelContextWrapAnchorTransition(
+  nativeOffset: number,
+  collapseAnchorY: number,
+  previousContextWrapped: boolean,
+  nextContextWrapped: boolean,
+) {
+  'worklet';
+  const safeNativeOffset = Math.max(0, nativeOffset);
+  const wrapDelta =
+    perChannelContextWrapOffset(nextContextWrapped) -
+    perChannelContextWrapOffset(previousContextWrapped);
+  const nextNativeOffset = Math.max(0, safeNativeOffset + wrapDelta);
+  const appliedDelta = nextNativeOffset - safeNativeOffset;
+
+  return {
+    nativeOffset: nextNativeOffset,
+    collapseAnchorY: Math.max(0, Math.max(0, collapseAnchorY) + appliedDelta),
+  } as const;
 }
 
 export function perChannelAnimatedTargetForScheduleOffset(
   scheduleOffset: number,
   collapseAnchorScheduleOffset: number,
   currentProgress: number,
+  contextWrapped = false,
 ) {
   const safeScheduleOffset = Math.max(0, scheduleOffset);
   const safeAnchor = Math.max(0, collapseAnchorScheduleOffset);
@@ -315,6 +351,7 @@ export function perChannelAnimatedTargetForScheduleOffset(
     nativeOffset: perChannelNativeOffsetForScheduleOffset(
       safeScheduleOffset,
       targetProgress,
+      contextWrapped,
     ),
   } as const;
 }
