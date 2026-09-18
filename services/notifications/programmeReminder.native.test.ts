@@ -16,9 +16,17 @@ const notifications = vi.hoisted(() => ({
   },
   SchedulableTriggerInputTypes: { DATE: 'date' },
 }));
+const exactAlarm = vi.hoisted(() => ({
+  get: vi.fn(),
+  request: vi.fn(),
+}));
 
 vi.mock('expo-notifications', () => notifications);
-vi.mock('react-native', () => ({ Platform: { OS: 'android' } }));
+vi.mock('react-native', () => ({ Platform: { OS: 'android', Version: 36 } }));
+vi.mock('./exactAlarmCapability.native', () => ({
+  getExactAlarmCapability: exactAlarm.get,
+  requestExactAlarmCapability: exactAlarm.request,
+}));
 
 import {
   reconcileProgrammeReminder,
@@ -81,9 +89,64 @@ beforeEach(() => {
   notifications.scheduleNotificationAsync.mockReset().mockResolvedValue('notification-1');
   notifications.cancelScheduledNotificationAsync.mockReset().mockResolvedValue(undefined);
   notifications.getAllScheduledNotificationsAsync.mockReset().mockResolvedValue([]);
+  exactAlarm.get.mockReset().mockReturnValue('available');
+  exactAlarm.request.mockReset().mockResolvedValue('available');
 });
 
 describe('native programme reminder scheduling', () => {
+  it('schedules only after Android exact-alarm capability is established', async () => {
+    const nowMs = Date.parse(programme.startAt) - 30 * 60 * 1000;
+
+    await expect(
+      scheduleProgrammeReminder(programme, channel, () => nowMs),
+    ).resolves.toMatchObject({ ok: true, notificationId: 'notification-1' });
+
+    expect(exactAlarm.get).toHaveBeenCalledTimes(2);
+    expect(exactAlarm.request).not.toHaveBeenCalled();
+    expect(notifications.scheduleNotificationAsync).toHaveBeenCalledTimes(1);
+  });
+
+  it('fails closed and does not schedule when exact-alarm special access is still missing', async () => {
+    const nowMs = Date.parse(programme.startAt) - 30 * 60 * 1000;
+    exactAlarm.get.mockReturnValue('unavailable');
+    exactAlarm.request.mockResolvedValue('unavailable');
+
+    await expect(
+      scheduleProgrammeReminder(programme, channel, () => nowMs),
+    ).resolves.toEqual({ ok: false, reason: 'exact-alarm' });
+
+    expect(exactAlarm.request).toHaveBeenCalledTimes(1);
+    expect(notifications.scheduleNotificationAsync).not.toHaveBeenCalled();
+  });
+
+  it('continues scheduling after the user returns with exact-alarm access granted', async () => {
+    const nowMs = Date.parse(programme.startAt) - 30 * 60 * 1000;
+    exactAlarm.get
+      .mockReturnValueOnce('unavailable')
+      .mockReturnValueOnce('available');
+    exactAlarm.request.mockResolvedValue('available');
+
+    await expect(
+      scheduleProgrammeReminder(programme, channel, () => nowMs),
+    ).resolves.toMatchObject({ ok: true, notificationId: 'notification-1' });
+
+    expect(exactAlarm.request).toHaveBeenCalledTimes(1);
+    expect(notifications.scheduleNotificationAsync).toHaveBeenCalledTimes(1);
+  });
+
+  it('fails closed if exact-alarm access is revoked before the native schedule call', async () => {
+    const nowMs = Date.parse(programme.startAt) - 30 * 60 * 1000;
+    exactAlarm.get
+      .mockReturnValueOnce('available')
+      .mockReturnValueOnce('unavailable');
+
+    await expect(
+      scheduleProgrammeReminder(programme, channel, () => nowMs),
+    ).resolves.toEqual({ ok: false, reason: 'exact-alarm' });
+
+    expect(notifications.scheduleNotificationAsync).not.toHaveBeenCalled();
+  });
+
   it('recomputes after permission and falls back immediately inside five minutes', async () => {
     const permission = deferred<{ granted: boolean; status: string }>();
     notifications.requestPermissionsAsync.mockReturnValue(permission.promise);
@@ -134,6 +197,30 @@ describe('native programme reminder scheduling', () => {
 });
 
 describe('native programme reminder reconciliation', () => {
+  it('invalidates an outstanding reminder when exact-alarm access has been revoked', async () => {
+    const nowMs = Date.parse(programme.startAt) - 30 * 60 * 1000;
+    exactAlarm.get.mockReturnValue('unavailable');
+
+    await expect(
+      reconcileProgrammeReminder(reminderRecord(), programme, () => nowMs),
+    ).resolves.toEqual({ status: 'verified-invalid' });
+
+    expect(notifications.getAllScheduledNotificationsAsync).not.toHaveBeenCalled();
+  });
+
+  it('keeps metadata inactive when exact-alarm capability cannot be established', async () => {
+    const nowMs = Date.parse(programme.startAt) - 30 * 60 * 1000;
+    exactAlarm.get.mockReturnValue('indeterminate');
+
+    await expect(
+      reconcileProgrammeReminder(reminderRecord(), programme, () => nowMs),
+    ).resolves.toEqual({
+      status: 'indeterminate',
+      reason: 'exact-alarm-capability-unknown',
+      presentActive: false,
+    });
+  });
+
   it('keeps metadata when native enumeration is indeterminate', async () => {
     const nowMs = Date.parse(programme.startAt) - 30 * 60 * 1000;
     notifications.getAllScheduledNotificationsAsync.mockRejectedValue(
