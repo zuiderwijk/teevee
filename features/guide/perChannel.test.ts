@@ -13,6 +13,10 @@ import {
   currentProgrammeIdAt,
   perChannelFunctionalGapsForCollapseProgress,
   perChannelLayoutAnchorKey,
+  perChannelNativeOffsetForScheduleOffset,
+  perChannelScheduleOffsetForNativeOffset,
+  PER_CHANNEL_STABLE_SCROLL_GEOMETRY,
+  perChannelStableScrollVisuals,
   currentProgrammeRowHeight,
   programmeRowForTimestamp,
   programmesForChannelDay,
@@ -156,6 +160,43 @@ describe('per-channel fixed-row schedule', () => {
       stripToContext: 0,
       contextToSchedule: 0,
     });
+  });
+
+  it('keeps the native schedule viewport fixed while visual chrome converges', () => {
+    expect(PER_CHANNEL_STABLE_SCROLL_GEOMETRY).toEqual({
+      viewportTop: 112,
+      contentTopInset: 148,
+      wrappedContextDelta: 36,
+      scrollCompensation: 92,
+    });
+
+    const rest = perChannelStableScrollVisuals(0, false);
+    const midpoint = perChannelStableScrollVisuals(0.5, false);
+    const condensed = perChannelStableScrollVisuals(1, false);
+
+    expect(rest.overlayBottom).toBe(260);
+    expect(midpoint.overlayBottom).toBe(186);
+    expect(condensed.overlayBottom).toBe(112);
+    expect(rest.contentTranslateY).toBe(0);
+    expect(midpoint.contentTranslateY).toBe(-46);
+    expect(condensed.contentTranslateY).toBe(-92);
+
+    const wrappedRest = perChannelStableScrollVisuals(0, true);
+    const wrappedCondensed = perChannelStableScrollVisuals(1, true);
+    expect(wrappedRest.overlayBottom).toBe(296);
+    expect(wrappedCondensed.overlayBottom).toBe(148);
+    expect(wrappedRest.contentTranslateY).toBe(36);
+    expect(wrappedCondensed.contentTranslateY).toBe(-56);
+  });
+
+  it('round-trips semantic schedule offsets through the stable native viewport geometry', () => {
+    for (const progress of [0, 0.25, 0.5, 1]) {
+      const nativeOffset = perChannelNativeOffsetForScheduleOffset(640, progress);
+      expect(perChannelScheduleOffsetForNativeOffset(nativeOffset, progress)).toBe(640);
+    }
+
+    expect(perChannelNativeOffsetForScheduleOffset(0, 0)).toBe(148);
+    expect(perChannelNativeOffsetForScheduleOffset(0, 1)).toBe(56);
   });
 
   it('uses the accepted Per-zender typography and 72/60 rail geometry', () => {
