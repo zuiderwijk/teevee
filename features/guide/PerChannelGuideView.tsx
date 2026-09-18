@@ -51,6 +51,7 @@ import {
   channelRailRecenterPlan,
   collapseProgressForScrollOffset,
   compactContextForCollapseProgress,
+  perChannelAnimatedTargetForScheduleOffset,
   perChannelFunctionalGapsForCollapseProgress,
   perChannelLayoutAnchorKey,
   perChannelNativeOffsetForScheduleOffset,
@@ -526,15 +527,29 @@ export const PerChannelGuideView = memo(function PerChannelGuideView({
         timeMs,
         referenceInsetRef.current,
       );
-      const y = perChannelNativeOffsetForScheduleOffset(scheduleOffset, progress);
+      const target =
+        animated && collapseEnabled.value !== 0
+          ? perChannelAnimatedTargetForScheduleOffset(
+              scheduleOffset,
+              collapseAnchorY.value,
+              progress,
+            )
+          : {
+              progress,
+              nativeOffset: perChannelNativeOffsetForScheduleOffset(
+                scheduleOffset,
+                progress,
+              ),
+            };
       if (!animated) {
         collapseAnchorY.value = Math.max(
           0,
-          y - progress * PER_CHANNEL_VISUAL_METRICS.collapseDistance,
+          target.nativeOffset -
+            target.progress * PER_CHANNEL_VISUAL_METRICS.collapseDistance,
         );
         collapseEnabled.value = 1;
       }
-      scheduleRef.current?.scrollTo({ y, animated });
+      scheduleRef.current?.scrollTo({ y: target.nativeOffset, animated });
     },
     [collapseAnchorY, collapseEnabled, collapseProgress],
   );
