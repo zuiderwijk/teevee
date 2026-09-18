@@ -2,6 +2,7 @@ import { programmeProgress, type Channel, type GuideFixture, type GuideSchedule,
 
 import {
   currentProgrammeRowHeight,
+  GUIDE_VISUAL_METRICS,
   PER_CHANNEL_VISUAL_METRICS,
   standardProgrammeRowHeight,
 } from './guideVisualMetrics';
@@ -189,6 +190,111 @@ export function perChannelFunctionalGapsForCollapseProgress(progress: number) {
     stripToContext: PER_CHANNEL_VISUAL_METRICS.stripToUtilitiesGap * (1 - clamped),
     contextToSchedule: PER_CHANNEL_VISUAL_METRICS.utilityToScheduleGap * (1 - clamped),
   } as const;
+}
+
+const GUIDE_CHROME_EXPANDED_HEIGHT =
+  GUIDE_VISUAL_METRICS.brandTopInset +
+  GUIDE_VISUAL_METRICS.brandMarkBoxHeight +
+  GUIDE_VISUAL_METRICS.presentationNavHeight;
+
+/**
+ * Keep the native vertical ScrollView viewport fixed while Per-zender chrome
+ * visually converges from its rest stack to the condensed stack.
+ *
+ * The rest -> condensed visual stack contracts by 148 pt:
+ * - Guide chrome: 100 -> 0
+ * - channel rail: 72 -> 60
+ * - rail -> context gap: 24 -> 0
+ * - context -> schedule gap: 12 -> 0
+ *
+ * Native scroll advances only 56 pt over that same collapse. The remaining
+ * 92 pt therefore has to be a visual content transform, never a normal-flow
+ * layout mutation above the active ScrollView.
+ */
+export const PER_CHANNEL_STABLE_SCROLL_GEOMETRY = {
+  viewportTop:
+    PER_CHANNEL_VISUAL_METRICS.channelStripCondensedHeight +
+    PER_CHANNEL_VISUAL_METRICS.stickyContextHeight,
+  contentTopInset:
+    GUIDE_CHROME_EXPANDED_HEIGHT +
+    (PER_CHANNEL_VISUAL_METRICS.channelStripHeight -
+      PER_CHANNEL_VISUAL_METRICS.channelStripCondensedHeight) +
+    PER_CHANNEL_VISUAL_METRICS.stripToUtilitiesGap +
+    PER_CHANNEL_VISUAL_METRICS.utilityToScheduleGap,
+  wrappedContextDelta:
+    PER_CHANNEL_VISUAL_METRICS.stickyContextWrappedHeight -
+    PER_CHANNEL_VISUAL_METRICS.stickyContextHeight,
+  scrollCompensation:
+    GUIDE_CHROME_EXPANDED_HEIGHT +
+    (PER_CHANNEL_VISUAL_METRICS.channelStripHeight -
+      PER_CHANNEL_VISUAL_METRICS.channelStripCondensedHeight) +
+    PER_CHANNEL_VISUAL_METRICS.stripToUtilitiesGap +
+    PER_CHANNEL_VISUAL_METRICS.utilityToScheduleGap -
+    PER_CHANNEL_VISUAL_METRICS.collapseDistance,
+} as const;
+
+export function perChannelStableScrollVisuals(
+  progress: number,
+  contextWrapped: boolean,
+) {
+  'worklet';
+  const clamped = Math.min(1, Math.max(0, progress));
+  const contextHeight = contextWrapped
+    ? PER_CHANNEL_VISUAL_METRICS.stickyContextWrappedHeight
+    : PER_CHANNEL_VISUAL_METRICS.stickyContextHeight;
+  const wrapDelta = contextWrapped
+    ? PER_CHANNEL_STABLE_SCROLL_GEOMETRY.wrappedContextDelta
+    : 0;
+  const gaps = perChannelFunctionalGapsForCollapseProgress(clamped);
+  const guideChromeHeight = GUIDE_CHROME_EXPANDED_HEIGHT * (1 - clamped);
+  const channelStripHeight =
+    PER_CHANNEL_VISUAL_METRICS.channelStripHeight -
+    (PER_CHANNEL_VISUAL_METRICS.channelStripHeight -
+      PER_CHANNEL_VISUAL_METRICS.channelStripCondensedHeight) *
+      clamped;
+  const overlayBottom =
+    guideChromeHeight +
+    channelStripHeight +
+    gaps.stripToContext +
+    contextHeight +
+    gaps.contextToSchedule;
+  const contentTranslateY =
+    wrapDelta - PER_CHANNEL_STABLE_SCROLL_GEOMETRY.scrollCompensation * clamped;
+
+  return {
+    guideChromeHeight,
+    channelStripHeight,
+    stripToContextGap: gaps.stripToContext,
+    contextToScheduleGap: gaps.contextToSchedule,
+    overlayBottom,
+    contentTranslateY,
+  } as const;
+}
+
+export function perChannelNativeOffsetForScheduleOffset(
+  scheduleOffset: number,
+  collapseProgress: number,
+) {
+  const clamped = Math.min(1, Math.max(0, collapseProgress));
+  return Math.max(
+    0,
+    PER_CHANNEL_STABLE_SCROLL_GEOMETRY.contentTopInset +
+      Math.max(0, scheduleOffset) -
+      PER_CHANNEL_STABLE_SCROLL_GEOMETRY.scrollCompensation * clamped,
+  );
+}
+
+export function perChannelScheduleOffsetForNativeOffset(
+  nativeOffset: number,
+  collapseProgress: number,
+) {
+  const clamped = Math.min(1, Math.max(0, collapseProgress));
+  return Math.max(
+    0,
+    Math.max(0, nativeOffset) -
+      PER_CHANNEL_STABLE_SCROLL_GEOMETRY.contentTopInset +
+      PER_CHANNEL_STABLE_SCROLL_GEOMETRY.scrollCompensation * clamped,
+  );
 }
 
 export function perChannelLayoutAnchorKey(
