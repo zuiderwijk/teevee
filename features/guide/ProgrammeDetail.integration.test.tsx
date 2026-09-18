@@ -107,8 +107,11 @@ vi.mock('react-native', async () => {
       children,
     ) : null;
   }
+  const AppState = {
+    addEventListener: () => ({ remove: () => undefined }),
+  };
   return {
-    View, Text, Image, Pressable, ScrollView, Modal, SafeAreaView: View,
+    AppState, View, Text, Image, Pressable, ScrollView, Modal, SafeAreaView: View,
     useWindowDimensions: () => ({ width: 390, height: 844, scale: 3, fontScale: 1 }),
     StyleSheet: { create: <T,>(value: T) => value, hairlineWidth: 1, absoluteFill: {} },
   };
