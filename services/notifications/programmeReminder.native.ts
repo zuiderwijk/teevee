@@ -5,6 +5,10 @@ import type { Channel, Programme } from '@/data/domain/epg';
 import type { ProgrammeReminderRecord } from '@/features/guide/programmePersonalState';
 
 import {
+  getExactAlarmCapability,
+  requestExactAlarmCapability,
+} from './exactAlarmCapability.native';
+import {
   PROGRAMME_REMINDER_LEAD_MS,
   programmeReminderFireAtMs,
   type ProgrammeReminderNow,
@@ -70,9 +74,21 @@ export async function scheduleProgrammeReminder(
     await ensureAndroidChannel();
     if (!(await ensurePermission())) return { ok: false, reason: 'permission' };
 
+    let exactAlarmCapability = getExactAlarmCapability();
+    if (exactAlarmCapability === 'unavailable') {
+      exactAlarmCapability = await requestExactAlarmCapability();
+    }
+    if (exactAlarmCapability !== 'available') {
+      return { ok: false, reason: 'exact-alarm' };
+    }
+
     const schedulingNowMs = now();
     const fireAtMs = programmeReminderFireAtMs(programme.startAt, schedulingNowMs);
     if (fireAtMs === null) return { ok: false, reason: 'started' };
+
+    if (getExactAlarmCapability() !== 'available') {
+      return { ok: false, reason: 'exact-alarm' };
+    }
 
     const preferredFireAt =
       Date.parse(programme.startAt) - PROGRAMME_REMINDER_LEAD_MS;
@@ -135,6 +151,18 @@ export async function reconcileProgrammeReminder(
   }
 
   if (record.fireAtMs <= nowMs) return { status: 'verified-valid' };
+
+  const exactAlarmCapability = getExactAlarmCapability();
+  if (exactAlarmCapability === 'unavailable') {
+    return { status: 'verified-invalid' };
+  }
+  if (exactAlarmCapability === 'indeterminate') {
+    return {
+      status: 'indeterminate',
+      reason: 'exact-alarm-capability-unknown',
+      presentActive: false,
+    };
+  }
 
   try {
     const scheduled = await Notifications.getAllScheduledNotificationsAsync();
