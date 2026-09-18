@@ -238,7 +238,7 @@ The Core Guide MVP is not complete until physical validation confirms at least:
 - in Per zender between 00:00 and 05:59, `Primetime` returns to 20:30 on the preceding television-day evening;
 - `Nu` remains distinct from Primetime and restores the actual current instant/day;
 - Totaal date context updates coherently when the stable time-navigation anchor crosses 06:00;
-- vertical scrolling preserves the accepted sticky day/time context in Totaal and channel/date/Primetime/Nu context in Per zender;
+- vertical scrolling preserves the accepted sticky day/time context in Totaal and the fixed 52-pt date/Primetime/Nu temporal context beneath the persistent channel rail in Per zender;
 - `Nu` correctly restores the actual instant from any selected historical/future day;
 - Programme Detail opens/returns correctly for historical and future broadcasts;
 - refresh/day rollover preserves meaningful channel/time/date context;
