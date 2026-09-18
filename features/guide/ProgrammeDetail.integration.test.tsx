@@ -9,7 +9,9 @@ import GuideScreen from '@/app/index';
 import { guideFixture } from '@/data/fixtures/guideFixture';
 import { useGuideClock } from '@/features/guide/useGuideClock';
 
-import { MISSING_DESCRIPTION, ProgrammeDetail } from './ProgrammeDetail';
+import { ProgrammeDetail } from './ProgrammeDetail';
+import { EMPTY_PROGRAMME_PERSONAL_STATE } from './programmePersonalState';
+import { writeProgrammePersonalState } from '@/services/storage/programmePersonalStateStorage';
 
 type PanEvent = { translationY: number; velocityY: number; numberOfPointers: number };
 type GestureCallbacks = {
@@ -176,6 +178,7 @@ beforeEach(() => {
   motion.readStyle = null;
   motion.spring.mockClear();
   motion.cancel.mockClear();
+  writeProgrammePersonalState(EMPTY_PROGRAMME_PERSONAL_STATE);
   container = document.createElement('div');
   document.body.appendChild(container);
   root = createRoot(container);
@@ -228,13 +231,13 @@ describe('programme detail rendering boundary', () => {
     expect(mountedProgrammeCount).toBeLessThan(guideFixture.programmes.length);
 
     const first = guideFixture.programmes[0]!;
-    for (const closeId of ['programme-detail-close', 'programme-detail-backdrop', 'native-request-close', 'swipe']) {
+    for (const closeId of ['programme-detail-backdrop', 'native-request-close', 'swipe']) {
       await click(`programme-${first.id}`);
       expect(container.querySelector('[role="dialog"]')).not.toBeNull();
       expect(container.querySelector('[role="dialog"]')?.getAttribute('data-animation')).toBe('slide');
       expect(offsetY()).toBe(0);
       expect(getByTestId('programme-detail-sheet').textContent).toContain(first.title);
-      expect(getByTestId('programme-detail-sheet').textContent).toContain(MISSING_DESCRIPTION);
+      expect(container.querySelector('[data-testid="programme-detail-description"]')).toBeNull();
       expect(vi.mocked(useGuideClock)).toHaveBeenCalledTimes(renderCount);
       if (closeId === 'swipe') await swipe(100); else await click(closeId);
       expect(container.querySelector('[role="dialog"]')).toBeNull();
@@ -273,7 +276,7 @@ describe('programme detail rendering boundary', () => {
     const first = guideFixture.programmes[0]!;
     const second = guideFixture.programmes.find((programme) => programme.description !== undefined)!;
     await click(`programme-${first.id}`);
-    await click('programme-detail-close');
+    await click('programme-detail-backdrop');
     await click(`programme-${second.id}`);
     const sheet = getByTestId('programme-detail-sheet');
     expect(sheet.textContent).toContain(second.title);
@@ -284,14 +287,17 @@ describe('programme detail rendering boundary', () => {
 
   it.each([undefined, '', '   '])('handles absent or blank descriptions: %s', async (description) => {
     const programme = { id: 'missing', channelId: 'test', title: 'Zonder tekst', startAt: '2026-09-13T18:00:00Z', endAt: '2026-09-13T19:00:00Z', ...(description === undefined ? {} : { description }) };
-    await act(async () => root.render(<ProgrammeDetail state={{ visible: true, selection: { programme, channelName: 'Testzender' } }} onClose={vi.fn()} />));
-    expect(getByTestId('programme-detail-sheet').textContent).toContain(MISSING_DESCRIPTION);
+    const channel = { id: 'test', name: 'Testzender', displayName: 'Testzender', sortOrder: 0, isActive: true };
+    await act(async () => root.render(<ProgrammeDetail state={{ visible: true, selection: { programme, channel } }} onClose={vi.fn()} />));
+    expect(container.querySelector('[data-testid="programme-detail-description"]')).toBeNull();
   });
 });
 
 describe('detail swipe wiring with mocked gesture events', () => {
   async function openDetail(onClose = vi.fn()) {
-    await act(async () => root.render(<ProgrammeDetail state={{ visible: true, selection: { programme: guideFixture.programmes[0]!, channelName: 'Testzender' } }} onClose={onClose} />));
+    const programme = guideFixture.programmes[0]!;
+    const channel = guideFixture.channels.find((candidate) => candidate.id === programme.channelId)!;
+    await act(async () => root.render(<ProgrammeDetail state={{ visible: true, selection: { programme, channel } }} onClose={onClose} />));
     return onClose;
   }
 
@@ -333,7 +339,7 @@ describe('detail swipe wiring with mocked gesture events', () => {
     expect(onClose).toHaveBeenCalledTimes(1);
     expect(offsetY()).toBe(30);
     expect(motion.spring).not.toHaveBeenCalled();
-    await click('programme-detail-close');
+    await click('programme-detail-backdrop');
     expect(onClose).toHaveBeenCalledTimes(1);
   });
 
