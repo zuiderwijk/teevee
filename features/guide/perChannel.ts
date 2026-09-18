@@ -278,9 +278,8 @@ export function perChannelNativeOffsetForScheduleOffset(
   const clamped = Math.min(1, Math.max(0, collapseProgress));
   return Math.max(
     0,
-    PER_CHANNEL_STABLE_SCROLL_GEOMETRY.contentTopInset +
-      Math.max(0, scheduleOffset) -
-      PER_CHANNEL_STABLE_SCROLL_GEOMETRY.scrollCompensation * clamped,
+    Math.max(0, scheduleOffset) +
+      PER_CHANNEL_VISUAL_METRICS.collapseDistance * clamped,
   );
 }
 
@@ -292,8 +291,7 @@ export function perChannelScheduleOffsetForNativeOffset(
   return Math.max(
     0,
     Math.max(0, nativeOffset) -
-      PER_CHANNEL_STABLE_SCROLL_GEOMETRY.contentTopInset +
-      PER_CHANNEL_STABLE_SCROLL_GEOMETRY.scrollCompensation * clamped,
+      PER_CHANNEL_VISUAL_METRICS.collapseDistance * clamped,
   );
 }
 
