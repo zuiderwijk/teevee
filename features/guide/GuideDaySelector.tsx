@@ -12,7 +12,11 @@ import {
 import { TEEVEE_FONT_FAMILIES } from '@/theme/typography';
 import { useTeeveeTheme } from '@/theme/useTeeveeTheme';
 
-import { guideDayLabel, guideDayOptions } from './guideDaySelection';
+import {
+  guideDayLabel,
+  guideDayOptions,
+  perChannelGuideDayLabel,
+} from './guideDaySelection';
 import {
   COMPACT_GUIDE_MAX_FONT_SIZE_MULTIPLIER,
   GUIDE_TYPOGRAPHY,
@@ -24,7 +28,7 @@ type GuideDaySelectorProps = {
   nowMs: number;
   loading?: boolean;
   unavailable?: boolean;
-  compactPrefix?: string | undefined;
+  labelVariant?: 'default' | 'per-channel';
   onSelectDay: (dayStartMs: number) => void;
 };
 
@@ -33,14 +37,16 @@ export const GuideDaySelector = memo(function GuideDaySelector({
   nowMs,
   loading = false,
   unavailable = false,
-  compactPrefix,
+  labelVariant = 'default',
   onSelectDay,
 }: GuideDaySelectorProps) {
   const theme = useTeeveeTheme();
   const [open, setOpen] = useState(false);
   const options = useMemo(() => guideDayOptions(nowMs), [nowMs]);
-  const selectedLabel = guideDayLabel(selectedDayStartMs, nowMs);
-  const visibleLabel = compactPrefix ? `${compactPrefix} · ${selectedLabel}` : selectedLabel;
+  const labelForDay = labelVariant === 'per-channel'
+    ? perChannelGuideDayLabel
+    : guideDayLabel;
+  const selectedLabel = labelForDay(selectedDayStartMs, nowMs);
 
   const selectDay = (dayStartMs: number) => {
     setOpen(false);
@@ -52,7 +58,7 @@ export const GuideDaySelector = memo(function GuideDaySelector({
       <Pressable
         testID="guide-day-selector"
         accessibilityRole="button"
-        accessibilityLabel={`${visibleLabel}. Kies een dag`}
+        accessibilityLabel={`${selectedLabel}. Kies een dag`}
         accessibilityHint={
           unavailable
             ? 'Actuele gidsdata voor deze dag is niet beschikbaar; de lokale gids blijft bruikbaar.'
@@ -66,31 +72,13 @@ export const GuideDaySelector = memo(function GuideDaySelector({
         ]}
       >
         <View style={styles.inlineTextGroup}>
-          {compactPrefix ? (
-            <>
-              <Text
-                numberOfLines={1}
-                maxFontSizeMultiplier={COMPACT_GUIDE_MAX_FONT_SIZE_MULTIPLIER}
-                style={[styles.compactPrefix, { color: theme.colors.text }]}
-              >
-                {compactPrefix}
-              </Text>
-              <Text
-                maxFontSizeMultiplier={COMPACT_GUIDE_MAX_FONT_SIZE_MULTIPLIER}
-                style={[styles.compactDate, { color: theme.colors.text }]}
-              >
-                {' · '}{selectedLabel}
-              </Text>
-            </>
-          ) : (
-            <Text
-              numberOfLines={1}
-              maxFontSizeMultiplier={COMPACT_GUIDE_MAX_FONT_SIZE_MULTIPLIER}
-              style={[styles.inlineLabel, { color: theme.colors.text }]}
-            >
-              {selectedLabel}
-            </Text>
-          )}
+          <Text
+            numberOfLines={1}
+            maxFontSizeMultiplier={COMPACT_GUIDE_MAX_FONT_SIZE_MULTIPLIER}
+            style={[styles.inlineLabel, { color: theme.colors.text }]}
+          >
+            {selectedLabel}
+          </Text>
         </View>
         <View accessible={false} style={styles.chevronBox}>
           <Text
@@ -135,7 +123,7 @@ export const GuideDaySelector = memo(function GuideDaySelector({
             <ScrollView bounces={false} showsVerticalScrollIndicator={false} contentContainerStyle={styles.optionList}>
               {options.map((window) => {
                 const selected = window.fromMs === selectedDayStartMs;
-                const label = guideDayLabel(window.fromMs, nowMs);
+                const label = labelForDay(window.fromMs, nowMs);
                 return (
                   <Pressable
                     key={window.fromMs}
@@ -193,14 +181,6 @@ const styles = StyleSheet.create({
   inlineLabel: {
     flexShrink: 1,
     ...GUIDE_TYPOGRAPHY.selectedDate,
-  },
-  compactPrefix: {
-    flexShrink: 1,
-    ...GUIDE_TYPOGRAPHY.condensedChannelPrefix,
-  },
-  compactDate: {
-    flexShrink: 0,
-    ...GUIDE_TYPOGRAPHY.condensedDate,
   },
   chevronBox: {
     width: 14,
