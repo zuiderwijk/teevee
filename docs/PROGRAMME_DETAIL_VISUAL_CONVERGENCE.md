@@ -1,6 +1,6 @@
 # Programme Detail — production convergence specification
 
-Status: **CANONICAL PRODUCTION IMPLEMENTATION SPEC — accepted direction, one owner product decision still open**  
+Status: **CANONICAL PRODUCTION IMPLEMENTATION SPEC — owner-approved**  
 Date: 2026-09-18
 
 This document converts the accepted Programme Detail direction into a production implementation contract. It is convergence, not redesign.
@@ -199,7 +199,7 @@ Use actual available-width/text measurement or an equivalently deterministic lay
 - notification permission is requested only as a consequence of an explicit reminder action, never on app launch;
 - if permission/scheduling fails, the UI must not claim an active reminder.
 
-The exact notification fire time is the one unresolved owner product decision; see §15.
+Canonical reminder timing: schedule the notification **5 minutes before programme start**; see §15.
 
 ## 7. Description and optional enrichment
 
@@ -371,16 +371,17 @@ Keep these concerns separated:
 
 Do not add unrelated Guide refactors.
 
-## 15. OWNER PRODUCT DECISION REQUIRED BEFORE REMINDER RUNTIME
+## 15. Canonical reminder timing
 
-The accepted product baseline says `Herinner mij` uses push/local notifications as appropriate, but it does **not** define the default notification fire time.
+Owner decision: **`Herinner mij` fires 5 minutes before programme start.**
 
-Development must not invent this durable user-facing behaviour.
+Production rules:
+- schedule at `programme.startAt - 5 minutes`;
+- this is the single fixed Phase 4 default;
+- no reminder-time picker or configurable lead-time setting is added in this phase;
+- if the user presses `Herinner mij` less than five minutes before programme start, schedule the reminder at the earliest technically valid immediate notification time rather than silently doing nothing;
+- once `startAt <= now`, the reminder action is unavailable as defined in §6.3;
+- if notification permission or scheduling fails, do not present `Herinnering aan` as active;
+- persist the actual scheduled fire instant together with the programme start instant so corrected schedule data can be detected safely.
 
-Freeze exactly one default for the MVP before notification code is added:
-
-- **Option A — at programme start**: simplest and literal; no advance warning.
-- **Option B — 5 minutes before start**: gives the user time to switch on the TV/stream, but establishes an implicit lead-time policy.
-- **Option C — configurable lead time**: explicitly out of current Phase 4 scope unless the owner expands scope.
-
-All other production rules in this document can proceed independently. No runtime PR should claim Programme Detail actions complete until this decision is recorded canonically.
+This owner-approved rule closes the final product decision required for the Phase 4 Programme Detail runtime increment.
