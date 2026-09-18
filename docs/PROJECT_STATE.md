@@ -23,7 +23,7 @@ Previous phase: **Phase 3 — Real Data Vertical Slice — CLOSED**
 2. **Phase 1B — Per zender / Nu & Straks:** complete and physically accepted on iPhone.
 3. **Phase 2 — App Shell:** complete and physically accepted on iPhone.
 4. **Phase 3 — Real Data Vertical Slice:** complete and physically accepted on iPhone. Real provider -> hosted ingest -> canonical persistence -> public typed read -> mobile canonical datasource is proven, including fixture-first startup, real-data transition, fallback and context retention.
-5. **Phase 4 — Core Guide MVP hardening:** active. The 06:00 television-day foundation, television-day-aware runtime, D-2..D+7 day navigation/date context and the measured Totaal cold-switch performance hardening are merged, independently QA-reviewed where required and physically accepted on iPhone.
+5. **Phase 4 — Core Guide MVP hardening:** active. The 06:00 television-day foundation, television-day-aware runtime, D-2..D+7 day navigation/date context, measured Totaal cold-switch performance hardening, Per-zender production convergence and Programme Detail production convergence are merged. Required Independent QA and iPhone physical gates are closed; physical Android interaction acceptance remains deferred until Android hardware is available.
 
 ## Frozen television-day and Guide-horizon semantics
 ADR 0008 is canonical:
@@ -71,10 +71,13 @@ Do not retune accepted Guide mechanics without concrete regression evidence.
 - `NowNextGuideView` stays behind deferred `import()`; do not restore a static startup import without separate physical evidence.
 
 ## Programme Detail
-- direct from all three Guide presentations; no intermediate preview sheet;
-- accepted current action scope is `Herinner mij` + `Bewaar`; Share is not required;
-- actions/sticky bottom copies remain future Phase 4 work;
-- returning from detail preserves originating Guide context.
+- production convergence is merged and closed through PR #92;
+- direct from all three Guide presentations; no intermediate preview sheet; the originating Guide remains mounted and round-trip context is preserved;
+- action scope is `Herinner mij` + `Bewaar`; Share is not required;
+- `Herinner mij` uses the canonical five-minute lead time, with immediate fallback inside the final five minutes and no reminder after programme start;
+- local personal state is provider-independent; reminder scheduling/cancellation is isolated behind the notification boundary;
+- Android 12+ exact-alarm scheduling uses `SCHEDULE_EXACT_ALARM`, verifies special-access capability before scheduling, fails closed when capability is unavailable/indeterminate, and preserves cleanup metadata when native cancellation cannot be confirmed;
+- contextual sticky action copies, measured hysteresis, Dynamic-Type-safe action stacking, safe-area ownership and handle-zone swipe-to-dismiss are production behaviour.
 
 ## Phase 4 accepted implementation ledger
 - **PR #62** — television-day domain foundation. Merged and CI-proven.
@@ -87,6 +90,8 @@ Do not retune accepted Guide mechanics without concrete regression evidence.
 - **PR #86** — accepted Per-zender compact temporal-context refinement. Merged documentation/design baseline: no selected-channel text outside the rail; fixed 52-pt temporal context; one-line 1.20-capped date/Primetime/Nu; 72→60 rail; 140/56/84 contraction architecture endpoints. Its initial expanded spacing calibration was later superseded by PR #89.
 - **PR #89** — owner-approved final Per-zender expanded spacing after physical iPhone calibration: **4 pt rail→context / 52 pt context / 24 pt context→schedule**, condensed 0/52/0. The 28-pt expanded gap sum and frozen 140/56/84 collapse geometry remain unchanged.
 - **PR #88** — Per-zender runtime convergence to the accepted compact temporal context plus iOS safe-area and selected-channel schedule-height/trailing-whitespace fixes. Final exact implementation head `0f3ccb3f00fecc3229f32dae9521d1bb6254f830` passed physical iPhone validation and Independent QA. Merge commit `6521da61159583d39dc55fe1e1cccabf5176251a`; post-merge CI #596 completed successfully.
+- **PR #91** — owner-approved canonical Programme Detail production design specification. Merged before runtime implementation.
+- **PR #92** — Programme Detail production convergence. Final exact implementation head `4a21b36c690aaa0df598dcc5ddf33ada1c790bcf` passed physical iPhone validation and Independent QA after reminder lifecycle/concurrency hardening. Merge commit `ba59ea72c41d0ee73c8fea30bb4de8b59454e00b`; post-merge CI #650 completed successfully, including the main/release full-ABI Android build. Physical Android exact-alarm special-access interaction remains deferred to Android hardware.
 
 ## Phase 4 performance evidence
 Original issue #67 physical baseline for cold Totaal day switches:
@@ -106,8 +111,7 @@ Focused PR #74 physical proof before the final animated-`Nu` correction:
 Independent QA then found one blocking animated same-window `Nu` ownership case. Development corrected it so animated programmatic scrolling leaves programme-window ownership tied to actual native scroll offsets. QA re-reviewed the final exact head with the blocker closed. Final focused physical iPhone acceptance passed Totaal day-switch responsiveness, animated same-window `Nu` continuity, hard horizontal fling/bounce and normal Guide scrolling. No persistent cache, eager horizon prefetch, provider/data-contract change, new dependency or full FlatList/FlashList virtualization was introduced.
 
 ## Remaining Phase 4 responsibilities
-- production-quality Programme Detail actions (`Herinner mij` + `Bewaar`) and contextual sticky bottom copies as a separate coherent increment;
-- revisit known Nu & Straks density/accessibility debt without overlapping touch targets;
+- converge the accepted Nu & Straks presentation to a production-ready specification and then runtime implementation, including the known density/accessibility debt without overlapping touch targets;
 - decide local schedule persistence/cache only if measured MVP/offline requirements justify it;
 - preserve schedule refresh/date/channel/time context and deterministic fixture fallback;
 - physical Android interaction acceptance remains open until an Android device is available.
@@ -131,9 +135,9 @@ Physical Android interaction acceptance remains OPEN/DEFERRED because no Android
 - physical Android validation.
 
 ## EXACT NEXT STEP
-**Implement the owner-approved Programme Detail production specification in `docs/PROGRAMME_DETAIL_VISUAL_CONVERGENCE.md` as one separate HIGH-risk Phase 4 increment. `Herinner mij` fires 5 minutes before programme start; configurable lead time remains out of Phase 4 scope. Preserve the mounted-Guide/modal boundary, Guide round-trip context, accessibility, themes and all accepted Guide behaviour. Add deterministic coverage, exact-head CI, physical iPhone validation and Independent QA before Lead merge.**
+**Run Accepted Design Refinement for the already accepted Nu & Straks presentation and produce the canonical production implementation specification `docs/NU_EN_STRAKS_VISUAL_CONVERGENCE.md`, equivalent in role/detail to the Per-zender production specification. Start from `design/current/guide/NU_EN_STRAKS.md`, ADR 0008 and the accepted canonical visual; preserve the shared reference instant, reference programme + exactly three following programmes, Nu/Primetime semantics, stable channel context, accepted time-rail/mixed gestures and deferred `NowNextGuideView` import. Resolve the tracked density/accessibility debt without reintroducing cards, artwork, genres, progress bars or extra labels. Merge the production design specification before runtime Development.**
 
 Owner checkout: `~/projects/teevee`.
 
 ## Resume instruction
-> Read `AGENTS.md`, this file, `docs/ENGINEERING_QUALITY_POLICY.md`, ADR 0007, ADR 0008 and the relevant accepted visual handoff before changing the repository. Phase 1A, Phase 1B, Phase 2 and Phase 3 are closed on iPhone. Phase 4 is active. Per-zender production convergence is merged and closed through PR #88/#89: preserve its 52/176 fixed rows, 4/52/24 expanded temporal composition, 0/52/0 condensed composition, semantic anchors, channel identity stability, safe-area handling, selected-channel schedule-height ownership, gestures, D-2..D+7 and the frozen PR #81 fixed-native-viewport/collapse-isolation architecture. The Programme Detail production handoff lives in `docs/PROGRAMME_DETAIL_VISUAL_CONVERGENCE.md`; it is owner-approved, including the fixed `Herinner mij` timing of 5 minutes before programme start. The next runtime increment is Programme Detail production convergence.
+> Read `AGENTS.md`, this file, `docs/ENGINEERING_QUALITY_POLICY.md`, ADR 0007, ADR 0008 and the relevant accepted visual handoff before changing the repository. Phase 1A, Phase 1B, Phase 2 and Phase 3 are closed on iPhone. Phase 4 is active. Per-zender production convergence is merged and closed through PR #88/#89. Programme Detail production convergence is merged and closed through PR #92; preserve its mounted-Guide/modal boundary, fixed five-minute reminder contract, provider-independent personal state, sticky-action behaviour, accessibility and exact-alarm fail-closed lifecycle. The next canonical increment is Nu & Straks Accepted Design Refinement: convert the accepted `design/current/guide/NU_EN_STRAKS.md` baseline into `docs/NU_EN_STRAKS_VISUAL_CONVERGENCE.md` before runtime Development.

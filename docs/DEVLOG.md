@@ -11,6 +11,20 @@ Doel: chronologisch, begrijpelijk overzicht van substantiële milestones, verifi
 
 ---
 
+## 18 september 2026 — PR #92 Programme Detail production convergence gesloten
+
+PR #92 is na meerdere gerichte Independent QA-rondes gemergd. Finale exacte implementatie-head: `4a21b36c690aaa0df598dcc5ddf33ada1c790bcf`; merge-commit op `main`: `ba59ea72c41d0ee73c8fea30bb4de8b59454e00b`.
+
+Productiegedrag is nu vastgelegd en geïmplementeerd: title-first Programme Detail vanuit alle drie Guide-presentaties, gemounte Guide/context-preserving modal boundary, `Herinner mij` met vaste vijf-minutenlead en immediate fallback, persisted `Bewaar`, contextual sticky action copies, Dynamic-Type-safe stacking, safe-area ownership en handle-zone swipe-to-dismiss.
+
+De HIGH-risk reminderflow is tijdens QA gehard voor tijdgrenzen/resume, permission-await crossings, native reconciliation failures, cancellation-vs-`Bewaar` concurrency en Android 12+ exact-alarm special access. Android gebruikt bewust `SCHEDULE_EXACT_ALARM`, controleert `canScheduleExactAlarms()`, biedt de app-specifieke settings-route, failt gesloten bij ontbrekende/indeterminate capability en annuleert bij geverifieerde revocation eerst de native Expo scheduled request voordat lokale metadata wordt verwijderd. Bij onbevestigde cancellation blijft het notification-id inactief bewaard als cleanup-handle.
+
+Fysieke iPhone-validatie en gerichte post-fix smoke zijn PASS. Independent QA gaf finale PASS op exact head `4a21b36c690aaa0df598dcc5ddf33ada1c790bcf`. Post-merge CI #650 op exact `main` `ba59ea72c41d0ee73c8fea30bb4de8b59454e00b` is volledig groen voor `classify`, `quality` en `android-native`, inclusief de main/release full-ABI Android build. Fysieke Android special-access interactie blijft conform projectstatus deferred wegens ontbreken van Android-hardware.
+
+**Volgende stap:** geen nieuwe vrije designexploratie. Start Accepted Design Refinement voor de reeds geaccepteerde Nu & Straks-baseline en leg eerst de production implementation specification vast als `docs/NU_EN_STRAKS_VISUAL_CONVERGENCE.md`; daarna pas runtime Development.
+
+---
+
 ## 18 september 2026 — PR #92 final QA fix: Android exact-alarm special-access lifecycle
 
 Independent QA re-review bevestigde de eerdere vijf Programme Detail/reminder-fixes en vond nog één Android-blocker: `SCHEDULE_EXACT_ALARM` stond correct in de manifest, maar runtime kon niet bewijzen dat Android 12+ de speciale “Alarmen en herinneringen”-toegang daadwerkelijk had verleend voordat een reminder als actief werd opgeslagen.
