@@ -745,6 +745,61 @@ export const NowNextGuideView = memo(function NowNextGuideView({
                 onSelectProgramme={onSelectProgramme}
               />
             ))
+          ) : schedulePresentation.channels.length > 0 ? (
+            schedulePresentation.channels.map((channel, index) => (
+              <View
+                key={channel.id}
+                testID={`now-next-channel-${channel.id}`}
+                style={[
+                  styles.channelRow,
+                  {
+                    height: rowLayout.rowHeight,
+                    borderBottomColor: theme.colors.border,
+                  },
+                ]}
+              >
+                <View
+                  importantForAccessibility="no-hide-descendants"
+                  accessibilityElementsHidden
+                  style={[
+                    styles.channelIdentityZone,
+                    { height: rowLayout.referenceHeight },
+                  ]}
+                >
+                  <ChannelIdentity
+                    channel={channel}
+                    textColor={theme.colors.text}
+                    mutedTextColor={theme.colors.textMuted}
+                    variant="now-next"
+                    accessible={false}
+                  />
+                </View>
+
+                {index === 0 ? (
+                  <View
+                    testID="now-next-schedule-state-unavailable"
+                    accessible
+                    accessibilityRole="text"
+                    accessibilityLabel="Geen gidsgegevens beschikbaar."
+                    style={[
+                      styles.scheduleUnavailableInline,
+                      { height: rowLayout.referenceHeight },
+                    ]}
+                  >
+                    <Text
+                      style={[
+                        styles.scheduleUnavailableText,
+                        { color: theme.colors.textSecondary },
+                      ]}
+                    >
+                      Geen gidsgegevens beschikbaar.
+                    </Text>
+                  </View>
+                ) : (
+                  <View style={styles.programmesColumn} />
+                )}
+              </View>
+            ))
           ) : (
             <View
               testID="now-next-schedule-state-unavailable"
@@ -753,12 +808,7 @@ export const NowNextGuideView = memo(function NowNextGuideView({
               accessibilityLabel="Geen gidsgegevens beschikbaar."
               style={[
                 styles.scheduleUnavailable,
-                {
-                  minHeight: Math.max(
-                    rowLayout.rowHeight,
-                    schedulePresentation.channels.length * rowLayout.rowHeight,
-                  ),
-                },
+                { minHeight: rowLayout.rowHeight },
               ]}
             >
               <Text
@@ -973,6 +1023,11 @@ const styles = StyleSheet.create({
   scheduleUnavailable: {
     paddingHorizontal: GUIDE_VISUAL_METRICS.screenInsetX,
     paddingTop: 24,
+  },
+  scheduleUnavailableInline: {
+    flex: 1,
+    minWidth: 0,
+    justifyContent: 'center',
   },
   scheduleUnavailableText: {
     ...NOW_NEXT_TYPOGRAPHY.referenceMeta,
