@@ -11,6 +11,16 @@ Doel: chronologisch, begrijpelijk overzicht van substantiële milestones, verifi
 
 ---
 
+## 19 september 2026 — PR #96 physical-validation fix: keep tests outside Expo Router route tree
+
+Physical iPhone validation exposed an Expo Go launch crash because `app/index.test.tsx` lived inside the Expo Router route-module tree. Teevee uses `main: expo-router/entry`, so files under `app/` are production route modules and must not contain Vitest/spec modules.
+
+The existing GuideScreen integration coverage moved unchanged to `features/guide/GuideScreen.integration.test.tsx` and imports the production screen through `@/app/index`. A repository-level Vitest guard under `scripts/ci/expo-router-app-tree.test.mjs` recursively rejects any future `.test.` or `.spec.` module under `app/`.
+
+No Nu & Straks product, UX, visual, interaction or runtime behavior changed. **Next step:** exact-head CI, then return PR #96 to Lead and restart physical iPhone validation from app launch.
+
+---
+
 ## 18 september 2026 — PR #96 Nu & Straks production convergence
 
 De owner-approved Nu & Straks production specification uit `docs/NU_EN_STRAKS_VISUAL_CONVERGENCE.md` is als afzonderlijke HIGH-risk Phase 4 runtime-increment geïmplementeerd. De bestaande shared-reference/live-browse/Nu/Primetime en fysiek geaccepteerde native rail-interactie blijven de productbasis; prototype-era styling en strict-midnight ownership zijn verwijderd.
