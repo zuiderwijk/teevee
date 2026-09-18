@@ -264,6 +264,21 @@ const schedule: GuideSchedule = {
   ],
 };
 
+const genericFixture: GuideSchedule = {
+  ...schedule,
+  generatedAt: '2026-09-18T15:01:00.000Z',
+  channels: [
+    {
+      id: 'fixture-only',
+      name: 'Generic fixture',
+      displayName: 'Generic fixture',
+      sortOrder: 0,
+      isActive: true,
+    },
+  ],
+  programmes: [],
+};
+
 function scrollEvent(x: number, velocityX = 0) {
   return {
     nativeEvent: {
@@ -558,6 +573,109 @@ describe('Nu & Straks production interaction boundary', () => {
     expect(getByTestId(container, 'now-next-channel-scroll')).toBe(channelScroll);
     expect(channelScroll.scrollTop).toBe(360);
     expect(container.textContent).toContain('Gecorrigeerd volgend programma');
+  });
+
+  it('keeps the established channel catalogue visible through schedule unavailability and recovery', async () => {
+    const navigation = (
+      <span data-testid="shared-presentation-nav">Shared navigation</span>
+    );
+    const onSelectProgramme = vi.fn();
+
+    await act(async () =>
+      root.render(
+        <NowNextGuideView
+          guideDataVersion={0}
+          presentationNavigation={navigation}
+          onSelectProgramme={onSelectProgramme}
+        />,
+      ),
+    );
+
+    const channelScroll = getByTestId(container, 'now-next-channel-scroll');
+    const referenceContext = getByTestId(container, 'now-next-reference-context');
+    channelScroll.scrollTop = 360;
+
+    await act(async () => {
+      getByTestId(container, 'now-next-time-slot-29').click();
+    });
+    expect(getByTestId(container, 'now-next-reference-time').textContent).toBe(
+      '20:30',
+    );
+
+    runtime.schedule = null;
+    runtime.fixture = genericFixture;
+    await act(async () =>
+      root.render(
+        <NowNextGuideView
+          guideDataVersion={1}
+          presentationNavigation={navigation}
+          onSelectProgramme={onSelectProgramme}
+        />,
+      ),
+    );
+
+    expect(getByTestId(container, 'now-next-channel-scroll')).toBe(channelScroll);
+    expect(channelScroll.scrollTop).toBe(360);
+    expect(getByTestId(container, 'now-next-reference-context')).toBe(
+      referenceContext,
+    );
+    expect(getByTestId(container, 'now-next-reference-time').textContent).toBe(
+      '20:30',
+    );
+
+    const identities = [
+      ...container.querySelectorAll<HTMLElement>('[data-channel-identity]'),
+    ].map((node) => node.getAttribute('data-channel-identity'));
+    expect(identities).toEqual(['NPO 1', 'NPO 2']);
+    expect(identities).not.toContain('Generic fixture');
+    expect(
+      container.querySelectorAll(
+        '[data-testid="now-next-schedule-state-unavailable"]',
+      ),
+    ).toHaveLength(1);
+    expect(
+      container.querySelectorAll(
+        'button[data-testid^="now-next-reference-"]',
+      ),
+    ).toHaveLength(0);
+    expect(
+      container.querySelectorAll(
+        'button[data-testid^="now-next-following-"]',
+      ),
+    ).toHaveLength(0);
+
+    runtime.schedule = {
+      ...schedule,
+      generatedAt: '2026-09-18T18:30:00.000Z',
+    };
+    await act(async () =>
+      root.render(
+        <NowNextGuideView
+          guideDataVersion={2}
+          presentationNavigation={navigation}
+          onSelectProgramme={onSelectProgramme}
+        />,
+      ),
+    );
+
+    expect(getByTestId(container, 'now-next-channel-scroll')).toBe(channelScroll);
+    expect(channelScroll.scrollTop).toBe(360);
+    expect(getByTestId(container, 'now-next-reference-context')).toBe(
+      referenceContext,
+    );
+    expect(getByTestId(container, 'now-next-reference-time').textContent).toBe(
+      '20:30',
+    );
+    expect(
+      container.querySelectorAll(
+        '[data-testid="now-next-schedule-state-unavailable"]',
+      ),
+    ).toHaveLength(0);
+    expect(
+      container.querySelectorAll(
+        'button[data-testid^="now-next-reference-"]',
+      ).length,
+    ).toBeGreaterThan(0);
   });
 
   it('keeps production shell and a single calm data state when canonical programme data is unavailable', async () => {
