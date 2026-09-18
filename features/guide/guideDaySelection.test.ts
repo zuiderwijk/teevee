@@ -8,6 +8,7 @@ import {
   guideTargetForNow,
   guideTargetForPrimetime,
   guideTotaalDayForViewedAnchor,
+  perChannelGuideDayLabel,
   reconcileGuideDaySelection,
 } from './guideDaySelection';
 
@@ -40,6 +41,28 @@ describe('Guide day selection', () => {
 
     expect(guideDayLabel(currentTelevisionDay.fromMs, nowMs)).toBe('Ma 14 sep');
     expect(guideDayLabel(followingTelevisionDay.fromMs, nowMs)).toBe('Vandaag · di 15 sep');
+  });
+
+  it('uses the canonical Per-zender relative labels only from 06:00 through 23:59', () => {
+    const beforeBoundary = Date.parse('2026-09-15T03:59:00Z');
+    const beforeOptions = guideDayOptions(beforeBoundary);
+    expect(perChannelGuideDayLabel(beforeOptions.find(({ offset }) => offset === 0)!.fromMs, beforeBoundary)).toBe('Ma 14 sep');
+    expect(perChannelGuideDayLabel(beforeOptions.find(({ offset }) => offset === 1)!.fromMs, beforeBoundary)).toBe('Di 15 sep');
+
+    const boundary = Date.parse('2026-09-15T04:00:00Z');
+    const boundaryOptions = guideDayOptions(boundary);
+    expect(perChannelGuideDayLabel(boundaryOptions.find(({ offset }) => offset === 0)!.fromMs, boundary)).toBe('Vandaag');
+    expect(perChannelGuideDayLabel(boundaryOptions.find(({ offset }) => offset === 1)!.fromMs, boundary)).toBe('Morgen');
+
+    const lateEvening = Date.parse('2026-09-15T21:59:00Z');
+    const lateOptions = guideDayOptions(lateEvening);
+    expect(perChannelGuideDayLabel(lateOptions.find(({ offset }) => offset === 0)!.fromMs, lateEvening)).toBe('Vandaag');
+    expect(perChannelGuideDayLabel(lateOptions.find(({ offset }) => offset === 1)!.fromMs, lateEvening)).toBe('Morgen');
+
+    const afterMidnight = Date.parse('2026-09-15T22:00:00Z');
+    const midnightOptions = guideDayOptions(afterMidnight);
+    expect(perChannelGuideDayLabel(midnightOptions.find(({ offset }) => offset === 0)!.fromMs, afterMidnight)).toBe('Di 15 sep');
+    expect(perChannelGuideDayLabel(midnightOptions.find(({ offset }) => offset === 1)!.fromMs, afterMidnight)).toBe('Wo 16 sep');
   });
 
   it('changes relative labels at exactly 06:00 without a midnight television-day rollover', () => {

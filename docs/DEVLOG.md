@@ -11,6 +11,38 @@ Doel: chronologisch, begrijpelijk overzicht van substantiële milestones, verifi
 
 ---
 
+## 18 september 2026 — PR #88 rebased onto accepted PR #89 4/24 spacing calibration
+
+Accepted Design Refinement PR #89 is merged on `main` and supersedes only the expanded/rest Per-zender gap distribution. PR #88 is rebased onto that canonical baseline rather than carrying its pre-#89 design documentation forward.
+
+Runtime calibration changes only the expanded endpoints from 16/12 to **4 pt rail→temporal context** and **24 pt temporal context→schedule**. The sum remains 28 pt, so the frozen PR #81 geometry is unchanged: **140 pt** full visual contraction, **56 pt** native collapse, **84 pt** visual compensation, **112 pt** fixed viewport top and **140 pt** schedule content top inset. Condensed remains 0/52/0.
+
+The previously accepted safe-area, collapse-isolation, programme-anchor, selected-schedule-height/trailing-whitespace, channel-switching, Nu/Primetime and theme fixes are preserved unchanged. The explicit opaque gap ownership introduced after physical validation also remains; only its accepted endpoint heights change.
+
+Deterministic coverage proves visible rest rail→context = 4 pt, context = 52 pt, context→schedule = 24 pt, condensed gaps = 0/0, rest/settled overlay bottoms = 252/112 pt, total contraction = 140 pt and semantic native↔schedule anchor round-tripping. Full HIGH-risk exact-head CI remains required; do not merge or request Independent QA yet.
+
+---
+
+## 18 september 2026 — Per-zender required visual-convergence follow-up on PR #88
+
+Physical iPhone validation of PR #88 head `75cd5f7148bab4583b335924100f2684e96b16bf` accepted the safe-area, scroll-isolation, programme-anchor, trailing-whitespace, channel-switching, Nu/Primetime and light/dark fixes. One required visual issue remained: the canonical 16-pt rail→context gap read visibly larger while the canonical 12-pt context→schedule gap read effectively absent.
+
+The numeric 16/52/12 → 0/52/0 geometry and frozen 140/56/84 collapse math were already correct. The remaining defect was visual ownership: the two functional gaps were transparent overlay spacers while the independently scrolling schedule renders underneath the overlay. The context→schedule spacer therefore relied on the enclosing overlay background/bounds to mask schedule content, which physical iOS rendering did not preserve strongly enough as visible whitespace. Both canonical gap zones now render their own opaque semantic background while retaining the exact accepted dimensions. No metric, safe-area coordinate, programme-row geometry, semantic anchor or collapse architecture changed.
+
+Deterministic coverage now models explicit rail, context and schedule-content boundaries and proves rest-state visible gaps of exactly 16 and 12 pt, fixed 52-pt context, and settled-condensed gaps of 0/0. Exact-head CI and renewed physical Lead validation remain required before Independent QA; do not merge yet.
+
+## 18 september 2026 — Per-zender PR #86/#87 runtime convergence + iOS safe area + trailing whitespace
+
+Deze HIGH-risk Guide candidate convergeert de Per-zender runtime naar de na PR #86/#87 canonical 52-only temporal context zonder de PR #81 fixed-native-viewport/collapse-isolation terug te draaien. De obsolete 88-pt wrap-state, wrap-detectie en wrap-anchorcompensatie verdwijnen; rest/condensed geometry gebruikt 16/12 → 0/0 gaps, 72→60 rail, 56 pt native collapse, 140 pt totale visuele contractie en 84 pt visual compensation. Per-zender datumlabels volgen de expliciete 06:00-regel en geselecteerde-zendertekst wordt nergens buiten de logo-rail geïnjecteerd.
+
+De fysieke iOS-statusbar overlap kwam uit absolute Per-zender chrome/schedule-posities binnen de core React Native SafeAreaView: de safe-area padding was geen betrouwbare coordinate origin voor de absolute kinderen. De candidate gebruikt daarom de daadwerkelijke top inset uit react-native-safe-area-context één keer als origin voor zowel overlay als fixed schedule viewport; er is geen device-specifieke padding en geen tweede SafeAreaView-compensatie.
+
+De enorme trailing whitespace kwam niet uit TV-day bounds of ontbrekende providerdata maar uit verticale ownership: scheduleHeight was het maximum van de vorige, geselecteerde en volgende horizontale pager-page. Een zender met weinig programma's erfde daardoor de scrollhoogte van een veel langere buur. De verticale contenthoogte volgt nu uitsluitend de geselecteerde zender. Een daadwerkelijk lege, authoritative selected schedule-page toont een expliciete empty state; er worden geen fictieve programma's of providerworkarounds toegevoegd.
+
+Deterministische regressies dekken 52-only context/no-wrap, 140/56/84 geometry, safe-area coordinate calculation, geselecteerde-zender height ownership, empty-state basisgeometry en de Per-zender 06:00 Vandaag/Morgen/weekday+date-semantiek. **Volgende stap:** exact-head CI; daarna Lead fysieke iPhone product/visual validation. Nog geen Independent QA en niet mergen.
+
+---
+
 ## 18 september 2026 — PR #81 QA required fix: 52/88 context-anchor invariant
 
 Independent QA vond op exact head `ce030817ff64db570a0a78ec779824e7662fedd8` één blocking edge case in de verder stabiele fixed-native-viewport architectuur: `contextWrapped` kon live 52→88 of 88→52 schakelen zonder equivalente schedule-anchorcompensatie. Daardoor verschoof programme-content 36 pt wanneer bijvoorbeeld de condensed channel prefix wrapping veroorzaakte of channel/day/font/viewport-hermeting de wrap-mode wijzigde.

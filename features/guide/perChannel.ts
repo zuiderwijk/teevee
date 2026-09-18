@@ -201,14 +201,14 @@ const GUIDE_CHROME_EXPANDED_HEIGHT =
  * Keep the native vertical ScrollView viewport fixed while Per-zender chrome
  * visually converges from its rest stack to the condensed stack.
  *
- * The rest -> condensed visual stack contracts by 148 pt:
+ * The rest -> condensed visual stack contracts by 140 pt:
  * - Guide chrome: 100 -> 0
  * - channel rail: 72 -> 60
- * - rail -> context gap: 24 -> 0
- * - context -> schedule gap: 12 -> 0
+ * - rail -> context gap: 4 -> 0
+ * - context -> schedule gap: 24 -> 0
  *
  * Native scroll advances only 56 pt over that same collapse. The remaining
- * 92 pt therefore has to be a visual content transform, never a normal-flow
+ * 84 pt therefore has to be a visual content transform, never a normal-flow
  * layout mutation above the active ScrollView.
  */
 export const PER_CHANNEL_STABLE_SCROLL_GEOMETRY = {
@@ -221,9 +221,6 @@ export const PER_CHANNEL_STABLE_SCROLL_GEOMETRY = {
       PER_CHANNEL_VISUAL_METRICS.channelStripCondensedHeight) +
     PER_CHANNEL_VISUAL_METRICS.stripToUtilitiesGap +
     PER_CHANNEL_VISUAL_METRICS.utilityToScheduleGap,
-  wrappedContextDelta:
-    PER_CHANNEL_VISUAL_METRICS.stickyContextWrappedHeight -
-    PER_CHANNEL_VISUAL_METRICS.stickyContextHeight,
   scrollCompensation:
     GUIDE_CHROME_EXPANDED_HEIGHT +
     (PER_CHANNEL_VISUAL_METRICS.channelStripHeight -
@@ -233,18 +230,9 @@ export const PER_CHANNEL_STABLE_SCROLL_GEOMETRY = {
     PER_CHANNEL_VISUAL_METRICS.collapseDistance,
 } as const;
 
-export function perChannelStableScrollVisuals(
-  progress: number,
-  contextWrapped: boolean,
-) {
+export function perChannelVisibleStackGeometry(progress: number) {
   'worklet';
   const clamped = Math.min(1, Math.max(0, progress));
-  const contextHeight = contextWrapped
-    ? PER_CHANNEL_VISUAL_METRICS.stickyContextWrappedHeight
-    : PER_CHANNEL_VISUAL_METRICS.stickyContextHeight;
-  const wrapDelta = contextWrapped
-    ? PER_CHANNEL_STABLE_SCROLL_GEOMETRY.wrappedContextDelta
-    : 0;
   const gaps = perChannelFunctionalGapsForCollapseProgress(clamped);
   const guideChromeHeight = GUIDE_CHROME_EXPANDED_HEIGHT * (1 - clamped);
   const channelStripHeight =
@@ -252,89 +240,88 @@ export function perChannelStableScrollVisuals(
     (PER_CHANNEL_VISUAL_METRICS.channelStripHeight -
       PER_CHANNEL_VISUAL_METRICS.channelStripCondensedHeight) *
       clamped;
-  const overlayBottom =
-    guideChromeHeight +
-    channelStripHeight +
-    gaps.stripToContext +
-    contextHeight +
-    gaps.contextToSchedule;
-  const contentTranslateY =
-    wrapDelta - PER_CHANNEL_STABLE_SCROLL_GEOMETRY.scrollCompensation * clamped;
+  const railTop = guideChromeHeight;
+  const railBottom = railTop + channelStripHeight;
+  const contextTop = railBottom + gaps.stripToContext;
+  const contextBottom = contextTop + PER_CHANNEL_VISUAL_METRICS.stickyContextHeight;
+  const scheduleContentTop = contextBottom + gaps.contextToSchedule;
 
   return {
     guideChromeHeight,
     channelStripHeight,
+    railTop,
+    railBottom,
+    contextTop,
+    contextBottom,
+    scheduleContentTop,
     stripToContextGap: gaps.stripToContext,
     contextToScheduleGap: gaps.contextToSchedule,
-    overlayBottom,
-    contentTranslateY,
   } as const;
 }
 
-function perChannelContextWrapOffset(contextWrapped: boolean) {
+export function perChannelStableScrollVisuals(progress: number) {
   'worklet';
-  return contextWrapped ? PER_CHANNEL_STABLE_SCROLL_GEOMETRY.wrappedContextDelta : 0;
+  const clamped = Math.min(1, Math.max(0, progress));
+  const geometry = perChannelVisibleStackGeometry(clamped);
+  const contentTranslateY =
+    clamped === 0
+      ? 0
+      : -PER_CHANNEL_STABLE_SCROLL_GEOMETRY.scrollCompensation * clamped;
+
+  return {
+    guideChromeHeight: geometry.guideChromeHeight,
+    channelStripHeight: geometry.channelStripHeight,
+    stripToContextGap: geometry.stripToContextGap,
+    contextToScheduleGap: geometry.contextToScheduleGap,
+    overlayBottom: geometry.scheduleContentTop,
+    contentTranslateY,
+  } as const;
 }
 
 export function perChannelNativeOffsetForScheduleOffset(
   scheduleOffset: number,
   collapseProgress: number,
-  contextWrapped = false,
 ) {
   'worklet';
   const clamped = Math.min(1, Math.max(0, collapseProgress));
   return Math.max(
     0,
     Math.max(0, scheduleOffset) +
-      PER_CHANNEL_VISUAL_METRICS.collapseDistance * clamped +
-      perChannelContextWrapOffset(contextWrapped),
+      PER_CHANNEL_VISUAL_METRICS.collapseDistance * clamped,
   );
 }
 
 export function perChannelScheduleOffsetForNativeOffset(
   nativeOffset: number,
   collapseProgress: number,
-  contextWrapped = false,
 ) {
   'worklet';
   const clamped = Math.min(1, Math.max(0, collapseProgress));
   return Math.max(
     0,
     Math.max(0, nativeOffset) -
-      PER_CHANNEL_VISUAL_METRICS.collapseDistance * clamped -
-      perChannelContextWrapOffset(contextWrapped),
+      PER_CHANNEL_VISUAL_METRICS.collapseDistance * clamped,
   );
 }
 
-/**
- * Preserve both the semantic programme anchor and collapse progress when the
- * canonical context changes discretely between 52 and 88 pt.
- */
-export function perChannelContextWrapAnchorTransition(
-  nativeOffset: number,
-  collapseAnchorY: number,
-  previousContextWrapped: boolean,
-  nextContextWrapped: boolean,
-) {
-  'worklet';
-  const safeNativeOffset = Math.max(0, nativeOffset);
-  const wrapDelta =
-    perChannelContextWrapOffset(nextContextWrapped) -
-    perChannelContextWrapOffset(previousContextWrapped);
-  const nextNativeOffset = Math.max(0, safeNativeOffset + wrapDelta);
-  const appliedDelta = nextNativeOffset - safeNativeOffset;
-
+export function perChannelSafeAreaLayout(topInset: number) {
+  const safeTop = Number.isFinite(topInset) ? Math.max(0, topInset) : 0;
   return {
-    nativeOffset: nextNativeOffset,
-    collapseAnchorY: Math.max(0, Math.max(0, collapseAnchorY) + appliedDelta),
+    overlayTop: safeTop,
+    scheduleViewportTop: safeTop + PER_CHANNEL_STABLE_SCROLL_GEOMETRY.viewportTop,
   } as const;
+}
+
+export function perChannelSelectedScheduleHeight(rows: PerChannelProgrammeRow[]) {
+  return rows.length === 0
+    ? PER_CHANNEL_VISUAL_METRICS.currentRowHeight
+    : scheduleHeightForRows(rows);
 }
 
 export function perChannelAnimatedTargetForScheduleOffset(
   scheduleOffset: number,
   collapseAnchorScheduleOffset: number,
   currentProgress: number,
-  contextWrapped = false,
 ) {
   const safeScheduleOffset = Math.max(0, scheduleOffset);
   const safeAnchor = Math.max(0, collapseAnchorScheduleOffset);
@@ -351,7 +338,6 @@ export function perChannelAnimatedTargetForScheduleOffset(
     nativeOffset: perChannelNativeOffsetForScheduleOffset(
       safeScheduleOffset,
       targetProgress,
-      contextWrapped,
     ),
   } as const;
 }
