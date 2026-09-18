@@ -85,6 +85,8 @@ jobs:
       - run: npm ci
       - name: Generate Android native project
         run: npx expo prebuild --platform android --clean
+      - name: Verify Android exact-alarm permission
+        run: grep -Fq 'android.permission.SCHEDULE_EXACT_ALARM' android/app/src/main/AndroidManifest.xml
       - name: Compile Android debug APK (PR arm64)
         if: github.event_name == 'pull_request'
         working-directory: android
