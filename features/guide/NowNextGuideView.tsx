@@ -80,7 +80,7 @@ const ChannelRow = memo(function ChannelRow({
 
   const openProgramme = useCallback(
     (programme: Programme) => onSelectProgramme({ programme, channel }),
-    [channel.displayName, onSelectProgramme],
+    [channel, onSelectProgramme],
   );
 
   const isActuallyLive =
