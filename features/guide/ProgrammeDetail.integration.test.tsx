@@ -11,7 +11,7 @@ import { useGuideClock } from '@/features/guide/useGuideClock';
 
 import { ProgrammeDetail } from './ProgrammeDetail';
 import { EMPTY_PROGRAMME_PERSONAL_STATE } from './programmePersonalState';
-import { writeProgrammePersonalState } from '@/services/storage/programmePersonalStateStorage';
+import { readProgrammePersonalState, writeProgrammePersonalState } from '@/services/storage/programmePersonalStateStorage';
 
 type PanEvent = { translationY: number; velocityY: number; numberOfPointers: number };
 type GestureCallbacks = {
@@ -290,6 +290,103 @@ describe('programme detail rendering boundary', () => {
     const channel = { id: 'test', name: 'Testzender', displayName: 'Testzender', sortOrder: 0, isActive: true };
     await act(async () => root.render(<ProgrammeDetail state={{ visible: true, selection: { programme, channel } }} onClose={vi.fn()} />));
     expect(container.querySelector('[data-testid="programme-detail-description"]')).toBeNull();
+  });
+});
+
+
+describe('programme detail production actions', () => {
+  const channel = {
+    id: 'test',
+    name: 'Testzender',
+    displayName: 'Testzender',
+    sortOrder: 0,
+    isActive: true,
+  };
+
+  function detailState(startAt: string, endAt: string, id = 'detail-action') {
+    return {
+      visible: true,
+      selection: {
+        channel,
+        programme: {
+          id,
+          channelId: channel.id,
+          title: 'Detailprogramma',
+          description: 'Een beschrijving voor de productiedetail.',
+          startAt,
+          endAt,
+        },
+      },
+    };
+  }
+
+  it('renders title before channel/time and exposes current status only while current', async () => {
+    const currentState = detailState(
+      '2026-09-13T05:30:00Z',
+      '2026-09-13T06:30:00Z',
+      'current-detail',
+    );
+    await act(async () => root.render(<ProgrammeDetail state={currentState} onClose={vi.fn()} />));
+    const sheetText = Array.from(
+      getByTestId('programme-detail-sheet').querySelectorAll('span'),
+    ).map((node) => node.textContent ?? '');
+    expect(sheetText[0]).toBe('Detailprogramma');
+    expect(getByTestId('programme-detail-current-status').textContent).toBe('Nu bezig');
+    expect(container.querySelector('[data-testid="programme-detail-reminder"]')).toBeNull();
+    expect(getByTestId('programme-detail-save').textContent).toBe('Bewaar');
+  });
+
+  it('offers reminders only for future programmes and fails closed when scheduling is unsupported', async () => {
+    const futureState = detailState(
+      '2026-09-13T18:00:00Z',
+      '2026-09-13T19:00:00Z',
+      'future-detail',
+    );
+    await act(async () => root.render(<ProgrammeDetail state={futureState} onClose={vi.fn()} />));
+    expect(getByTestId('programme-detail-reminder').textContent).toBe('Herinner mij');
+
+    await act(async () => {
+      getByTestId('programme-detail-reminder').click();
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
+    expect(getByTestId('programme-detail-reminder').textContent).toBe('Herinner mij');
+    expect(getByTestId('programme-detail-sheet').textContent).toContain(
+      'Programmaherinneringen zijn op dit apparaat niet beschikbaar.',
+    );
+
+    const pastState = detailState(
+      '2026-09-13T04:00:00Z',
+      '2026-09-13T05:00:00Z',
+      'past-detail',
+    );
+    await act(async () => root.render(<ProgrammeDetail state={pastState} onClose={vi.fn()} />));
+    expect(container.querySelector('[data-testid="programme-detail-reminder"]')).toBeNull();
+  });
+
+  it('persists Bewaar state across detail close and reopen', async () => {
+    const futureState = detailState(
+      '2026-09-13T18:00:00Z',
+      '2026-09-13T19:00:00Z',
+      'saved-detail',
+    );
+    const onClose = vi.fn();
+    await act(async () => root.render(<ProgrammeDetail state={futureState} onClose={onClose} />));
+    await click('programme-detail-save');
+    expect(getByTestId('programme-detail-save').textContent).toBe('Bewaard');
+    expect(readProgrammePersonalState().saved['saved-detail']).toBeDefined();
+
+    await act(async () =>
+      root.render(
+        <ProgrammeDetail
+          state={{ ...futureState, visible: false }}
+          onClose={onClose}
+        />,
+      ),
+    );
+    await act(async () => root.render(<ProgrammeDetail state={futureState} onClose={onClose} />));
+    expect(getByTestId('programme-detail-save').textContent).toBe('Bewaard');
   });
 });
 
