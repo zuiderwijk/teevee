@@ -1,14 +1,14 @@
 # Teevee — Totaal visual convergence handoff
 
-Status: **IMPLEMENTATION HANDOFF — accepted baseline, no redesign**
+Status: **DRAFT / INACTIVE — NOT AN IMPLEMENTATION HANDOFF**
 Date: 2026-09-15
-Owner-approved sources: `design/current/guide/TOTAAL.md`, `design/current/guide/GUIDE_DAY_SELECTOR.md`, `design/current/TYPOGRAPHY.md`, `docs/VISUAL_BASELINE.md`, `docs/UX.md`, `docs/DESIGN_SYSTEM.md`.
+Owner correction 2026-09-21: Totaal final production visual design is not yet complete. Shared day-selector, typography, interaction/data and accessibility contracts remain valid constraints; the Totaal-specific visual composition below is provisional until explicitly owner-approved.
 
 ## Purpose
 
-Bring the existing `GuideView` implementation visually into line with the already accepted Totaal baseline without reopening the proven interaction mechanics.
+Preserve the prior candidate convergence thinking as input for the next Totaal design round **without authorizing runtime implementation**.
 
-This is a convergence task, not a new design exploration. When this document conflicts with a generated mock-up, use the exact canonical assets referenced from `design/current/guide/TOTAAL.md` and the written repository rules.
+The proven interaction mechanics must remain intact, but the final production visual composition is still open. **Do not start Development from this document.** First complete Totaal Design / UX Exploration, obtain explicit owner acceptance, then rewrite/reactivate this file as the canonical production visual-convergence specification. Until then, Totaal-specific visual details below are candidate direction only; shared accepted contracts such as day navigation, typography, accessibility, data semantics and gesture ownership remain binding.
 
 ## Canonical visual references
 
@@ -267,9 +267,9 @@ Do not use this work to:
 - retune core timeline geometry solely for cosmetic matching;
 - replace current validated interaction code with a parallel Guide implementation.
 
-## Implementation order
+## Candidate implementation order — inactive until owner approval
 
-Recommended sequence to minimise regression risk:
+If the final accepted design retains these directions, the following sequence may minimise regression risk. It is **not authorized work yet**:
 
 1. move/shared-style the Guide presentation selector into the accepted upper Guide shell while preserving selection/deferred-load semantics;
 2. integrate the already accepted Guide day selector in place of prototype day buttons;
@@ -280,9 +280,9 @@ Recommended sequence to minimise regression risk:
 7. validate light/dark/system and representative larger-text settings;
 8. run the existing interaction/test/export/native checks and perform focused physical iPhone acceptance; Android remains a separate physical gate when a device is available.
 
-## Acceptance criteria
+## Candidate acceptance criteria — to be finalized after design approval
 
-Totaal visual convergence is complete only when all of the following are true:
+These criteria are provisional and must be reconciled with the eventual owner-approved production design before Development begins:
 
 1. The screen clearly matches the canonical Totaal visual language in both light and dark mode: open timeline, logo rail, restrained separators, typography-led programme cells.
 2. No permanent grey/rounded programme-card styling remains in Totaal.
