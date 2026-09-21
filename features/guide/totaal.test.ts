@@ -4,8 +4,10 @@ import type { Channel, GuideFixture, GuideSchedule } from '@/data/domain/epg';
 import { TEEVEE_FONT_FAMILIES } from '@/theme/typography';
 import { darkTheme, lightTheme } from '@/theme/tokens';
 
+import { formatGuideTime } from './guideRenderData';
 import {
   TOTAAL_TYPOGRAPHY,
+  TOTAAL_VERTICAL_SCROLL_ENDPOINT_POLICY,
   TOTAAL_VISUAL_METRICS,
   resolveTotaalSchedulePresentation,
   totaalChannelIdForScheduleOffset,
@@ -13,6 +15,7 @@ import {
   totaalChromeCondensedForProgress,
   totaalCollapseProgressForScrollOffset,
   totaalComposedContentTop,
+  totaalCurrentTimeMarkerBodyWidth,
   totaalCurrentTimeMarkerBodyX,
   totaalNativeOffsetForScheduleOffset,
   totaalProgrammeContentPresentation,
@@ -137,11 +140,32 @@ describe('Totaal production calibration', () => {
     expect(TOTAAL_VISUAL_METRICS.axisBaselineOpacity).toBe(0.42);
   });
 
-  it('keeps the current-marker helper explicitly workletized without changing its geometry', () => {
+  it('keeps every HH:MM current label readable while clamping only the body at viewport edges', () => {
+    const labels = [
+      '2026-09-22T00:00:00+02:00',
+      '2026-09-22T00:04:00+02:00',
+      '2026-09-22T09:09:00+02:00',
+      '2026-09-22T23:59:00+02:00',
+    ].map((value) => formatGuideTime(Date.parse(value)));
+    expect(labels).toEqual(['00:00', '00:04', '09:09', '23:59']);
+
+    const bodyWidth = totaalCurrentTimeMarkerBodyWidth(1);
+    expect(bodyWidth).toBe(48);
+    expect(bodyWidth - TOTAAL_VISUAL_METRICS.currentMarkerPaddingX * 2).toBe(38);
     expect(totaalCurrentTimeMarkerBodyX.toString()).toContain('worklet');
-    expect(totaalCurrentTimeMarkerBodyX(120, 300, 38)).toBe(101);
-    expect(totaalCurrentTimeMarkerBodyX(3, 300, 38)).toBe(0);
-    expect(totaalCurrentTimeMarkerBodyX(298, 300, 38)).toBe(262);
+    expect(totaalCurrentTimeMarkerBodyX(120, 300, bodyWidth)).toBe(96);
+    expect(totaalCurrentTimeMarkerBodyX(3, 300, bodyWidth)).toBe(0);
+    expect(totaalCurrentTimeMarkerBodyX(298, 300, bodyWidth)).toBe(252);
+    expect(totaalCurrentTimeMarkerBodyWidth(1.2)).toBe(56);
+    expect(totaalCurrentTimeMarkerBodyWidth(2)).toBe(56);
+  });
+
+  it('disables vertical endpoint overscroll only for the Totaal channel schedule', () => {
+    expect(TOTAAL_VERTICAL_SCROLL_ENDPOINT_POLICY).toEqual({
+      bounces: false,
+      alwaysBounceVertical: false,
+      overScrollMode: 'never',
+    });
   });
 
   it('uses fixed native viewport geometry with 196/212 rest and 96 settled endpoints', () => {
