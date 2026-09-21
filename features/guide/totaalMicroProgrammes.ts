@@ -4,6 +4,8 @@ import { TOTAAL_TYPOGRAPHY } from './totaal';
 
 export const TOTAAL_MICRO_PROGRAMME_BASE_THRESHOLD = 48;
 export const TOTAAL_MICRO_PROGRAMME_INSET_X = 6;
+export const TOTAAL_MICRO_PROGRAMME_ELLIPSIS_BASE_MIN_WIDTH =
+  TOTAAL_TYPOGRAPHY.programmeTitle.fontSize + TOTAAL_MICRO_PROGRAMME_INSET_X * 2;
 
 const INTERNAL_WHITESPACE = /\s+/g;
 
@@ -49,11 +51,7 @@ export function totaalMicroProgrammeThreshold(fontScale: number): number {
  */
 export function totaalMicroProgrammeEllipsisMinWidth(fontScale: number): number {
   'worklet';
-  return (
-    (TOTAAL_TYPOGRAPHY.programmeTitle.fontSize +
-      TOTAAL_MICRO_PROGRAMME_INSET_X * 2) *
-    safeScale(fontScale)
-  );
+  return TOTAAL_MICRO_PROGRAMME_ELLIPSIS_BASE_MIN_WIDTH * safeScale(fontScale);
 }
 
 export function totaalMicroProgrammeShowsEllipsis(
