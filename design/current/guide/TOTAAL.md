@@ -3,7 +3,7 @@
 Status: **ACCEPTED — PRODUCTION VISUAL DESIGN OWNER-APPROVED**
 Owner-approved: 2026-09-21
 
-This manifest defines the accepted Totaal production visual direction. It freezes composition, hierarchy and visual language. The detailed production implementation candidate is `docs/TOTAAL_VISUAL_CONVERGENCE.md`; that specification becomes canonical only after explicit owner acceptance and merge. Development must not start from this manifest alone.
+This manifest defines the accepted Totaal production visual direction. It freezes composition, hierarchy and visual language. The detailed owner-approved production implementation specification is `docs/TOTAAL_VISUAL_CONVERGENCE.md`; it becomes canonical Development authority when the documentation/design PR is merged to `main`. Development must not start before that merge.
 
 ## Canonical visual asset
 
@@ -167,7 +167,7 @@ That handoff calibrates the remaining implementation details, including:
 - fixed-native-viewport collapse/compensation;
 - very short programmes, long titles and missing logos.
 
-Until that production specification is owner-approved and merged, these values remain a review candidate rather than Development authority.
+The production specification is owner-approved. Its values become Development authority when the documentation/design PR is merged to `main`; physical-device validation remains a later runtime gate.
 
 ## Superseded Totaal visual treatments
 
