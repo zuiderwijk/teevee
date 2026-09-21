@@ -19,6 +19,7 @@ import {
   perChannelScheduleOffsetForNativeOffset,
   perChannelSelectedScheduleHeight,
   PER_CHANNEL_STABLE_SCROLL_GEOMETRY,
+  perChannelStableScrollGeometry,
   perChannelStableScrollVisuals,
   perChannelVisibleStackGeometry,
   currentProgrammeRowHeight,
@@ -203,6 +204,33 @@ describe('per-channel fixed-row schedule', () => {
     }
   });
 
+  it('reconciles the shared 64-pt accessibility tabs to 268/156/100 without changing the 112-pt viewport', () => {
+    const geometry = perChannelStableScrollGeometry(1.8);
+    expect(geometry).toEqual({
+      viewportTop: 112,
+      contentTopInset: 156,
+      scrollCompensation: 100,
+    });
+
+    const rest = perChannelStableScrollVisuals(0, 1.8);
+    const condensed = perChannelStableScrollVisuals(1, 1.8);
+    expect(rest.overlayBottom).toBe(268);
+    expect(condensed.overlayBottom).toBe(112);
+    expect(rest.overlayBottom - condensed.overlayBottom).toBe(156);
+    expect(condensed.contentTranslateY).toBe(-100);
+    expect(PER_CHANNEL_VISUAL_METRICS.collapseDistance).toBe(56);
+
+    for (const progress of [0, 0.25, 0.5, 0.75, 1]) {
+      const visuals = perChannelStableScrollVisuals(progress, 1.8);
+      const scheduleVisualTop =
+        geometry.viewportTop +
+        geometry.contentTopInset +
+        visuals.contentTranslateY -
+        PER_CHANNEL_VISUAL_METRICS.collapseDistance * progress;
+      expect(scheduleVisualTop).toBeCloseTo(visuals.overlayBottom, 8);
+    }
+  });
+
   it('proves the visible rest and condensed rail/context/schedule gaps from zone boundaries', () => {
     const rest = perChannelVisibleStackGeometry(0);
     expect(rest.railBottom).toBe(172);
@@ -225,6 +253,10 @@ describe('per-channel fixed-row schedule', () => {
     expect(perChannelSafeAreaLayout(0)).toEqual({ overlayTop: 0, scheduleViewportTop: 112 });
     expect(perChannelSafeAreaLayout(59)).toEqual({ overlayTop: 59, scheduleViewportTop: 171 });
     expect(perChannelSafeAreaLayout(-12)).toEqual({ overlayTop: 0, scheduleViewportTop: 112 });
+    expect(perChannelSafeAreaLayout(59, 1.8)).toEqual({
+      overlayTop: 59,
+      scheduleViewportTop: 171,
+    });
   });
 
   it('owns vertical content height by the selected channel rather than a longer pager neighbour', () => {
