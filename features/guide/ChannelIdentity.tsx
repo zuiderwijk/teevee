@@ -10,12 +10,13 @@ import {
   PER_CHANNEL_VISUAL_METRICS,
 } from './guideVisualMetrics';
 import { resolveChannelLogo } from './channelLogoRegistry';
+import { TOTAAL_VISUAL_METRICS } from './totaal';
 
 type ChannelIdentityProps = {
   channel: Channel;
   textColor: string;
   mutedTextColor: string;
-  variant?: 'default' | 'per-channel-strip' | 'now-next' | 'detail';
+  variant?: 'default' | 'totaal' | 'per-channel-strip' | 'now-next' | 'detail';
   accessible?: boolean;
 };
 
@@ -29,10 +30,11 @@ export const ChannelIdentity = memo(function ChannelIdentity({
   const resolvedLogo = resolveChannelLogo(channel);
   const [failedLogoKey, setFailedLogoKey] = useState<string | null>(null);
   const showLogo = Boolean(resolvedLogo) && failedLogoKey !== resolvedLogo?.key;
+  const totaal = variant === 'totaal';
   const perChannelStrip = variant === 'per-channel-strip';
   const nowNext = variant === 'now-next';
   const detail = variant === 'detail';
-  const compactLogoIdentity = perChannelStrip || nowNext;
+  const compactLogoIdentity = totaal || perChannelStrip || nowNext;
   const showVisibleName = compactLogoIdentity ? !showLogo : true;
   const visibleName = compactLogoIdentity
     ? channel.shortName ?? channel.displayName
@@ -44,6 +46,7 @@ export const ChannelIdentity = memo(function ChannelIdentity({
       accessibilityLabel={accessible ? channel.displayName : undefined}
       style={[
         styles.container,
+        totaal ? styles.totaalContainer : null,
         perChannelStrip ? styles.perChannelContainer : null,
         nowNext ? styles.nowNextContainer : null,
         detail ? styles.detailContainer : null,
@@ -57,6 +60,7 @@ export const ChannelIdentity = memo(function ChannelIdentity({
           onError={() => setFailedLogoKey(resolvedLogo?.key ?? null)}
           style={[
             styles.logo,
+            totaal ? styles.totaalLogo : null,
             perChannelStrip ? styles.perChannelLogo : null,
             nowNext ? styles.nowNextLogo : null,
             detail ? styles.detailLogo : null,
@@ -65,14 +69,15 @@ export const ChannelIdentity = memo(function ChannelIdentity({
       ) : null}
       {showVisibleName ? (
         <Text
-          numberOfLines={1}
+          numberOfLines={totaal ? 2 : 1}
           ellipsizeMode={compactLogoIdentity || detail || showLogo ? 'tail' : 'middle'}
           maxFontSizeMultiplier={
-            perChannelStrip ? COMPACT_GUIDE_MAX_FONT_SIZE_MULTIPLIER : undefined
+            compactLogoIdentity ? COMPACT_GUIDE_MAX_FONT_SIZE_MULTIPLIER : undefined
           }
           style={[
             nowNext ? styles.nowNextName : styles.name,
             showLogo ? styles.nameWithLogo : null,
+            totaal ? styles.totaalFallback : null,
             perChannelStrip ? styles.perChannelFallback : null,
             nowNext ? styles.nowNextFallback : null,
             detail ? styles.detailName : null,
@@ -102,6 +107,9 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     paddingHorizontal: 6,
   },
+  totaalContainer: {
+    paddingHorizontal: 6,
+  },
   detailContainer: {
     flex: 0,
     minWidth: 0,
@@ -126,6 +134,11 @@ const styles = StyleSheet.create({
     width: '78%',
     height: 24,
     marginBottom: 4,
+  },
+  totaalLogo: {
+    width: TOTAAL_VISUAL_METRICS.channelLogoMaxWidth,
+    height: TOTAAL_VISUAL_METRICS.channelLogoMaxHeight,
+    marginBottom: 0,
   },
   detailLogo: {
     width: 36,
@@ -152,6 +165,12 @@ const styles = StyleSheet.create({
   nameWithLogo: {
     fontSize: 10,
     fontWeight: '600',
+  },
+  totaalFallback: {
+    ...GUIDE_TYPOGRAPHY.channelFallback,
+    width: '100%',
+    textAlign: 'center',
+    letterSpacing: 0,
   },
   nowNextName: {
     width: '100%',

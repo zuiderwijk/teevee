@@ -1,5 +1,6 @@
 export const GUIDE_TIME_TICK_LABEL_OFFSET = 6;
-export const GUIDE_TIME_TICK_INTERVAL_MINUTES = 30;
+export const GUIDE_TIME_TICK_INTERVAL_MINUTES = 15;
+export const GUIDE_TIME_LABEL_INTERVAL_MINUTES = 30;
 
 export function clippedTimeAxisLabelWidth(
   viewportX: number,

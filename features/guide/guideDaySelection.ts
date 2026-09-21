@@ -42,15 +42,7 @@ export function guideDayIsSelectable(dayStartMs: number, nowMs: number): boolean
  * television day as Vandaag.
  */
 export function guideDayLabel(dayStartMs: number, nowMs: number): string {
-  const nominalCalendarDay = guideDayStart(dayStartMs);
-  const todayCalendarDay = guideDayStart(nowMs);
-  const formatted = formatNominalDay(dayStartMs);
-
-  if (nominalCalendarDay === todayCalendarDay) return `Vandaag · ${formatted.toLowerCase()}`;
-  if (nominalCalendarDay === guideDayStart(nowMs, 1)) {
-    return `Morgen · ${formatted.toLowerCase()}`;
-  }
-  return formatted;
+  return perChannelGuideDayLabel(dayStartMs, nowMs);
 }
 
 function amsterdamHour(nowMs: number): number {
