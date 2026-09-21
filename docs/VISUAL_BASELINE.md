@@ -87,6 +87,7 @@ These assets **supersede only stale date/day controls**. For Per-zender they ame
 Status: **ACCEPTED — PRODUCTION VISUAL DESIGN OWNER-APPROVED**
 Owner-approved production direction: 2026-09-21
 Detailed manifest: `design/current/guide/TOTAAL.md`
+Production specification: `docs/TOTAAL_VISUAL_CONVERGENCE.md`
 
 Canonical visual asset in the user's Teevee Library:
 - light/dark + expanded/condensed board: `/Teevee/Totaal production design - light dark expanded condensed.png`
@@ -110,9 +111,9 @@ Accepted production visual characteristics:
 - bottom navigation follows the same shared app-shell structure as Per zender;
 - Instrument Sans; substantive programme content remains Dynamic-Type aware.
 
-The visual board is canonical for composition/hierarchy, not literal schedule content or every generated glyph. Exact broadcaster assets come from the canonical logo registry; exact bottom-nav glyphs come from the shared app shell. Exact typography metrics, row height, rail width/logo box, separator/tick contrast, current-time-marker dimensions and collapse calibration are intentionally left for the production specification and physical validation.
+The visual board is canonical for composition/hierarchy, not literal schedule content or every generated glyph. Exact broadcaster assets come from the canonical logo registry; exact bottom-nav glyphs come from the shared app shell. The production calibration is now frozen in `docs/TOTAAL_VISUAL_CONVERGENCE.md`: GuideChrome 100/116, 52-pt day/Nu context, 44-pt axis, 96-pt persistent stack, 56-pt isolated native collapse with 44/60 compensation, 84-pt base channel rail, 52×40 logo optical box, 76-pt base schedule rows, 15/19 programme title, 13/18 secondary time, 15-minute axis ticks and compact current-time marker.
 
-Frozen interaction/data/performance mechanics remain unchanged: 2D time/channel navigation, real duration geometry, native inertia/bounce/directional lock, partial-left readability, D-2..D+7 + 06:00 television day, Programme Detail round-trip and bounded horizontal programme windowing.
+Frozen interaction/data/performance mechanics remain unchanged: 2D time/channel navigation, real duration geometry, native inertia/bounce/directional lock, partial-left readability, D-2..D+7 + 06:00 television day, Programme Detail round-trip and bounded horizontal programme windowing. Production programme frames now use the full real duration width; visual programme boundaries may not shorten that geometry.
 
 Superseded as Totaal production references:
 - `/Teevee/Nederlandse tv-gids op smartphone.png`;
