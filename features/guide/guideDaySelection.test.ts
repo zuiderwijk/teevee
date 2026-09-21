@@ -40,10 +40,10 @@ describe('Guide day selection', () => {
     const followingTelevisionDay = options.find(({ offset }) => offset === 1)!;
 
     expect(guideDayLabel(currentTelevisionDay.fromMs, nowMs)).toBe('Ma 14 sep');
-    expect(guideDayLabel(followingTelevisionDay.fromMs, nowMs)).toBe('Vandaag · di 15 sep');
+    expect(guideDayLabel(followingTelevisionDay.fromMs, nowMs)).toBe('Di 15 sep');
   });
 
-  it('uses the canonical Per-zender relative labels only from 06:00 through 23:59', () => {
+  it('uses the canonical shared Totaal/Per-zender relative labels only from 06:00 through 23:59', () => {
     const beforeBoundary = Date.parse('2026-09-15T03:59:00Z');
     const beforeOptions = guideDayOptions(beforeBoundary);
     expect(perChannelGuideDayLabel(beforeOptions.find(({ offset }) => offset === 0)!.fromMs, beforeBoundary)).toBe('Ma 14 sep');
@@ -53,6 +53,8 @@ describe('Guide day selection', () => {
     const boundaryOptions = guideDayOptions(boundary);
     expect(perChannelGuideDayLabel(boundaryOptions.find(({ offset }) => offset === 0)!.fromMs, boundary)).toBe('Vandaag');
     expect(perChannelGuideDayLabel(boundaryOptions.find(({ offset }) => offset === 1)!.fromMs, boundary)).toBe('Morgen');
+    expect(guideDayLabel(boundaryOptions.find(({ offset }) => offset === 0)!.fromMs, boundary)).toBe('Vandaag');
+    expect(guideDayLabel(boundaryOptions.find(({ offset }) => offset === 1)!.fromMs, boundary)).toBe('Morgen');
 
     const lateEvening = Date.parse('2026-09-15T21:59:00Z');
     const lateOptions = guideDayOptions(lateEvening);

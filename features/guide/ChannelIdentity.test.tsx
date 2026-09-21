@@ -12,13 +12,21 @@ vi.mock('react-native', () => {
     children?: ReactNode;
     accessibilityLabel?: string;
     ellipsizeMode?: string;
+    numberOfLines?: number;
     onError?: () => void;
   };
 
   const View = ({ children, accessibilityLabel }: Props) =>
     createElement('div', { 'aria-label': accessibilityLabel }, children);
-  const Text = ({ children, ellipsizeMode }: Props) =>
-    createElement('span', { 'data-ellipsize-mode': ellipsizeMode }, children);
+  const Text = ({ children, ellipsizeMode, numberOfLines }: Props) =>
+    createElement(
+      'span',
+      {
+        'data-ellipsize-mode': ellipsizeMode,
+        'data-number-of-lines': numberOfLines,
+      },
+      children,
+    );
   const Image = ({ onError }: Props) => createElement('img', { onError });
 
   return {
@@ -181,6 +189,51 @@ describe('ChannelIdentity', () => {
     expect(container.querySelector('img')).not.toBeNull();
     expect(container.querySelector('span')).toBeNull();
     expect(container.querySelector('[aria-label]')).toBeNull();
+  });
+
+  it('uses a 48x36 logo-first Totaal identity without a duplicate visible caption', async () => {
+    await act(async () => {
+      root.render(
+        <ChannelIdentity
+          channel={{
+            ...baseChannel,
+            id: 'nl-npo-1',
+            displayName: 'Nederland 1 volledig',
+            shortName: 'NPO 1',
+          }}
+          textColor="#111"
+          mutedTextColor="#777"
+          variant="totaal"
+          accessible={false}
+        />,
+      );
+    });
+
+    expect(container.querySelector('img')).not.toBeNull();
+    expect(container.querySelector('span')).toBeNull();
+    expect(container.querySelector('[aria-label]')).toBeNull();
+  });
+
+  it('uses the full Totaal displayName as a max-two-line fallback and accessibility identity', async () => {
+    await act(async () => {
+      root.render(
+        <ChannelIdentity
+          channel={{
+            ...baseChannel,
+            displayName: 'Publieke Omroep Volledig',
+            shortName: 'PO',
+          }}
+          textColor="#111"
+          mutedTextColor="#777"
+          variant="totaal"
+          accessible
+        />,
+      );
+    });
+
+    expect(container.textContent).toBe('Publieke Omroep Volledig');
+    expect(container.querySelector('span')?.getAttribute('data-number-of-lines')).toBe('2');
+    expect(container.querySelector('[aria-label="Publieke Omroep Volledig"]')).not.toBeNull();
   });
 
   it('falls back inside the same Per-zender identity after a logo load failure', async () => {

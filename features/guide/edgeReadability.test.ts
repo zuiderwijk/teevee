@@ -29,7 +29,7 @@ describe('edgeReadableProgramme', () => {
     const result = edgeReadableProgramme([programme], 30, 120, windowStart, 3);
 
     expect(result).not.toBeNull();
-    expect(result?.frame).toEqual({ left: 0, width: 178 });
+    expect(result?.frame).toEqual({ left: 0, width: 180 });
     expect(result?.hiddenLeft).toBe(30);
     expect(result?.visibleWidth).toBe(120);
     expect(result?.endsInViewport).toBe(false);
@@ -38,32 +38,32 @@ describe('edgeReadableProgramme', () => {
   it('reports the true remaining width when the programme end is visible', () => {
     const result = edgeReadableProgramme([programme], 100, 120, windowStart, 3);
 
-    expect(result?.visibleWidth).toBe(78);
+    expect(result?.visibleWidth).toBe(80);
     expect(result?.endsInViewport).toBe(true);
   });
 
   it('returns null before the programme start, at its exact start and after its end', () => {
     expect(edgeReadableProgramme([programme], 0, 120, windowStart, 3)).toBeNull();
-    expect(edgeReadableProgramme([programme], 178, 120, windowStart, 3)).toBeNull();
+    expect(edgeReadableProgramme([programme], 180, 120, windowStart, 3)).toBeNull();
     expect(edgeReadableProgramme([programme], 300, 120, windowStart, 3)).toBeNull();
   });
 });
 
 describe('edge boundary switching', () => {
   it('builds sorted visual start/end boundaries including the programme gap', () => {
-    expect(edgeBoundaryXs([programme, nextProgramme], windowStart, 3)).toEqual([0, 178, 180, 268]);
+    expect(edgeBoundaryXs([programme, nextProgramme], windowStart, 3)).toEqual([0, 180, 270]);
   });
 
   it('changes buckets only after crossing a boundary, not merely reaching it', () => {
-    const boundaries = [0, 178, 180, 268];
+    const boundaries = [0, 180, 270];
 
     expect(edgeBoundaryBucket(boundaries, 0)).toBe(-1);
     expect(edgeBoundaryBucket(boundaries, 0.1)).toBe(0);
-    expect(edgeBoundaryBucket(boundaries, 178)).toBe(0);
-    expect(edgeBoundaryBucket(boundaries, 178.1)).toBe(1);
-    expect(edgeBoundaryBucket(boundaries, 180)).toBe(1);
-    expect(edgeBoundaryBucket(boundaries, 180.1)).toBe(2);
-    expect(edgeBoundaryBucket(boundaries, 500)).toBe(3);
+    expect(edgeBoundaryBucket(boundaries, 180)).toBe(0);
+    expect(edgeBoundaryBucket(boundaries, 180.1)).toBe(1);
+    expect(edgeBoundaryBucket(boundaries, 270)).toBe(1);
+    expect(edgeBoundaryBucket(boundaries, 270.1)).toBe(2);
+    expect(edgeBoundaryBucket(boundaries, 500)).toBe(2);
   });
 
   it('clamps invalid or negative viewport positions to the left edge', () => {
