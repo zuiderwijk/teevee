@@ -79,13 +79,14 @@ Purpose: compare multiple channels across time.
 
 - vertical movement: channels;
 - horizontal movement: time;
-- time axis remains available/sticky where needed for orientation;
+- time axis remains available/sticky where needed for orientation; production Totaal uses a 44-pt axis with 15-minute positions, labels on :00/:30 and unlabeled :15/:45 ticks;
 - channel identity rail remains available while moving through time;
 - tap programme: open Programme Detail directly;
-- current time uses one compact marker anchored to the time axis; do not add a full-height red line through channel rows;
+- current time uses one compact marker anchored to the time axis; production geometry is 46×20 with a 6×4 notch and exact-minute positioning; do not add a full-height red line through channel rows;
 - current programme information prioritises the useful end time (`tot HH:MM`) without an in-cell progress bar or heavy permanent current card;
 - future/non-current programmes prioritise start time; end time is normally unnecessary in the grid;
 - programme cells use the accepted open-grid language: no permanent rounded/fill card treatment merely to define every cell;
+- very short programmes keep exact real-time width; never widen geometry or use overlapping hitSlop merely to manufacture a 44/48 target. Such cells remain independent screen-reader actions and are an explicit essential-spatial-geometry exception pending physical validation.
 - title is the primary programme signal; avoid genres and other low-value metadata inside compact schedule cells;
 - use the accepted shared Guide day selector for D-2..D+7 navigation;
 - `Nu` returns to the actual current instant and corresponding television day;
@@ -93,7 +94,7 @@ Purpose: compare multiple channels across time.
 - when crossing 06:00, date context updates to the next television day while the timeline may remain continuous;
 - platform-standard inertia and elastic/bounce behaviour are part of the intended tactile quality; avoid hard unnatural scroll stops.
 
-Programme geometry continues to represent real schedule time. Text may adapt within the visible part of a programme cell, but the programme block itself must not move away from its real start/duration geometry.
+Programme geometry continues to represent real schedule time. Text may adapt within the visible part of a programme cell, but the programme block itself must not move away from its real start/duration geometry. Production Totaal uses the full duration width and draws boundaries on the real end timestamp; it does not shorten cells to create cosmetic gaps.
 
 At larger system text sizes, adapt row height, geometry and secondary metadata density rather than clipping essential information or globally disabling text scaling.
 
@@ -105,7 +106,7 @@ Accepted Totaal visual composition (owner-approved 2026-09-21):
 - channel rail is logo-first, has no visible `ZENDER` heading and does not duplicate a readable logo with a visible channel-name caption;
 - channel rail and schedule share one calm canvas with restrained separators rather than card/sidebar surfaces;
 - bottom navigation uses the same shared app-shell structure as Per zender;
-- exact production metrics remain to be frozen in the dedicated Totaal production visual-convergence specification.
+- production metrics are frozen in `docs/TOTAAL_VISUAL_CONVERGENCE.md`: shared GuideChrome 100/116, 52-pt date/Nu row, 44-pt time axis, 96-pt persistent functional stack, 56-pt fixed-native-viewport collapse with 44/60 visual compensation, 84-pt base channel rail, 76-pt base programme rows, 15/19 title and 13/18 time hierarchy.
 
 ## Per zender — accepted interaction baseline
 Purpose: inspect the schedule of one channel while making adjacent-channel comparison effortless.
