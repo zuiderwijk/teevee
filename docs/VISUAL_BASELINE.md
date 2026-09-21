@@ -101,6 +101,7 @@ Accepted production visual characteristics:
 - date wording matches Per zender: 06:00–23:59 uses only `Vandaag` / `Morgen` for current/next television day; other days use abbreviated weekday + date; 00:00–05:59 uses explicit weekday + date for every day;
 - open 2D schedule canvas, not permanent rounded/filled programme cards;
 - programme title is primary; running programme secondary copy prioritises `tot HH:MM`, future/non-current programme secondary copy uses start time where useful;
+- owner-approved micro-programme amendment (2026-09-21): full real frame `< 48 × S` shows centred `…`; >=2 directly adjacent same-title microcells may share one run-bounded title when visible run width reaches `48 × S`, without merging boundaries/actions;
 - no in-cell progress bars;
 - one compact red current-time marker anchored to the time axis; no full-height red line through channel rows;
 - whole and half hours carry visible time labels; quarter hours use unlabeled minor ticks;
@@ -111,7 +112,7 @@ Accepted production visual characteristics:
 - bottom navigation follows the same shared app-shell structure as Per zender;
 - Instrument Sans; substantive programme content remains Dynamic-Type aware.
 
-The visual board is canonical for composition/hierarchy, not literal schedule content or every generated glyph. Exact broadcaster assets come from the canonical logo registry; exact bottom-nav glyphs come from the shared app shell. Exact typography, row/rail/time-axis geometry, separator/tick hierarchy, current-time marker, Dynamic Type and collapse calibration are owner-approved in `docs/TOTAAL_VISUAL_CONVERGENCE.md` and become canonical Development authority when that documentation/design PR is merged to `main`; physical device validation remains the runtime implementation gate.
+The visual board is canonical for composition/hierarchy, not literal schedule content or every generated glyph. The written micro-programme amendment in `design/current/guide/TOTAAL.md` and `docs/TOTAAL_VISUAL_CONVERGENCE.md` supersedes any title-fragment behaviour implied by the board. Exact broadcaster assets come from the canonical logo registry; exact bottom-nav glyphs come from the shared app shell. Exact typography, row/rail/time-axis geometry, separator/tick hierarchy, current-time marker, Dynamic Type and collapse calibration are owner-approved in `docs/TOTAAL_VISUAL_CONVERGENCE.md` and become canonical Development authority when that documentation/design PR is merged to `main`; physical device validation remains the runtime implementation gate.
 
 Frozen interaction/data/performance mechanics remain unchanged: 2D time/channel navigation, real duration geometry, native inertia/bounce/directional lock, partial-left readability, D-2..D+7 + 06:00 television day, Programme Detail round-trip and bounded horizontal programme windowing.
 

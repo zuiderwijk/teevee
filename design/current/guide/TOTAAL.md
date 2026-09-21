@@ -2,6 +2,7 @@
 
 Status: **ACCEPTED — PRODUCTION VISUAL DESIGN OWNER-APPROVED**
 Owner-approved: 2026-09-21
+Micro-programme refinement owner-approved: 2026-09-21
 
 This manifest defines the accepted Totaal production visual direction. It freezes composition, hierarchy and visual language. The detailed owner-approved production implementation specification is `docs/TOTAAL_VISUAL_CONVERGENCE.md`; it becomes canonical Development authority when the documentation/design PR is merged to `main`. Development must not start before that merge.
 
@@ -89,8 +90,14 @@ The bounded D-2..D+7 bottom-sheet contract remains defined by `design/current/gu
 - running programme: secondary copy prioritises **`tot HH:MM`**;
 - future/non-current programme: secondary copy uses the start time when useful;
 - secondary time copy is visually quieter than the title;
-- for narrow/partially clipped cells, title survives before secondary time metadata;
-- exact font sizes/weights/row metrics remain to be frozen in the production spec and validated physically.
+- for normal narrow/partially clipped cells, title survives before secondary time metadata;
+- a genuine microcell whose full real frame width is `< 48 × S pt` (`S = max(1, effectiveFontScale)`) suppresses meaningless title fragments and shows one centred `…` with no secondary time;
+- the actual-current individual microcell uses Semibold `…`; non-current uses Medium;
+- two or more directly adjacent microcells on the same channel with the same title after trim/whitespace normalisation form a repeated-title run;
+- when the visible repeated-run intersection is at least `48 × S pt`, suppress per-cell `…` and show one shared one-line Medium title over the visible run, left-aligned with the existing 6-pt compact inset and clipped/sticky strictly inside the run bounds;
+- repeated-title sharing never merges geometry: every underlying broadcast retains its own boundary, hit target, accessibility action and Programme Detail action;
+- shared repeated-run title remains Medium even when one underlying broadcast is current; exact current semantics remain on that broadcast and the time-axis marker;
+- exact font sizes/weights/row metrics remain defined by the production spec and validated physically.
 
 ### Current programme
 - no in-cell progress bar;
@@ -168,6 +175,8 @@ That handoff calibrates the remaining implementation details, including:
 - very short programmes, long titles and missing logos.
 
 The production specification is owner-approved. Its values become Development authority when the documentation/design PR is merged to `main`; physical-device validation remains a later runtime gate.
+
+The 2026-09-21 micro-programme amendment is a targeted production refinement only. It does **not** reopen 84/76/3.00 geometry, programme boundaries, open-grid styling, current-time marker, channel rail, Guide chrome, day navigation or any gesture/performance contract.
 
 ## Superseded Totaal visual treatments
 
