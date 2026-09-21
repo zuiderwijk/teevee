@@ -34,6 +34,7 @@ export const TOTAAL_VISUAL_METRICS = {
   nowPaddingX: 12,
   nowRadius: 10,
   dateInsetX: 20,
+  scheduleBottomClearance: 16,
 } as const;
 
 export const TOTAAL_TYPOGRAPHY = {
@@ -135,20 +136,77 @@ export function totaalStableScrollGeometry(fontScale = 1) {
   } as const;
 }
 
-export function totaalStableScrollVisuals(progress: number, fontScale = 1) {
+export function totaalStableScrollVisuals(
+  progress: number,
+  fontScale = 1,
+  nativeScrollY = 0,
+  reduceMotion = false,
+) {
   'worklet';
   const clamped = Math.min(1, Math.max(0, progress));
   const expandedChromeHeight = guideChromeExpandedHeight(fontScale);
   const scrollCompensation =
     expandedChromeHeight - TOTAAL_VISUAL_METRICS.collapseDistance;
+  const safeNativeScrollY = Number.isFinite(nativeScrollY)
+    ? Math.max(0, nativeScrollY)
+    : 0;
+
+  const contentTranslateY = reduceMotion
+    ? clamped < 1
+      ? safeNativeScrollY
+      : -(expandedChromeHeight - TOTAAL_VISUAL_METRICS.reduceMotionSwitchOffset)
+    : clamped === 0
+      ? 0
+      : -scrollCompensation * clamped;
 
   return {
     overlayBottom:
       expandedChromeHeight * (1 - clamped) +
       TOTAAL_VISUAL_METRICS.persistentStackHeight,
-    contentTranslateY:
-      clamped === 0 ? 0 : -scrollCompensation * clamped,
+    contentTranslateY,
   } as const;
+}
+
+export function totaalComposedContentTop(
+  nativeScrollY: number,
+  fontScale: number,
+  reduceMotion: boolean,
+) {
+  const safeNativeScrollY = Number.isFinite(nativeScrollY)
+    ? Math.max(0, nativeScrollY)
+    : 0;
+  const progress = totaalCollapseProgressForScrollOffset(
+    safeNativeScrollY,
+    reduceMotion,
+  );
+  const geometry = totaalStableScrollGeometry(fontScale);
+  return (
+    geometry.contentTopInset -
+    safeNativeScrollY +
+    totaalStableScrollVisuals(
+      progress,
+      fontScale,
+      safeNativeScrollY,
+      reduceMotion,
+    ).contentTranslateY
+  );
+}
+
+export function totaalVerticalContentExtent(
+  contentTopInset: number,
+  guideHeight: number,
+) {
+  const safeContentTopInset = Number.isFinite(contentTopInset)
+    ? Math.max(0, contentTopInset)
+    : 0;
+  const safeGuideHeight = Number.isFinite(guideHeight)
+    ? Math.max(0, guideHeight)
+    : 0;
+  return (
+    safeContentTopInset +
+    safeGuideHeight +
+    TOTAAL_VISUAL_METRICS.scheduleBottomClearance
+  );
 }
 
 export function totaalSafeAreaLayout(topInset: number, fontScale = 1) {
@@ -284,26 +342,36 @@ export function totaalPreservedChannelScheduleOffset({
 export function totaalNativeOffsetForScheduleOffset(
   scheduleOffset: number,
   collapseProgress: number,
+  reduceMotion = false,
 ) {
   'worklet';
   const clamped = Math.min(1, Math.max(0, collapseProgress));
-  return Math.max(
-    0,
-    Math.max(0, scheduleOffset) +
-      TOTAAL_VISUAL_METRICS.collapseDistance * clamped,
-  );
+  const nativeCollapseContribution = reduceMotion
+    ? clamped >= 1
+      ? TOTAAL_VISUAL_METRICS.reduceMotionSwitchOffset
+      : 0
+    : TOTAAL_VISUAL_METRICS.collapseDistance * clamped;
+  return Math.max(0, Math.max(0, scheduleOffset) + nativeCollapseContribution);
 }
 
 export function totaalScheduleOffsetForNativeOffset(
   nativeOffset: number,
   collapseProgress: number,
+  reduceMotion = false,
 ) {
   'worklet';
+  const safeNativeOffset = Math.max(0, nativeOffset);
   const clamped = Math.min(1, Math.max(0, collapseProgress));
+  if (reduceMotion) {
+    if (clamped < 1) return 0;
+    return Math.max(
+      0,
+      safeNativeOffset - TOTAAL_VISUAL_METRICS.reduceMotionSwitchOffset,
+    );
+  }
   return Math.max(
     0,
-    Math.max(0, nativeOffset) -
-      TOTAAL_VISUAL_METRICS.collapseDistance * clamped,
+    safeNativeOffset - TOTAAL_VISUAL_METRICS.collapseDistance * clamped,
   );
 }
 
