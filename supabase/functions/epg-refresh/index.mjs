@@ -3,6 +3,7 @@ import {
   IPTV_EPG_NL_CHANNEL_MAPPINGS,
   IPTV_EPG_NL_PROVIDER_CHANNEL_IDS,
 } from '../../../server/epg/developmentChannelCatalog.ts';
+import { refreshGuideHorizon } from '../../../server/epg/guideHorizonRefresh.ts';
 import {
   HOSTED_REQUEST_MAX_BODY_BYTES,
   parseHostedRefreshRequest,
@@ -73,6 +74,28 @@ async function parseJsonBody(req) {
   }
 }
 
+function diagnosticCounts(result) {
+  return result.diagnostics.reduce(
+    (counts, diagnostic) => {
+      counts[diagnostic.severity] += 1;
+      return counts;
+    },
+    { warning: 0, error: 0 },
+  );
+}
+
+function horizonWindowResponse(window) {
+  return {
+    offset: window.offset,
+    from: window.from,
+    to: window.to,
+    status: window.result.write.status,
+    write: window.result.write,
+    programmeCount: window.result.schedule.programmes.length,
+    diagnosticCounts: diagnosticCounts(window.result),
+  };
+}
+
 export default {
   async fetch(req) {
     if (req.method !== 'POST') return errorResponse('Method not allowed', 405);
@@ -103,30 +126,47 @@ export default {
     }
 
     const startedAt = performance.now();
+    const refreshStartedAt = new Date();
+    const provider = new XmltvEpgProvider();
+    const scheduleRepository = repository(secretKey);
+
     try {
+      if (request.mode === 'guide-horizon') {
+        const windows = await refreshGuideHorizon({
+          provider,
+          repository: scheduleRepository,
+          canonicalChannels: [...DEVELOPMENT_CHANNELS],
+          channelMappings: [...IPTV_EPG_NL_CHANNEL_MAPPINGS],
+          providerChannelIds: request.providerChannelIds,
+          anchorMs: refreshStartedAt.getTime(),
+          clock: () => refreshStartedAt,
+        });
+
+        return Response.json({
+          status: 'completed',
+          mode: request.mode,
+          windows: windows.map(horizonWindowResponse),
+          elapsedMs: Math.round(performance.now() - startedAt),
+        });
+      }
+
       const result = await ingestProviderSchedule({
-        provider: new XmltvEpgProvider(),
-        repository: repository(secretKey),
+        provider,
+        repository: scheduleRepository,
         canonicalChannels: [...DEVELOPMENT_CHANNELS],
         channelMappings: [...IPTV_EPG_NL_CHANNEL_MAPPINGS],
         providerChannelIds: request.providerChannelIds,
         from: new Date(request.from),
         to: new Date(request.to),
+        clock: () => refreshStartedAt,
       });
-
-      const diagnosticCounts = result.diagnostics.reduce(
-        (counts, diagnostic) => {
-          counts[diagnostic.severity] += 1;
-          return counts;
-        },
-        { warning: 0, error: 0 },
-      );
 
       return Response.json({
         status: result.write.status,
+        mode: request.mode,
         write: result.write,
         programmeCount: result.schedule.programmes.length,
-        diagnosticCounts,
+        diagnosticCounts: diagnosticCounts(result),
         elapsedMs: Math.round(performance.now() - startedAt),
       });
     } catch (error) {

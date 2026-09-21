@@ -100,7 +100,8 @@ describe('XmltvEpgProvider', () => {
   });
 
   it('marks a requested window complete only when every requested channel is continuously covered', async () => {
-    const provider = new XmltvEpgProvider({ fetcher: vi.fn(async () => response()) });
+    const fetcher = vi.fn(async () => response());
+    const provider = new XmltvEpgProvider({ fetcher });
     const from = new Date('2026-09-14T16:00:00.000Z');
     const to = new Date('2026-09-14T18:00:00.000Z');
 
@@ -111,6 +112,7 @@ describe('XmltvEpgProvider', () => {
     expect(npo.programmes).toHaveLength(2);
     expect(both.coverage).toBe('partial');
     expect(both.programmes).toHaveLength(4);
+    expect(fetcher).toHaveBeenCalledTimes(1);
   });
 
   it('returns only programmes intersecting the explicit [from,to) query', async () => {

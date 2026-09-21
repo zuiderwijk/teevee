@@ -4,11 +4,21 @@ import { parseGuideScheduleApiRequest } from '../../services/api/guideScheduleCo
 export const HOSTED_SCHEDULE_MAX_WINDOW_MS = 25 * 60 * 60 * 1000;
 export const HOSTED_REQUEST_MAX_BODY_BYTES = 8 * 1024;
 
-export type HostedRefreshRequest = {
+export type HostedWindowRefreshRequest = {
+  mode: 'window';
   from: string;
   to: string;
   providerChannelIds: string[];
 };
+
+export type HostedGuideHorizonRefreshRequest = {
+  mode: 'guide-horizon';
+  providerChannelIds: string[];
+};
+
+export type HostedRefreshRequest =
+  | HostedWindowRefreshRequest
+  | HostedGuideHorizonRefreshRequest;
 
 function record(value: unknown): Record<string, unknown> | null {
   if (typeof value !== 'object' || value === null || Array.isArray(value)) return null;
@@ -70,13 +80,37 @@ export function parseHostedGuideScheduleRequest(
   };
 }
 
-/** Protected ingestion policy. Provider IDs remain server-side and tightly allow-listed. */
+/**
+ * Protected ingestion policy.
+ *
+ * Legacy explicit-window refresh remains available for diagnostics/manual repair. Cron uses
+ * guide-horizon mode so the server derives the canonical 06:00 Amsterdam windows itself.
+ * Provider IDs remain server-side and tightly allow-listed in both modes.
+ */
 export function parseHostedRefreshRequest(
   value: unknown,
   allowedProviderChannelIds: readonly string[],
 ): HostedRefreshRequest {
   const input = record(value);
   if (!input) throw new Error('Refresh request must be an object');
+
+  const providerChannelIds = requestedIds(
+    input.providerChannelIds,
+    allowedProviderChannelIds,
+    'providerChannelIds',
+  );
+
+  if (input.mode === 'guide-horizon') {
+    if (input.from !== undefined || input.to !== undefined) {
+      throw new Error('Guide-horizon refresh derives its own television-day windows');
+    }
+    return { mode: 'guide-horizon', providerChannelIds };
+  }
+
+  if (input.mode !== undefined && input.mode !== 'window') {
+    throw new Error('Refresh request mode is invalid');
+  }
+
   const from = input.from;
   const to = input.to;
   if (typeof from !== 'string' || !Number.isFinite(Date.parse(from))) {
@@ -94,12 +128,9 @@ export function parseHostedRefreshRequest(
   assertHostedWindow(normalizedFrom, normalizedTo);
 
   return {
+    mode: 'window',
     from: normalizedFrom,
     to: normalizedTo,
-    providerChannelIds: requestedIds(
-      input.providerChannelIds,
-      allowedProviderChannelIds,
-      'providerChannelIds',
-    ),
+    providerChannelIds,
   };
 }
