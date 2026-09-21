@@ -1,8 +1,8 @@
 -- Align the development EPG cron with ADR 0008 television-day semantics.
 --
 -- The Edge Function derives D-3..D+8 as independent 06:00 Europe/Amsterdam windows.
--- D-2..D+7 is the product horizon, D+8 is required for Totaal continuity when D+7
--- is selected, and D-3 is a historical safety buffer. Partial provider windows are
+-- D-2..D+7 is the product horizon. D-3 and D+8 are backend safety buffers; they do
+-- not expand the selectable horizon. Partial provider windows are
 -- skipped by ingestion and therefore never become authoritative canonical coverage.
 create or replace function teevee.enqueue_development_epg_refresh()
 returns bigint[]
