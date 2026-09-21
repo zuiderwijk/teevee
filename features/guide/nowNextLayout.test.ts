@@ -9,6 +9,7 @@ import {
   nowNextChannelRowLayout,
   nowNextChromeCondensedForProgress,
   nowNextCollapseProgressForScrollOffset,
+  nowNextFollowingContentPlacement,
   nowNextFollowingLayoutMode,
   nowNextFollowingSlotHeight,
   nowNextFollowingTargetRects,
@@ -108,6 +109,67 @@ describe('Nu & Straks deterministic channel geometry', () => {
     expect(nowNextMinimumTouchTarget('android')).toBe(48);
     expect(nowNextFollowingSlotHeight('ios', 1, 266)).toBe(44);
     expect(nowNextFollowingSlotHeight('android', 1, 266)).toBe(48);
+  });
+
+  it('uses canonical standard-text iOS content offsets 16 / 8 / 0', () => {
+    expect(nowNextFollowingContentPlacement('ios', 1, 0)).toEqual({
+      justifyContent: 'flex-start',
+      topOffset: 16,
+    });
+    expect(nowNextFollowingContentPlacement('ios', 1, 1)).toEqual({
+      justifyContent: 'flex-start',
+      topOffset: 8,
+    });
+    expect(nowNextFollowingContentPlacement('ios', 1, 2)).toEqual({
+      justifyContent: 'flex-start',
+      topOffset: 0,
+    });
+  });
+
+  it('uses canonical standard-text Android content offsets 19 / 9 / 0', () => {
+    expect(nowNextFollowingContentPlacement('android', 1, 0)).toEqual({
+      justifyContent: 'flex-start',
+      topOffset: 19,
+    });
+    expect(nowNextFollowingContentPlacement('android', 1, 1)).toEqual({
+      justifyContent: 'flex-start',
+      topOffset: 9,
+    });
+    expect(nowNextFollowingContentPlacement('android', 1, 2)).toEqual({
+      justifyContent: 'flex-start',
+      topOffset: 0,
+    });
+  });
+
+  it.each([
+    ['ios', 44],
+    ['android', 48],
+  ] as const)(
+    'keeps standard visible content inside each %s target',
+    (platform, targetHeight) => {
+      for (const slotIndex of [0, 1, 2]) {
+        const placement = nowNextFollowingContentPlacement(
+          platform,
+          1,
+          slotIndex,
+        );
+        expect(
+          placement.topOffset +
+            NOW_NEXT_VISUAL_METRICS.followingStandardVisibleContentHeight,
+        ).toBeLessThanOrEqual(targetHeight);
+      }
+    },
+  );
+
+  it('centres Larger Text following content and applies no standard offset', () => {
+    for (const scale of [1.351, 1.8, 2.1]) {
+      for (const slotIndex of [0, 1, 2]) {
+        expect(nowNextFollowingContentPlacement('ios', scale, slotIndex)).toEqual({
+          justifyContent: 'center',
+          topOffset: 0,
+        });
+      }
+    }
   });
 
   it('preserves the physically accepted larger-text following modes', () => {
