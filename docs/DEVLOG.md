@@ -11,20 +11,6 @@ Doel: chronologisch, begrijpelijk overzicht van substantiële milestones, verifi
 
 ---
 
-## 21 september 2026 — Totaal production visual-convergence specification via PR #111
-
-The owner-approved 21 September Totaal production design has been converted into the exact production implementation handoff in `docs/TOTAAL_VISUAL_CONVERGENCE.md`. This replaces the stale pre-approval draft without changing runtime code.
-
-The specification keeps the proven Totaal interaction/data/performance architecture intact and freezes the remaining production calibration: shared GuideChrome **100/116 pt**, **52-pt** day/Nu context, **44-pt** time axis, **96-pt** persistent functional stack, fixed-native-viewport **56-pt** collapse with **44/60-pt** visual compensation, **84-pt** base channel rail, **52×40-pt** logo optical box, **76-pt** base schedule rows, **15/19** title hierarchy, **13/18** time metadata, 15-minute axis positions, compact current-time marker and full real-duration programme frames with no cosmetic width subtraction.
-
-The Totaal-specific specification also freezes Dynamic-Type formulas, programme content-degradation order, partial-left readability, short-programme essential-geometry handling, Light/Dark/System semantics, loading/hosted-data continuity, 23/25-hour DST behaviour, accessibility and the physical iPhone/Android validation gates. It explicitly reuses the proven fixed-native-viewport/collapse-isolation topology instead of the current prototype's normal-flow header removal and preserves PR #74 bounded horizontal programme-window ownership/overscan.
-
-Canonical support documents are reconciled so Totaal is no longer described as awaiting a production specification. This PR is docs/design-spec only; no runtime code is changed.
-
-**Next step after owner/Lead review and merge:** Development implements Totaal production visual convergence on the existing architecture, then exact-head CI, physical iPhone validation and Independent QA. Phase 5 Search remains blocked until this increment closes.
-
----
-
 ## 21 september 2026 — Owner correction: Totaal production visual design is still open
 
 The owner corrected an over-broad project closeout: Totaal has a proven and physically accepted **interaction/technical baseline** plus accepted shared day-navigation and typography contracts, but its **final production visual design has not yet been completed or owner-approved**.
