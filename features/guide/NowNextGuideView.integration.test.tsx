@@ -476,6 +476,48 @@ describe('Nu & Straks production interaction boundary', () => {
     expect(getByTestId(container, 'now-next-reference-time').textContent).toBe('20:00');
   });
 
+  it('lets native momentum own a hard fling and reversal until the final settled slot', async () => {
+    await act(async () =>
+      root.render(
+        <NowNextGuideView
+          guideDataVersion={1}
+          presentationNavigation={<span />}
+          onSelectProgramme={vi.fn()}
+        />,
+      ),
+    );
+
+    const rail = native.scrollProps.get('now-next-time-rail');
+    if (
+      !rail?.onScrollBeginDrag ||
+      !rail.onScrollEndDrag ||
+      !rail.onMomentumScrollEnd
+    ) {
+      throw new Error('Rail momentum handlers missing');
+    }
+
+    const initialScrollCalls = native.railScrollTo.mock.calls.length;
+
+    await act(async () => {
+      rail.onScrollBeginDrag?.();
+      rail.onScrollEndDrag?.(scrollEvent(70 * 48, 2.4));
+    });
+
+    // A hard fling has native momentum still in flight. The provisional drag-end
+    // offset must not become the semantic reference and must not trigger recentering.
+    expect(getByTestId(container, 'now-next-reference-time').textContent).toBe('20:17');
+    expect(native.railScrollTo).toHaveBeenCalledTimes(initialScrollCalls);
+
+    await act(async () => {
+      // Model a reversal: native momentum ultimately settles before the
+      // provisional drag-end offset. Only this final snapped slot may commit.
+      rail.onMomentumScrollEnd?.(scrollEvent(54 * 48, -1.2));
+    });
+
+    expect(getByTestId(container, 'now-next-reference-time').textContent).toBe('19:30');
+    expect(native.railScrollTo).toHaveBeenCalledTimes(initialScrollCalls);
+  });
+
   it('commits a no-momentum drag and lets explicit slot/Nu/Primetime actions recenter', async () => {
     await act(async () =>
       root.render(
