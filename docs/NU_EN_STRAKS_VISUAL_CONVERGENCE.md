@@ -343,12 +343,25 @@ Each following target remains:
 - complete target minimum **44 pt iOS / 48 dp Android**;
 - **0 pt** interaction gap between adjacent targets.
 
-Visible content in all three targets is now **vertically centred**. The previous #1 bottom / #2 centre / #3 top bias is superseded.
+Visible standard-text content uses a deterministic **progressive vertical cluster** inside the unchanged safe targets. Let:
 
-The compact continuation is created by:
+`visibleSlack = followingTargetHeight - 20 pt`
+
+where 20 pt is the maximum one-line visible content height from the 15/20 title line.
+
+Apply these top offsets inside the target:
+- following #1: `round(visibleSlack × 2/3)`;
+- following #2: `round(visibleSlack × 1/3)`;
+- following #3: `0`.
+
+At base geometry this yields approximately:
+- iOS 44-pt targets: **16 / 8 / 0 pt** top offsets and ~16-pt visible gaps;
+- Android 48-dp targets: **19 / 9 / 0 dp** top offsets and ~18–19-dp visible gaps.
+
+The compact continuation is therefore created by:
 - bottom-aligning the reference title;
 - removing the reference→following spacer;
-- keeping the first following content centred inside its unchanged safe target.
+- progressively lifting the three standard-text following content blocks through their existing target slack.
 
 All visible content remains inside its own Pressable. Touch targets remain adjacent and non-overlapping. No extra separator is added between the three programmes.
 
@@ -363,7 +376,7 @@ Primary accessibility composition is an **inline time + title flow**:
 - programme content keeps full Dynamic Type scaling;
 - title may wrap so the combined visible programme occupies maximum **2 lines**;
 - full programme title and start/end times remain available to assistive technology;
-- content block is vertically **centred** within its target.
+- content block is vertically **centred** within its target; the standard-text progressive offsets do not apply above fontScale 1.35.
 
 Content-safe following target height:
 
