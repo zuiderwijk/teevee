@@ -63,6 +63,7 @@ import {
   nowNextChromeCondensedForProgress,
   nowNextCollapseProgressForScrollOffset,
   nowNextProgrammePressBackgroundColor,
+  nowNextRailSlotPresentation,
   nowNextSafeAreaLayout,
   nowNextStableScrollVisuals,
 } from './nowNextLayout';
@@ -187,21 +188,6 @@ const ChannelRow = memo(function ChannelRow({
               style={[styles.referenceTitle, { color: theme.colors.text }]}
             >
               {referenceProgramme.title}
-            </Text>
-            <Text
-              numberOfLines={1}
-              style={[
-                styles.referenceMeta,
-                {
-                  color: isActuallyLive
-                    ? theme.colors.currentTime
-                    : theme.colors.textSecondary,
-                },
-              ]}
-            >
-              {isActuallyLive
-                ? `Nu · tot ${formatTime(Date.parse(referenceProgramme.endAt))}`
-                : `tot ${formatTime(Date.parse(referenceProgramme.endAt))}`}
             </Text>
           </Pressable>
         ) : (
@@ -532,16 +518,6 @@ export const NowNextGuideView = memo(function NowNextGuideView({
         >
           <View style={styles.referenceCopy}>
             <Text
-              numberOfLines={1}
-              maxFontSizeMultiplier={COMPACT_GUIDE_MAX_FONT_SIZE_MULTIPLIER}
-              style={[
-                styles.referenceCaption,
-                { color: theme.colors.textMuted },
-              ]}
-            >
-              Referentietijd
-            </Text>
-            <Text
               testID="now-next-reference-time"
               numberOfLines={1}
               maxFontSizeMultiplier={COMPACT_GUIDE_MAX_FONT_SIZE_MULTIPLIER}
@@ -601,6 +577,11 @@ export const NowNextGuideView = memo(function NowNextGuideView({
             >
               {({ pressed }) => (
                 <View
+                  testID={
+                    temporalControlStates.nu === 'active'
+                      ? 'now-next-now-current'
+                      : 'now-next-now-return'
+                  }
                   style={[
                     styles.nowVisible,
                     temporalControlStates.nu === 'action'
@@ -672,6 +653,7 @@ export const NowNextGuideView = memo(function NowNextGuideView({
           >
             {slots.map((slot, index) => {
               const selected = index === selectedSlotIndex;
+              const slotPresentation = nowNextRailSlotPresentation(index);
               return (
                 <Pressable
                   key={slot}
@@ -685,22 +667,36 @@ export const NowNextGuideView = memo(function NowNextGuideView({
                     pressed ? { backgroundColor: theme.colors.surface } : null,
                   ]}
                 >
-                  <Text
-                    numberOfLines={1}
-                    maxFontSizeMultiplier={COMPACT_GUIDE_MAX_FONT_SIZE_MULTIPLIER}
+                  {slotPresentation.showsLabel ? (
+                    <Text
+                      testID={`now-next-time-label-${index}`}
+                      numberOfLines={1}
+                      maxFontSizeMultiplier={COMPACT_GUIDE_MAX_FONT_SIZE_MULTIPLIER}
+                      style={[
+                        selected
+                          ? styles.timeSlotSelectedText
+                          : styles.timeSlotText,
+                        {
+                          color: selected
+                            ? theme.colors.text
+                            : theme.colors.textMuted,
+                        },
+                      ]}
+                    >
+                      {formatTime(slot)}
+                    </Text>
+                  ) : null}
+                  <View
+                    testID={`now-next-time-tick-${index}`}
+                    pointerEvents="none"
                     style={[
-                      selected
-                        ? styles.timeSlotSelectedText
-                        : styles.timeSlotText,
+                      styles.timeSlotTick,
                       {
-                        color: selected
-                          ? theme.colors.text
-                          : theme.colors.textMuted,
+                        height: slotPresentation.tickHeight,
+                        backgroundColor: theme.colors.border,
                       },
                     ]}
-                  >
-                    {formatTime(slot)}
-                  </Text>
+                  />
                 </Pressable>
               );
             })}
@@ -852,13 +848,8 @@ const styles = StyleSheet.create({
     flexShrink: 1,
     justifyContent: 'center',
   },
-  referenceCaption: {
-    ...NOW_NEXT_TYPOGRAPHY.referenceCaption,
-    letterSpacing: 0,
-  },
   referenceTime: {
     ...NOW_NEXT_TYPOGRAPHY.referenceTime,
-    marginTop: 1,
     letterSpacing: 0,
     fontVariant: ['tabular-nums'],
   },
@@ -921,10 +912,16 @@ const styles = StyleSheet.create({
     borderRadius: NOW_NEXT_VISUAL_METRICS.referenceMarkerWidth / 2,
   },
   timeSlot: {
+    position: 'relative',
     width: NOW_NEXT_VISUAL_METRICS.timeSlotWidth,
     height: NOW_NEXT_VISUAL_METRICS.timeSlotHeight,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  timeSlotTick: {
+    position: 'absolute',
+    bottom: 0,
+    width: NOW_NEXT_VISUAL_METRICS.railTickWidth,
   },
   timeSlotText: {
     ...NOW_NEXT_TYPOGRAPHY.timeSlot,
