@@ -652,7 +652,7 @@ export const NowNextGuideView = memo(function NowNextGuideView({
               styles.timeRailBaseline,
               {
                 backgroundColor: theme.colors.railTick,
-                opacity: NOW_NEXT_VISUAL_METRICS.quarterRailTickOpacity,
+                opacity: NOW_NEXT_VISUAL_METRICS.railBaselineOpacity,
               },
             ]}
           />
@@ -927,7 +927,7 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     bottom: 0,
-    height: 1,
+    height: NOW_NEXT_VISUAL_METRICS.railBaselineHeight,
   },
   referenceMarker: {
     position: 'absolute',
