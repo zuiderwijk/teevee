@@ -9,6 +9,7 @@ import {
   totaalMicroProgrammeThreshold,
   totaalNormaliseRepeatedProgrammeTitle,
   totaalRepeatedRunVisibleLayout,
+  totaalRepeatedTitleRunPresentationsForWindow,
   totaalRepeatedTitleRunsForTimeWindow,
 } from './totaalMicroProgrammes';
 
@@ -163,6 +164,57 @@ describe('Totaal repeated-title run derivation', () => {
         START + 20 * 60_000,
       )[0]?.id,
     ).toBe(run.id);
+  });
+
+  it('keeps full run identity while bounding overlay members to each programme window', () => {
+    const programmes = Array.from({ length: 24 }, (_, index) =>
+      programme(`p-${index}`, index * 5, 5),
+    );
+    const result = metadata(programmes);
+    const run = result.repeatedTitleRuns[0]!;
+    const leftFrom = START;
+    const leftTo = START + 26 * 60_000;
+    const rightFrom = START + 94 * 60_000;
+    const rightTo = START + 121 * 60_000;
+    const source = new Map([[CHANNEL, programmes]]);
+    const leftWindow = windowGuideProgrammesByChannel(source, leftFrom, leftTo);
+    const rightWindow = windowGuideProgrammesByChannel(source, rightFrom, rightTo);
+
+    const leftPresentation = totaalRepeatedTitleRunPresentationsForWindow(
+      result.repeatedTitleRuns,
+      result.repeatedRunByProgrammeId,
+      leftWindow,
+      leftFrom,
+      leftTo,
+    )[0]!;
+    const rightPresentation = totaalRepeatedTitleRunPresentationsForWindow(
+      result.repeatedTitleRuns,
+      result.repeatedRunByProgrammeId,
+      rightWindow,
+      rightFrom,
+      rightTo,
+    )[0]!;
+
+    expect(leftPresentation.run.id).toBe(run.id);
+    expect(rightPresentation.run.id).toBe(run.id);
+    expect(leftPresentation.run.programmes).toHaveLength(24);
+    expect(rightPresentation.run.programmes).toHaveLength(24);
+    expect(leftPresentation.programmes.map((item) => item.id)).toEqual([
+      'p-0',
+      'p-1',
+      'p-2',
+      'p-3',
+      'p-4',
+      'p-5',
+    ]);
+    expect(rightPresentation.programmes.map((item) => item.id)).toEqual([
+      'p-18',
+      'p-19',
+      'p-20',
+      'p-21',
+      'p-22',
+      'p-23',
+    ]);
   });
 });
 
