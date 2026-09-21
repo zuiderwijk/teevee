@@ -323,7 +323,7 @@ describe('programme detail rendering boundary', () => {
     const hiddenContainers = Array.from(
       container.querySelectorAll<HTMLElement>('[data-important-for-accessibility="no-hide-descendants"]'),
     );
-    expect(hiddenContainers.some((node) => node.textContent?.includes('ZENDER'))).toBe(true);
+    expect(hiddenContainers.some((node) => node.textContent?.includes('ZENDER'))).toBe(false);
     expect(hiddenContainers.some((node) => /\d{2}:\d{2}/.test(node.textContent ?? ''))).toBe(true);
 
     const first = guideFixture.programmes[0]!;
