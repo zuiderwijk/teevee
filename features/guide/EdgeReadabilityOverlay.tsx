@@ -7,7 +7,11 @@ import Animated, {
 } from 'react-native-reanimated';
 import { scheduleOnRN } from 'react-native-worklets';
 
-import { isProgrammeCurrent, type GuideFixture, type Programme } from '@/data/domain/epg';
+import {
+  isProgrammeCurrent,
+  type GuideFixture,
+  type Programme,
+} from '@/data/domain/epg';
 import { useTeeveeTheme } from '@/theme/useTeeveeTheme';
 
 import {
@@ -16,8 +20,14 @@ import {
   edgeReadableProgramme,
   type EdgeReadableProgramme,
 } from './edgeReadability';
-import { programmeContentMode } from './geometry';
+import { formatGuideTime } from './guideRenderData';
 import type { GuideLayoutMetrics } from './layout';
+import {
+  TOTAAL_TYPOGRAPHY,
+  TOTAAL_VISUAL_METRICS,
+  totaalProgrammeContentPresentation,
+  totaalStableScrollVisuals,
+} from './totaal';
 
 const MIN_READABLE_TEXT_WIDTH = 16;
 
@@ -27,10 +37,11 @@ type EdgeReadabilityOverlayProps = {
   windowStart: number;
   viewportWidth: number;
   nowMs: number;
-  nowX: number;
-  nowInWindow: boolean;
   scrollX: SharedValue<number>;
   scrollY: SharedValue<number>;
+  contentTopInset: number;
+  collapseProgress: SharedValue<number>;
+  fontScale: number;
 };
 
 type EdgeRowProps = {
@@ -38,12 +49,12 @@ type EdgeRowProps = {
   rowIndex: number;
   rowHeight: number;
   viewportWidth: number;
-  largeText: boolean;
   nowMs: number;
   scrollX: SharedValue<number>;
   textColor: string;
-  programmeColor: string;
-  currentProgrammeColor: string;
+  secondaryTextColor: string;
+  canvasColor: string;
+  boundaryColor: string;
 };
 
 function EdgeRow({
@@ -51,66 +62,93 @@ function EdgeRow({
   rowIndex,
   rowHeight,
   viewportWidth,
-  largeText,
   nowMs,
   scrollX,
   textColor,
-  programmeColor,
-  currentProgrammeColor,
+  secondaryTextColor,
+  canvasColor,
+  boundaryColor,
 }: EdgeRowProps) {
   const startX = edge?.frame.left ?? 0;
   const endX = edge ? edge.frame.left + edge.frame.width : 0;
   const hasEdge = edge !== null;
-  const contentMode = edge ? programmeContentMode(edge.frame.width) : 'compact';
-  const horizontalPadding = contentMode === 'compact' ? 5 : 8;
+  const presentation = totaalProgrammeContentPresentation(edge?.visibleWidth ?? 0);
   const isCurrent = edge !== null && isProgrammeCurrent(edge.programme, nowMs);
-  const leavesProgressVisible = isCurrent && contentMode !== 'compact';
-  const topInset = leavesProgressVisible ? 14 : 4;
-  const bottomInset = 4;
+  const startMs = edge ? Date.parse(edge.programme.startAt) : 0;
+  const endMs = edge ? Date.parse(edge.programme.endAt) : 0;
+  const secondary = isCurrent
+    ? `tot ${formatGuideTime(endMs)}`
+    : formatGuideTime(startMs);
 
   const animatedStyle = useAnimatedStyle(() => {
-    if (!hasEdge) return { width: 0, opacity: 0, borderTopRightRadius: 0, borderBottomRightRadius: 0 };
+    if (!hasEdge) return { width: 0, opacity: 0 };
 
     const x = scrollX.value;
     const remaining = Math.max(0, endX - x);
     const width = Math.min(viewportWidth, remaining);
     const active = x > startX && x < endX;
-    const endVisible = remaining <= viewportWidth;
 
     return {
       width,
       opacity: active && width >= MIN_READABLE_TEXT_WIDTH ? 1 : 0,
-      borderTopRightRadius: endVisible && !leavesProgressVisible ? 8 : 0,
-      borderBottomRightRadius: endVisible ? 8 : 0,
     };
-  }, [endX, hasEdge, leavesProgressVisible, startX, viewportWidth]);
+  }, [endX, hasEdge, startX, viewportWidth]);
+
+  const boundaryStyle = useAnimatedStyle(() => {
+    if (!hasEdge) return { opacity: 0 };
+    const x = scrollX.value;
+    const remaining = Math.max(0, endX - x);
+    const active = x > startX && x < endX;
+    const endVisible = remaining <= viewportWidth;
+    return {
+      opacity:
+        active && endVisible
+          ? TOTAAL_VISUAL_METRICS.programmeBoundaryOpacity
+          : 0,
+    };
+  }, [endX, hasEdge, startX, viewportWidth]);
 
   return (
     <Animated.View
       style={[
         styles.edgeMask,
         {
-          top: rowIndex * rowHeight + topInset,
-          height: Math.max(0, rowHeight - topInset - bottomInset),
-          paddingHorizontal: horizontalPadding,
-          paddingVertical: contentMode === 'compact' ? 6 : 7,
-          backgroundColor: isCurrent ? currentProgrammeColor : programmeColor,
+          top: rowIndex * rowHeight,
+          height: Math.max(0, rowHeight - 1),
+          paddingHorizontal: presentation.paddingX,
+          backgroundColor: canvasColor,
         },
         animatedStyle,
       ]}
     >
-      <Text
-        numberOfLines={1}
-        ellipsizeMode="tail"
+      <View style={styles.textContent}>
+        <Text
+          numberOfLines={presentation.titleLines}
+          ellipsizeMode="tail"
+          style={[
+            isCurrent ? styles.currentTitle : styles.title,
+            { color: textColor },
+          ]}
+        >
+          {edge?.programme.title ?? ''}
+        </Text>
+        {presentation.showSecondary && edge ? (
+          <Text
+            numberOfLines={1}
+            style={[styles.secondary, { color: secondaryTextColor }]}
+          >
+            {secondary}
+          </Text>
+        ) : null}
+      </View>
+      <Animated.View
+        pointerEvents="none"
         style={[
-          styles.title,
-          contentMode === 'compact' ? styles.titleCompact : null,
-          largeText ? styles.titleLargeText : null,
-          { color: textColor },
+          styles.boundary,
+          { backgroundColor: boundaryColor },
+          boundaryStyle,
         ]}
-      >
-        {edge?.programme.title ?? ''}
-      </Text>
+      />
     </Animated.View>
   );
 }
@@ -121,22 +159,30 @@ export function EdgeReadabilityOverlay({
   windowStart,
   viewportWidth,
   nowMs,
-  nowX,
-  nowInWindow,
   scrollX,
   scrollY,
+  contentTopInset,
+  collapseProgress,
+  fontScale,
 }: EdgeReadabilityOverlayProps) {
   const theme = useTeeveeTheme();
 
   const programmesByChannel = useMemo(() => {
     const map = new Map<string, Programme[]>();
     for (const channel of fixture.channels) map.set(channel.id, []);
-    for (const programme of fixture.programmes) map.get(programme.channelId)?.push(programme);
+    for (const programme of fixture.programmes) {
+      map.get(programme.channelId)?.push(programme);
+    }
     return map;
   }, [fixture]);
 
   const boundaries = useMemo(
-    () => edgeBoundaryXs(fixture.programmes, windowStart, layout.minuteWidth),
+    () =>
+      edgeBoundaryXs(
+        fixture.programmes,
+        windowStart,
+        layout.minuteWidth,
+      ),
     [fixture.programmes, layout.minuteWidth, windowStart],
   );
 
@@ -151,11 +197,17 @@ export function EdgeReadabilityOverlay({
           layout.minuteWidth,
         ),
       ),
-    [fixture.channels, layout.minuteWidth, programmesByChannel, viewportWidth, windowStart],
+    [
+      fixture.channels,
+      layout.minuteWidth,
+      programmesByChannel,
+      viewportWidth,
+      windowStart,
+    ],
   );
 
-  const [activeEdges, setActiveEdges] = useState<Array<EdgeReadableProgramme | null>>(() =>
-    buildEdges(0),
+  const [activeEdges, setActiveEdges] = useState<Array<EdgeReadableProgramme | null>>(
+    () => buildEdges(0),
   );
 
   const syncEdgesForX = useCallback(
@@ -179,16 +231,18 @@ export function EdgeReadabilityOverlay({
   );
 
   const gridStyle = useAnimatedStyle(() => ({
-    transform: [{ translateY: -scrollY.value }],
+    transform: [
+      {
+        translateY:
+          contentTopInset -
+          scrollY.value +
+          totaalStableScrollVisuals(
+            collapseProgress.value,
+            fontScale,
+          ).contentTranslateY,
+      },
+    ],
   }));
-
-  const currentTimeStyle = useAnimatedStyle(() => {
-    const left = nowX - scrollX.value;
-    return {
-      opacity: nowInWindow && left >= 0 && left <= viewportWidth ? 1 : 0,
-      transform: [{ translateX: left }],
-    };
-  }, [nowInWindow, nowX, viewportWidth]);
 
   return (
     <View
@@ -202,7 +256,9 @@ export function EdgeReadabilityOverlay({
       <Animated.View
         style={[
           styles.grid,
-          { height: fixture.channels.length * layout.rowHeight },
+          {
+            height: fixture.channels.length * layout.rowHeight,
+          },
           gridStyle,
         ]}
       >
@@ -213,25 +269,15 @@ export function EdgeReadabilityOverlay({
             rowIndex={rowIndex}
             rowHeight={layout.rowHeight}
             viewportWidth={viewportWidth}
-            largeText={layout.largeText}
             nowMs={nowMs}
             scrollX={scrollX}
             textColor={theme.colors.text}
-            programmeColor={theme.colors.programme}
-            currentProgrammeColor={theme.colors.programmeCurrent}
+            secondaryTextColor={theme.colors.textSecondary}
+            canvasColor={theme.colors.background}
+            boundaryColor={theme.colors.border}
           />
         ))}
       </Animated.View>
-
-      {nowInWindow ? (
-        <Animated.View
-          style={[
-            styles.currentTimeLine,
-            { backgroundColor: theme.colors.currentTime },
-            currentTimeStyle,
-          ]}
-        />
-      ) : null}
     </View>
   );
 }
@@ -258,15 +304,26 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
     justifyContent: 'center',
   },
-  title: { fontSize: 12, fontWeight: '600' },
-  titleCompact: { fontSize: 10 },
-  titleLargeText: { fontSize: 12 },
-  currentTimeLine: {
+  textContent: {
+    minWidth: 0,
+    flexShrink: 1,
+    justifyContent: 'center',
+  },
+  title: {
+    ...TOTAAL_TYPOGRAPHY.programmeTitle,
+  },
+  currentTitle: {
+    ...TOTAAL_TYPOGRAPHY.currentProgrammeTitle,
+  },
+  secondary: {
+    ...TOTAAL_TYPOGRAPHY.programmeSecondary,
+    marginTop: 3,
+  },
+  boundary: {
     position: 'absolute',
-    left: 0,
-    top: 0,
-    bottom: 0,
-    width: 2,
-    zIndex: 4,
+    right: 0,
+    top: TOTAAL_VISUAL_METRICS.programmeBoundaryInsetY,
+    bottom: TOTAAL_VISUAL_METRICS.programmeBoundaryInsetY,
+    width: TOTAAL_VISUAL_METRICS.programmeBoundaryWidth,
   },
 });
