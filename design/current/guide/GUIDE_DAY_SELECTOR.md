@@ -1,7 +1,7 @@
 # Guide day selector — current accepted interaction and visual direction
 
 Status: **ACCEPTED**
-Accepted: 2026-09-15; Per-zender Primetime amendment accepted 2026-09-15; Per-zender temporal-state refinement accepted 2026-09-17; Per-zender rest-heading removal and compact temporal-context refinement accepted 2026-09-18
+Accepted: 2026-09-15; Per-zender Primetime amendment accepted 2026-09-15; Per-zender temporal-state refinement accepted 2026-09-17; Per-zender rest-heading removal and compact temporal-context refinement accepted 2026-09-18; Totaal compact date-label alignment accepted 2026-09-21
 
 Applies to:
 - Totaal;
@@ -46,10 +46,10 @@ Authority amendment: the sticky/condensed visual predates the accepted Per-zende
 
 ### Inline control
 - show one compact, primarily typographic date control rather than ten permanent day buttons or a horizontal date rail;
-- use human-readable labels; Totaal may continue its existing shared formatting, while Per zender uses the compact-label override below;
-- **Per zender 06:00–23:59:** current television day = `Vandaag`, next television day = `Morgen`, with no redundant weekday/date suffix; all other days use an explicit weekday + date such as `Zo 20 sep`;
-- **Per zender 00:00–05:59:** use only explicit weekday + date labels for every television-day option, including the current and next television day. Do not show `Vandaag` or `Morgen` in this window;
-- these Per-zender rules are based on the canonical 06:00 Europe/Amsterdam television-day boundary, not calendar midnight;
+- use human-readable compact labels consistently in **Totaal and Per zender**;
+- **06:00–23:59:** current television day = `Vandaag`, next television day = `Morgen`, with no redundant weekday/date suffix; all other days use an explicit abbreviated weekday + date such as `Zo 20 sep`;
+- **00:00–05:59:** use only explicit abbreviated weekday + date labels for every television-day option, including the current and next television day. Do not show `Vandaag` or `Morgen` in this window;
+- these shared rules are based on the canonical 06:00 Europe/Amsterdam television-day boundary, not calendar midnight;
 - the complete control remains a platform-appropriate touch target even when its visible treatment is only text plus chevron;
 - `Nu` remains a separate persistent action and is not folded into the date selector;
 - in Per zender, `Primetime` is an additional sibling utility action; it is not part of the date selector itself.
@@ -58,7 +58,7 @@ Authority amendment: the sticky/condensed visual predates the accepted Per-zende
 Tapping the date control opens a bounded bottom sheet containing the ten available television days in chronological order.
 
 - current selection is explicit and not colour-only;
-- for Per zender, bottom-sheet labels follow the same compact-label rule as the inline selector: `Vandaag`/`Morgen` only from 06:00–23:59; from 00:00–05:59 all options use explicit weekday + date labels;
+- for Totaal and Per zender, bottom-sheet labels follow the same compact-label rule as the inline selector: `Vandaag`/`Morgen` only from 06:00–23:59; from 00:00–05:59 all options use explicit weekday + date labels;
 - no month grid, arbitrary calendar navigation or unavailable dates;
 - selecting a day closes the sheet and moves the Guide to that television day.
 
