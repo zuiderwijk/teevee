@@ -3,6 +3,8 @@ import { TEEVEE_FONT_FAMILIES } from '@/theme/typography';
 
 import { guideChromeExpandedHeight } from './guideVisualMetrics';
 
+export const TOTAAL_PROGRAMME_READABILITY_THRESHOLDS = [64, 126] as const;
+
 export const TOTAAL_VISUAL_METRICS = {
   dayContextHeight: 52,
   timeAxisHeight: 44,
@@ -135,9 +137,7 @@ export function totaalStableScrollGeometry(fontScale = 1) {
 export function totaalStableScrollVisuals(progress: number, fontScale = 1) {
   'worklet';
   const clamped = Math.min(1, Math.max(0, progress));
-  const expandedChromeHeight =
-    52 +
-    (Number.isFinite(fontScale) && Math.max(1, fontScale) > 1.35 ? 64 : 48);
+  const expandedChromeHeight = guideChromeExpandedHeight(fontScale);
   const scrollCompensation =
     expandedChromeHeight - TOTAAL_VISUAL_METRICS.collapseDistance;
 
@@ -186,11 +186,45 @@ export function totaalCurrentTimeMarkerBodyX(
   return Math.min(Math.max(0, safeViewport - safeBody), Math.max(0, centred));
 }
 
+export function totaalProgrammeSecondaryLabel(
+  current: boolean,
+  startLabel: string,
+  endLabel: string,
+) {
+  return current ? `tot ${endLabel}` : startLabel;
+}
+
 export function totaalProgrammePressBackgroundColor(
   pressed: boolean,
   surfaceElevated: string,
 ) {
   return pressed ? surfaceElevated : 'transparent';
+}
+
+export function totaalNativeOffsetForScheduleOffset(
+  scheduleOffset: number,
+  collapseProgress: number,
+) {
+  'worklet';
+  const clamped = Math.min(1, Math.max(0, collapseProgress));
+  return Math.max(
+    0,
+    Math.max(0, scheduleOffset) +
+      TOTAAL_VISUAL_METRICS.collapseDistance * clamped,
+  );
+}
+
+export function totaalScheduleOffsetForNativeOffset(
+  nativeOffset: number,
+  collapseProgress: number,
+) {
+  'worklet';
+  const clamped = Math.min(1, Math.max(0, collapseProgress));
+  return Math.max(
+    0,
+    Math.max(0, nativeOffset) -
+      TOTAAL_VISUAL_METRICS.collapseDistance * clamped,
+  );
 }
 
 export type TotaalSchedulePresentation = {

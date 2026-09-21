@@ -9,7 +9,9 @@ import {
   View,
 } from 'react-native';
 import Animated, {
+  scrollTo,
   useAnimatedReaction,
+  useAnimatedRef,
   useAnimatedScrollHandler,
   useAnimatedStyle,
   useReducedMotion,
@@ -60,8 +62,11 @@ import {
   totaalChromeCondensedForProgress,
   totaalCollapseProgressForScrollOffset,
   totaalCurrentTimeMarkerBodyX,
+  totaalNativeOffsetForScheduleOffset,
   totaalProgrammeContentPresentation,
   totaalProgrammePressBackgroundColor,
+  totaalProgrammeSecondaryLabel,
+  totaalScheduleOffsetForNativeOffset,
   totaalSafeAreaLayout,
   totaalStableScrollGeometry,
   totaalStableScrollVisuals,
@@ -100,7 +105,10 @@ export const GuideView = memo(function GuideView({
     [effectiveFontScale],
   );
 
-  const horizontalRef = useRef<ScrollView>(null);
+  const horizontalRef = useAnimatedRef<Animated.ScrollView>();
+  const axisRef = useAnimatedRef<Animated.ScrollView>();
+  const verticalRef = useRef<ScrollView>(null);
+  const viewedChannelIdRef = useRef<string | null>(null);
   const scrollX = useSharedValue(0);
   const scrollY = useSharedValue(0);
   const collapseProgress = useSharedValue(0);
@@ -337,7 +345,9 @@ export const GuideView = memo(function GuideView({
   const horizontalScrollHandler = useAnimatedScrollHandler(
     {
       onScroll: (event) => {
-        scrollX.value = Math.max(0, event.contentOffset.x);
+        const viewportX = Math.max(0, event.contentOffset.x);
+        scrollX.value = viewportX;
+        scrollTo(axisRef, viewportX, 0, false);
       },
       onEndDrag: (event) => {
         const viewportX = Math.max(0, event.contentOffset.x);
@@ -348,7 +358,39 @@ export const GuideView = memo(function GuideView({
         scheduleOnRN(syncHorizontalAnchor, viewportX);
       },
     },
-    [scrollX, syncHorizontalAnchor],
+    [axisRef, scrollX, syncHorizontalAnchor],
+  );
+
+  const axisScrollHandler = useAnimatedScrollHandler(
+    {
+      onScroll: (event) => {
+        const viewportX = Math.max(0, event.contentOffset.x);
+        scrollX.value = viewportX;
+        scrollTo(horizontalRef, viewportX, 0, false);
+      },
+      onEndDrag: (event) => {
+        const viewportX = Math.max(0, event.contentOffset.x);
+        scheduleOnRN(syncHorizontalAnchor, viewportX);
+      },
+      onMomentumEnd: (event) => {
+        const viewportX = Math.max(0, event.contentOffset.x);
+        scheduleOnRN(syncHorizontalAnchor, viewportX);
+      },
+    },
+    [horizontalRef, scrollX, syncHorizontalAnchor],
+  );
+
+  const syncViewedChannel = useCallback(
+    (nativeY: number, progress: number) => {
+      if (runtimeFixture.channels.length === 0) return;
+      const scheduleOffset = totaalScheduleOffsetForNativeOffset(nativeY, progress);
+      const index = Math.min(
+        runtimeFixture.channels.length - 1,
+        Math.max(0, Math.floor(scheduleOffset / layout.rowHeight)),
+      );
+      viewedChannelIdRef.current = runtimeFixture.channels[index]?.id ?? null;
+    },
+    [layout.rowHeight, runtimeFixture.channels],
   );
 
   const verticalScrollHandler = useAnimatedScrollHandler(
@@ -358,13 +400,23 @@ export const GuideView = memo(function GuideView({
         scrollY.value = y;
         collapseProgress.value = totaalCollapseProgressForScrollOffset(y, reduceMotion);
       },
+      onEndDrag: (event) => {
+        scheduleOnRN(
+          syncViewedChannel,
+          Math.max(0, event.contentOffset.y),
+          collapseProgress.value,
+        );
+      },
+      onMomentumEnd: (event) => {
+        scheduleOnRN(
+          syncViewedChannel,
+          Math.max(0, event.contentOffset.y),
+          collapseProgress.value,
+        );
+      },
     },
-    [reduceMotion, scrollY],
+    [reduceMotion, scrollY, syncViewedChannel],
   );
-
-  const axisTrackStyle = useAnimatedStyle(() => ({
-    transform: [{ translateX: -scrollX.value }],
-  }));
 
   const scheduleContentStyle = useAnimatedStyle(() => ({
     transform: [
@@ -450,8 +502,10 @@ export const GuideView = memo(function GuideView({
         scrollX.value = prealignmentX;
       }
       horizontalRef.current?.scrollTo({ x, animated });
+      axisRef.current?.scrollTo({ x, animated });
     },
     [
+      axisRef,
       commitViewedTime,
       layout.minuteWidth,
       scrollX,
@@ -522,10 +576,36 @@ export const GuideView = memo(function GuideView({
     ],
   );
 
+  useEffect(() => {
+    if (runtimeFixture.channels.length === 0) return;
+    const rememberedId =
+      viewedChannelIdRef.current ?? runtimeFixture.channels[0]?.id ?? null;
+    viewedChannelIdRef.current = rememberedId;
+    const index = Math.max(
+      0,
+      runtimeFixture.channels.findIndex(({ id }) => id === rememberedId),
+    );
+    const scheduleOffset = index * layout.rowHeight;
+    const nativeY = totaalNativeOffsetForScheduleOffset(
+      scheduleOffset,
+      collapseProgress.value,
+    );
+    scrollY.value = nativeY;
+    const frame = requestAnimationFrame(() => {
+      verticalRef.current?.scrollTo({ y: nativeY, animated: false });
+    });
+    return () => cancelAnimationFrame(frame);
+  }, [
+    collapseProgress,
+    layout.rowHeight,
+    runtimeFixture.channels,
+    scrollY,
+  ]);
+
   const jumpToNow = useCallback(() => {
     const target = guideTargetForNow(Date.now());
     if (target.timeMs >= windowStart && target.timeMs < windowEnd) {
-      scrollToTime(target.timeMs, true);
+      scrollToTime(target.timeMs, !reduceMotion);
       return;
     }
     pendingTargetTimeRef.current = target.timeMs;
@@ -534,6 +614,7 @@ export const GuideView = memo(function GuideView({
     setWindowStartDayMs(target.dayStartMs);
   }, [
     commitViewedTime,
+    reduceMotion,
     scrollToTime,
     syncProgrammeWindowForTarget,
     windowEnd,
@@ -616,6 +697,7 @@ export const GuideView = memo(function GuideView({
           style={[styles.axisRow, { backgroundColor: theme.colors.background }]}
         >
           <View
+            testID="totaal-axis-corner"
             style={[
               styles.axisCorner,
               {
@@ -636,9 +718,18 @@ export const GuideView = memo(function GuideView({
           </View>
 
           <View style={[styles.axisViewport, { width: programmeViewportWidth }]}>
-            <Animated.View
-              style={[styles.axisTrack, { width }, axisTrackStyle]}
+            <Animated.ScrollView
+              ref={axisRef}
+              testID="totaal-time-axis-scroll"
+              horizontal
+              bounces
+              directionalLockEnabled
+              decelerationRate="normal"
+              showsHorizontalScrollIndicator={false}
+              scrollEventThrottle={16}
+              onScroll={axisScrollHandler}
             >
+              <View style={[styles.axisTrack, { width }]}>
               <View
                 style={[
                   styles.axisBaseline,
@@ -665,7 +756,8 @@ export const GuideView = memo(function GuideView({
                   />
                 );
               })}
-            </Animated.View>
+              </View>
+            </Animated.ScrollView>
 
             {ticks.length > 0 ? (
               <TimeAxisLeftMask
@@ -785,6 +877,7 @@ export const GuideView = memo(function GuideView({
           ]}
         >
           <Animated.ScrollView
+            ref={verticalRef}
             testID="guide-channel-scroll"
             bounces
             alwaysBounceVertical
@@ -836,9 +929,11 @@ export const GuideView = memo(function GuideView({
                         const isCurrent = isProgrammeCurrent(programme, nowMs);
                         const content = totaalProgrammeContentPresentation(frame.width);
                         const accessibilityStatus = isCurrent ? ', nu bezig' : '';
-                        const secondary = isCurrent
-                          ? `tot ${formatGuideTime(endMs)}`
-                          : formatGuideTime(startMs);
+                        const secondary = totaalProgrammeSecondaryLabel(
+                          isCurrent,
+                          formatGuideTime(startMs),
+                          formatGuideTime(endMs),
+                        );
 
                         return (
                           <Pressable

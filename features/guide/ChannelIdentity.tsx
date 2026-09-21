@@ -36,9 +36,11 @@ export const ChannelIdentity = memo(function ChannelIdentity({
   const detail = variant === 'detail';
   const compactLogoIdentity = totaal || perChannelStrip || nowNext;
   const showVisibleName = compactLogoIdentity ? !showLogo : true;
-  const visibleName = compactLogoIdentity
-    ? channel.shortName ?? channel.displayName
-    : channel.displayName;
+  const visibleName = totaal
+    ? channel.displayName
+    : compactLogoIdentity
+      ? channel.shortName ?? channel.displayName
+      : channel.displayName;
 
   return (
     <View
@@ -75,7 +77,7 @@ export const ChannelIdentity = memo(function ChannelIdentity({
             compactLogoIdentity ? COMPACT_GUIDE_MAX_FONT_SIZE_MULTIPLIER : undefined
           }
           style={[
-            nowNext ? styles.nowNextName : styles.name,
+            nowNext ? styles.nowNextName : totaal ? styles.totaalName : styles.name,
             showLogo ? styles.nameWithLogo : null,
             totaal ? styles.totaalFallback : null,
             perChannelStrip ? styles.perChannelFallback : null,
@@ -166,10 +168,12 @@ const styles = StyleSheet.create({
     fontSize: 10,
     fontWeight: '600',
   },
-  totaalFallback: {
-    ...GUIDE_TYPOGRAPHY.channelFallback,
+  totaalName: {
     width: '100%',
     textAlign: 'center',
+  },
+  totaalFallback: {
+    ...GUIDE_TYPOGRAPHY.channelFallback,
     letterSpacing: 0,
   },
   nowNextName: {
