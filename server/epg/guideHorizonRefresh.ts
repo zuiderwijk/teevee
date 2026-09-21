@@ -21,9 +21,9 @@ export type GuideHorizonRefreshResult = GuideRefreshWindow & {
 /**
  * Refresh one safety-buffered hosted Guide horizon using television-day windows.
  *
- * Product navigation is D-2..D+7. Totaal can require the following television day
- * for continuity, so D+8 must also be materialised when the provider supplies it.
- * D-3 is retained as a symmetric historical safety buffer.
+ * Product navigation is D-2..D+7. Totaal composes adjacent television-day reads for
+ * continuity when the following day remains inside that visible horizon. D-3 and D+8
+ * are backend safety buffers only; they do not expand the selectable product horizon.
  */
 export function guideRefreshWindows(anchorMs: number): GuideRefreshWindow[] {
   const windows: GuideRefreshWindow[] = [];
