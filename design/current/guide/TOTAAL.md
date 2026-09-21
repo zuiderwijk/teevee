@@ -3,7 +3,7 @@
 Status: **ACCEPTED — PRODUCTION VISUAL DESIGN OWNER-APPROVED**
 Owner-approved: 2026-09-21
 
-This manifest defines the accepted Totaal production visual direction. It freezes composition, hierarchy and visual language, but it is **not yet the production implementation specification**. Exact implementation metrics and acceptance criteria still require the dedicated production visual-convergence specification before Development starts.
+This manifest defines the accepted Totaal production visual direction. It freezes composition, hierarchy and visual language. The detailed production implementation candidate is `docs/TOTAAL_VISUAL_CONVERGENCE.md`; that specification becomes canonical only after explicit owner acceptance and merge. Development must not start from this manifest alone.
 
 ## Canonical visual asset
 
@@ -154,16 +154,20 @@ Use the same canonical bottom-navigation structure and behaviour as Per zender. 
 - light/dark/system retain equivalent hierarchy and semantics;
 - physical validation must cover representative larger-text settings.
 
-## What the visual board does not freeze
+## Production calibration
 
-The owner-approved board freezes **direction and composition**, not every generated pixel. The production design specification must still determine and physically calibrate:
-- exact programme title/time typography;
-- exact standard row height and responsive larger-text row geometry;
-- exact channel-rail width/logo optical box;
-- exact separator/tick contrast;
-- exact current-time marker dimensions;
-- exact condensed collapse/compensation metrics compatible with the existing Totaal scroll architecture;
-- edge cases for very short programmes, long titles and missing logos.
+The owner-approved board freezes **direction and composition**, not every generated pixel. Exact production metrics, responsive rules, edge cases and physical acceptance criteria are proposed in `docs/TOTAAL_VISUAL_CONVERGENCE.md`.
+
+That handoff calibrates the remaining implementation details, including:
+- programme title/time typography;
+- deterministic base/Dynamic-Type row geometry;
+- channel-rail width/logo optical box;
+- separator/tick hierarchy;
+- compact current-time marker;
+- fixed-native-viewport collapse/compensation;
+- very short programmes, long titles and missing logos.
+
+Until that production specification is owner-approved and merged, these values remain a review candidate rather than Development authority.
 
 ## Superseded Totaal visual treatments
 
