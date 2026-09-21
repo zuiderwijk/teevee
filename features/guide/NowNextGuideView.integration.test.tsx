@@ -78,22 +78,32 @@ vi.mock('react-native', async () => {
     onPress?: () => void;
     style?: unknown | ((state: { pressed: boolean }) => unknown);
     pointerEvents?: string;
+    numberOfLines?: number;
   };
 
-  const View = ({ children, testID, accessibilityLabel }: HostProps) =>
+  const View = ({
+    children,
+    testID,
+    accessibilityLabel,
+    style,
+  }: HostProps) =>
     createElement(
       'div',
       {
         'data-testid': testID,
         'aria-label': accessibilityLabel,
+        'data-style': JSON.stringify(style),
       },
       typeof children === 'function' ? children({ pressed: false }) : children,
     );
 
-  const Text = ({ children, testID }: HostProps) =>
+  const Text = ({ children, testID, numberOfLines }: HostProps) =>
     createElement(
       'span',
-      { 'data-testid': testID },
+      {
+        'data-testid': testID,
+        'data-number-of-lines': numberOfLines,
+      },
       typeof children === 'function' ? children({ pressed: false }) : children,
     );
 
@@ -448,6 +458,44 @@ describe('Nu & Straks production interaction boundary', () => {
     expect(getByTestId(container, 'now-next-now').getAttribute('aria-selected')).toBe(
       'true',
     );
+  });
+
+  it('wires the PR #100 railTick and larger-text presentation into the rendered view', async () => {
+    viewport.fontScale = 1.8;
+    await act(async () =>
+      root.render(
+        <NowNextGuideView
+          guideDataVersion={1}
+          presentationNavigation={<span />}
+          onSelectProgramme={vi.fn()}
+        />,
+      ),
+    );
+
+    expect(
+      getByTestId(container, 'now-next-reference-context').getAttribute(
+        'data-style',
+      ),
+    ).toContain('"height":88');
+
+    const majorTickStyle = getByTestId(
+      container,
+      'now-next-time-tick-56',
+    ).getAttribute('data-style');
+    const quarterTickStyle = getByTestId(
+      container,
+      'now-next-time-tick-57',
+    ).getAttribute('data-style');
+    expect(majorTickStyle).toContain('"backgroundColor":"#80807A"');
+    expect(majorTickStyle).toContain('"opacity":1');
+    expect(quarterTickStyle).toContain('"backgroundColor":"#80807A"');
+    expect(quarterTickStyle).toContain('"opacity":0.78');
+
+    const followingTitle = getByTestId(
+      container,
+      'now-next-following-one-0-one-follow-1',
+    ).querySelector('span:last-child');
+    expect(followingTitle?.getAttribute('data-number-of-lines')).toBe('2');
   });
 
   it('commits native rail momentum semantically without a secondary scrollTo', async () => {
