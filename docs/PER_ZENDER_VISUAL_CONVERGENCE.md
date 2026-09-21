@@ -676,7 +676,7 @@ Touch targets remain minimum 44 pt iOS / 48 dp Android; the cap applies to visib
 
 Programme times, programme titles and current description remain uncapped substantive content and continue to follow §§14.1–14.2.
 
-Presentation tabs and channel fallback retain their existing compact-chrome scaling rules; this refinement does not change them.
+Presentation tabs follow the shared Guide accessibility composition: **48 pt / one line through fontScale 1.35**, then **64 pt / maximum two lines above 1.35**, while retaining the shared 1.20 compact-label cap. Channel fallback retains its existing compact-chrome scaling rule. This shared-shell amendment does not change the fixed 52-pt Per-zender temporal context.
 
 On supported phone widths, a Per-zender temporal row that wraps or truncates at the documented 1.20 cap is an implementation/convergence defect, not an instruction to grow the context to 88 pt. Do not abbreviate `Primetime` or hide `Nu`; use the accepted compact date labels instead.
 
@@ -737,7 +737,8 @@ Production scroll-layout invariant — **PR #81 architecture is frozen**:
 - native scrolling consumes exactly **56 pt** over the collapse;
 - visual content compensation supplies exactly **84 pt** = `140 - 56`;
 - at collapse progress `p`, native collapse contribution = `56 × p` and visual content translation = `-84 × p`; together they account for the full `140 × p` visual contraction;
-- rest overlay bottom = **252 pt** = 100 Guide chrome + 72 rail + 4 gap + 52 context + 24 gap; settled overlay bottom = **112 pt** = 60 rail + 52 context;
+- standard-text rest overlay bottom = **252 pt** = 100 Guide chrome + 72 rail + 4 gap + 52 context + 24 gap; settled overlay bottom = **112 pt** = 60 rail + 52 context;
+- above fontScale 1.35, the shared Guide presentation row grows 48→64, so expanded Guide chrome becomes **116 pt**, rest overlay bottom becomes **268 pt**, full visual contraction becomes **156 pt**, native collapse remains **56 pt** and visual compensation becomes **100 pt**; the settled 112-pt Per-zender functional viewport and all rail/context/schedule metrics remain unchanged;
 - scroll-driven rest→condensed geometry is visual overlay/transform geometry and must not mutate normal-flow sibling heights above that same ScrollView;
 - semantic programme/timestamp anchors use explicit native↔schedule offset conversion so isolation does not change Nu, Primetime, day/channel continuity or fixed-row semantics;
 - temporal context is always 52 pt, so **no wrap delta exists** in visual geometry or native↔semantic conversion;
@@ -930,14 +931,14 @@ Explicitly superseded in Per-zender runtime:
 - the pre-PR #86 rest gap value `stripToUtilitiesGap = 24`;
 - comments/tests/calculations that describe **148 pt** visual contraction or **92 pt** visual compensation.
 
-Development must use the single fixed 52-pt context and **4/24 expanded → 0/0 condensed** gaps, yielding the same **140 pt contraction / 56 pt native collapse / 84 pt visual compensation** because the total expanded gap sum remains 28 pt. This is a convergence of accepted values inside the existing architecture, not permission to redesign collapse or move it back into normal flow.
+Development must use the single fixed 52-pt context and **4/24 expanded → 0/0 condensed** gaps. At fontScale <=1.35 this yields **140 pt contraction / 56 pt native collapse / 84 pt visual compensation**. Above 1.35, the shared 64-pt Guide presentation row adds 16 pt only to expanded non-functional chrome, yielding **156 / 56 / 100** while the same fixed-native-viewport architecture and 112-pt settled Per-zender functional stack remain unchanged. This is a convergence of accepted shared accessibility chrome, not permission to redesign collapse or move it back into normal flow.
 
 ## 22. Implementation calibration register
 
 Surface-specific implementation calibrations now frozen for Development handoff:
 
 1. Guide screen inset 20 and brand box 56×44.
-2. Presentation row 48 and selected indicator 88×2.5.
+2. Shared Guide presentation row **48 through fontScale 1.35 / 64 above 1.35**, labels one line / max two lines respectively, selected indicator 88×2.5 and compact-label cap 1.20.
 3. Channel rail: 72 rest / 60 condensed, 48×48 item, 12 gap, 40×32 logo max, 20 edge inset.
 4. Preferred trailing continuation cue target 12 pt where it does not disturb centering/visibility.
 5. Context geometry: expanded **4 / 52 / 24** (strip→context / context height / context→schedule); condensed **0 / 52 / 0**; no selected-channel text outside the rail and no wrapped context.
@@ -947,7 +948,7 @@ Surface-specific implementation calibrations now frozen for Development handoff:
 9. Standard title 17/21 500, current title 19/23 700, time 16/20 400, current description **15/22 400 max4** — Instrument Sans.
 10. Current top14, title→description gap **10**, description→progress minimum **20 at every Dynamic Type scale**, progress 4 high/radius2/bottom16; current-row scaling uses the content-safe minimum from §14.2.
 11. Separator left20 at bottom of each row.
-12. Collapse isolation: temporal context **52 only**; hard compact-label multiplier 1.20; fixed viewport top112; full visual contraction140; native collapse56; visual compensation84; rest gaps interpolate **4→0** above the context and **24→0** below it; Reduce Motion switches endpoints discretely at28.
+12. Collapse isolation: temporal context **52 only**; hard temporal-label multiplier 1.20; fixed settled viewport top112; native collapse56; standard full contraction/visual compensation **140/84**, accessibility shared-tab mode **156/100**; rest gaps interpolate **4→0** above the context and **24→0** below it; Reduce Motion switches endpoints discretely at28.
 
 Development must not choose alternatives locally. A future retune requires new owner-approved evidence and an update to this source of truth.
 
@@ -988,7 +989,7 @@ When Lead schedules Per-zender visual convergence, Development must be able to i
 15. active/current never means disabled;
 16. full programme row pressed = temporary semantic `surface` fill; clear on release/cancel/gesture takeover;
 17. preserve horizontal adjacent-channel swipe, channel-rail browsing, D-2..D+7, 06:00 television-day semantics, Programme Detail round-trip and time-anchor semantics;
-18. preserve the PR #81 fixed-native-viewport/collapse-isolation architecture: strip 72→60, strip→context **4→0**, context→schedule **24→0**, one fixed 52-pt temporal context, 48×48 items unchanged, native collapse56, full visual contraction140 and visual compensation84; no per-frame normal-flow mutation above the active schedule ScrollView;
+18. preserve the PR #81 fixed-native-viewport/collapse-isolation architecture: strip 72→60, strip→context **4→0**, context→schedule **24→0**, one fixed 52-pt temporal context, 48×48 items unchanged, native collapse56; standard shared chrome uses contraction/compensation **140/84**, accessibility shared-tab mode **156/100**; no per-frame normal-flow mutation above the active schedule ScrollView;
 19. remove the obsolete wrapped-context runtime paths listed in §21 while preserving semantic native↔schedule anchor conversion;
 20. enforce `maximumFontSizeMultiplier = 1.20` for Per-zender date/Primetime/Nu labels, keep them one line in the 52-pt context, and validate light/dark/system, substantive programme Dynamic Type, VoiceOver, TalkBack and Reduce Motion;
 21. do not add swipe nudge, overflow button, arrows, fade masks or old exploration chrome;

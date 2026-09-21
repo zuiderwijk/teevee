@@ -19,7 +19,7 @@ Production specification: `docs/NU_EN_STRAKS_VISUAL_CONVERGENCE.md`
 - No progress bars.
 - No chevrons or repeated `Daarna` labels.
 - Compact shared time rail with **15-minute navigation steps**; only whole and half hours carry visible time labels.
-- Every quarter-hour position has a thin vertical tick: whole/half-hour ticks are longer, quarter-hour ticks are shorter and unlabeled; the selected/current reference marker remains visually strongest.
+- Every quarter-hour position has a 1-pt vertical tick: whole/half-hour ticks are 10 pt, quarter-hour ticks 6 pt; both use the dedicated `railTick` semantic token, while the 2×12 `currentTime` selected/current marker remains visually strongest.
 - `Primetime` is the explicit 20:30 shortcut; `Nu` restores live when browsing.
 - Live mode always resolves programmes against the **actual current instant** and never rounds semantic `Nu` to a rail slot; visible live context is `Nu · HH:MM` using the actual minute.
 - Horizontal movement changes the reference time; vertical movement changes channel context.
@@ -34,7 +34,7 @@ The accepted shared Guide shell also supersedes any standalone prototype header/
 
 ## Owner-accepted refinement — 2026-09-21
 
-Physical iPhone evidence on the production-convergence candidate justified reopening a small set of Nu & Straks presentation details. These refinements are **OWNER ACCEPTED** and supersede the earlier production calibration only where listed:
+Physical iPhone evidence on the production-convergence candidates justified reopening a small set of Nu & Straks presentation details. The first refinement established the 15-minute rail and compact default density. A second physical review of PR #96 exact head `32db9459d265e8546c7137baf82e623f015ad652` rejected only rail-tick legibility, larger-text composition and the perceived rhythm of the three following programmes. These refinements are **OWNER ACCEPTED** and supersede the earlier production calibration only where listed:
 
 - time navigation settles in **15-minute** increments instead of 30-minute increments;
 - whole and half hours show text labels plus a thin vertical tick; quarter hours show only a shorter thin vertical tick;
@@ -42,7 +42,11 @@ Physical iPhone evidence on the production-convergence candidate justified reope
 - the `Referentietijd` caption is removed; live context shows `Nu · HH:MM` with the exact actual minute, browse context shows the selected time;
 - visible reference-programme `tot HH:MM` metadata is removed because the following programme start time normally communicates the same boundary; full start/end times remain available to accessibility and Programme Detail;
 - the reference programme block is more compact and the transition to the three following programmes is tighter;
-- the three following programme rows remain directly adjacent with no additional visual inter-row gap while retaining independent minimum 44 pt iOS / 48 dp Android touch targets;
+- the three following programme rows remain directly adjacent with no additional interaction gap while retaining independent minimum 44 pt iOS / 48 dp Android touch targets;
+- rail ticks keep 1-pt thickness but use dedicated `railTick` contrast: light `#80807A`, dark `#72726B`; major opacity 1.00, quarter opacity 0.78;
+- above font scale 1.35, shared Guide tabs become 64 pt / max two lines and Nu & Straks context becomes 88 pt in 40+48 lanes rather than truncating compact chrome;
+- above font scale 1.35, following programmes use an inline time+title composition with at most two visible lines; stacked time-above-title is reserved for the extreme >2.0 / <180-pt width fallback;
+- the three normal following targets keep their 44/48 interaction geometry while visible content is visually clustered: #1 bottom-biased, #2 centred, #3 top-biased;
 - active/current `Nu` and return-to-live `Nu` must be visually and semantically distinct. The same control treatment may not represent both states.
 
 Exact production metrics and acceptance criteria are frozen in `docs/NU_EN_STRAKS_VISUAL_CONVERGENCE.md`.
@@ -53,8 +57,10 @@ The former compact following-row debt is resolved by the owner-approved producti
 - each following programme owns a real, non-overlapping platform-safe target: minimum **44 pt on iOS / 48 dp on Android**;
 - three following **slot geometries** remain reserved per channel even when programme data is missing, so reference-time changes do not shift vertical channel context;
 - at effective font scale `<= 1.35`, following time + title remain on one row;
-- above `1.35`, each following programme switches to stacked time/title layout and grows vertically rather than shrinking or overlapping text;
-- substantive programme content keeps Dynamic Type; compact functional chrome alone uses the documented 1.20 cap;
+- above `1.35`, following content remains substantive and uncapped but uses the accepted inline time+title two-line composition to avoid excessive vertical expansion;
+- stacked time/title is only the extreme-width fallback when font scale >2.0 and programme width <180 pt;
+- compact functional chrome keeps the documented 1.20 cap but uses responsive 64-pt presentation tabs and 88-pt Nu & Straks context rather than truncating;
+- visible following content is clustered independently from the unchanged non-overlapping 44/48 touch geometry;
 - reference/following hierarchy remains typographic and open: no cards, artwork, progress, chevrons or extra labels are introduced.
 
 Exact metrics, safe-area rules, shell condensation, Nu/Primetime states, time-rail geometry, pressed states, empty-data behaviour, Programme Detail round-trip and physical validation criteria live in `docs/NU_EN_STRAKS_VISUAL_CONVERGENCE.md`.
@@ -65,6 +71,11 @@ Earlier Nu & Straks designs with progress bars, fewer following programmes, artw
 The following prototype/runtime treatments are also non-canonical:
 - 30-minute-only rail navigation;
 - rail labels without positional quarter/half-hour ticks;
+- generic `border` colour for rail ticks instead of the dedicated `railTick` semantic token;
+- fixed one-line 48-pt presentation tabs above font scale 1.35;
+- fixed 52-pt single-row Nu & Straks context above font scale 1.35;
+- automatic stacked following layout for every font scale above 1.35;
+- identical vertical centring of all three following content bands when it makes the group read too loose;
 - rounding live `Nu` semantics to the nearest rail slot;
 - a visible `Referentietijd` caption;
 - visible reference-programme `tot HH:MM` metadata;

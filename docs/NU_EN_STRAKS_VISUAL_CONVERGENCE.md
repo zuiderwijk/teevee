@@ -2,9 +2,9 @@
 
 Status: **CANONICAL PRODUCTION IMPLEMENTATION SPEC — owner-approved**
 Date: 2026-09-18
-Owner refinement: 2026-09-21
+Owner refinements: 2026-09-21 — temporal/density refinement plus post-PR #96 physical refinement
 
-This document converts the accepted Nu & Straks direction into a production implementation contract. It is convergence, not redesign. The 21 September owner refinement supersedes only the exact temporal-rail, reference-copy and default-density calibrations explicitly amended below.
+This document converts the accepted Nu & Straks direction into a production implementation contract. It is convergence, not redesign. Physical iPhone review of PR #96 exact head `32db9459d265e8546c7137baf82e623f015ad652` rejected only rail-tick legibility, larger-text composition and the perceived rhythm of the three following programmes. The post-PR #96 owner refinement below supersedes only those calibrations; all other accepted Nu & Straks contracts remain frozen.
 
 ## 1. Authority
 
@@ -95,7 +95,7 @@ These are Development corrections, not owner decisions.
 
 Nu & Straks uses the same Guide chrome hierarchy as the other production Guide presentations.
 
-### 5.1 Expanded/rest composition
+### 5.1 Standard expanded/rest composition — fontScale <= 1.35
 
 From top to content:
 1. top safe area;
@@ -105,52 +105,105 @@ From top to content:
 5. time rail;
 6. vertically scrollable channel rows.
 
-Shared metrics already canonical elsewhere remain:
+Standard metrics:
 - horizontal screen inset: **20 pt**;
 - brand top inset: **8 pt**;
 - brand mark box: **56 × 44 pt**;
-- Guide presentation navigation height: **48 pt**;
-- expanded shared brand + presentation chrome: **100 pt**, excluding top safe area.
+- Guide presentation navigation: **48 pt**, one-line labels;
+- expanded shared brand + presentation chrome: **100 pt**, excluding top safe area;
+- reference-time context: **52 pt**;
+- time rail: **52 pt**;
+- persistent functional stack: **104 pt**.
 
 Do not add a Nu & Straks-specific duplicate heading below the shared presentation navigation.
 
-### 5.2 Sticky/condensed composition
+### 5.2 Responsive accessibility composition — fontScale > 1.35
+
+Physical iPhone evidence proves that keeping the shared presentation tabs and Nu & Straks temporal controls inside the standard one-line geometry causes unacceptable truncation.
+
+The shared Guide presentation selector therefore uses its accepted accessibility state:
+- navigation height: **64 pt**;
+- visible labels remain `Totaal`, `Per zender`, `Nu & Straks`; do not abbreviate them;
+- labels may use **maximum 2 lines**;
+- text remains centred;
+- compact-label `maximumFontSizeMultiplier = 1.20` remains in force;
+- the full 64-pt tab remains the interactive target;
+- selected indicator remains the canonical **2.5-pt** underline treatment.
+
+The brand row remains **52 pt**, so expanded shared brand + presentation chrome becomes **116 pt**.
+
+Nu & Straks reference context becomes **88 pt** in this mode:
+- upper reference-time lane: **40 pt**;
+- lower utilities lane: **48 pt**.
+
+The rail remains **52 pt**. The persistent functional stack is therefore **140 pt** in accessibility mode.
+
+This is responsive accessibility composition, not a separate product state.
+
+### 5.3 Sticky/condensed composition
 
 Vertical channel scrolling may condense only non-functional shared brand/presentation chrome.
 
-The persistent functional stack is:
-1. reference-time context: **52 pt**;
-2. time rail: **52 pt**.
-
-Settled condensed functional height: **104 pt**, excluding top safe area.
+Persistent functional stack:
+- standard mode: **52 reference + 52 rail = 104 pt**;
+- accessibility mode: **88 reference/utilities + 52 rail = 140 pt**.
 
 No date row, selected-channel label, compact channel title or other extra context is added.
 
-Normal-motion calibration:
-- collapse is coupled monotonically to the first **56 pt** of vertical channel-scroll;
-- disappearing shared chrome may translate upward by at most **12 pt**;
-- no scroll-direction hide/reveal behaviour;
-- no spring-based toolbar behaviour;
-- the visible channel/list anchor must remain stable through collapse.
+Normal-motion calibration remains:
+- native collapse distance: **56 pt**;
+- disappearing shared chrome translate: max **12 pt** upward;
+- no scroll-direction hide/reveal;
+- no spring;
+- stable visible channel/list anchor throughout collapse.
+
+Fixed-native-viewport visual compensation is derived from the responsive expanded GuideChrome:
+- standard: **100 - 56 = 44 pt**;
+- accessibility: **116 - 56 = 60 pt**.
 
 Reduce Motion:
-- use a discrete expanded/condensed switch at **28 pt** vertical schedule offset;
-- preserve the same final geometry.
+- discrete expanded/condensed switch at **28 pt** vertical schedule offset;
+- preserve the applicable standard/accessibility final geometry.
 
 ## 6. Reference-time context
 
-The reference-time context remains a fixed **52-pt** functional row with **20-pt** horizontal insets.
+The former `Referentietijd` caption remains removed.
 
-The former `Referentietijd` caption is removed. The temporal value is the only left-hand text anchor:
+### 6.1 Standard mode — fontScale <= 1.35
+
+The context is a fixed **52-pt** horizontal row with **20-pt** horizontal insets.
+
+Left:
 - value: **18/22, Instrument Sans Semibold**;
-- live: `Nu · HH:MM`, using the **actual current minute**;
+- live: `Nu · HH:MM`, using the exact actual minute;
 - browse: `HH:MM`, using the settled 15-minute browse reference.
 
-The value is vertically centred within the 52-pt row. Do not replace the removed caption with another explanatory label.
+Right:
+- Primetime + Nu in the same row.
 
-All compact reference-time chrome uses a hard maximum font-size multiplier of **1.20**. This cap does not apply to programme content.
+The value is vertically centred. Do not replace the removed caption with another explanatory label.
 
-### 6.1 Nu and Primetime geometry
+### 6.2 Accessibility mode — fontScale > 1.35
+
+The context becomes **88 pt**, split into two non-competing lanes.
+
+Upper reference lane — **40 pt**:
+- left inset **20 pt**;
+- same `Nu · HH:MM` / `HH:MM` copy;
+- **18/22 Semibold**;
+- one line;
+- tabular numerals where supported.
+
+Lower utility lane — **48 pt**:
+- Primetime + Nu align to the trailing side;
+- same **8-pt** inter-control gap;
+- same 36-pt visible controls;
+- same platform-safe 44/48 touch targets;
+- same semantic states.
+
+All compact reference/utility chrome keeps the hard **1.20** maximum font-size multiplier. Programme content remains substantive and uncapped.
+
+### 6.3 Nu and Primetime geometry
 
 Production calibration:
 - visible control height: **36 pt**;
@@ -161,7 +214,7 @@ Production calibration:
 - Nu horizontal padding: **12 pt**;
 - label: **14/18, Instrument Sans Semibold**.
 
-### 6.2 Nu and Primetime semantic states
+### 6.4 Nu and Primetime semantic states
 
 Live:
 - Nu = active/current;
@@ -179,7 +232,7 @@ If actual Now and the Primetime semantic context overlap, **Nu wins while the pr
 
 Active/current is never disabled. Disabled is reserved for genuinely unavailable actions.
 
-Current state must not rely on colour alone; expose selected/current semantics to accessibility and use the restrained canonical current-state indicator rather than a permanent heavy pill. In particular, active/current `Nu` must **not** reuse the return-to-live pill/surface treatment: live `Nu` is a current-state treatment, while browse `Nu` is an action treatment.
+Current state must not rely on colour alone; expose selected/current semantics to accessibility. Active/current `Nu` must not reuse the return-to-live pill/surface treatment.
 
 ## 7. Time rail
 
@@ -205,12 +258,13 @@ Production calibration:
 - slot interactive height: **48 pt**;
 - every slot remains an accessible time target, including unlabeled quarter hours;
 - whole and half hours: visible **13/18** label, Instrument Sans Medium; selected label Semibold;
-- whole/half-hour positional tick: **1 × 10 pt** semantic `border` hairline, directly beneath the label anchor;
-- quarter-hour positional tick: **1 × 6 pt** semantic `border` hairline, no visible text label;
-- selected/current reference marker: **2 × 12 pt**, semantic `currentTime`, visually stronger than either hairline;
+- whole/half-hour positional tick: **1 × 10 pt** semantic `railTick`, opacity **1.00**, directly beneath the label anchor;
+- quarter-hour positional tick: **1 × 6 pt** semantic `railTick`, opacity **0.78**, no visible text label;
+- semantic `railTick`: light **#80807A**, dark **#72726B**;
+- selected/current reference marker: **2 × 12 pt**, semantic `currentTime`, opacity **1.00**, visually stronger than either hairline;
 - viewport insets centre the first and last quarter-hour targets as well as interior targets.
 
-The hairlines belong only to the rail and do not continue through programme content.
+The hairlines belong only to the rail and do not continue through programme content. `railTick` is intentionally distinct from the quieter generic `border` separator token: these marks are positional navigation signals and must remain physically legible, especially in dark mode. Keep the 1-pt tick width; improve legibility through semantic contrast rather than thickness.
 
 ### 7.3 Live positioning
 
@@ -307,44 +361,72 @@ There are always exactly three following **slots** in the channel-row geometry. 
 
 This preserves stable vertical channel context while keeping the information hierarchy unchanged.
 
-### 11.1 Normal text layout
+### 11.1 Standard text layout — fontScale <= 1.35
 
-At effective font scale **≤ 1.35**:
-- one horizontal row;
+Each following target remains:
 - time column width: **52 pt**;
 - time → title gap: **8 pt**;
 - time: **13/18, Instrument Sans Regular**, tabular numerals where supported;
 - title: **15/20, Instrument Sans Medium**;
-- title: maximum **1 line**, ellipsis at tail;
-- the complete row is one non-overlapping programme button;
-- row minimum = **44 pt iOS / 48 dp Android**.
+- title maximum **1 line**, tail ellipsis;
+- complete target minimum **44 pt iOS / 48 dp Android**;
+- **0 pt** interaction gap between adjacent targets.
 
-### 11.2 Larger/accessibility text layout
+The target geometry is not the visual rhythm. To make the three programmes read as one compact information group while keeping three independent targets:
+- following #1 visible content band is **bottom-biased**, with **2 pt** bottom inset;
+- following #2 visible content band is vertically **centred**;
+- following #3 visible content band is **top-biased**, with **2 pt** top inset.
 
-At effective font scale **> 1.35**:
-- switch each following slot to a stacked layout;
-- start time appears first;
-- **3 pt** time → title gap;
-- title may use maximum **2 lines**;
-- both time and title keep substantive Dynamic Type;
-- do not shrink text to retain screenshot density.
+All visible content remains inside its own Pressable. Touch targets remain adjacent and non-overlapping. No extra separator is added between the three programmes.
 
-Content-safe row height is:
+### 11.2 Larger/accessibility text layout — fontScale > 1.35
 
-max(platform minimum touch target,
-ceil(18 × fontScale + 3 + 40 × fontScale + 12))
+Do **not** switch automatically to a separate time line above a two-line title. Physical iPhone evidence shows that treatment expands each following target excessively.
 
-The 12 pt term represents 6 pt top + 6 pt bottom content padding.
+Primary accessibility composition is an **inline time + title flow**:
+- start time retains **13/18 Regular, textMuted**;
+- title retains **15/20 Medium, textSecondary**;
+- inline time → title separation: **8 pt**;
+- programme content keeps full Dynamic Type scaling;
+- title may wrap so the combined visible programme occupies maximum **2 lines**;
+- full programme title and start/end times remain available to assistive technology.
 
-Rows therefore grow substantially at accessibility sizes. This is intentional: legibility and separate touch targets take precedence over showing more channels per viewport.
+Content-safe following target height:
 
-### 11.3 Non-overlap invariant
+`max(platform minimum touch target, ceil(40 × fontScale + 8))`
+
+The 8-pt term is **4 pt top + 4 pt bottom** content allowance. The time shares the first line with the title and therefore does not reserve a separate vertical line.
+
+The same visual grouping bias applies to grown targets:
+- #1 content block toward the bottom, 2-pt inset;
+- #2 centred;
+- #3 toward the top, 2-pt inset.
+
+### 11.3 Extreme-width fallback
+
+Only when **both** conditions apply:
+- effective `fontScale > 2.0`; and
+- available programme-content width is **< 180 pt**;
+
+the target may fall back to stacked time then title:
+- time line first;
+- **3 pt** gap;
+- title maximum 2 lines;
+- 6 pt top + 6 pt bottom content padding.
+
+Fallback height:
+
+`max(platform minimum touch target, ceil(18 × fontScale + 3 + 40 × fontScale + 12))`
+
+This is a last-resort width fallback, not the default larger-text mode.
+
+### 11.4 Non-overlap invariant
 
 Following-programme targets must never overlap spatially.
 
 Do not use oversized hitSlop that extends one programme target into an adjacent programme target.
 
-Automated layout tests should prove non-overlap for supported font-scale/layout modes.
+Automated layout tests must prove non-overlap for standard, inline-accessibility and extreme fallback modes.
 
 ## 12. Deterministic channel-row height and stable vertical context
 
@@ -386,16 +468,22 @@ Two deliberate categories apply.
 - Primetime;
 - time-rail labels.
 
+The cap is paired with responsive geometry rather than truncation:
+- Guide presentation nav = **48 pt / 1 line** at fontScale <=1.35;
+- Guide presentation nav = **64 pt / max 2 lines** above 1.35;
+- Nu & Straks reference context = **52 pt horizontal** at <=1.35;
+- Nu & Straks reference context = **88 pt, 40+48 two-lane** above 1.35.
+
 ### Substantive content — no global cap
 - reference programme title;
-- reference programme time/status;
+- reference programme time/status in accessibility semantics;
 - following programme times;
 - following programme titles;
 - channel text fallback.
 
-Substantive content adapts by increasing geometry and, for following rows, switching to the accepted stacked layout above fontScale 1.35.
+Above fontScale 1.35, following programmes use the inline two-line accessibility composition from §11.2. Stacked time/title is reserved only for the extreme-width fallback in §11.3.
 
-Do not solve density by clipping essential copy or overlapping interaction areas.
+Do not solve density by clipping essential copy, reducing substantive font scaling or overlapping interaction areas.
 
 ## 15. Empty and incomplete data
 
@@ -485,6 +573,7 @@ Light:
 - quiet secondary/muted tokens as defined by the theme;
 - pressed programme: semantic 'surface';
 - separators: semantic 'border';
+- rail positional ticks: semantic `railTick` **#80807A** with major opacity 1.00 / quarter opacity 0.78;
 - reference marker/current indicator: semantic 'currentTime'.
 
 Dark:
@@ -492,6 +581,7 @@ Dark:
 - primary text: '#F4F4F1';
 - same semantic hierarchy;
 - pressed programme: semantic 'surface';
+- rail positional ticks: semantic `railTick` **#72726B** with major opacity 1.00 / quarter opacity 0.78;
 - no separate dark-mode composition.
 
 System follows OS appearance without remounting or losing reference/channel context.
@@ -501,7 +591,7 @@ Existing provenance debt for RTL 4/RTL 5/SBS6 dark-background broadcaster assets
 ## 20. Safe areas and bottom clearance
 
 - apply top safe area exactly once;
-- the persistent 104-pt functional stack sits below the top safe area;
+- the persistent functional stack sits below the top safe area: **104 pt** in standard mode and **140 pt** in accessibility mode;
 - no content may render behind the notch/Dynamic Island;
 - bottom navigation remains stable;
 - the last channel row can scroll fully clear of bottom navigation/home indicator;
@@ -560,25 +650,32 @@ Development must add coverage for at least:
 12. Nu precedence when actual Now overlaps Primetime context;
 13. stable channel-row height with missing following programmes;
 14. minimum 44 pt iOS / 48 dp Android following targets;
-15. no overlap between adjacent following programme targets;
-16. horizontal normal layout at fontScale ≤1.35;
-17. stacked following layout at fontScale >1.35;
-18. vertical channel position remains stable after reference changes;
-19. rail-originated momentum settle updates state without secondary scrollTo;
-20. no-momentum drag commit;
-21. explicit slot/Nu/Primetime actions may centre their targets;
-22. Reduce Motion action/collapse behaviour;
-23. Programme Detail reference-programme round-trip;
-24. Programme Detail following-programme round-trip;
-25. incomplete/empty schedule behaviour;
-26. light/dark semantic token usage;
-27. deferred NowNextGuideView import remains deferred;
-28. only whole/half-hour rail slots render text labels;
-29. whole/half-hour and quarter-hour ticks use distinct accepted hairline lengths;
-30. live `Nu` copy uses the exact current minute while browse commits quarter-hour references;
-31. reference programmes render no visible `tot HH:MM` metadata while accessibility retains start/end time;
-32. default reference/following geometry uses the accepted 64/4/44-or-48 compact calibration;
-33. active/current `Nu` and return-to-live `Nu` render distinct state treatments.
+15. no overlap between adjacent following targets;
+16. standard following layout at fontScale <=1.35;
+17. inline two-line following accessibility layout above 1.35;
+18. stacked following fallback only when fontScale >2.0 and programme width <180 pt;
+19. following visual content bias #1 bottom / #2 centre / #3 top without content leaving its target;
+20. vertical channel position remains stable after reference changes;
+21. rail-originated momentum settle updates state without secondary scrollTo;
+22. no-momentum drag commit;
+23. explicit slot/Nu/Primetime actions may centre their targets;
+24. Reduce Motion action/collapse behaviour;
+25. Programme Detail reference-programme round-trip;
+26. Programme Detail following-programme round-trip;
+27. incomplete/empty schedule behaviour;
+28. light/dark semantic token usage;
+29. deferred NowNextGuideView import remains deferred;
+30. only whole/half-hour rail slots render text labels;
+31. whole/half and quarter ticks remain 1 pt with 10/6 heights;
+32. major tick uses `railTick` at 1.00 opacity and quarter tick at 0.78;
+33. `railTick` resolves to #80807A light / #72726B dark;
+34. live Nu copy uses the exact current minute while browse commits quarter-hour references;
+35. reference programmes render no visible `tot HH:MM` metadata while accessibility retains start/end time;
+36. base geometry remains 64 reference / 4 transition / 44-or-48 following targets / 216-or-228 channel row;
+37. active/current Nu and return-to-live Nu render distinct state treatments;
+38. shared Guide presentation nav is 48/one-line through 1.35 and 64/max-two-lines above 1.35;
+39. Nu & Straks reference context is 52 horizontal through 1.35 and 88 two-lane above 1.35;
+40. accessibility expanded GuideChrome is 116 and fixed-native-viewport compensation resolves to 60 while native collapse remains 56.
 
 Time-sensitive tests use injected/fixed instants. No wall-clock sleeps.
 
@@ -607,27 +704,32 @@ Do not introduce unrelated Guide/data refactors.
 
 Physical validation on the exact implementation head must include:
 
-1. Light/live state against the canonical Nu & Straks visual plus the 21 September refinement: exact `Nu · HH:MM`, no `Referentietijd` caption, quarter-hour ticks and no visible reference `tot` metadata.
-2. Dark/live state with identical geometry and hierarchy.
-3. Primetime jump to 20:30 and correct browse/current semantics.
-4. Ordinary browse time: Nu becomes the clear return action.
-5. Slow rail drag settles to one unambiguous **15-minute** slot; whole/half-hour labels and quarter-hour-only ticks remain visually clear.
-6. Repeated hard fling + reversal reproducing the old PR #24 failure pattern: no oscillation, tug-of-war or inescapable slot.
-7. Direct time-slot tap changes the programme set once and centres calmly.
-8. Stable vertical context: scroll midway down the channel list, then change reference through rail, Primetime and Nu; the same channel context remains in the viewport.
-9. All three following programmes can be tapped individually without an adjacent programme opening.
-10. Default text remains visually compact/premium: 64-pt reference block, 4-pt transition and directly adjacent following targets without visual crowding.
-11. Representative ~135% text shows no clipping/overlap.
-12. Accessibility text >1.35 switches following programmes to stacked layout with fully separate targets.
-13. VoiceOver focus order and labels for reference/following programmes, rail slots, Nu and Primetime.
-14. Reduce Motion: direct action recentering and discrete shell condensation without unnecessary animation.
-15. Programme Detail round-trip from reference programme preserves exact context.
-16. Programme Detail round-trip from each following programme preserves exact context.
-17. Gap state renders honestly while next known programmes remain usable.
-18. Partial following data does not shift channel-row geometry.
-19. Top/bottom safe areas: no obstruction by notch/Dynamic Island/home indicator/navigation.
-20. Persisted Nu & Straks preference still respects the deferred module boundary during startup.
-21. Realistic channel count/density scrolls acceptably at normal and accessibility text sizes.
+1. Light/live state: exact `Nu · HH:MM`, no `Referentietijd`, quarter-hour ticks, no visible reference `tot`.
+2. Dark/live state with the already accepted overall dark composition unchanged.
+3. Major and quarter ticks are physically legible in dark mode while remaining subordinate to the 2×12 current marker.
+4. Major and quarter ticks remain 1 pt; improved legibility comes from `railTick` contrast rather than thickness.
+5. Primetime jump to 20:30 and correct browse/current semantics.
+6. Ordinary browse: Nu becomes the clear return action.
+7. Slow rail drag settles to one unambiguous 15-minute slot.
+8. Repeated hard fling + reversal: no oscillation, tug-of-war or inescapable slot.
+9. Direct time-slot tap changes the programme set once and centres calmly.
+10. Stable vertical context through rail, Primetime and Nu changes.
+11. Default text: 64-pt reference block, 4-pt transition, three separate 44-pt following targets and visibly tighter three-programme rhythm.
+12. Verify following #1/#2/#3 read as one compact group without any touch-target overlap.
+13. All three following programmes remain individually tappable.
+14. At representative ~135% text: no clipping or overlapping.
+15. Above 1.35: Guide tabs become 64 pt/max two lines with no truncated `Per zender` or `Nu & Straks`.
+16. Above 1.35: reference context becomes 88 pt with 40-pt time lane + 48-pt utility lane; no utility truncation.
+17. Above 1.35: following programmes use inline time+title, maximum two lines, and are materially less tall than the rejected PR #96 stacked treatment.
+18. At large text, substantive programme text still scales; no global programme cap.
+19. If testing an extreme combination >2.0 plus <180-pt programme width, stacked fallback remains readable and non-overlapping.
+20. VoiceOver focus order and full labels for reference/following programmes, rail targets, Nu and Primetime.
+21. Reduce Motion: direct action recentering and discrete shell condensation without unnecessary animation.
+22. Programme Detail round-trip from reference and each following programme preserves exact context.
+23. Gap and partial-following states do not shift channel geometry.
+24. Top/bottom safe areas remain correct in standard and accessibility chrome modes.
+25. Persisted Nu & Straks preference still respects deferred loading.
+26. Realistic channel count/density scrolls acceptably at normal and accessibility text sizes.
 
 Physical Android interaction acceptance remains separately open until a physical Android device is available, as recorded in canonical project state.
 
@@ -635,21 +737,25 @@ Physical Android interaction acceptance remains separately open until a physical
 
 Values frozen by this owner-approved production refinement:
 
-1. Shared Guide screen inset 20; shared brand box 56×44; presentation navigation 48.
-2. Persistent Nu & Straks functional chrome: 52 reference context + 52 time rail = **104 pt**.
-3. Shared chrome collapse: 56-pt vertical distance; max 12-pt upward translation; Reduce Motion discrete switch at 28.
-4. Reference-time value 18/22 Semibold with no caption; compact chrome max multiplier 1.20; live value uses exact actual minute.
-5. Nu/Primetime visible height 36; gap 8; platform touch minimum 44/48; labels 14/18 Semibold; active/current Nu and return-action Nu are visibly distinct.
-6. Time rail: height 52; quarter slot 48×48; whole/half labels 13/18 Medium, selected Semibold; major hairline 1×10; quarter hairline 1×6; marker 2×12; snap interval 48.
-7. Channel geometry: left inset 20; identity zone 64; gap 16; programme X100; right inset24.
-8. Reference block min64; reference title18/22 Semibold max2; no visible end-time metadata; reference→following gap4.
-9. Following rows: min44 iOS /48 Android; 0 additional inter-row gap; time width52; gap8; time13/18 Regular; title15/20 Medium.
-10. Following accessibility switch: fontScale >1.35 → stacked time/title, 3-pt gap, title max2; content-safe formula from §11.2.
-11. Base channel row: 216 iOS /228 Android at normal font scale.
-12. Three following slot geometries always remain reserved even when programme data is missing.
-13. Programme press = transient semantic surface fill, no permanent card/opacity-first treatment.
-14. No artwork, genres, progressbars, chevrons or repeated 'Daarna' labels.
-15. NowNextGuideView remains behind deferred import.
+1. Shared Guide screen inset 20; brand row 52; standard presentation nav 48; accessibility presentation nav **64 above fontScale 1.35**, max two label lines, compact label cap 1.20.
+2. Nu & Straks standard functional stack: **52 reference + 52 rail = 104 pt**.
+3. Nu & Straks accessibility functional stack: **88 reference/utilities + 52 rail = 140 pt**.
+4. Shared chrome native collapse remains 56; max translate 12; Reduce Motion switch 28; visual compensation **44 standard / 60 accessibility**.
+5. Reference-time value 18/22 Semibold with no caption; live value uses exact actual minute; accessibility context uses **40-pt reference lane + 48-pt utility lane**.
+6. Nu/Primetime visible height 36; gap8; platform touch minimum44/48; labels14/18 Semibold; active/current Nu and return-action Nu remain distinct.
+7. Time rail: height52; quarter slot48×48; whole/half labels13/18 Medium, selected Semibold; major tick **1×10 railTick @1.00**; quarter tick **1×6 railTick @0.78**; marker2×12 currentTime; snap interval48.
+8. `railTick`: **#80807A light / #72726B dark**.
+9. Channel geometry: left20; identity64; gap16; programme X100; right24.
+10. Reference block min64; reference title18/22 Semibold max2; no visible end-time metadata; reference→following gap4.
+11. Following standard targets: min44 iOS /48 Android; 0 interaction gap; time width52; gap8; time13/18 Regular; title15/20 Medium.
+12. Standard visual rhythm: following #1 content bottom-biased2, #2 centred, #3 top-biased2; targets themselves remain unchanged.
+13. Above fontScale1.35, following content uses inline time+title, max2 lines, height `max(minTarget, ceil(40×fontScale+8))`.
+14. Stacked following fallback exists only for fontScale>2.0 **and** available programme width<180, using the content-safe formula in §11.3.
+15. Base channel row remains **216 iOS /228 Android** at normal font scale.
+16. Three following slot geometries always remain reserved even when programme data is missing.
+17. Programme press = transient semantic surface fill, no permanent card/opacity-first treatment.
+18. No artwork, genres, progressbars, chevrons or repeated 'Daarna' labels.
+19. NowNextGuideView remains behind deferred import.
 
 Development must not choose alternatives locally. A future retune requires new owner-approved evidence and an update to this source of truth.
 
@@ -687,6 +793,11 @@ Do not treat these current/prototype runtime values as canonical:
 - layout that changes a channel row's height when programme availability/title length changes;
 - 30-minute-only rail navigation;
 - rail time labels without positional whole/half-hour and quarter-hour hairlines;
+- generic low-contrast `border` as the rail-tick colour;
+- a fixed 48-pt one-line shared Guide presentation row at fontScale >1.35;
+- a fixed 52-pt one-row Nu & Straks reference/utilities context at fontScale >1.35;
+- automatic stacked time-above-title following layout for every fontScale >1.35;
+- centring all three following content bands identically so visible rhythm simply mirrors 44/48-pt touch geometry;
 - visible `Referentietijd` caption;
 - visible reference-programme `tot HH:MM` metadata;
 - default 72-pt reference block / 8-pt transition calibration;

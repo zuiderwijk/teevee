@@ -11,15 +11,25 @@ Doel: chronologisch, begrijpelijk overzicht van substantiële milestones, verifi
 
 ---
 
-## 21 september 2026 — PR #96 reconciled to owner-approved Nu & Straks refinement
+## 21 september 2026 — Nu & Straks physical accessibility refinement canonical via PR #100
 
-Open runtime PR #96 is reconciled with canonical `main` `03c420bb461583029db6f91b4e17593922297494`, preserving the merged PR #97 design/spec refinement and PR #98 project-state/DEVLOG updates. The previous PR #96 calibration is no longer the runtime candidate where PR #97 superseded it.
+The owner accepted the targeted refinement derived from physical iPhone rejection of PR #96 exact head `32db9459d265e8546c7137baf82e623f015ad652`. Design/spec PR #100 merged with exact design head `d2ece22771b35f369d40e58a51f8b85ffb461933`; merge commit `319e3caad758d0d7b511f2a01180ad91847a293f`. Post-merge docs/design CI #695 is green.
 
-Runtime now follows the refined production baseline: **15-minute** browse targets, **92/96/100** DST-aware rail targets, **48-pt** quarter-hour snap targets, visible labels only on whole/half hours, **10-pt** major versus **6-pt** quarter hairlines, and a stronger **2×12-pt** selected/current marker. Live `Nu` remains the exact actual instant/minute while browse settle commits a quarter-hour reference. The visible `Referentietijd` caption and reference-programme `tot HH:MM` copy are removed; full start/end/current semantics remain in accessibility and Programme Detail.
+The refinement remains narrow. Rail ticks keep their 1-pt geometry but move from generic `border` to a dedicated `railTick` semantic: light `#80807A`, dark `#72726B`, major opacity 1.00 and quarter opacity 0.78. Larger-text shared Guide tabs become 64 pt / max two lines above fontScale 1.35 while retaining the 1.20 compact-label cap. Nu & Straks reference/utilities become an 88-pt 40+48 two-lane context above 1.35, producing a 140-pt persistent accessibility functional stack. Following programmes above 1.35 now use an inline time+title, maximum-two-line composition; stacked time-above-title is reserved for the extreme fontScale >2.0 plus programme-width <180 pt fallback. The three following touch targets remain independent 44/48 minimums, while visible content is clustered #1 bottom / #2 centre / #3 top to tighten perceived rhythm.
 
-Default density is now the owner-approved **64-pt** reference block, **4-pt** reference→following transition, directly adjacent 44-pt iOS / 48-dp Android following targets and **216-pt iOS / 228-dp Android** normal channel rows. The >1.35 stacked Dynamic Type path remains content-safe. Existing accepted architecture remains intact: 06:00 television-day semantics, shared Guide shell, 104-pt persistent functional stack, native rail fling/settle ownership without secondary `scrollTo()`, stable vertical context, three following slots, mounted Programme Detail round-trip, established-catalogue outage behaviour, fixture/hosted continuity, Reduce Motion, themes, deferred `NowNextGuideView` loading and Expo Router route-tree test isolation.
+The shared presentation-tab accessibility rule also updates the Per-zender canonical shell geometry above fontScale 1.35, without changing its 52-pt temporal context or product/content model.
 
-Deterministic coverage has been recalibrated to the new quarter-hour rail and compact density contract while retaining all prior interaction/data/startup regressions. **Volgende stap:** exact-head CI on the reconciled PR #96 candidate; when green, return the exact head to Lead for re-review and restart the full physical iPhone validation from clean launch. Independent QA remains after physical PASS only.
+**Next step:** Development updates the existing PR #96 against the PR #100 canonical baseline, including deterministic tests for the new railTick, responsive shared shell and larger-text/density rules. Physical iPhone acceptance remains paused until Lead accepts the new exact runtime head for another physical pass; Independent QA remains after physical PASS.
+
+---
+
+## 21 september 2026 — Nu & Straks physical candidate not accepted
+
+Runtime PR #96 was successfully reconciled to the PR #97 canonical baseline and reached exact head `32db9459d265e8546c7137baf82e623f015ad652`. Exact-head CI #691 was green with 62 test files / 424 tests, exports and native/config checks. Lead opened the physical iPhone gate.
+
+Physical review did **not** accept this candidate. Dark mode as a whole is accepted, but three targeted issues remain: time-rail major/quarter hairlines are physically too low-contrast (especially dark mode); large-text/Dynamic Type composition produces material chrome truncation and excessive following-row growth; and the three following programmes still read visually too loose even though the runtime already meets the current 44/48 minimum-target and zero-extra-gap numeric spec.
+
+This is therefore classified as a canonical refinement, not an ordinary implementation miss. Physical validation, Independent QA and merge of PR #96 remain paused. Next step is targeted Design / UX refinement of rail-tick contrast, large-text composition and visual density while preserving independent minimum touch targets and the rest of the accepted Nu & Straks interaction model.
 
 ---
 
