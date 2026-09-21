@@ -54,6 +54,7 @@ Semantic categories:
 - rail positional tick (`railTick`), separate from generic separators where physical navigation marks need stronger contrast;
 - accent/interactive;
 - current/reference-time indicator;
+- `onCurrentTime` for readable text rendered directly on a current-time marker.
 - programme states;
 - success/warning/error;
 - focus/pressed/disabled.
@@ -138,6 +139,8 @@ Exact canonical assets and state semantics are defined by `design/current/guide/
 ### Totaal
 This is the densest presentation because spatial geometry itself communicates schedule information.
 
+Exact production implementation authority: `docs/TOTAAL_VISUAL_CONVERGENCE.md`.
+
 Accepted production visual language:
 - one continuous open timeline canvas; no permanent rounded/fill programme cards;
 - programme title carries the primary hierarchy; do not add genres or artwork;
@@ -150,7 +153,22 @@ Accepted production visual language:
 - dark mode preserves the same open hierarchy rather than substituting filled dark cards;
 - bottom navigation uses the same shared app-shell treatment as Per zender.
 
-Exact typography, row height, rail width/logo box, tick contrast and current-time-marker dimensions remain production-spec calibrations rather than global design-system tokens until physically validated.
+Frozen Totaal calibration:
+- shared GuideChrome **100 pt standard / 116 pt above fontScale 1.35**;
+- day + `Nu` context **52 pt**;
+- time axis **44 pt**;
+- persistent functional stack **96 pt**;
+- isolated native collapse **56 pt**, visual compensation **44/60 pt**, Reduce Motion switch **28 pt**;
+- channel rail **84 pt base** with responsive substantive fallback width;
+- logo optical box max **52×40 pt**;
+- schedule row **76 pt base** with deterministic Dynamic-Type growth;
+- programme title **15/19 Medium**, actual-current **15/19 Semibold**, secondary time **13/18 Regular**;
+- horizontal scale **3 pt/min base**, responsive with font scale while preserving exact real-time geometry;
+- 15-minute axis positions, :00/:30 labels and unlabeled :15/:45 ticks;
+- current-time marker **46×20 pt** with **6×4 pt** notch;
+- programme frame width is full real duration; visual separators never shorten duration geometry.
+
+Totaal marker text uses semantic `onCurrentTime`: light **#000000**, dark **#10100F**. Other theme surfaces keep the existing shared tokens.
 
 ### Per zender
 Use an open vertical schedule, not a card stack. Keep the sticky horizontal channel-logo strip visually grouped with temporal controls while giving programme content clearer separation: **4 pt rail→utilities** in expanded/rest, then **24 pt utilities→schedule**. Horizontal schedule swipe changes channel; no decorative previous/next arrows are required when gesture behaviour and logo strip make navigation understandable.
