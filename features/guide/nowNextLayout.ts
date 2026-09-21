@@ -8,10 +8,13 @@ export const NOW_NEXT_VISUAL_METRICS = {
   functionalStackHeight: 104,
   collapseDistance: 56,
   reduceMotionSwitchOffset: 28,
-  timeSlotWidth: 76,
+  timeSlotWidth: 48,
   timeSlotHeight: 48,
+  railTickWidth: 1,
+  majorRailTickHeight: 10,
+  quarterRailTickHeight: 6,
   referenceMarkerWidth: 2,
-  referenceMarkerHeight: 8,
+  referenceMarkerHeight: 12,
   shortcutVisibleHeight: 36,
   shortcutGap: 8,
   shortcutRadius: 18,
@@ -28,24 +31,19 @@ export const NOW_NEXT_VISUAL_METRICS = {
   programmeColumnX: 100,
   programmeRightInset: 24,
   channelTopPadding: 8,
-  referenceProgrammeMinHeight: 72,
-  referenceToFollowingGap: 8,
+  referenceProgrammeMinHeight: 64,
+  referenceToFollowingGap: 4,
   channelBottomPadding: 8,
   followingTimeWidth: 52,
   followingTimeTitleGap: 8,
   followingStackedGap: 3,
   followingStackedPaddingY: 6,
-  baseRowHeightIos: 228,
-  baseRowHeightAndroid: 240,
+  baseRowHeightIos: 216,
+  baseRowHeightAndroid: 228,
   bottomClearance: 16,
 } as const;
 
 export const NOW_NEXT_TYPOGRAPHY = {
-  referenceCaption: {
-    fontFamily: TEEVEE_FONT_FAMILIES.medium,
-    fontSize: 11,
-    lineHeight: 14,
-  },
   referenceTime: {
     fontFamily: TEEVEE_FONT_FAMILIES.semibold,
     fontSize: 18,
@@ -110,11 +108,19 @@ export function nowNextMinimumTouchTarget(platform: string) {
 export function nowNextReferenceBlockHeight(fontScale: number) {
   const scale = normalizedFontScale(fontScale);
   const contentSafe = Math.ceil(
-    NOW_NEXT_TYPOGRAPHY.referenceTitle.lineHeight * scale * 2 +
-      3 +
-      NOW_NEXT_TYPOGRAPHY.referenceMeta.lineHeight * scale,
+    NOW_NEXT_TYPOGRAPHY.referenceTitle.lineHeight * scale * 2,
   );
   return Math.max(NOW_NEXT_VISUAL_METRICS.referenceProgrammeMinHeight, contentSafe);
+}
+
+export function nowNextRailSlotPresentation(index: number) {
+  const major = Math.max(0, Math.trunc(index)) % 2 === 0;
+  return {
+    showsLabel: major,
+    tickHeight: major
+      ? NOW_NEXT_VISUAL_METRICS.majorRailTickHeight
+      : NOW_NEXT_VISUAL_METRICS.quarterRailTickHeight,
+  } as const;
 }
 
 export function nowNextFollowingSlotHeight(
