@@ -10,6 +10,8 @@ import { TOTAAL_TYPOGRAPHY } from './totaal';
 import { deriveTotaalMicroProgrammeMetadata } from './totaalMicroProgrammes';
 import { TotaalMicroProgrammeOverlay } from './TotaalMicroProgrammeOverlay';
 
+const themeState = vi.hoisted(() => ({ text: '#111' }));
+
 type StyleValue = Record<string, unknown> | StyleValue[] | null | undefined;
 type MockProps = {
   children?: ReactNode;
@@ -56,6 +58,8 @@ vi.mock('react-native', () => {
         'data-important-for-accessibility': importantForAccessibility,
         'data-width': resolved.width,
         'data-opacity': resolved.opacity,
+        'data-left': resolved.left,
+        'data-background': resolved.backgroundColor,
         'data-translate-x': transform?.[0]?.translateX,
       },
       children,
@@ -90,7 +94,7 @@ vi.mock('react-native-reanimated', async () => {
 
 vi.mock('@/theme/useTeeveeTheme', () => ({
   useTeeveeTheme: () => ({
-    colors: { text: '#111' },
+    colors: { text: themeState.text },
   }),
 }));
 
@@ -113,6 +117,7 @@ let root: Root;
 let container: HTMLDivElement;
 
 beforeEach(() => {
+  themeState.text = '#111';
   vi.stubGlobal('IS_REACT_ACT_ENVIRONMENT', true);
   container = document.createElement('div');
   document.body.appendChild(container);
@@ -176,11 +181,59 @@ describe('TotaalMicroProgrammeOverlay', () => {
     expect(rootOverlay?.dataset.accessibilityHidden).toBe('true');
     expect(rootOverlay?.dataset.importantForAccessibility).toBe('no-hide-descendants');
     expect(title?.dataset.opacity).toBe('1');
+    expect(title?.dataset.pointerEvents).toBe('none');
+    expect(title?.dataset.accessible).toBe('false');
+    expect(title?.dataset.left).toBe('6');
+    expect(title?.dataset.background).toBeUndefined();
     expect(ellipses?.dataset.opacity).toBe('0');
     expect(title?.querySelector('span')?.dataset.fontFamily).toBe(
       TOTAAL_TYPOGRAPHY.programmeTitle.fontFamily,
     );
     expect(title?.querySelector('span')?.dataset.color).toBe('#111');
+  });
+
+  it('uses the semantic primary text token in dark appearance without changing run geometry', async () => {
+    themeState.text = '#f5f5f2';
+    const programmes = [
+      programme('a', 0),
+      programme('b', 5),
+      programme('c', 10),
+      programme('d', 15),
+    ];
+    const run = deriveTotaalMicroProgrammeMetadata(
+      new Map([['one', programmes]]),
+      3,
+      1,
+    ).repeatedTitleRuns[0]!;
+
+    await act(async () => {
+      root.render(
+        <TotaalMicroProgrammeOverlay
+          runs={[run]}
+          channelRowIndex={new Map([['one', 0]])}
+          windowStartMs={START}
+          minuteWidth={3}
+          rowHeight={76}
+          viewportWidth={300}
+          nowMs={START + 2 * 60_000}
+          scrollX={sharedValue(0)}
+          scrollY={sharedValue(0)}
+          contentTopInset={100}
+          collapseProgress={sharedValue(0)}
+          fontScale={1}
+          reduceMotion={false}
+        />,
+      );
+    });
+
+    const title = container.querySelector<HTMLElement>(
+      `[data-testid="totaal-repeated-title-${run.id}"]`,
+    );
+    expect(title?.dataset.width).toBeUndefined();
+    expect(title?.querySelector('span')?.dataset.color).toBe('#f5f5f2');
+    expect(title?.querySelector('span')?.dataset.fontFamily).toBe(
+      TOTAAL_TYPOGRAPHY.programmeTitle.fontFamily,
+    );
   });
 
   it('falls back to per-cell ellipses when only a sub-threshold run remainder is visible', async () => {
