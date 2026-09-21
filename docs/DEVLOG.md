@@ -11,6 +11,22 @@ Doel: chronologisch, begrijpelijk overzicht van substantiële milestones, verifi
 
 ---
 
+## 21 september 2026 — Totaal production visual convergence implemented in PR #114
+
+Development converged Totaal to the owner-approved production visual specification without replacing the proven 2D Guide architecture. The runtime now uses the shared GuideChrome/tabs, the fixed native schedule viewport with 56-pt collapse isolation, a persistent 52-pt day/Nu context plus 44-pt time axis, the 84-pt base logo-first channel rail and deterministic Dynamic Type geometry. Programme cells keep exact start/duration geometry at 3.00 pt/min base scale with zero permanent gap, no card fill/radius/progress treatment, Instrument Sans title hierarchy, current `tot HH:MM` copy, restrained temporal boundaries and semantic pressed-only elevation.
+
+The time axis now uses real 15-minute positions with labels at :00/:30, production railTick hierarchy, a compact exact-minute current-time marker and no full-height now line. Totaal has an explicit ChannelIdentity presentation so successful logos do not duplicate visible names while retained channels remain accessible when programme actions are absent. Partial-left readability, viewport-bucketed programme windowing with 1.5-viewport overscan, D-2..D+7/06:00 television-day semantics, wall-clock-preserving day changes, Nu, native inertia/bounce/directional lock, fixture-first→hosted continuity and Programme Detail round-trip remain on the existing architecture.
+
+A small runtime support refactor isolates Totaal programme rendering into `TotaalProgrammeCell` and adds deterministic helpers for collapse geometry, vertical channel-context preservation, unavailable-state presentation, axis/marker calibration and width-aware content degradation. No new dependency, provider/cache/Search/Tonight scope or parallel Guide implementation was introduced.
+
+Deterministic coverage was expanded for geometry, no-gap programme widths, 15-minute axis hierarchy, typography/current copy, width degradation, current marker, logo/accessibility behaviour, 100/116 shared chrome with 196/212→96 collapse endpoints, compact date wording, 120-pt viewed-time anchor, television-day/day-switch/Nu semantics, Dynamic Type formulas, partial-left readability, programme windowing, Detail/runtime continuity, themes and shared Guide tabs. Implementation head `6b52d3bfaf935bbf8e6c8c16b7b2f7a18e99d9a4` passed PR CI #797: npm ci, strict TypeScript, lint, **66 test files / 475 tests**, and iOS/Android/web Expo export. The runtime-ui classifier correctly skipped the native/config Android compile job because no native/config files changed.
+
+Physical acceptance is intentionally not claimed here. The next gate is Lead exact-head review, then physical iPhone validation of expanded/condensed composition, horizontal/vertical gesture ownership, current-time marker, logo rail, Dynamic Type, light/dark appearance, day/Nu transitions and Programme Detail round-trip before Independent QA.
+
+**Next step:** Lead exact-head review of PR #114; do not merge before the prescribed physical iPhone and Independent QA gates pass.
+
+---
+
 ## 21 september 2026 — Totaal production visual specification canonical via PR #112
 
 The owner-approved Totaal visual baseline from PR #110 is now converted into an implementation-ready production specification. PR #112 exact design/spec head `6c68202bce249c8eff2e198699e2a582bce55ede` passed docs-only CI #783 and merged as `4638f0574c60f3ad2f0d723c55a9291c9aff1e29`; post-merge CI #784 succeeded. The earlier one-file PR #111 review proposal was superseded and closed unmerged.
