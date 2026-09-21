@@ -12,6 +12,7 @@ import {
   totaalChannelIdentityAccessible,
   totaalChromeCondensedForProgress,
   totaalCollapseProgressForScrollOffset,
+  totaalComposedContentTop,
   totaalCurrentTimeMarkerBodyX,
   totaalNativeOffsetForScheduleOffset,
   totaalProgrammeContentPresentation,
@@ -23,6 +24,7 @@ import {
   totaalStableScrollGeometry,
   totaalStableScrollVisuals,
   totaalTimeAxisTickPresentation,
+  totaalVerticalContentExtent,
 } from './totaal';
 
 const channel: Channel = {
@@ -180,6 +182,23 @@ describe('Totaal production calibration', () => {
     expect(totaalChromeCondensedForProgress(0.5)).toBe(true);
   });
 
+  it('keeps the expanded endpoint until 28 pt then lands on the exact settled endpoint with Reduce Motion', () => {
+    expect(totaalComposedContentTop(27.99, 1, true)).toBeCloseTo(100, 8);
+    expect(totaalComposedContentTop(28, 1, true)).toBe(0);
+    expect(totaalComposedContentTop(48, 1, true)).toBe(-20);
+
+    expect(totaalComposedContentTop(27.99, 1.5, true)).toBeCloseTo(116, 8);
+    expect(totaalComposedContentTop(28, 1.5, true)).toBe(0);
+    expect(totaalComposedContentTop(48, 1.5, true)).toBe(-20);
+  });
+
+  it('keeps semantic channel offset coherent across the Reduce Motion switch', () => {
+    expect(totaalScheduleOffsetForNativeOffset(27.99, 0, true)).toBe(0);
+    expect(totaalScheduleOffsetForNativeOffset(28, 1, true)).toBe(0);
+    expect(totaalScheduleOffsetForNativeOffset(48, 1, true)).toBe(20);
+    expect(totaalNativeOffsetForScheduleOffset(20, 1, true)).toBe(48);
+  });
+
   it('preserves semantic channel context without snapping when catalogue order is unchanged', () => {
     const previous = ['npo-1', 'npo-2', 'rtl-4'];
     expect(totaalChannelIdForScheduleOffset(previous, 76, 98)).toBe('npo-2');
@@ -220,6 +239,14 @@ describe('Totaal production calibration', () => {
       overlayTop: 59,
       scheduleViewportTop: 155,
     });
+  });
+
+  it('adds exactly 16 pt trailing schedule clearance after the final channel row', () => {
+    expect(TOTAAL_VISUAL_METRICS.scheduleBottomClearance).toBe(16);
+    const guideHeight = 3 * 76;
+    const extent = totaalVerticalContentExtent(100, guideHeight);
+    expect(extent).toBe(100 + guideHeight + 16);
+    expect(extent - (100 + guideHeight)).toBe(16);
   });
 
   it('retains established channel identity without fabricating programmes while a selected day is unavailable', () => {
