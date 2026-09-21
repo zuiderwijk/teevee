@@ -9,19 +9,17 @@ import {
   nowNextChannelRowLayout,
   nowNextChromeCondensedForProgress,
   nowNextCollapseProgressForScrollOffset,
-  nowNextFollowingContentBias,
   nowNextFollowingLayoutMode,
   nowNextFollowingSlotHeight,
-  nowNextFollowingStackedContentPadding,
   nowNextFollowingTargetRects,
   nowNextMinimumTouchTarget,
   nowNextProgrammePressBackgroundColor,
   nowNextRailSlotPresentation,
   nowNextReferenceBlockHeight,
-  nowNextReferenceContextLayout,
   nowNextSafeAreaLayout,
   nowNextStableScrollGeometry,
   nowNextStableScrollVisuals,
+  nowNextUtilityContextLayout,
 } from './nowNextLayout';
 
 describe('Nu & Straks deterministic channel geometry', () => {
@@ -34,6 +32,22 @@ describe('Nu & Straks deterministic channel geometry', () => {
     expect(missingDataRow).toEqual(longTitleRow);
   });
 
+  it('locks the final reference/following density without changing row totals', () => {
+    expect(NOW_NEXT_VISUAL_METRICS.referenceProgrammeMinHeight).toBe(64);
+    expect(NOW_NEXT_VISUAL_METRICS.referenceToFollowingGap).toBe(0);
+    expect(NOW_NEXT_VISUAL_METRICS.channelBottomPadding).toBe(12);
+    expect(nowNextChannelRowLayout('ios', 1, 266)).toMatchObject({
+      referenceHeight: 64,
+      followingHeight: 44,
+      rowHeight: 216,
+    });
+    expect(nowNextChannelRowLayout('android', 1, 266)).toMatchObject({
+      referenceHeight: 64,
+      followingHeight: 48,
+      rowHeight: 228,
+    });
+  });
+
   it('locks the canonical horizontal programme and rail geometry', () => {
     expect(
       NOW_NEXT_VISUAL_METRICS.channelLeftInset +
@@ -44,12 +58,10 @@ describe('Nu & Straks deterministic channel geometry', () => {
     expect(NOW_NEXT_VISUAL_METRICS.programmeRightInset).toBe(24);
     expect(NOW_NEXT_VISUAL_METRICS.timeSlotWidth).toBe(48);
     expect(NOW_NEXT_VISUAL_METRICS.timeSlotHeight).toBe(48);
-    expect(NOW_NEXT_VISUAL_METRICS.referenceProgrammeMinHeight).toBe(64);
-    expect(NOW_NEXT_VISUAL_METRICS.referenceToFollowingGap).toBe(4);
     expect(NOW_NEXT_VISUAL_METRICS.bottomClearance).toBe(16);
   });
 
-  it('renders only whole/half labels and applies canonical railTick hierarchy', () => {
+  it('renders only whole/half labels and applies the frozen railTick hierarchy', () => {
     expect(nowNextRailSlotPresentation(0)).toEqual({
       showsLabel: true,
       tickHeight: 10,
@@ -71,6 +83,8 @@ describe('Nu & Straks deterministic channel geometry', () => {
       tickOpacity: 0.78,
     });
     expect(NOW_NEXT_VISUAL_METRICS.railTickWidth).toBe(1);
+    expect(NOW_NEXT_VISUAL_METRICS.railBaselineHeight).toBe(1);
+    expect(NOW_NEXT_VISUAL_METRICS.railBaselineOpacity).toBe(0.78);
     expect(NOW_NEXT_VISUAL_METRICS.referenceMarkerWidth).toBe(2);
     expect(NOW_NEXT_VISUAL_METRICS.referenceMarkerHeight).toBe(12);
     expect(lightTheme.colors.railTick).toBe('#80807A');
@@ -96,7 +110,7 @@ describe('Nu & Straks deterministic channel geometry', () => {
     expect(nowNextFollowingSlotHeight('android', 1, 266)).toBe(48);
   });
 
-  it('uses standard, inline-accessibility and extreme fallback modes only at their canonical boundaries', () => {
+  it('preserves the physically accepted larger-text following modes', () => {
     expect(nowNextFollowingLayoutMode(1, 160)).toBe('standard');
     expect(nowNextFollowingLayoutMode(1.35, 160)).toBe('standard');
     expect(nowNextFollowingLayoutMode(1.351, 160)).toBe('inline-accessibility');
@@ -105,7 +119,7 @@ describe('Nu & Straks deterministic channel geometry', () => {
     expect(nowNextFollowingLayoutMode(2.01, 179.9)).toBe('stacked-fallback');
   });
 
-  it('uses the exact canonical larger-text height formulas', () => {
+  it('preserves the exact canonical larger-text height formulas', () => {
     expect(nowNextFollowingSlotHeight('ios', 1.8, 220)).toBe(80);
     expect(nowNextFollowingSlotHeight('android', 1.8, 220)).toBe(80);
     expect(nowNextFollowingSlotHeight('ios', 2.1, 179)).toBe(137);
@@ -126,93 +140,40 @@ describe('Nu & Straks deterministic channel geometry', () => {
       }
     },
   );
-
-  it('keeps extreme fallback bias inside the canonical 12-pt padding budget', () => {
-    const bottomBias = nowNextFollowingContentBias(0);
-    const centreBias = nowNextFollowingContentBias(1);
-    const topBias = nowNextFollowingContentBias(2);
-    const bottomStack = nowNextFollowingStackedContentPadding(0);
-    const centreStack = nowNextFollowingStackedContentPadding(1);
-    const topStack = nowNextFollowingStackedContentPadding(2);
-
-    expect(
-      bottomStack.paddingTop +
-        bottomStack.paddingBottom +
-        bottomBias.paddingBottom,
-    ).toBe(12);
-    expect(
-      centreStack.paddingTop +
-        centreStack.paddingBottom +
-        centreBias.paddingTop +
-        centreBias.paddingBottom,
-    ).toBe(12);
-    expect(
-      topStack.paddingTop + topStack.paddingBottom + topBias.paddingTop,
-    ).toBe(12);
-
-    const scale = 2.1;
-    const targetHeight = nowNextFollowingSlotHeight('ios', scale, 179);
-    const visibleContentHeight = Math.ceil(18 * scale + 3 + 40 * scale);
-    expect(targetHeight - visibleContentHeight).toBeGreaterThanOrEqual(12);
-  });
-
-  it('biases visible following content without changing or escaping target geometry', () => {
-    expect(nowNextFollowingContentBias(0)).toEqual({
-      justifyContent: 'flex-end',
-      paddingTop: 0,
-      paddingBottom: 2,
-    });
-    expect(nowNextFollowingContentBias(1)).toEqual({
-      justifyContent: 'center',
-      paddingTop: 0,
-      paddingBottom: 0,
-    });
-    expect(nowNextFollowingContentBias(2)).toEqual({
-      justifyContent: 'flex-start',
-      paddingTop: 2,
-      paddingBottom: 0,
-    });
-
-    const targets = nowNextFollowingTargetRects('ios', 1, 266);
-    expect(targets[0]!.height).toBe(44);
-    expect(targets[1]!.height).toBe(44);
-    expect(targets[2]!.height).toBe(44);
-  });
 });
 
-describe('Nu & Straks responsive shared-shell geometry', () => {
-  it('uses 52+52 standard and 88+52 accessibility functional stacks', () => {
-    expect(nowNextReferenceContextLayout(1.35)).toEqual({
-      mode: 'horizontal',
+describe('Nu & Straks final shared-shell geometry', () => {
+  it('uses one 52-pt utility context and a 104-pt persistent stack at every font scale', () => {
+    expect(nowNextUtilityContextLayout()).toEqual({
       height: 52,
-      referenceLaneHeight: 52,
-      utilitiesLaneHeight: 52,
       functionalStackHeight: 104,
     });
-    expect(nowNextReferenceContextLayout(1.351)).toEqual({
-      mode: 'two-lane',
-      height: 88,
-      referenceLaneHeight: 40,
-      utilitiesLaneHeight: 48,
-      functionalStackHeight: 140,
-    });
+    expect(NOW_NEXT_VISUAL_METRICS.utilityContextHeight).toBe(52);
+    expect(NOW_NEXT_VISUAL_METRICS.timeRailHeight).toBe(52);
+    expect(NOW_NEXT_VISUAL_METRICS.functionalStackHeight).toBe(104);
+    expect(NOW_NEXT_VISUAL_METRICS).not.toHaveProperty(
+      'accessibilityReferenceContextHeight',
+    );
+    expect(NOW_NEXT_VISUAL_METRICS).not.toHaveProperty(
+      'accessibilityFunctionalStackHeight',
+    );
   });
 
-  it('keeps native collapse at 56 while compensation becomes 44 standard / 60 accessibility', () => {
+  it('keeps native collapse at 56 with 44/60 responsive GuideChrome compensation', () => {
     expect(NOW_NEXT_STABLE_SCROLL_GEOMETRY).toEqual({
       viewportTop: 104,
       contentTopInset: 100,
       scrollCompensation: 44,
     });
-    expect(nowNextStableScrollGeometry(1.351)).toEqual({
-      viewportTop: 140,
+    expect(nowNextStableScrollGeometry(1.8)).toEqual({
+      viewportTop: 104,
       contentTopInset: 116,
       scrollCompensation: 60,
     });
     expect(NOW_NEXT_VISUAL_METRICS.collapseDistance).toBe(56);
   });
 
-  it('resolves standard and accessibility rest/condensed overlay endpoints', () => {
+  it('resolves canonical 204/104 standard and 220/104 Larger Text overlay endpoints', () => {
     expect(nowNextStableScrollVisuals(0, 1)).toEqual({
       guideChromeHeight: 100,
       overlayBottom: 204,
@@ -225,30 +186,27 @@ describe('Nu & Straks responsive shared-shell geometry', () => {
     });
     expect(nowNextStableScrollVisuals(0, 1.8)).toEqual({
       guideChromeHeight: 116,
-      overlayBottom: 256,
+      overlayBottom: 220,
       contentTranslateY: 0,
     });
     expect(nowNextStableScrollVisuals(1, 1.8)).toEqual({
       guideChromeHeight: 0,
-      overlayBottom: 140,
+      overlayBottom: 104,
       contentTranslateY: -60,
     });
   });
 
   it.each([
-    [1, 104, 100],
-    [1.8, 140, 116],
+    [1, 100],
+    [1.8, 116],
   ] as const)(
     'keeps the channel anchor aligned throughout collapse at fontScale %s',
-    (fontScale, viewportTop, contentTopInset) => {
+    (fontScale, contentTopInset) => {
       for (const y of [0, 14, 28, 42, 56]) {
         const progress = nowNextCollapseProgressForScrollOffset(y, false);
         const visuals = nowNextStableScrollVisuals(progress, fontScale);
         const rowTop =
-          viewportTop +
-          contentTopInset -
-          y +
-          visuals.contentTranslateY;
+          104 + contentTopInset - y + visuals.contentTranslateY;
         expect(rowTop).toBeCloseTo(visuals.overlayBottom, 6);
       }
     },
@@ -261,14 +219,14 @@ describe('Nu & Straks responsive shared-shell geometry', () => {
     expect(nowNextChromeCondensedForProgress(0.5)).toBe(true);
   });
 
-  it('applies the top safe area exactly once for both responsive stacks', () => {
+  it('applies the top safe area exactly once with the same 104-pt viewport at all scales', () => {
     expect(nowNextSafeAreaLayout(59, 1)).toEqual({
       overlayTop: 59,
       channelViewportTop: 163,
     });
     expect(nowNextSafeAreaLayout(59, 1.8)).toEqual({
       overlayTop: 59,
-      channelViewportTop: 199,
+      channelViewportTop: 163,
     });
   });
 });
