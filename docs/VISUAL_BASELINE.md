@@ -87,6 +87,7 @@ These assets **supersede only stale date/day controls**. For Per-zender they ame
 Status: **ACCEPTED — PRODUCTION VISUAL DESIGN OWNER-APPROVED**
 Owner-approved production direction: 2026-09-21
 Detailed manifest: `design/current/guide/TOTAAL.md`
+Production specification candidate: `docs/TOTAAL_VISUAL_CONVERGENCE.md` — owner review required before merge/Development
 
 Canonical visual asset in the user's Teevee Library:
 - light/dark + expanded/condensed board: `/Teevee/Totaal production design - light dark expanded condensed.png`
@@ -110,7 +111,7 @@ Accepted production visual characteristics:
 - bottom navigation follows the same shared app-shell structure as Per zender;
 - Instrument Sans; substantive programme content remains Dynamic-Type aware.
 
-The visual board is canonical for composition/hierarchy, not literal schedule content or every generated glyph. Exact broadcaster assets come from the canonical logo registry; exact bottom-nav glyphs come from the shared app shell. Exact typography metrics, row height, rail width/logo box, separator/tick contrast, current-time-marker dimensions and collapse calibration are intentionally left for the production specification and physical validation.
+The visual board is canonical for composition/hierarchy, not literal schedule content or every generated glyph. Exact broadcaster assets come from the canonical logo registry; exact bottom-nav glyphs come from the shared app shell. Exact typography, row/rail/time-axis geometry, separator/tick hierarchy, current-time marker, Dynamic Type and collapse calibration are proposed in `docs/TOTAAL_VISUAL_CONVERGENCE.md` and become canonical only after owner acceptance + merge; physical device validation remains the implementation gate.
 
 Frozen interaction/data/performance mechanics remain unchanged: 2D time/channel navigation, real duration geometry, native inertia/bounce/directional lock, partial-left readability, D-2..D+7 + 06:00 television day, Programme Detail round-trip and bounded horizontal programme windowing.
 
