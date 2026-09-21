@@ -657,12 +657,12 @@ export const GuideView = memo(function GuideView({
         scrollX.value = plan.authoritativeX;
       }
 
-      horizontalRef.current?.scrollTo({
+      horizontalRef.current?.scrollTo?.({
         x: plan.scheduleTargetX,
         animated,
       });
       if (plan.axisTargetX !== null) {
-        axisRef.current?.scrollTo({
+        axisRef.current?.scrollTo?.({
           x: plan.axisTargetX,
           animated: false,
         });
