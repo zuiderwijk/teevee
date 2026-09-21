@@ -99,11 +99,12 @@ afterEach(async () => {
   vi.unstubAllGlobals();
 });
 
-function renderTabs() {
+function renderTabs(loadingPresentation: 'now-next' | null = null) {
   return act(async () =>
     root.render(
       <GuidePresentationSelector
         selected="now-next"
+        loadingPresentation={loadingPresentation}
         onSelect={vi.fn()}
         variant="tabs"
       />,
@@ -138,6 +139,23 @@ describe('GuidePresentationSelector responsive tabs', () => {
           label.getAttribute('data-max-font-size-multiplier') === '1.2',
       ),
     ).toBe(true);
+  });
+
+  it('keeps the full Nu & Straks tab label while its deferred module is loading', async () => {
+    viewport.fontScale = 1.8;
+    await renderTabs('now-next');
+
+    const labels = [...container.querySelectorAll('span')];
+    expect(labels.map((label) => label.textContent)).toEqual([
+      'Totaal',
+      'Per zender',
+      'Nu & Straks',
+    ]);
+
+    const nowNext = container.querySelector<HTMLButtonElement>(
+      '[data-testid="guide-presentation-now-next"]',
+    );
+    expect(nowNext?.disabled).toBe(true);
   });
 
   it('uses 64-pt max-two-line tabs above fontScale 1.35 without abbreviating labels', async () => {
