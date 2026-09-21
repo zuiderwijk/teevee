@@ -1,4 +1,13 @@
-import { type ReactNode, memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import {
+  type ReactNode,
+  memo,
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 import {
   Platform,
   Pressable,
@@ -38,9 +47,10 @@ import {
   guideTotaalDayForViewedAnchor,
 } from './guideDaySelection';
 import {
+  guideInitialProgrammeViewport,
   guideProgrammeTimeWindow,
   guideProgrammeWindowBucket,
-  guideProgrammaticScrollPrealignmentX,
+  guideProgrammaticNavigationPolicy,
   windowGuideProgrammesByChannel,
 } from './guideProgrammeWindow';
 import { formatGuideTime, indexGuideProgrammesByChannel } from './guideRenderData';
@@ -116,23 +126,36 @@ export const GuideView = memo(function GuideView({
     [effectiveFontScale],
   );
 
+  const programmeViewportWidth = Math.max(0, windowWidth - layout.channelWidth);
+  const nowMs = useGuideClock();
+  const [visibleDayStartMs, setVisibleDayStartMs] = useState(() =>
+    guideTotaalDayForViewedAnchor(nowMs),
+  );
+  const [windowStartDayMs, setWindowStartDayMs] = useState(visibleDayStartMs);
+  const [initialHorizontalViewport] = useState(() =>
+    guideInitialProgrammeViewport(
+      Math.max(
+        0,
+        timeToX(nowMs, windowStartDayMs, layout.minuteWidth) -
+          TOTAAL_VISUAL_METRICS.viewedTimeAnchor,
+      ),
+      programmeViewportWidth,
+    ),
+  );
+
   const horizontalRef = useAnimatedRef<Animated.ScrollView>();
   const axisRef = useAnimatedRef<Animated.ScrollView>();
   const verticalRef = useRef<ScrollView>(null);
   const viewedChannelIdRef = useRef<string | null>(null);
   const previousChannelIdsRef = useRef<readonly string[]>([]);
   const previousRowHeightRef = useRef(layout.rowHeight);
-  const scrollX = useSharedValue(0);
+  const viewedTimeRef = useRef(nowMs);
+  const scrollX = useSharedValue(initialHorizontalViewport.viewportX);
   const horizontalOwnership = useSharedValue(totaalHorizontalIdleOwnership());
   const horizontalProgrammaticTargetX = useSharedValue(-1);
   const scrollY = useSharedValue(0);
   const collapseProgress = useSharedValue(0);
-  const nowMs = useGuideClock();
-  const viewedTimeRef = useRef(nowMs);
-  const [visibleDayStartMs, setVisibleDayStartMs] = useState(() =>
-    guideTotaalDayForViewedAnchor(nowMs),
-  );
-  const [windowStartDayMs, setWindowStartDayMs] = useState(visibleDayStartMs);
+
   const followingDayStartMs = guideTelevisionDayStart(windowStartDayMs, 1);
   const includeFollowingDay = guideDayIsSelectable(followingDayStartMs, nowMs);
   const selectedWindow = useSelectedGuideDaySchedule(
@@ -199,8 +222,15 @@ export const GuideView = memo(function GuideView({
   );
 
   const pendingTargetTimeRef = useRef<number | null>(null);
+  const pendingDirectHorizontalPositionRef = useRef<{
+    viewportX: number;
+    targetBucket: number;
+  } | null>(null);
   const [condensed, setCondensed] = useState(false);
-  const [programmeWindowBucket, setProgrammeWindowBucket] = useState(0);
+  const programmeWindowBucketRef = useRef(initialHorizontalViewport.bucket);
+  const [programmeWindowBucket, setProgrammeWindowBucket] = useState(
+    initialHorizontalViewport.bucket,
+  );
 
   const windowStart = windowStartDayMs;
   const windowEnd = useMemo(
@@ -221,7 +251,6 @@ export const GuideView = memo(function GuideView({
   const nowX = timeToX(nowMs, windowStart, layout.minuteWidth);
   const nowInWindow = nowMs >= windowStart && nowMs < windowEnd;
   const guideHeight = runtimeFixture.channels.length * layout.rowHeight;
-  const programmeViewportWidth = Math.max(0, windowWidth - layout.channelWidth);
   const programmeTimeWindow = useMemo(
     () =>
       guideProgrammeTimeWindow({
@@ -277,6 +306,7 @@ export const GuideView = memo(function GuideView({
   }, []);
 
   const syncProgrammeWindowBucket = useCallback((nextBucket: number) => {
+    programmeWindowBucketRef.current = nextBucket;
     setProgrammeWindowBucket((current) => (current === nextBucket ? current : nextBucket));
   }, []);
 
@@ -617,23 +647,12 @@ export const GuideView = memo(function GuideView({
     };
   }, [nowInWindow, nowX, programmeViewportWidth]);
 
-  const scrollToTime = useCallback(
-    (timeMs: number, animated: boolean) => {
-      const target = clampTime(timeMs, windowStart, windowEnd);
-      commitViewedTime(target);
-      const x = Math.max(
-        0,
-        timeToX(target, windowStart, layout.minuteWidth) - TOTAAL_VISUAL_METRICS.viewedTimeAnchor,
-      );
-      const prealignmentX = guideProgrammaticScrollPrealignmentX(x, animated);
-      const plan = totaalHorizontalProgrammaticPlan(x, animated);
-
+  const applyHorizontalViewport = useCallback(
+    (viewportX: number, animated: boolean) => {
+      const plan = totaalHorizontalProgrammaticPlan(viewportX, animated);
       horizontalOwnership.value = plan.ownership;
-      horizontalProgrammaticTargetX.value = animated ? x : -1;
+      horizontalProgrammaticTargetX.value = animated ? viewportX : -1;
 
-      if (prealignmentX !== null) {
-        syncProgrammeWindowForViewportX(prealignmentX);
-      }
       if (plan.authoritativeX !== null) {
         scrollX.value = plan.authoritativeX;
       }
@@ -651,16 +670,63 @@ export const GuideView = memo(function GuideView({
     },
     [
       axisRef,
-      commitViewedTime,
       horizontalOwnership,
       horizontalProgrammaticTargetX,
-      layout.minuteWidth,
+      horizontalRef,
       scrollX,
-      syncProgrammeWindowForViewportX,
+    ],
+  );
+
+  const scrollToTime = useCallback(
+    (timeMs: number, requestedAnimated: boolean) => {
+      const target = clampTime(timeMs, windowStart, windowEnd);
+      commitViewedTime(target);
+      const targetViewportX = Math.max(
+        0,
+        timeToX(target, windowStart, layout.minuteWidth) -
+          TOTAAL_VISUAL_METRICS.viewedTimeAnchor,
+      );
+      const navigation = guideProgrammaticNavigationPolicy(
+        scrollX.value,
+        targetViewportX,
+        programmeViewportWidth,
+        requestedAnimated,
+      );
+
+      if (
+        navigation.prealignmentX !== null &&
+        programmeWindowBucketRef.current !== navigation.targetBucket
+      ) {
+        pendingDirectHorizontalPositionRef.current = {
+          viewportX: navigation.targetViewportX,
+          targetBucket: navigation.targetBucket,
+        };
+        syncProgrammeWindowBucket(navigation.targetBucket);
+        return;
+      }
+
+      pendingDirectHorizontalPositionRef.current = null;
+      applyHorizontalViewport(navigation.targetViewportX, navigation.animated);
+    },
+    [
+      applyHorizontalViewport,
+      commitViewedTime,
+      layout.minuteWidth,
+      programmeViewportWidth,
+      scrollX,
+      syncProgrammeWindowBucket,
       windowEnd,
       windowStart,
     ],
   );
+
+  useLayoutEffect(() => {
+    const pending = pendingDirectHorizontalPositionRef.current;
+    if (!pending || pending.targetBucket !== programmeWindowBucket) return;
+
+    pendingDirectHorizontalPositionRef.current = null;
+    applyHorizontalViewport(pending.viewportX, false);
+  }, [applyHorizontalViewport, programmeWindowBucket]);
 
   useEffect(() => {
     if (guideDayIsSelectable(windowStartDayMs, nowMs)) return;
@@ -689,13 +755,12 @@ export const GuideView = memo(function GuideView({
     windowStartDayMs,
   ]);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     const target =
       pendingTargetTimeRef.current ??
       guideTargetForDaySelection(viewedTimeRef.current, windowStartDayMs).timeMs;
     pendingTargetTimeRef.current = null;
-    const frame = requestAnimationFrame(() => scrollToTime(target, false));
-    return () => cancelAnimationFrame(frame);
+    scrollToTime(target, false);
   }, [scrollToTime, windowStartDayMs]);
 
   const changeDay = useCallback(

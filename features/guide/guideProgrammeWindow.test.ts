@@ -4,8 +4,10 @@ import type { Programme } from '@/data/domain/epg';
 
 import {
   GUIDE_PROGRAMME_WINDOW_OVERSCAN_VIEWPORTS,
+  guideInitialProgrammeViewport,
   guideProgrammeTimeWindow,
   guideProgrammeWindowBucket,
+  guideProgrammaticNavigationPolicy,
   guideProgrammaticScrollPrealignmentX,
   windowGuideProgrammesByChannel,
 } from './guideProgrammeWindow';
@@ -23,6 +25,58 @@ describe('Totaal programme windowing', () => {
     expect(guideProgrammeWindowBucket(300, VIEWPORT_WIDTH)).toBe(1);
     expect(guideProgrammeWindowBucket(899, VIEWPORT_WIDTH)).toBe(2);
     expect(guideProgrammeWindowBucket(-40, VIEWPORT_WIDTH)).toBe(0);
+  });
+
+  it('starts the first visible Totaal frame with the target viewport and target bucket authoritative', () => {
+    expect(guideInitialProgrammeViewport(1980, VIEWPORT_WIDTH)).toEqual({
+      viewportX: 1980,
+      bucket: 6,
+    });
+    expect(guideInitialProgrammeViewport(-50, VIEWPORT_WIDTH)).toEqual({
+      viewportX: 0,
+      bucket: 0,
+    });
+  });
+
+  it('keeps short programmatic travel animated while it stays inside source-window overscan', () => {
+    const policy = guideProgrammaticNavigationPolicy(
+      600,
+      600 + VIEWPORT_WIDTH * GUIDE_PROGRAMME_WINDOW_OVERSCAN_VIEWPORTS,
+      VIEWPORT_WIDTH,
+      true,
+    );
+
+    expect(policy.animated).toBe(true);
+    expect(policy.prealignmentX).toBeNull();
+  });
+
+  it('prealigns and jumps directly when programmatic travel exceeds source-window overscan', () => {
+    const targetViewportX =
+      600 + VIEWPORT_WIDTH * GUIDE_PROGRAMME_WINDOW_OVERSCAN_VIEWPORTS + 1;
+    const policy = guideProgrammaticNavigationPolicy(
+      600,
+      targetViewportX,
+      VIEWPORT_WIDTH,
+      true,
+    );
+
+    expect(policy).toEqual({
+      animated: false,
+      targetViewportX,
+      targetBucket: guideProgrammeWindowBucket(targetViewportX, VIEWPORT_WIDTH),
+      prealignmentX: targetViewportX,
+    });
+  });
+
+  it('keeps explicitly non-animated positioning direct even for a nearby target', () => {
+    expect(
+      guideProgrammaticNavigationPolicy(600, 650, VIEWPORT_WIDTH, false),
+    ).toEqual({
+      animated: false,
+      targetViewportX: 650,
+      targetBucket: 2,
+      prealignmentX: 650,
+    });
   });
 
   it('keeps animated programmatic ownership on the native viewport until real scroll offsets cross buckets', () => {
