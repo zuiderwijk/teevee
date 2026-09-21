@@ -57,6 +57,7 @@ import { TimeAxisTick } from './TimeAxisTick';
 import {
   resolveTotaalSchedulePresentation,
   TOTAAL_VISUAL_METRICS,
+  totaalChannelIdentityAccessible,
   totaalChromeCondensedForProgress,
   totaalCollapseProgressForScrollOffset,
   totaalCurrentTimeMarkerBodyX,
@@ -830,8 +831,8 @@ export const GuideView = memo(function GuideView({
             ]}
           >
             {runtimeFixture.channels.map((channel, rowIndex) => {
-              const channelHasProgrammeActions =
-                (programmesByChannel.get(channel.id)?.length ?? 0) > 0;
+              const programmeActionCount =
+                programmesByChannel.get(channel.id)?.length ?? 0;
               return (
                 <View
                   key={channel.id}
@@ -849,7 +850,7 @@ export const GuideView = memo(function GuideView({
                     textColor={theme.colors.text}
                     mutedTextColor={theme.colors.textSecondary}
                     variant="totaal"
-                    accessible={!channelHasProgrammeActions}
+                    accessible={totaalChannelIdentityAccessible(programmeActionCount)}
                   />
                 </View>
               );

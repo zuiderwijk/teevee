@@ -46,13 +46,22 @@ export function edgeBoundaryXs(
   programmes: Programme[],
   windowStartMs: number,
   minuteWidth: number,
+  visibleWidthThresholds: readonly number[] = [],
 ): number[] {
   const boundaries = new Set<number>();
 
   for (const programme of programmes) {
     const frame = programmeFrame(programme, windowStartMs, minuteWidth);
     boundaries.add(frame.left);
-    boundaries.add(frame.left + frame.width);
+    const frameEnd = frame.left + frame.width;
+    boundaries.add(frameEnd);
+    for (const threshold of visibleWidthThresholds) {
+      if (!Number.isFinite(threshold) || threshold <= 0) continue;
+      const thresholdX = frameEnd - threshold;
+      if (thresholdX > frame.left && thresholdX < frameEnd) {
+        boundaries.add(thresholdX);
+      }
+    }
   }
 
   return [...boundaries].sort((left, right) => left - right);

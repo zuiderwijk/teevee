@@ -50,8 +50,19 @@ describe('edgeReadableProgramme', () => {
 });
 
 describe('edge boundary switching', () => {
-  it('builds sorted visual start/end boundaries including the programme gap', () => {
+  it('builds sorted real programme start/end boundaries without a synthetic card gap', () => {
     expect(edgeBoundaryXs([programme, nextProgramme], windowStart, 3)).toEqual([0, 180, 270]);
+  });
+
+  it('adds only content-degradation crossings that lie inside a real programme frame', () => {
+    expect(
+      edgeBoundaryXs(
+        [programme, nextProgramme],
+        windowStart,
+        3,
+        [64, 126],
+      ),
+    ).toEqual([0, 54, 116, 180, 206, 270]);
   });
 
   it('changes buckets only after crossing a boundary, not merely reaching it', () => {

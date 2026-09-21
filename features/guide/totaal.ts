@@ -194,6 +194,10 @@ export function totaalProgrammeSecondaryLabel(
   return current ? `tot ${endLabel}` : startLabel;
 }
 
+export function totaalChannelIdentityAccessible(programmeActionCount: number) {
+  return !Number.isFinite(programmeActionCount) || programmeActionCount <= 0;
+}
+
 export function totaalProgrammePressBackgroundColor(
   pressed: boolean,
   surfaceElevated: string,

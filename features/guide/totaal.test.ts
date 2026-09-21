@@ -8,6 +8,7 @@ import {
   TOTAAL_TYPOGRAPHY,
   TOTAAL_VISUAL_METRICS,
   resolveTotaalSchedulePresentation,
+  totaalChannelIdentityAccessible,
   totaalChromeCondensedForProgress,
   totaalCollapseProgressForScrollOffset,
   totaalCurrentTimeMarkerBodyX,
@@ -101,6 +102,12 @@ describe('Totaal production calibration', () => {
       showSecondary: true,
       mode: 'comfortable',
     });
+  });
+
+  it('keeps channel identity non-redundant in normal rows but accessible without programme actions', () => {
+    expect(totaalChannelIdentityAccessible(3)).toBe(false);
+    expect(totaalChannelIdentityAccessible(1)).toBe(false);
+    expect(totaalChannelIdentityAccessible(0)).toBe(true);
   });
 
   it('keeps permanent programme background transparent and pressed state semantic', () => {

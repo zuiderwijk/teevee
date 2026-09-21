@@ -21,7 +21,6 @@ import {
   type EdgeReadableProgramme,
 } from './edgeReadability';
 import { formatGuideTime } from './guideRenderData';
-import { programmeFrame } from './geometry';
 import type { GuideLayoutMetrics } from './layout';
 import {
   TOTAAL_PROGRAMME_READABILITY_THRESHOLDS,
@@ -178,26 +177,16 @@ export function EdgeReadabilityOverlay({
     return map;
   }, [fixture]);
 
-  const boundaries = useMemo(() => {
-    const boundarySet = new Set(
+  const boundaries = useMemo(
+    () =>
       edgeBoundaryXs(
         fixture.programmes,
         windowStart,
         layout.minuteWidth,
+        TOTAAL_PROGRAMME_READABILITY_THRESHOLDS,
       ),
-    );
-    for (const programme of fixture.programmes) {
-      const frame = programmeFrame(programme, windowStart, layout.minuteWidth);
-      const frameEnd = frame.left + frame.width;
-      for (const threshold of TOTAAL_PROGRAMME_READABILITY_THRESHOLDS) {
-        const thresholdX = frameEnd - threshold;
-        if (thresholdX > frame.left && thresholdX < frameEnd) {
-          boundarySet.add(thresholdX);
-        }
-      }
-    }
-    return [...boundarySet].sort((left, right) => left - right);
-  }, [fixture.programmes, layout.minuteWidth, windowStart]);
+    [fixture.programmes, layout.minuteWidth, windowStart],
+  );
 
   const buildEdges = useCallback(
     (viewportX: number) =>
