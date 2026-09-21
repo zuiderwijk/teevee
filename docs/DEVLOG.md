@@ -11,6 +11,16 @@ Doel: chronologisch, begrijpelijk overzicht van substantiële milestones, verifi
 
 ---
 
+## 21 september 2026 — Nu & Straks final standard-text following density micro-refinement
+
+Physical iPhone review of PR #96 exact head `3cafcc6bee996eb1923549bb3b65fdabb6666262` accepted the final reference-time removal, rail-bottom treatment, dark mode, Larger Text, 15-minute rail/ticks, Nu/Primetime, vertical channel-position preservation and the tightened reference→first-following transition. One visual issue remained: at standard text, following #1→#2 and #2→#3 still read too loose because each one-line content block was centred in its independent 44-pt iOS / 48-dp Android Pressable.
+
+The interaction geometry remains frozen. The final owner correction changes only standard-text content placement inside the existing targets. With `visibleSlack = followingTargetHeight - 20`, following #1 uses top offset `round(slack × 2/3)`, #2 uses `round(slack × 1/3)`, and #3 uses 0. This produces approximately 16-pt visible gaps on iOS and 18–19-dp gaps on Android while retaining separate, adjacent, non-overlapping targets and keeping all visible content inside its own Pressable. Larger Text (>1.35) remains physically accepted and vertically centred.
+
+**Next step:** update the existing PR #96 only for this standard-text content-placement rule, add deterministic coverage, run exact-head CI and perform one final focused physical iPhone recheck. Independent QA remains blocked until physical PASS.
+
+---
+
 ## 21 september 2026 — Nu & Straks final physical composition canonical via PR #102
 
 Physical iPhone review of PR #96 exact head `224e7df1d47dbb5c42694cb36469de673496e7d5` produced a partial PASS: dark mode, Larger Text/Dynamic Type composition, vertical channel-position preservation, Nu, Primetime, 15-minute navigation and the vertical rail ticks were accepted. Three presentation details remained open and were owner-refined in design/spec PR #102.
