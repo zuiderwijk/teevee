@@ -11,6 +11,20 @@ Doel: chronologisch, begrijpelijk overzicht van substantiële milestones, verifi
 
 ---
 
+## 21 september 2026 — Nu & Straks final physical composition canonical via PR #102
+
+Physical iPhone review of PR #96 exact head `224e7df1d47dbb5c42694cb36469de673496e7d5` produced a partial PASS: dark mode, Larger Text/Dynamic Type composition, vertical channel-position preservation, Nu, Primetime, 15-minute navigation and the vertical rail ticks were accepted. Three presentation details remained open and were owner-refined in design/spec PR #102.
+
+PR #102 merged with exact design head `67a15db6e7f325247ca49bc95e34811449cd1729`; merge commit `778445acbf8f71b1383fdede4178f861e4074f62`. Post-merge docs/design CI #725 is green.
+
+The final refinement removes all standalone visible reference-time copy in both live and browse modes and deletes the obsolete Larger Text reference-time lane. Nu & Straks now keeps a 52-pt utility-only Primetime/Nu context plus 52-pt rail = **104 pt persistent functional stack at every font scale**. Shared Guide Larger Text tabs remain unchanged at 64 pt/max two lines. The rail-bottom line becomes **exactly 1 pt semantic `railTick` @0.78**, matching the approved quarter-hour ticks rather than generic `border`/platform hairline treatment.
+
+Reference/following density is tightened without changing hit geometry: reference minimum stays 64 pt but the title is bottom-aligned with 0 pt extra bottom inset; the dedicated transition becomes **0 pt**; channel bottom padding becomes **12 pt** so normal rows remain **216 pt iOS / 228 dp Android**; all three following visible content blocks are centred while the Pressables stay adjacent, independent and minimum 44/48. The already physically accepted Larger Text following layout/formulas remain frozen.
+
+**Next step:** Development reconciles the existing PR #96 against this final canonical baseline, updates deterministic tests/PR body/DEVLOG and produces a new exact-head CI candidate. Then Lead re-review and focused physical iPhone revalidation; Independent QA only after physical PASS.
+
+---
+
 ## 21 september 2026 — Nu & Straks physical accessibility refinement canonical via PR #100
 
 The owner accepted the targeted refinement derived from physical iPhone rejection of PR #96 exact head `32db9459d265e8546c7137baf82e623f015ad652`. Design/spec PR #100 merged with exact design head `d2ece22771b35f369d40e58a51f8b85ffb461933`; merge commit `319e3caad758d0d7b511f2a01180ad91847a293f`. Post-merge docs/design CI #695 is green.
