@@ -43,6 +43,7 @@ type EdgeReadabilityOverlayProps = {
   contentTopInset: number;
   collapseProgress: SharedValue<number>;
   fontScale: number;
+  reduceMotion: boolean;
 };
 
 type EdgeRowProps = {
@@ -165,6 +166,7 @@ export function EdgeReadabilityOverlay({
   contentTopInset,
   collapseProgress,
   fontScale,
+  reduceMotion,
 }: EdgeReadabilityOverlayProps) {
   const theme = useTeeveeTheme();
 
@@ -241,6 +243,8 @@ export function EdgeReadabilityOverlay({
           totaalStableScrollVisuals(
             collapseProgress.value,
             fontScale,
+            scrollY.value,
+            reduceMotion,
           ).contentTranslateY,
       },
     ],
