@@ -1,316 +1,1140 @@
-# Teevee — Totaal visual convergence handoff
+# Teevee — Totaal production visual convergence
 
-Status: **DRAFT / INACTIVE — STALE PRE-APPROVAL HANDOFF; DO NOT IMPLEMENT**
-Date: 2026-09-15
-Owner-approved visual baseline: 2026-09-21
+Status: **OWNER-APPROVED DESIGN → IMPLEMENTATION SPECIFICATION**
+Date: 2026-09-21
+Canonical visual approved: 2026-09-21
 
-The Totaal production visual design is now owner-approved and canonical in `design/current/guide/TOTAAL.md` + `docs/VISUAL_BASELINE.md`. This older draft predates that approval and therefore remains inactive until it is rewritten against the accepted 21 September baseline.
+This document is the single production implementation handoff for the accepted **Totaal** Guide presentation. It replaces the stale pre-approval draft that previously occupied this path.
 
-## Purpose
+This is Accepted Design Refinement, not Design / UX Exploration. Development must implement this specification without reopening the accepted Totaal composition or changing the frozen Guide interaction/data architecture.
 
-Preserve the earlier candidate convergence thinking as historical implementation input **without authorizing runtime implementation**.
+## 1. Authority and source-of-truth order
 
-The visual-design exploration is now complete and owner-approved, but **this document has not yet been reconciled into the production implementation specification**. Do not start Development from this draft. The next design handoff is to rewrite/reactivate this file from the accepted Totaal baseline, freeze exact metrics/edge cases/acceptance criteria, merge that specification to `main`, and only then begin runtime visual convergence. Frozen interaction/data/performance mechanics remain binding.
+For Totaal production convergence, use this order:
 
-## Canonical visual references
+1. `docs/PROJECT_STATE.md`;
+2. `docs/PRODUCT.md`;
+3. `docs/UX.md`;
+4. `docs/VISUAL_BASELINE.md`;
+5. this document;
+6. `design/current/guide/TOTAAL.md`;
+7. `design/current/guide/GUIDE_DAY_SELECTOR.md`;
+8. `design/current/TYPOGRAPHY.md`;
+9. `docs/DESIGN_SYSTEM.md`;
+10. accepted ADRs, especially ADR 0007 and ADR 0008.
 
-Current owner-approved Totaal composition:
+Canonical visual:
 - `/Teevee/Totaal production design - light dark expanded condensed.png`
-  - file id: `file_00000000aafc8230b3218e6577a1d912`
-  - stable Library record: `libfile_1f6afbdcf8748191b5d524a7aad5e0df`
+- Library file id: `file_00000000aafc8230b3218e6577a1d912`
+- stable Library record: `libfile_1f6afbdcf8748191b5d524a7aad5e0df`
 
-The previous 13 September light/dark images are superseded as production references and remain historical exploration only.
+The visual board is authority for composition, hierarchy and overall visual language. Exact production metrics below supersede only the board details that were intentionally left open for production calibration.
 
-Accepted day selector and sticky state:
-- `/Teevee/Teevee Guide day selector - states and bottom sheet.png`
-  - file id: `file_00000000390c8210b76256621721592b`
-- `/Teevee/Teevee Guide day selector - sticky scroll behavior.png`
-  - file id: `file_00000000314481f69f6a34d18ece1c21`
+Runtime values are implementation evidence only. Existing prototype-era values do not become canonical merely because they are already coded.
 
-Important authority rule: the day-selector boards define only the approved day-selector and sticky/condensed behaviour. Their generated programme-grid styling is not authoritative where it conflicts with the canonical Totaal images. In particular, do **not** copy the full-height red line visible in those boards.
+## 2. Frozen product / interaction contracts
 
-## Current implementation: preserve versus converge
+Do not reopen in this increment:
 
-### Preserve exactly unless concrete physical regression evidence requires change
+- horizontal movement = time;
+- vertical movement = channels;
+- real programme start/duration determines horizontal geometry;
+- native inertia, bounce and directional lock;
+- proven partial-left programme-title/time-axis readability;
+- bounded horizontal programme windowing and conservative overscan;
+- D-2 through D+7 Guide horizon;
+- television day = 06:00 Europe/Amsterdam → 06:00 next local day;
+- midnight is not a Guide boundary;
+- shared bounded day selector + separate `Nu`;
+- Programme Detail opens directly;
+- Programme Detail round-trip preserves Totaal day/time/channel/scroll context;
+- fixture-first / hosted canonical runtime boundary;
+- provider-independent data architecture;
+- Instrument Sans;
+- Light / Dark / System;
+- substantive Dynamic Type;
+- shared bottom navigation;
+- physical Android validation may remain deferred until hardware exists.
 
-- horizontal movement remains time navigation;
-- vertical movement remains channel navigation;
-- real programme duration continues to determine horizontal geometry;
-- current native inertia, bounce and directional locking;
-- the proven partial-left-title/readability behaviour (`EdgeReadabilityOverlay` and related time-axis masking behaviour);
-- direct programme tap -> Programme Detail;
-- Programme Detail round-trip context;
-- deferred Nu & Straks loading architecture;
-- fixture-first / hosted-data runtime boundary;
-- current large-text geometry adaptation as a capability;
-- current semantic theme architecture and light/dark/system support.
+No second Totaal implementation, no new scroll engine, no alternate schedule model and no eager full-horizon payload are authorised.
 
-This task must not turn into gesture, data or navigation refactoring merely to achieve the visual target.
+## 3. Current runtime evidence: preserve vs supersede
 
-## Visual hierarchy
+### Preserve
 
-At rest, the Totaal surface should read in this order:
+The current Totaal implementation provides proven evidence for:
 
-1. shared Guide brand/shell context;
-2. Guide presentation selector, with `Totaal` selected;
-3. compact Guide day selector + separate `Nu` action;
-4. time axis with restrained current-time marker;
-5. open schedule grid with channel logos at left and programme typography aligned to real time;
-6. quiet stable bottom navigation.
+- 2D nested native scrolling;
+- native inertia/bounce/directional lock;
+- exact time→X mapping;
+- real-time current instant;
+- D-2..D+7 and 06:00-aware day targeting;
+- stable viewed-time anchor;
+- programme-window bucket ownership and overscan;
+- non-animated programme-window prealignment;
+- partial-left title readability;
+- Programme Detail direct open;
+- mounted Guide context through Programme Detail;
+- fixture-first / hosted replacement.
 
-When vertically scrolled, non-functional upper chrome condenses away. The persistent functional stack is:
+### Supersede
 
-1. date selector + `Nu`;
-2. time axis;
-3. schedule grid.
+The following current runtime treatments are not production authority:
 
-The channel identity rail remains spatially available with the grid.
+- standalone `TEEVEE / Gids` header;
+- floating bottom Guide-presentation pill;
+- Totaal using the older long `Vandaag · <datum>` copy;
+- visible `ZENDER` corner heading;
+- duplicate channel-name caption under a readable logo;
+- permanent rounded/fill programme cards;
+- in-cell progress bars;
+- full-height red current-time line;
+- 30-minute-only axis tick generation;
+- system-font programme styling;
+- strong whole-cell opacity press feedback;
+- normal-flow header removal driven by a binary scroll threshold;
+- the current fixed 2-pt subtraction from programme duration width as a visual gap.
 
-## Required convergence changes
+Development converges those details while retaining the underlying interaction/performance architecture.
 
-### 1. Shared Guide presentation selector
+## 4. Production composition
 
-The current floating bottom pill is not the accepted Totaal composition.
+### 4.1 Expanded / rest
 
-Target:
-- presentation selector is part of the upper Guide hierarchy, under the brand/header area;
-- treatments are primarily typographic and quiet rather than a floating segmented pill;
-- selected state is explicit, with restrained red/current emphasis consistent with the canonical Totaal reference;
-- `Totaal`, `Per zender`, `Nu & Straks` remain the same three presentations and keep their existing selection semantics;
-- the control remains accessible as a tablist/tab group and retains usable touch targets even when the visual treatment is text-led.
+From the top safe area downward:
 
-Because this selector is shared by all Guide presentations, implement it as shared shell/chrome rather than as a Totaal-only duplicate.
+1. shared Guide brand/action row;
+2. shared Guide presentation tabs, Totaal selected;
+3. Totaal day + `Nu` context;
+4. sticky time axis;
+5. open 2D schedule grid with logo-first channel rail;
+6. shared bottom navigation outside the Guide content viewport.
 
-### 2. Day selector
+There is no standalone `Gids` heading.
 
-Replace the prototype permanent `Vandaag` / `Morgen` buttons with the accepted `GUIDE_DAY_SELECTOR.md` pattern:
-- one compact typographic date control;
-- separate `Nu` action;
-- bounded D-2..D+7 bottom sheet;
-- preserve viewed wall-clock time when changing day where practical;
-- `Nu` restores both current day and actual current instant;
-- between 00:00 and 05:59 show the preceding television-day date without a misleading `Vandaag` label;
-- no unrestricted calendar, horizontal ten-day rail or previous/next-day arrows.
+There is no floating Guide-presentation selector at the bottom.
 
-Visual treatment should feel like part of the information hierarchy, not a prominent pill toolbar.
+### 4.2 Condensed / vertically scrolled
 
-### 3. Open programme grid — remove card treatment
+After the collapse settles:
 
-The current permanent filled/rounded programme blocks are superseded for Totaal.
+1. top safe area;
+2. day + `Nu` context;
+3. time axis;
+4. schedule/channel context.
 
-Target:
-- programme surfaces visually read as part of one open timeline canvas;
-- no permanent grey programme-card fill;
-- no rounded-card stacking;
-- use whitespace plus restrained row/temporal separators for structure;
-- real programme start/duration geometry remains unchanged;
-- pressed state may use a temporary, subtle opacity or transient surface feedback, but must not introduce a new permanent card language.
+The `tv.` mark, Search/secondary action row and Guide presentation tabs are fully gone from the functional stack.
 
-Do not change programme geometry merely to make the screenshot line up pixel-for-pixel.
+Returning naturally to the top restores the expanded hierarchy.
 
-### 4. Current programme treatment
+## 5. Exact vertical geometry
 
-Remove the in-cell progress bar from Totaal.
+### 5.1 Shared GuideChrome
 
-For a programme airing at the actual current instant:
-- title is primary;
-- useful secondary time copy is the end time, e.g. `tot 09:00`;
-- do not redundantly repeat its already-spatially-evident start time;
+Reuse the existing shared Guide metrics:
+
+- horizontal screen inset: **20 pt**;
+- brand top inset: **8 pt**;
+- brand mark box: **56 × 44 pt**;
+- presentation tabs: **48 pt / one line through fontScale 1.35**;
+- presentation tabs: **64 pt / maximum two lines above 1.35**;
+- compact tab-label cap: `maximumFontSizeMultiplier = 1.20`;
+- expanded GuideChrome height:
+  - **100 pt** through fontScale 1.35;
+  - **116 pt** above 1.35.
+
+Do not create a Totaal-only GuideChrome.
+
+### 5.2 Persistent Totaal functional stack
+
+The persistent stack is deliberately font-scale-stable compact chrome:
+
+- day + `Nu` context: **52 pt**;
+- time axis: **44 pt**;
+- total persistent functional stack: **96 pt**.
+
+This remains **96 pt at all supported font scales**. Programme content is substantive and scales independently; the compact temporal controls use the documented narrow cap.
+
+### 5.3 Expanded / condensed totals
+
+Excluding top safe area:
+
+Standard text, fontScale <=1.35:
+- expanded overlay bottom: **196 pt** = 100 GuideChrome + 52 context + 44 axis;
+- condensed overlay bottom: **96 pt**;
+- full visual contraction: **100 pt**.
+
+Larger Text, fontScale >1.35:
+- expanded overlay bottom: **212 pt** = 116 GuideChrome + 52 context + 44 axis;
+- condensed overlay bottom: **96 pt**;
+- full visual contraction: **116 pt**.
+
+### 5.4 Schedule native viewport
+
+The active vertical schedule ScrollView uses a fixed native viewport whose top is:
+
+`safeAreaTop + 96 pt`
+
+The viewport does **not** move while shared chrome visually collapses.
+
+At rest, schedule content reserves a top inset equal to the expanded GuideChrome:
+- **100 pt** standard;
+- **116 pt** Larger Text.
+
+The first visible schedule row therefore starts immediately below the expanded overlay without putting collapsing chrome in normal flow above the ScrollView.
+
+### 5.5 Bottom navigation and safe areas
+
+- top safe area is owned exactly once by the Guide screen;
+- bottom safe area / tab-bar geometry is owned by the shared Expo tab navigator;
+- Totaal does not add a second bottom safe-area inset;
+- the last schedule row must be able to scroll fully clear of the bottom navigation;
+- retain at least **16 pt** content clearance after the final row once the tab bar has taken its own space.
+
+## 6. Collapse architecture
+
+Totaal adopts the already proven fixed-native-viewport / collapse-isolation pattern. This is a shared architecture reuse, not a new scroll system.
+
+### 6.1 Normal motion
+
+- native collapse distance: **56 pt**;
+- `progress = clamp(nativeScrollY / 56, 0, 1)`;
+- disappearing GuideChrome opacity: `1 - progress`;
+- max upward chrome translation: **12 pt**;
+- no spring;
+- no scroll-direction hide/reveal behaviour.
+
+The active schedule ScrollView remains fixed below the 96-pt persistent stack.
+
+During the first 56 pt of native scroll:
+- standard visual compensation = **44 pt**;
+- Larger Text visual compensation = **60 pt**.
+
+Thus:
+- standard total contraction = 56 + 44 = **100 pt**;
+- Larger Text total contraction = 56 + 60 = **116 pt**.
+
+Visual schedule compensation is:
+- `-44 × progress` standard;
+- `-60 × progress` Larger Text.
+
+The row visible immediately below the sticky stack remains visually attached to that stack during collapse rather than jumping.
+
+### 6.2 Semantic vertical offset
+
+The first 56 native points are collapse ownership, not semantic channel progression.
+
+After collapse:
+
+`semanticScheduleY = max(0, nativeScrollY - 56)`
+
+Restoring a semantic channel position must apply the inverse conversion before setting native offset.
+
+Do not infer a time or channel from a normal-flow header height that is mutating during scroll.
+
+### 6.3 Reduce Motion
+
+With Reduce Motion:
+- use the same expanded and condensed endpoint geometry;
+- switch discretely at native schedule offset **28 pt**;
+- no interpolated opacity/translation is required;
+- user-driven native schedule scrolling remains native.
+
+### 6.4 Prohibited collapse implementation
+
+Do not reintroduce:
+
+`contentOffset → collapse → normal-flow sibling-height mutation → native offset compensation → new collapse input`
+
+Physical Per-zender evidence already proved that feedback topology can produce forward/back momentum oscillation. Totaal must use the isolated viewport pattern from the start.
+
+## 7. Day + Nu context
+
+### 7.1 Row geometry
+
+- row height: **52 pt**;
+- horizontal insets: **20 pt**;
+- date control leading;
+- `Nu` trailing;
+- internal control gap is flexible; `Nu` stays at the trailing inset;
+- vertical alignment: centred.
+
+### 7.2 Date control
+
+Use the shared `GuideDaySelector` interaction contract.
+
+Visible label:
+- **15/20 Instrument Sans Semibold**;
+- compact cap: **1.20**;
+- chevron: **14/16 Semibold**;
+- text→chevron gap: **6 pt**;
+- complete Pressable minimum: **48 pt high**.
+
+Canonical wording:
+
+From 06:00–23:59:
+- current television day: **`Vandaag`**;
+- next television day: **`Morgen`**;
+- no suffix after either;
+- other days: abbreviated weekday + date, e.g. **`Zo 20 sep`**.
+
+From 00:00–05:59:
+- all days use explicit abbreviated weekday + date;
+- no `Vandaag` or `Morgen`.
+
+The bounded sheet remains exactly D-2..D+7.
+
+### 7.3 Nu
+
+Totaal does not use `Nu` as a selected mode. The current-time marker already expresses actual Now spatially.
+
+`Nu` is an idempotent action: jump to the actual instant and its containing television day.
+
+Geometry:
+- visible control height: **36 pt**;
+- visible minimum width: **48 pt**;
+- effective touch target: minimum **44 pt iOS / 48 dp Android**;
+- horizontal padding: **12 pt**;
+- radius: **18 pt**;
+- outline: **1 pt semantic `border`**;
+- label: **14/18 Instrument Sans Semibold**;
+- compact cap: **1.20**.
+
+State:
+- enabled whenever the current instant can be targeted, which is normally always inside the product horizon;
+- no persistent selected fill;
+- pressed state uses semantic `surface`;
+- disabled is reserved for a true runtime inability to resolve the current target;
+- accessibility label: `Ga naar nu`.
+
+Pressing `Nu`:
+- selects the current television day;
+- moves the horizontal target to the exact actual instant;
+- preserves the current vertical channel position;
+- uses the existing bounded programme-window prealignment/native-scroll ownership.
+
+## 8. Time axis
+
+### 8.1 Geometry
+
+- axis height: **44 pt**;
+- starts at the programme viewport X after the channel rail;
+- channel-axis corner is blank: no `ZENDER` label;
+- axis background uses the same Guide canvas as the schedule;
+- bottom axis boundary: platform hairline using semantic `border`.
+
+Horizontal scale:
+
+`minuteWidth = 3 + 1.2 × (max(1, fontScale) - 1)`
+
+rounded to two decimals.
+
+Representative values:
+- 1.00 → **3.00 pt/min**;
+- 1.35 → **3.42 pt/min**;
+- 1.50 → **3.60 pt/min**;
+- 2.00 → **4.20 pt/min**;
+- 2.50 → **4.80 pt/min**.
+
+This retains the current proven readability strategy: Larger Text receives more horizontal programme space without changing real-time geometry.
+
+### 8.2 Tick rhythm
+
+Generate positions every **15 minutes**.
+
+Whole/half hours:
+- visible label;
+- vertical tick **1 × 10 pt**;
+- semantic `railTick`;
+- opacity **0.70**.
+
+Quarter hours (:15/:45):
+- no text label;
+- vertical tick **1 × 6 pt**;
+- semantic `railTick`;
+- opacity **0.45**.
+
+No additional 5-minute/10-minute raster.
+
+### 8.3 Time labels
+
+- text: **11/14 Instrument Sans Medium**;
+- tabular numerals where reliable;
+- compact cap: **1.20**;
+- label top inset: **6 pt**;
+- only :00/:30 render text.
+
+Time-label measuring width:
+
+`tickLabelWidth = round(72 + (minuteWidth - 3) × 30)`
+
+This preserves the existing left-edge masking calculation while allowing Larger Text horizontal expansion.
+
+### 8.4 Current-time marker
+
+Only actual Now uses the marker.
+
+Marker:
+- body: **46 × 20 pt**;
+- radius: **10 pt**;
+- horizontal internal padding: **6 pt**;
+- body bottom inset from axis bottom: **4 pt**;
+- centered notch: **6 pt wide × 4 pt high**;
+- notch point lands on the axis baseline at the exact current-time X;
+- background: semantic `currentTime`;
+- label: exact local time `HH:MM`;
+- label typography: **12/15 Instrument Sans Semibold**, tabular numerals;
+- label colour: semantic `onCurrentTime`.
+
+Production `onCurrentTime` token:
+- light: **#000000**;
+- dark: **#10100F**.
+
+The marker is decorative/spatial orientation in addition to programme accessibility semantics; it is not the only indication that a programme is current.
+
+### 8.5 Marker positioning / overlap
+
+- pointer/notch X always represents the exact actual instant;
+- body normally centres on the pointer;
+- within **4 pt** of the horizontal programme viewport edges, body may clamp inward while the notch remains anchored to true X;
+- if the pointer itself is outside the visible horizontal programme viewport, hide the marker rather than pinning it to an edge;
+- marker z-index is above axis labels/ticks and below modal/sheet chrome;
+- no red line continues through programme rows.
+
+### 8.6 Left-edge readability
+
+Keep the proven left-edge time-label masking:
+- do not allow a half-visible stale `08:30` label to remain under the fixed channel rail;
+- masking is visual only and does not change tick positions;
+- masking uses the axis canvas colour and same bottom boundary.
+
+## 9. Channel rail
+
+### 9.1 Width
+
+Totaal channel rail width follows:
+
+`round(84 + 28 × (max(1, fontScale) - 1))`
+
+Representative values:
+- 1.00 → **84 pt**;
+- 1.35 → **94 pt**;
+- 1.50 → **98 pt**;
+- 2.00 → **112 pt**.
+
+The widening is reserved for substantive fallback identity and does not scale logo artwork indefinitely.
+
+### 9.2 Logo-first identity
+
+Create/use an explicit Totaal presentation variant for `ChannelIdentity`; do not change Per-zender or Nu & Straks behaviour to satisfy Totaal.
+
+Readable logo:
+- optical box max **52 × 40 pt**;
+- resize mode: contain;
+- preserve source aspect ratio;
+- vertically centred in the channel row;
+- no visible channel-name caption below it;
+- no recolouring, stretching or fabricated tiles.
+
+Missing/unusable logo:
+- same rail geometry;
+- full available identity area;
+- **13/16 Instrument Sans Semibold** at base scale;
+- substantive scaling, no global cap;
+- maximum **2 lines**;
+- centred;
+- tail ellipsis only after two-line opportunity is exhausted.
+
+The complete `displayName` remains the accessibility label.
+
+### 9.3 Rail/schedule boundary
+
+- channel rail and schedule use the same semantic `background` canvas;
+- no separate card/sidebar fill;
+- one vertical platform hairline using semantic `border` may separate rail from programme viewport;
+- row separators align continuously across rail and schedule.
+
+## 10. Schedule row geometry
+
+### 10.1 Deterministic row height
+
+Base row height: **76 pt**.
+
+Responsive formula:
+
+`rowHeight = round(76 + 40 × (max(1, fontScale) - 1))`
+
+Representative values:
+- 1.00 → **76 pt**;
+- 1.10 → **80 pt**;
+- 1.35 → **90 pt**;
+- 1.50 → **96 pt**;
+- 2.00 → **116 pt**;
+- 2.50 → **136 pt**.
+
+The accepted board explicitly left 76 pt open for final calibration. Production freezes **76 pt** rather than compacting further: it preserves the open premium rhythm, accommodates title + useful time at default size and avoids premature density tuning before physical convergence.
+
+Every channel row uses the same height at a given font scale. Programme title length and programme duration never alter row height.
+
+### 10.2 Row separators
+
+- one row-bottom platform hairline;
+- semantic `border`;
+- runs across channel rail and programme area;
+- no doubled boundary at the rail split;
+- no alternating row fill.
+
+### 10.3 Programme horizontal geometry
+
+Programme X and width are derived only from real timestamps:
+
+`left = minutesBetween(dayWindowStart, programme.start) × minuteWidth`
+
+`width = max(1, minutesBetween(programme.start, programme.end) × minuteWidth)`
+
+Do **not** subtract a cosmetic programme gap from the duration width.
+
+Adjacent programme boundaries may be drawn as a line **inside/on the real end boundary**; they may not shorten either programme.
+
+This explicitly supersedes the current `GUIDE_PROGRAMME_GAP = 2` visual-width subtraction for Totaal.
+
+### 10.4 Programme boundary
+
+At a programme end:
+- one vertical platform hairline;
+- semantic `border`;
+- opacity **0.70**;
+- full row height;
+- no rounded gap;
+- one timestamp owns one boundary: do not draw two lines where adjacent programmes meet.
+
+No independent hourly grid is drawn through programme rows.
+
+## 11. Programme typography and content hierarchy
+
+### 11.1 Base typography
+
+Normal title:
+- **15/19 Instrument Sans Medium**;
+- semantic `text`.
+
+Actual-current title:
+- **15/19 Instrument Sans Semibold**;
+- same geometry; no size increase.
+
+Secondary time:
+- **13/18 Instrument Sans Regular**;
+- tabular numerals where reliable.
+
+Current programme time:
+- text = **`tot HH:MM`**;
+- semantic `textSecondary`.
+
+Future / historical non-current programme:
+- text = programme start `HH:MM`;
+- semantic `textMuted`.
+
+Historical programmes do not receive a special faded/past state.
+
+### 11.2 Cell padding
+
+Programme content is laid out inside the true frame.
+
+Standard/comfortable:
+- horizontal padding: **8 pt**;
+- vertical content allowance: **9 pt top + 9 pt bottom**;
+- title→time gap: **2 pt**.
+
+Compact:
+- horizontal padding: **4 pt**;
+- same row ownership;
+- no forced smaller title font.
+
+There are no card margins, rounded corners or per-cell outer gaps.
+
+### 11.3 Width-responsive content modes
+
+Let:
+
+`contentScale = max(1, fontScale)`
+
+and use the currently visible remainder of the programme when the left edge is clipped.
+
+#### Hidden visual content
+If visible width < `28 × contentScale`:
+- no visible title/time;
+- keep the exact programme frame and action semantics;
+- accessibility still exposes full programme information.
+
+#### Compact
+If visible width >= `28 × contentScale` and < `64 × contentScale`:
+- title only;
+- maximum 1 line;
+- no visible secondary time.
+
+#### Standard
+If visible width >= `64 × contentScale` and < `96 × contentScale`:
+- title maximum 1 line;
+- secondary time is allowed only when visible width >= `72 × contentScale` and vertical fit also succeeds.
+
+#### Comfortable
+If visible width >= `96 × contentScale`:
+- title maximum 2 lines;
+- secondary time is allowed when vertical fit succeeds.
+
+### 11.4 Vertical-fit degradation order
+
+Never shrink substantive programme text to retain metadata.
+
+Determine title lines from the width mode first. Then:
+
+1. preserve title;
+2. preserve the second title line in comfortable mode where row height permits;
+3. render secondary time only if the following fits:
+   `titleLineHeight × contentScale × titleLines + 2 + timeLineHeight × contentScale + 18 <= rowHeight`;
+4. if it does not fit, remove visible secondary time;
+5. never clip the title merely to keep time metadata.
+
+Full start/end times remain available in accessibility semantics and Programme Detail.
+
+## 12. Current programme
+
+A programme is current only when:
+
+`start <= actualNow < end`.
+
+Do not derive current state from selected day, last action or viewport location.
+
+Visible current treatment:
+- title changes Medium → **Semibold**;
+- secondary line changes to `tot HH:MM`;
 - no progress bar;
-- no special filled card is required.
+- no permanent current fill;
+- no border/radius/elevation change;
+- no `Nu bezig` badge.
 
-For non-current programme cells:
-- title remains primary;
-- show start time when space/density permits;
-- end time is normally unnecessary;
-- historical programmes use the same neutral non-live treatment; do not add a special "past" colour state.
+Accessibility label includes `nu bezig`.
 
-For very narrow cells, preserve the existing width-aware content degradation principle: title first, secondary time may disappear before the title does.
+If actual Now is outside the horizontally visible viewport, programme current semantics remain correct even though the compact current-time marker is hidden.
 
-### 5. Current-time indicator
+## 13. Programme pressed / focus state
 
-The canonical target is a compact red time marker on the time axis, including the actual current clock time when space permits.
+Programme action owns its exact real-time frame.
 
-Required:
-- no full-height red line through all channel rows;
-- no duplicate progress indication inside current cells;
-- the marker may include a small pointer/notch anchoring it to the axis;
-- the state cannot rely on red alone for accessibility; screen-reader programme labels still expose current status.
+Pressed:
+- temporary semantic `surface` fill over the full programme frame;
+- no radius;
+- no shadow;
+- no opacity-first treatment;
+- clear immediately on release, cancellation or gesture takeover.
 
-The compact marker should remain legible in both light and dark mode and must not obscure adjacent time labels.
+Keyboard/focus-capable environments:
+- visible focus treatment may use a 2-pt inset semantic `accent` outline;
+- must not alter frame geometry.
 
-### 6. Time axis
+## 14. Partial-left programme readability
 
-Keep the axis spatially stable and readable while horizontally browsing.
+Preserve the proven partial-left title behaviour.
 
-Target visual character:
-- light typography and hairline/tick structure rather than a heavy bar;
-- half-hour labels remain easy to scan;
-- minor ticks may be used where already supported without adding noise;
-- existing left-edge readability/masking behaviour remains intact;
-- time-axis layout must keep working with the larger-text geometry strategy.
+When the left viewport edge cuts through a programme:
+- programme frame remains at its true start/duration;
+- one pointer-events-none readability overlay may redraw the title inside the visible remainder;
+- overlay starts **8 pt** inside the programme viewport edge;
+- overlay background = semantic Guide `background`, not programme-card fill;
+- title uses the same current/non-current title weight;
+- maximum 1 visible overlay line;
+- secondary time is omitted in the overlay;
+- underlying programme remains the single interactive action;
+- overlay switches only when the left edge crosses a programme boundary, not on every scroll frame.
 
-### 7. Channel identity rail
+Do not duplicate accessibility nodes.
 
-The canonical Totaal rail is logo-first and visually open.
+## 15. Very short programmes and touch-target exception
 
-Target:
-- channel logos are the dominant visible identity;
-- do not show a permanent `ZENDER` heading if it adds chrome without utility;
-- when a readable logo exists, avoid making a small duplicate channel-name caption compete with it;
-- full channel identity remains available to accessibility APIs;
-- text-only fallback remains intentional and distinguishable, including at larger system text sizes;
-- preserve logo proportions and do not recolour/distort marks for layout consistency.
+Real programme duration is essential information and may create a visual frame narrower than the normal 44/48 touch recommendation.
 
-Any ChannelIdentity change must be checked against Per zender and Nu & Straks before being shared globally. If the required visual treatment differs by presentation, add an explicit presentation variant instead of regressing those accepted surfaces.
+Totaal must **not** solve this by:
+- widening the visible programme;
+- changing minute geometry;
+- overlapping neighbouring hitSlop;
+- assigning a neighbouring programme's visible area to the short programme.
 
-### 8. Separators and surfaces
+Contract:
+- the Pressable owns the exact programme frame;
+- frames that are >=44 pt iOS / >=48 dp Android naturally meet the platform target;
+- shorter spatial cells are an explicit essential-geometry exception;
+- they remain reachable through VoiceOver/TalkBack as independent programme actions;
+- no overlapping touch targets are permitted.
 
-Light mode:
-- near-white neutral canvas;
-- programme area should not read as a patchwork of grey cards;
-- use subtle neutral hairlines only where they improve temporal/channel orientation.
+Physical validation must include representative 5-, 10- and 15-minute programmes. If direct touch proves materially unusable despite the essential-geometry exception, that is an **OWNER DECISION REQUIRED** for a future interaction pattern; Development may not invent zoom, expansion or overlapping targets locally.
 
-Dark mode:
-- calm dark-anthracite canvas;
-- same open grid hierarchy as light mode;
-- avoid replacing light-mode grey cards with equally card-like dark blocks;
-- separators remain subordinate to text and channel marks.
+## 16. Dynamic Type / Larger Text
 
-Use semantic theme tokens. If existing `programme` / `programmeCurrent` tokens become unnecessary for Totaal after convergence, do not delete or globally redefine them without first checking other surfaces that may still use them.
+### 16.1 Compact chrome
 
-### 9. Brand/header condensation
+These controls use the existing **1.20** maximum multiplier:
+- Guide presentation tabs;
+- day selector label/chevron;
+- `Nu`;
+- time-axis labels;
+- current-time marker label.
 
-At the top of the Guide, non-functional brand/header chrome may be visible.
+The shared tabs still grow from 48→64 pt above fontScale 1.35 to avoid truncation.
 
-On vertical scroll:
-- it progressively condenses away with scroll position;
-- it does not behave like a news-app header that disappears/reappears based on scroll direction;
-- date + `Nu` + time axis remain persistently available;
-- returning to the top restores the full rest-state hierarchy naturally;
-- reduced-motion may use a simpler discrete state transition.
+The Totaal day row stays **52 pt** and axis stays **44 pt** because their capped content fits without truncation.
 
-Do not let sticky chrome cover programme content or the system safe area.
+### 16.2 Substantive content
 
-## Typography
+No global cap:
+- programme title;
+- programme secondary time;
+- channel fallback identity.
 
-- Use **Instrument Sans** as the accepted Teevee UI typeface, following `design/current/TYPOGRAPHY.md`; do not introduce Inter or another second sans-serif by default.
-- The Söhne-like family visible in historical canonical screenshots is superseded for family choice only; preserve the accepted hierarchy and composition.
-- Programme title hierarchy is more important than exact screenshot font size.
-- Secondary time text uses lower weight/contrast.
-- Avoid excessive boldness across every row; prefer Regular / Medium / Semibold as the normal hierarchy.
-- Preserve tabular-number behaviour for times where Instrument Sans/runtime support it reliably.
-- Verify exact font source/licence, bundled weights, startup loading/fallback and physical iOS/Android rendering before shipping; do not commit arbitrary font binaries.
+Responsive geometry comes from:
+- row-height formula in §10;
+- channel-width formula in §9;
+- minute-width formula in §8;
+- content modes/degradation in §11.
 
-## Larger system text
+Do not switch to a smaller programme typeface at Larger Text.
 
-The accepted screenshot density is not a reason to cap substantive text globally.
+### 16.3 Extreme accessibility fallback
 
-At larger text sizes:
-- row height and available text geometry may grow;
-- essential title information must not be clipped solely to preserve baseline density;
-- secondary time metadata may reduce/disappear before essential title information;
-- compact Guide/day controls may use only the already documented narrow scaling caps where needed;
-- text-only channel fallbacks must remain visually distinguishable;
-- sticky date/`Nu`/time context may become taller if necessary rather than shrinking text beyond legibility.
+At very high font scales:
+- continue the same deterministic formulas;
+- title may become the only visible programme content for many cells;
+- secondary time disappears before title;
+- narrow cells may have no visible copy but retain accessibility semantics;
+- never flatten programme duration or disable font scaling to recover screenshot density.
 
-Representative larger-text settings require physical validation.
+## 17. Gestures and ownership
 
-## Gestures and gesture conflicts
+Frozen:
+- horizontal gesture in programme/time area → time navigation;
+- vertical gesture in schedule → channel navigation;
+- directional lock remains;
+- programme tap → Programme Detail;
+- date selector tap → bounded bottom sheet;
+- `Nu` tap → current instant;
+- Guide presentation tab → presentation change;
+- bottom navigation remains independent.
 
-Do not reopen accepted mechanics:
-- horizontal gesture over schedule -> time;
-- vertical gesture -> channels;
-- directional lock remains active;
-- day selector opens only from its explicit touch target and must not create a competing horizontal gesture zone;
-- programme tap remains responsive immediately after momentum settles;
-- bottom-sheet gestures must not interfere with the mounted Guide state or force the Guide to remount.
+A diagonal gesture must not cause both horizontal time movement and vertical channel movement to commit semantic context simultaneously.
 
-## Programme Detail context
+Shared collapse reads the native vertical schedule offset but does not introduce a second competing pan recogniser.
 
-Opening Programme Detail must preserve:
-- active Totaal presentation;
+Programme press feedback must cancel cleanly when native scrolling takes ownership.
+
+## 18. Programme Detail round-trip
+
+Opening any Totaal programme leaves the Guide mounted.
+
+Closing Programme Detail restores exactly:
+- Guide presentation = Totaal;
 - selected television day;
-- horizontal time position;
-- vertical channel position.
+- exact viewed-time anchor;
+- horizontal native scroll position;
+- vertical semantic channel position;
+- collapse state implied by that vertical position;
+- current programme-window bucket/ownership.
 
-Closing detail returns to the same context. Visual convergence must not trade this away.
+Do not reset to `Nu`, top channel or 06:00 after closing Detail.
 
-## Loading / real-data / fallback states
+Personal-state changes in Programme Detail are not a reason to rebuild Totaal.
 
-The same Totaal visual rules apply whether content comes from:
-- deterministic fixture first frame;
-- hosted canonical real data;
-- offline/unavailable fallback.
+## 19. Date / 06:00 / DST behaviour
 
-A fixture -> hosted-data update must not flash back to the old card styling or reconstruct the Guide solely to apply the visual treatment.
+### 19.1 Continuous navigation
 
-## Accessibility
+- midnight is continuous;
+- crossing 00:00 does not change television-day context;
+- crossing **06:00** changes the visible selected television day only when the stable viewed-time anchor crosses the boundary;
+- a sliver of the following day appearing at the viewport edge is insufficient to switch the label.
 
-Minimum requirements:
-- every programme remains a meaningful button for VoiceOver/TalkBack with channel, title and time context;
-- current/live status is included semantically, not only through red;
-- Guide presentation selector remains semantically a tablist/tab group;
-- date selector exposes selected date and `Dag kiezen` semantics;
-- `Nu` exposes `Ga naar nu` semantics;
-- channel logos do not replace textual accessibility identity;
-- touch targets remain platform-appropriate;
-- contrast remains sufficient in light/dark/system;
-- reduced-motion is respected for header condensation and animated jumps.
+### 19.2 Day selection
 
-## Explicit non-goals
+Selecting another day:
+- preserves the viewed Amsterdam wall-clock time where practical;
+- uses the existing DST-aware nearest-practical mapping;
+- moves programme-window ownership before non-animated native repositioning when needed.
 
-Do not use this work to:
-- redesign Totaal gestures;
-- change the television-day boundary or horizon;
-- change Programme Detail scope;
-- change bottom-nav information architecture;
-- change provider/data architecture;
-- add artwork, genre labels or recommendations;
-- retune core timeline geometry solely for cosmetic matching;
-- replace current validated interaction code with a parallel Guide implementation.
+### 19.3 23-/25-hour days
 
-## Candidate implementation order — inactive until owner approval
+Timeline width derives from the real elapsed interval between local 06:00 boundaries.
 
-If the final accepted design retains these directions, the following sequence may minimise regression risk. It is **not authorized work yet**:
+Do not assume 24 hours.
 
-1. move/shared-style the Guide presentation selector into the accepted upper Guide shell while preserving selection/deferred-load semantics;
-2. integrate the already accepted Guide day selector in place of prototype day buttons;
-3. convert Totaal programme cells to open-grid styling without changing geometry/scroll architecture;
-4. replace progress/full-height-current-time treatment with the compact axis marker and correct time-copy hierarchy;
-5. refine channel rail presentation without breaking shared ChannelIdentity behaviour;
-6. implement/validate header condensation and sticky context;
-7. validate light/dark/system and representative larger-text settings;
-8. run the existing interaction/test/export/native checks and perform focused physical iPhone acceptance; Android remains a separate physical gate when a device is available.
+Tick positions and programme geometry use absolute timestamps; text labels use Europe/Amsterdam local time.
 
-## Candidate acceptance criteria — to be finalized after design approval
+Repeated fall-DST wall-clock labels may occur because two distinct real instants share a local clock label; geometry remains real-time-correct.
 
-These criteria are provisional and must be reconciled with the eventual owner-approved production design before Development begins:
+### 19.4 Nu
 
-1. The screen clearly matches the canonical Totaal visual language in both light and dark mode: open timeline, logo rail, restrained separators, typography-led programme cells.
-2. No permanent grey/rounded programme-card styling remains in Totaal.
-3. No in-cell progress bar remains in Totaal.
-4. No full-height red current-time line remains.
-5. Current programmes show useful end-time context where space permits; non-current programmes use start-time context where space permits.
-6. The Guide presentation selector is visually integrated into the upper Guide hierarchy rather than floating above the bottom navigation.
-7. The accepted date selector/`Nu` pattern and D-2..D+7 behaviour are used.
-8. Vertical scrolling preserves sticky date + `Nu` + time-axis context while non-functional chrome condenses.
-9. Horizontal and vertical Guide gestures, inertia, bounce, directional lock and partial-left-title readability remain at least as good as the physically accepted baseline.
-10. Programme Detail opens and returns without losing channel/time/day context.
-11. Larger system text remains usable without globally disabling scaling.
-12. Light, dark and system modes all preserve hierarchy/contrast.
-13. Fixture-first, hosted real-data and fallback paths share the same visual treatment.
-14. Existing automated checks pass; physical iPhone validation shows no interaction/performance regression.
+`Nu` always:
+- targets the real current instant;
+- selects the containing television day;
+- preserves vertical channel context.
 
-## Current known code deltas (15 September 2026)
+## 20. Loading, hosted data and schedule availability
 
-These are observations, not alternative design choices:
-- `GuideView.tsx` still renders permanent `Vandaag` / `Morgen` pills plus a filled `Nu` badge;
-- `GuideView.tsx` renders filled rounded programme blocks;
-- current programmes render an in-cell progress track/fill;
-- `GuideView.tsx` renders a full-height current-time line;
-- the channel corner currently contains the `ZENDER` label;
-- `ChannelIdentity` currently renders a small channel-name caption below a successful logo;
-- `GuidePresentationSelector` is currently a floating segmented pill docked above the bottom navigation by `app/index.tsx`.
+### 20.1 Fixture-first
 
-These implementation details are the primary visual convergence delta. They must not be mistaken for newer product decisions than the accepted canonical visuals.
+The deterministic fixture remains a valid true-fixture startup source and must use the final production visual treatment.
+
+Do not flash prototype Totaal styling while hosted data loads.
+
+### 20.2 Established canonical catalogue
+
+Once a hosted/canonical channel catalogue is established:
+- day changes and refreshes retain that catalogue;
+- do not transiently replace it with the generic deterministic channel catalogue;
+- preserve channel order/identity unless authoritative data itself changes it.
+
+### 20.3 Day loading
+
+If a selected day has not arrived yet but the established channel catalogue is known:
+- keep shell, date, `Nu`, axis and channel identities stable;
+- do not fabricate programme rows;
+- show one calm non-blocking `Gidsgegevens laden…` state in the schedule region;
+- do not repeat loading copy per channel.
+
+### 20.4 Hosted replacement
+
+When hosted schedule replaces fixture/older content:
+- preserve selected day;
+- preserve viewed-time anchor;
+- preserve horizontal native offset derived from that anchor;
+- preserve top visible channel by canonical channel id where practical;
+- preserve vertical semantic offset when channel order is unchanged;
+- do not remount Totaal.
+
+### 20.5 Refresh failure
+
+If usable schedule data already exists:
+- keep it visible;
+- do not blank the Guide solely because a refresh failed.
+
+If no usable authoritative schedule exists for the selected scope:
+- retain known channel catalogue;
+- keep shell/context/axis;
+- show one calm `Geen gidsgegevens beschikbaar.` state;
+- do not present uncovered scope as an authoritative empty schedule;
+- do not repeat the same message in every row.
+
+### 20.6 Partial coverage
+
+Render only authoritative covered programme data.
+
+An uncovered region is not equivalent to “nothing is on”. Do not fabricate programmes or “geen programma” cells.
+
+When the entire visible programme viewport is uncovered, expose the single availability state above. Partial uncovered areas remain visually blank/open rather than inventing schedule facts.
+
+## 21. Light / Dark / System tokens
+
+Geometry is identical across appearance modes.
+
+Use semantic tokens only.
+
+### Canvas
+- Guide canvas: `background`;
+- channel rail: `background`;
+- axis: `background`;
+- no permanent programme `surface` fill.
+
+### Text
+- primary title: `text`;
+- current `tot HH:MM`: `textSecondary`;
+- non-current start time: `textMuted`;
+- axis labels: `textMuted`.
+
+### Structure
+- row separator: `border`;
+- channel rail boundary: `border`;
+- programme boundary: `border @0.70`;
+- axis baseline: `border`;
+- axis ticks: `railTick`.
+
+### Interaction
+- programme pressed: `surface`;
+- control pressed: existing shared Guide pressed treatment;
+- current-time marker: `currentTime`;
+- marker text: `onCurrentTime`:
+  - light **#000000**;
+  - dark **#10100F**.
+
+Do not redefine global `border`, `railTick` or `currentTime` to make Totaal work.
+
+System appearance follows the OS without remounting or losing Guide context.
+
+## 22. Accessibility
+
+### 22.1 Programme actions
+
+Each programme is one button.
+
+Accessible label contains:
+- full channel display name;
+- full programme title;
+- start time;
+- end time;
+- `nu bezig` when actual-current.
+
+Hint may say it opens programme details.
+
+Visual truncation never truncates the accessibility label.
+
+### 22.2 Channel rail
+
+With programme actions present:
+- channel logo/identity does not need a separate focus stop for every row;
+- full channel name is already included in each programme label.
+
+If a retained channel catalogue is shown without programme actions because schedule is unavailable:
+- expose each visible retained channel identity with full `displayName` so VoiceOver/TalkBack users can still discover channel context.
+
+### 22.3 Day selector / tabs / Nu
+
+- Guide presentation selector: tablist/tabs with selected state;
+- date control: button with selected day label and “Kies een dag” action context;
+- bottom-sheet selected day: selected state plus visible non-colour indicator;
+- `Nu`: button labelled `Ga naar nu`;
+- compact controls keep platform-safe targets.
+
+### 22.4 Current state
+
+Current programme semantics never rely only on:
+- red marker;
+- title weight;
+- time copy.
+
+Accessibility label explicitly includes current/live state.
+
+### 22.5 Focus order
+
+Within the schedule viewport, focus follows visual programme order:
+- channel order top→bottom;
+- within a channel, chronological programme order.
+
+Do not expose duplicate overlay-title accessibility nodes.
+
+## 23. Performance / rendering constraints
+
+Production convergence must preserve the PR #74 performance architecture:
+
+- programme data indexed by channel;
+- horizontally bounded programme rendering;
+- coarse viewport buckets;
+- conservative **1.5 viewport** overscan;
+- native scroll frames stay on the UI thread;
+- React receives coarse bucket changes, not per-frame horizontal positions;
+- animated programme-window ownership follows the real native viewport;
+- non-animated jumps may prealign the target render window;
+- no eager rendering of the entire D-2..D+7 grid;
+- no per-frame React state updates for vertical collapse.
+
+Visual open-grid changes do not justify deleting windowing or rebuilding the schedule architecture.
+
+## 24. Deterministic test contract for Development
+
+Development must add/update tests for at least:
+
+1. shared Guide tabs 48/64 responsive metrics remain unchanged;
+2. Totaal context = 52 and axis = 44;
+3. persistent stack = 96 at all font scales;
+4. expanded overlay = 196 standard / 212 Larger Text;
+5. collapse = 56 native with 44/60 visual compensation;
+6. fixed viewport top = 96 below top safe area;
+7. Reduce Motion endpoint switch = 28;
+8. compact date labels: `Vandaag`, `Morgen`, explicit pre-06:00 labels;
+9. Totaal no longer uses long `Vandaag · <datum>` copy;
+10. `Nu` preserves vertical channel context and restores current day/instant;
+11. 15-minute axis positions with labels only at :00/:30;
+12. major/minor tick metrics and semantic `railTick`;
+13. axis height44 and 3.00 base pt/min;
+14. minute-width responsive formula;
+15. current marker exact-minute X and no full-height current line;
+16. marker hidden when actual Now is horizontally offscreen;
+17. channel rail width responsive formula;
+18. successful Totaal logo renders without visible duplicate channel caption;
+19. missing-logo fallback exposes full display name;
+20. row-height responsive formula;
+21. exact programme frame width uses real duration with no 2-pt visual subtraction;
+22. one boundary per programme end;
+23. no programme cards/radii/progressbars;
+24. normal/current 15/19 Medium/Semibold hierarchy;
+25. `tot HH:MM` only for actual-current programme when visual time fits;
+26. non-current time = start time;
+27. title survives before secondary time;
+28. hidden/compact/standard/comfortable width thresholds;
+29. partial-left overlay keeps exact programme geometry and has no accessibility node;
+30. programme pressed uses temporary semantic surface without opacity-first feedback;
+31. programme-window bucket/overscan architecture remains unchanged;
+32. programme-window ownership for animated vs non-animated jumps remains unchanged;
+33. 06:00 anchor-driven date-context transition;
+34. 23-/24-/25-hour television-day timeline width;
+35. Programme Detail round-trip retains presentation/day/time/x/y context;
+36. established canonical channel catalogue is not replaced by generic fixture during day loading;
+37. hosted replacement preserves viewed/channel context where ids remain;
+38. unavailable scope is not presented as an authoritative empty schedule;
+39. retained channels become accessibility-discoverable when programme actions are absent;
+40. light/dark/system semantic token mapping;
+41. no floating Totaal Guide selector;
+42. no standalone `Gids` heading.
+
+Time-sensitive tests use fixed/injected instants. No wall-clock sleeps.
+
+## 25. Physical iPhone validation checklist
+
+After runtime implementation and exact-head CI, validate on physical iPhone against the canonical four-state board.
+
+### Expanded / standard text
+1. shared `tv.` brand/action row matches the accepted shell;
+2. Totaal tab is selected in shared top tabs;
+3. no standalone `Gids` heading;
+4. date row is 52 pt and uses only `Vandaag` / `Morgen` where allowed;
+5. `Nu` is separate, compact and reachable;
+6. axis feels 44 pt and visually quiet;
+7. :00/:30 labels and :15/:45 minor ticks scan cleanly;
+8. current marker is compact, exact-minute and does not create a vertical red rail;
+9. 84-pt base channel rail reads logo-first;
+10. readable logos have no duplicate visible names;
+11. open schedule reads as one canvas, not cards;
+12. 76-pt rows feel calm but not wasteful;
+13. title 15/19 hierarchy and 13/18 time are physically legible;
+14. actual-current title + `tot HH:MM` is clear without a progressbar/card;
+15. future cells use start time only where useful;
+16. partial-left title stays readable during settled horizontal positions.
+
+### Condensed / vertical scroll
+17. brand/actions/tabs disappear fully;
+18. no compact `tv.` remains;
+19. date + Nu + axis remain as the 96-pt functional stack;
+20. one slow drag through the 56-pt collapse region has no jump/oscillation;
+21. one hard fling from rest has monotonic native momentum and no forward/back loop;
+22. first visible channel/programme remains visually attached to the sticky stack;
+23. scrolling back to top restores expanded chrome naturally.
+
+### Horizontal interaction
+24. slow horizontal pan remains native and smooth;
+25. strong fling keeps programme windowing filled with no blank bucket transition;
+26. reverse fling does not collapse partial-left titles;
+27. day-context changes only when the stable anchor crosses 06:00;
+28. crossing midnight is visually continuous;
+29. `Nu` restores exact Now without moving the vertical channel context.
+
+### Dynamic Type
+30. representative ~135% setting: programme copy scales, row/channel/minute geometry responds;
+31. >1.35: Guide tabs use accepted 64-pt/two-line shared mode;
+32. date/Nu/axis chrome stays readable in fixed 52/44 rows;
+33. title survives before time metadata;
+34. no overlapping/truncated substantive programme text;
+35. extreme accessibility setting remains operable even where secondary time disappears.
+
+### Programme edge cases
+36. long title;
+37. 5-minute programme;
+38. 10-minute programme;
+39. 15-minute programme;
+40. programme crossing the left viewport edge;
+41. programme beginning/ending exactly on :00/:15/:30/:45;
+42. missing logo fallback;
+43. current programme partially left-clipped.
+
+### Data / round-trip
+44. fixture-first → hosted replacement causes no shell/style flash;
+45. established hosted channel catalogue remains during another-day loading;
+46. temporary refresh failure retains usable schedule;
+47. unavailable day shows one calm state, not repeated row errors;
+48. Programme Detail open/close preserves x/y/day/presentation;
+49. light/dark/system switch preserves context.
+
+### Accessibility / motion
+50. VoiceOver programme labels include channel/title/start/end/current state;
+51. retained channel identities are discoverable when no programme actions exist;
+52. tabs/date/Nu expose correct roles/states;
+53. partial-left overlay does not create duplicate VoiceOver stops;
+54. Reduce Motion uses clean 28-pt endpoint switch;
+55. short-programme touch behaviour is assessed explicitly; no overlapping hit areas.
+
+## 26. Android validation items
+
+Physical Android remains deferred until hardware is available, but later validation must cover separately:
+
+1. 48-dp compact control targets;
+2. TalkBack programme/channel semantics and focus order;
+3. nested horizontal/vertical gesture arbitration;
+4. collapse smoothness and no offset oscillation;
+5. system Back from Programme Detail and day-selector sheet;
+6. font rendering/line metrics for Instrument Sans;
+7. Dynamic Type equivalent font scaling and row/channel geometry;
+8. 5/10/15-minute programme direct-touch usability;
+9. light/dark/system;
+10. realistic channel/programme-volume performance.
+
+Successful Android build/export is not physical Android acceptance.
+
+## 27. Production calibration register
+
+Development must treat these as implementation constraints:
+
+1. shared screen inset **20**;
+2. GuideChrome **100 standard /116 >1.35**;
+3. day + Nu row **52**;
+4. time axis **44**;
+5. persistent stack **96**;
+6. rest overlay **196 /212**, settled **96**;
+7. collapse **56**, max translate **12**, Reduce Motion switch **28**;
+8. visual compensation **44 /60**;
+9. fixed native viewport top **96** below safe area;
+10. date typography **15/20 Semibold**, compact cap1.20;
+11. Nu **36 visible /48 min width /44 iOS-48 Android touch / radius18 /14/18 Semibold**;
+12. axis base scale **3.00 pt/min**, formula §8.1;
+13. axis ticks every15; labels only :00/:30;
+14. major tick **1×10 railTick @0.70**; minor **1×6 @0.45**;
+15. current marker **46×20**, radius10, notch6×4, time12/15 Semibold;
+16. channel rail base **84**, responsive formula §9.1;
+17. Totaal logo optical box max **52×40**;
+18. channel fallback **13/16 Semibold**, max2;
+19. row base **76**, responsive formula §10.1;
+20. programme frame = exact duration × minuteWidth; no 2-pt width subtraction;
+21. programme boundary = one `border` hairline @0.70;
+22. title **15/19 Medium**; current **15/19 Semibold**;
+23. time **13/18 Regular**; current `tot HH:MM`, non-current start `HH:MM`;
+24. cell padding **8 horizontal /9 vertical**, compact horizontal4, title→time2;
+25. width modes = **28 /64 /96 × fontScale**, time threshold **72 × fontScale** plus vertical-fit gate;
+26. pressed programme = temporary semantic `surface`, no card/radius/opacity-first;
+27. partial-left overlay inset **8**, title-only, pointer-events-none;
+28. final row clearance **16** after shared bottom-nav ownership;
+29. programme overscan remains **1.5 viewports**;
+30. all date/time semantics remain ADR 0008;
+31. Programme Detail round-trip context remains frozen.
+
+Development must not substitute local alternatives without concrete physical/technical evidence and an owner-approved spec update.
+
+## 28. Owner escalation status
+
+No new fundamental owner decision is required to start Development after this specification is merged.
+
+One explicit future evidence gate remains: very short real-time programme cells can be narrower than 44/48 because real duration geometry is frozen and essential. The production rule is no geometry falsification and no overlapping hitSlop. If physical iPhone/Android validation shows materially poor direct-touch usability, escalate a dedicated interaction solution to the owner rather than inventing one during implementation.
+
+## 29. Development handoff
+
+After this specification is canonical on `main`:
+
+**Next step: Development — Totaal production visual convergence.**
+
+The runtime increment is HIGH risk because it touches:
+- Guide nested scrolling;
+- collapse architecture;
+- large schedule rendering;
+- time-axis geometry;
+- Programme Detail context;
+- Dynamic Type;
+- accessibility;
+- fixture/hosted transition.
+
+Required gate order:
+
+**Development → exact-head CI → physical iPhone validation → Independent QA → Lead merge decision.**
+
+Do not begin Phase 5 Search before this Totaal production convergence is complete.
