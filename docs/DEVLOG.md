@@ -11,6 +11,18 @@ Doel: chronologisch, begrijpelijk overzicht van substantiële milestones, verifi
 
 ---
 
+## 21 september 2026 — PR #96 reconciled to owner-approved Nu & Straks refinement
+
+Open runtime PR #96 is reconciled with canonical `main` `03c420bb461583029db6f91b4e17593922297494`, preserving the merged PR #97 design/spec refinement and PR #98 project-state/DEVLOG updates. The previous PR #96 calibration is no longer the runtime candidate where PR #97 superseded it.
+
+Runtime now follows the refined production baseline: **15-minute** browse targets, **92/96/100** DST-aware rail targets, **48-pt** quarter-hour snap targets, visible labels only on whole/half hours, **10-pt** major versus **6-pt** quarter hairlines, and a stronger **2×12-pt** selected/current marker. Live `Nu` remains the exact actual instant/minute while browse settle commits a quarter-hour reference. The visible `Referentietijd` caption and reference-programme `tot HH:MM` copy are removed; full start/end/current semantics remain in accessibility and Programme Detail.
+
+Default density is now the owner-approved **64-pt** reference block, **4-pt** reference→following transition, directly adjacent 44-pt iOS / 48-dp Android following targets and **216-pt iOS / 228-dp Android** normal channel rows. The >1.35 stacked Dynamic Type path remains content-safe. Existing accepted architecture remains intact: 06:00 television-day semantics, shared Guide shell, 104-pt persistent functional stack, native rail fling/settle ownership without secondary `scrollTo()`, stable vertical context, three following slots, mounted Programme Detail round-trip, established-catalogue outage behaviour, fixture/hosted continuity, Reduce Motion, themes, deferred `NowNextGuideView` loading and Expo Router route-tree test isolation.
+
+Deterministic coverage has been recalibrated to the new quarter-hour rail and compact density contract while retaining all prior interaction/data/startup regressions. **Volgende stap:** exact-head CI on the reconciled PR #96 candidate; when green, return the exact head to Lead for re-review and restart the full physical iPhone validation from clean launch. Independent QA remains after physical PASS only.
+
+---
+
 ## 21 september 2026 — Nu & Straks owner refinement canonical via PR #97
 
 Fysieke iPhone-review van de open Nu & Straks production-convergence candidate leverde concrete UX/visual evidence op voor een kleine owner-approved refinement van de canonical baseline. Design/spec PR #97 is gemergd met exacte design-head `d0834ce2f25ec25c9e969354bc5241790960e10a`; merge-commit op `main`: `8b838fc71e2dd3aea601731defb11e9680a5d99b`. Post-merge docs/design CI #677 is groen.
