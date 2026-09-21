@@ -504,7 +504,7 @@ export const GuideView = memo(function GuideView({
         scrollX.value = prealignmentX;
       }
       horizontalRef.current?.scrollTo({ x, animated });
-      axisRef.current?.scrollTo({ x, animated });
+      if (!animated) axisRef.current?.scrollTo({ x, animated: false });
     },
     [
       axisRef,
@@ -596,12 +596,12 @@ export const GuideView = memo(function GuideView({
         : nextChannelIds;
     const previousRowHeight = previousRowHeightRef.current;
     const rememberedId =
-      viewedChannelIdRef.current ??
       totaalChannelIdForScheduleOffset(
         previousChannelIds,
         previousRowHeight,
         currentScheduleOffset,
       ) ??
+      viewedChannelIdRef.current ??
       nextChannelIds[0] ??
       null;
     viewedChannelIdRef.current = rememberedId;
