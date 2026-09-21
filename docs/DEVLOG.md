@@ -11,6 +11,18 @@ Doel: chronologisch, begrijpelijk overzicht van substantiële milestones, verifi
 
 ---
 
+## 21 september 2026 — Nu & Straks owner refinement canonical via PR #97
+
+Fysieke iPhone-review van de open Nu & Straks production-convergence candidate leverde concrete UX/visual evidence op voor een kleine owner-approved refinement van de canonical baseline. Design/spec PR #97 is gemergd met exacte design-head `d0834ce2f25ec25c9e969354bc5241790960e10a`; merge-commit op `main`: `8b838fc71e2dd3aea601731defb11e9680a5d99b`. Post-merge docs/design CI #677 is groen.
+
+De refinement supersedeert alleen expliciete Nu & Straks-calibraties: browse-rail van 30 naar **15 minuten**; tekstlabels alleen op hele/halve uren; langere hairline op hele/halve uren en kortere unlabeled kwartierhairline; live `Nu` blijft de exacte actuele minuut; zichtbaar `Referentietijd` en reference-programme `tot HH:MM` vervallen; reference block wordt minimaal **64 pt** met **4 pt** overgang naar de following list; drie following targets sluiten direct aan met behoud van **44 pt iOS / 48 dp Android** minimumtargets; active/current `Nu` en return-to-live `Nu` krijgen verschillende states; normale channel rows worden **216 pt iOS / 228 dp Android**.
+
+Open runtime PR #96 was gebouwd tegen de eerdere calibratie. De lopende fysieke acceptatie is daarom **gestopt**. De eerdere runtimearchitectuur en fixes blijven behouden voor zover PR #97 ze niet supersedeert, inclusief 06:00 television-day semantics, native rail fling/settle ownership, stable vertical channel context, Programme Detail round-trip, unavailable-data catalogue preservation, deferred `NowNextGuideView` loading en de Expo Router route-tree test-isolationfix.
+
+**Volgende stap:** Development reconcileert PR #96 tegen de nieuwe canonical spec op `main`, levert een nieuwe exact-head met volledige deterministic coverage en exact-head CI, daarna Lead re-review en opnieuw fysieke iPhone-validatie. Independent QA pas na nieuwe fysieke acceptance.
+
+---
+
 ## 18 september 2026 — Nu & Straks production design canonical via PR #93
 
 De owner-approved Nu & Straks Accepted Design Refinement is canoniek gemergd. Finale exacte design-head: `18ee2b81357819b39ee35b9196d7f984ad59e9b7`; merge-commit op `main`: `21e1e61b950046fd0e77308be5a64d09721e6310`. Post-merge CI #654 is groen.
