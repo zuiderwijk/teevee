@@ -103,13 +103,13 @@ function sharedValue(value: number): SharedValue<number> {
   return { value } as unknown as SharedValue<number>;
 }
 
-function programme(id: string, startMinutes: number): Programme {
+function programme(id: string, startMinutes: number, durationMinutes = 5): Programme {
   return {
     id,
     channelId: 'one',
     title: 'Herhaalde editie',
     startAt: new Date(START + startMinutes * 60_000).toISOString(),
-    endAt: new Date(START + (startMinutes + 5) * 60_000).toISOString(),
+    endAt: new Date(START + (startMinutes + durationMinutes) * 60_000).toISOString(),
   };
 }
 
@@ -133,7 +133,7 @@ afterEach(async () => {
 describe('TotaalMicroProgrammeOverlay', () => {
   it('renders only the bounded member subset while shared geometry keeps the complete run bounds', async () => {
     const programmes = Array.from({ length: 20 }, (_, index) =>
-      programme(`p-${index}`, index * 5),
+      programme(`p-${index}`, index * 10, 10),
     );
     const run = deriveTotaalMicroProgrammeMetadata(
       new Map([['one', programmes]]),
@@ -175,7 +175,7 @@ describe('TotaalMicroProgrammeOverlay', () => {
     const runViewport = container.querySelector<HTMLElement>(
       `[data-testid="totaal-repeated-run-${run.id}"]`,
     );
-    expect(runViewport?.dataset.width).toBe('180');
+    expect(runViewport?.dataset.width).toBe('300');
     expect(run.programmes).toHaveLength(20);
   });
 
