@@ -21,6 +21,7 @@ vi.mock('react-native', () => {
     maxFontSizeMultiplier?: number;
     style?: unknown | ((state: { pressed: boolean }) => unknown);
     onPress?: () => void;
+    disabled?: boolean;
   };
 
   const resolvedChildren = (children: HostProps['children']) =>
@@ -50,7 +51,7 @@ vi.mock('react-native', () => {
       resolvedChildren(children),
     );
 
-  const Pressable = ({ children, testID, style, onPress }: HostProps) =>
+  const Pressable = ({ children, testID, style, onPress, disabled }: HostProps) =>
     createElement(
       'button',
       {
@@ -58,6 +59,7 @@ vi.mock('react-native', () => {
         'data-style': JSON.stringify(
           typeof style === 'function' ? style({ pressed: false }) : style,
         ),
+        disabled,
         onClick: onPress,
       },
       resolvedChildren(children),
