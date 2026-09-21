@@ -19,6 +19,8 @@ export const NOW_NEXT_VISUAL_METRICS = {
   quarterRailTickHeight: 6,
   majorRailTickOpacity: 1,
   quarterRailTickOpacity: 0.78,
+  railBaselineHeight: 1,
+  railBaselineOpacity: 0.78,
   referenceMarkerWidth: 2,
   referenceMarkerHeight: 12,
   shortcutVisibleHeight: 36,
