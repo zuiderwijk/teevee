@@ -133,11 +133,11 @@ The mobile app currently uses:
 PR #64 replaced the former strict calendar today+tomorrow/midnight semantics. Its exact reviewed head was automation-proven and physically accepted on iPhone for fixture-first -> hosted replacement and same-television-day background/resume context retention. The next runtime/UI boundary is selected-day D-2..D+7 access for Totaal and Per zender; Nu & Straks remains single-active-day.
 
 ## Caching/offline
-Persistent mobile schedule caching is **not selected or implemented yet**. The current robust fallback is deterministic fixture-first + preservation of usable runtime state across failed refreshes.
+Persistent mobile schedule caching was **not selected at Phase 4 closeout**. The current robust fallback is deterministic fixture-first + preservation of usable runtime state across failed refreshes.
 
-Do not add SQLite, TanStack Query or another cache/server-state framework speculatively. Phase 4 should first implement/measure realistic bounded selected-day D-2..D+7 access and payload patterns before choosing persistent cache technology or eager horizon loading.
+Phase 4 measurement showed the dominant cold Guide bottleneck was React/render + mount work rather than network/cache; bounded rendering resolved that path without persistent caching, eager D-2..D+7 prefetch or a new server-state dependency. Do not add SQLite, TanStack Query or another cache/server-state framework without new measured need.
 
-A true no-network cold start cannot be validated through Expo Go after force-quit because Expo Go itself needs Metro/network to load the development bundle. Release-like offline cold-start validation remains deferred until a standalone/dev build is available.
+A true no-network cold start cannot be validated through Expo Go after force-quit because Expo Go itself needs Metro/network to load the development bundle. The product-level local caching/graceful-offline requirement remains for release, but release-like offline cold-start validation and any concrete persistent-cache technology decision are deferred to Phase 9 when a standalone/dev build is available.
 
 ## Phase 4 architecture increment
 The architecture sequence follows `PROJECT_STATE.md` exactly:
