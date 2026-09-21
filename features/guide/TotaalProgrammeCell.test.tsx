@@ -38,7 +38,10 @@ vi.mock('react-native', () => {
   const View = ({ children, testID }: MockProps) =>
     createElement('div', { 'data-testid': testID }, children);
   const Text = ({ children, testID, numberOfLines, style }: MockProps) => {
-    const resolved = flattenStyle(style);
+    const resolved =
+      typeof style === 'function'
+        ? flattenStyle(style({ pressed: false }))
+        : flattenStyle(style);
     return createElement(
       'span',
       {
