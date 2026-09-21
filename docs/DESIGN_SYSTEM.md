@@ -1,6 +1,6 @@
 # Teevee Design System Direction
 
-Status: visual-design baseline updated 18 September 2026. Guide and Programme Detail direction below reflects owner-approved design decisions. Instrument Sans is the accepted UI typeface. Exact production token values still require implementation/device validation. Tonight remains provisional.
+Status: visual-design baseline updated through 21 September 2026. Guide and Programme Detail direction below reflects owner-approved design decisions. Instrument Sans is the accepted UI typeface. Exact production token values still require implementation/device validation. Tonight remains provisional.
 
 ## Objective
 Teevee should communicate premium utility: calm, precise, contemporary and highly legible. The Guide can contain substantial schedule information without looking dense or cheap.
@@ -51,6 +51,7 @@ Semantic categories:
 - primary/secondary/elevated surface where genuinely needed;
 - primary/secondary/muted text;
 - separator/border;
+- rail positional tick (`railTick`), separate from generic separators where physical navigation marks need stronger contrast;
 - accent/interactive;
 - current/reference-time indicator;
 - programme states;
@@ -61,6 +62,8 @@ Semantic categories:
 Do not use a visibly creamy/off-white background merely to signal premium. The accepted direction is a near-white neutral canvas in light mode and a calm dark-anthracite canvas in dark mode. Exact token values remain implementation decisions subject to contrast/device validation.
 
 ## Colour
+Rail positional ticks use the dedicated semantic `railTick` token rather than the generic `border` token when physical legibility requires stronger positional contrast. Accepted Guide calibration: light **#80807A**, dark **#72726B**. Major whole/half-hour ticks use opacity **1.00**; quarter-hour ticks use opacity **0.78**. Tick width remains 1 pt; the selected/current marker remains stronger through the semantic `currentTime` token.
+
 Red is an accent, not a structural fill. Use it for meaningful selected/current/primary-action emphasis, not as a large permanent chrome treatment.
 
 Avoid a redundant full-height red current-time line when a compact time indicator/marker already provides sufficient temporal orientation. State must never depend on red alone.
@@ -94,6 +97,17 @@ At rest the shell may show brand identity and the Guide-view selector. During ve
 - Nu & Straks: reference-time context/selector.
 
 Bottom navigation remains stable. Avoid making the `tv.` brand mark consume permanent vertical space when it is no longer functionally useful during scroll.
+
+### Shared Guide presentation selector — accessibility composition
+
+The Guide presentation tabs are compact chrome, so visible label scaling remains capped at `maximumFontSizeMultiplier = 1.20`. The cap must not be used to justify truncation:
+- through effective font scale **1.35**: presentation row **48 pt**, labels one line;
+- above **1.35**: presentation row **64 pt**, labels maximum two lines;
+- keep the full labels `Totaal`, `Per zender`, `Nu & Straks`; do not abbreviate them;
+- selected underline treatment remains unchanged;
+- the complete row remains interactive.
+
+This is a shared Guide-shell accessibility rule, not a Nu & Straks-specific copy of the selector.
 
 ### Shared Guide day selector
 Totaal and Per zender share one accepted visual/interaction component for day navigation.
@@ -130,11 +144,15 @@ Use an open vertical schedule, not a card stack. Keep the sticky horizontal chan
 ### Nu & Straks
 Each channel presents one dominant programme at the selected reference time plus three quieter following programmes. No progress bars, genre chips, artwork, chevrons or `Daarna` labels. The hierarchy itself communicates current/reference versus following content.
 
-The time rail uses 15-minute navigation increments. Whole and half hours carry text labels plus longer thin vertical ticks; quarter hours carry shorter unlabeled ticks. The selected/current marker remains the strongest rail mark. Live mode preserves the exact current minute semantically rather than rounding to the navigation increment.
+The time rail uses 15-minute navigation increments. Whole and half hours carry text labels plus longer 1-pt `railTick` marks; quarter hours carry shorter unlabeled 1-pt `railTick` marks. The selected/current marker remains the strongest rail mark. Live mode preserves the exact current minute semantically rather than rounding to the navigation increment.
 
 The visible reference programme omits redundant `tot HH:MM` metadata; the next programme's start time normally communicates the same boundary. Keep full start/end times in accessibility semantics and Programme Detail. The reference block and the transition into the three following programmes are deliberately compact, but each following programme retains its own non-overlapping platform-safe touch target.
 
 `Nu` has two materially different states: active/current while live, and return-to-live while browsing. These must not share an indistinguishable visual treatment.
+
+At larger text, Nu & Straks keeps programme content substantive and uncapped while adapting composition: above font scale 1.35, reference time and utilities use separate lanes and following programmes use an inline time+title flow with maximum two visible lines. Interaction geometry stays non-overlapping. Stacked time-above-title is reserved for the extreme >2.0 / <180-pt programme-width fallback.
+
+For the three following programmes, interaction and visual rhythm are intentionally separate: independent 44-pt iOS / 48-dp Android targets remain adjacent, while visible content is grouped by biasing programme #1 toward the bottom of its target, #2 centrally and #3 toward the top. Content never leaves its own target.
 
 ## Programme Detail
 Programme Detail is a calm information surface, not a streaming-service hero page.
