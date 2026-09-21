@@ -1,12 +1,13 @@
 # Teevee — Totaal production visual convergence
 
-Status: **OWNER-REVIEW CANDIDATE — DO NOT IMPLEMENT BEFORE OWNER ACCEPTANCE + MERGE**
+Status: **OWNER-APPROVED PRODUCTION SPECIFICATION — CANONICAL ON MERGE; DO NOT IMPLEMENT BEFORE MERGE**
 Date: 2026-09-21
+Owner-approved: 2026-09-21
 Canonical visual baseline: 2026-09-21
 
 This document converts the owner-approved Totaal production visual into one concrete production implementation contract. It is accepted-design convergence, not exploration and not runtime implementation.
 
-After owner acceptance and merge, this document is the single Totaal-specific visual handoff for Development. It does not reopen the already proven Totaal interaction, television-day, Programme Detail or programme-windowing architecture.
+After merge, this owner-approved document is the single Totaal-specific visual handoff for Development. It does not reopen the already proven Totaal interaction, television-day, Programme Detail or programme-windowing architecture.
 
 ## 1. Authority
 
@@ -957,7 +958,7 @@ Successful Android compilation is not physical acceptance.
 
 ## 32. Production calibration register
 
-Owner-review values proposed by this specification:
+Owner-approved production values frozen by this specification:
 
 1. Shared Guide: inset20; brand row52; tabs48 through 1.35 /64 above; GuideChrome100/116.
 2. Totaal sticky functional stack: day/Nu52 + axis44 = **96 at every font scale**.
@@ -978,7 +979,7 @@ Owner-review values proposed by this specification:
 17. Programme window bucket/overscan remains one viewport /1.5 viewports.
 18. Instrument Sans throughout; substantive programme copy uncapped.
 
-These values are implementation constraints only after owner acceptance and merge. Development must not substitute local alternatives after that point without new physical/UX evidence.
+These owner-approved values become implementation constraints when this specification is merged to `main`. Development must not substitute local alternatives after that point without new physical/UX evidence.
 
 ## 33. Superseded Totaal production treatments
 
@@ -997,11 +998,11 @@ Do not preserve:
 - heavy hourly grid;
 - current state communicated only by colour.
 
-## 34. OWNER DECISION REQUIRED
+## 34. Owner acceptance
 
-No new fundamental product or interaction choice is required.
+No new fundamental product or interaction choice remains open.
 
-Owner review is required only for the production-calibration package in §32, especially:
+The owner explicitly accepted the production-calibration package in §32 on 2026-09-21, including:
 - **76 pt** base row;
 - **84 pt** base channel rail / **48×36** optical logo box;
 - **3.00 pt/min** base horizontal scale;
@@ -1012,4 +1013,4 @@ Owner review is required only for the production-calibration package in §32, es
 - typographic-only current-programme treatment;
 - Dynamic Type formulas.
 
-If accepted, merge this documentation/design PR first. Only then may Development begin Totaal runtime visual convergence.
+Merge this documentation/design PR first. Only after the owner-approved specification is canonical on `main` may Development begin Totaal runtime visual convergence.
