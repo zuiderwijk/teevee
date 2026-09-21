@@ -75,7 +75,6 @@ import { TotaalProgrammeCell } from './TotaalProgrammeCell';
 import { useGuideClock } from './useGuideClock';
 import { useSelectedGuideDaySchedule } from './useSelectedGuideDaySchedule';
 
-const TIME_ANCHOR_INSET = 120;
 const CURRENT_MARKER_BODY_WIDTH = TOTAAL_VISUAL_METRICS.currentMarkerMinWidth;
 
 type GuideViewProps = {
@@ -276,7 +275,7 @@ export const GuideView = memo(function GuideView({
     (timeMs: number, targetWindowStartMs: number) => {
       const viewportX = Math.max(
         0,
-        timeToX(timeMs, targetWindowStartMs, layout.minuteWidth) - TIME_ANCHOR_INSET,
+        timeToX(timeMs, targetWindowStartMs, layout.minuteWidth) - TOTAAL_VISUAL_METRICS.viewedTimeAnchor,
       );
       syncProgrammeWindowForViewportX(viewportX);
     },
@@ -316,7 +315,7 @@ export const GuideView = memo(function GuideView({
     (viewportX: number) =>
       clampTime(
         windowStart +
-          ((Math.max(0, viewportX) + TIME_ANCHOR_INSET) / layout.minuteWidth) * 60_000,
+          ((Math.max(0, viewportX) + TOTAAL_VISUAL_METRICS.viewedTimeAnchor) / layout.minuteWidth) * 60_000,
         windowStart,
         windowEnd,
       ),
@@ -331,7 +330,7 @@ export const GuideView = memo(function GuideView({
   );
 
   useAnimatedReaction(
-    () => includeFollowingDay && scrollX.value + TIME_ANCHOR_INSET >= followingDayBoundaryX,
+    () => includeFollowingDay && scrollX.value + TOTAAL_VISUAL_METRICS.viewedTimeAnchor >= followingDayBoundaryX,
     (inFollowingDay, previouslyInFollowingDay) => {
       if (
         previouslyInFollowingDay === null ||
@@ -496,7 +495,7 @@ export const GuideView = memo(function GuideView({
       commitViewedTime(target);
       const x = Math.max(
         0,
-        timeToX(target, windowStart, layout.minuteWidth) - TIME_ANCHOR_INSET,
+        timeToX(target, windowStart, layout.minuteWidth) - TOTAAL_VISUAL_METRICS.viewedTimeAnchor,
       );
       const prealignmentX = guideProgrammaticScrollPrealignmentX(x, animated);
       if (prealignmentX !== null) {

@@ -52,6 +52,7 @@ describe('Totaal production calibration', () => {
     expect(TOTAAL_VISUAL_METRICS.dayContextHeight).toBe(52);
     expect(TOTAAL_VISUAL_METRICS.timeAxisHeight).toBe(44);
     expect(TOTAAL_VISUAL_METRICS.persistentStackHeight).toBe(96);
+    expect(TOTAAL_VISUAL_METRICS.viewedTimeAnchor).toBe(120);
     expect(TOTAAL_VISUAL_METRICS.channelLogoMaxWidth).toBe(48);
     expect(TOTAAL_VISUAL_METRICS.channelLogoMaxHeight).toBe(36);
     expect(TOTAAL_VISUAL_METRICS.currentMarkerBodyHeight).toBe(18);

@@ -9,6 +9,7 @@ export const TOTAAL_VISUAL_METRICS = {
   dayContextHeight: 52,
   timeAxisHeight: 44,
   persistentStackHeight: 96,
+  viewedTimeAnchor: 120,
   collapseDistance: 56,
   reduceMotionSwitchOffset: 28,
   channelLogoMaxWidth: 48,
