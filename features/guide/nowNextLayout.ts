@@ -275,6 +275,25 @@ export function nowNextFollowingContentBias(index: number) {
   } as const;
 }
 
+export function nowNextFollowingStackedContentPadding(index: number) {
+  if (index <= 0) {
+    return {
+      paddingTop: 8,
+      paddingBottom: 2,
+    } as const;
+  }
+  if (index >= 2) {
+    return {
+      paddingTop: 2,
+      paddingBottom: 8,
+    } as const;
+  }
+  return {
+    paddingTop: 6,
+    paddingBottom: 6,
+  } as const;
+}
+
 export function nowNextProgrammePressBackgroundColor(
   pressed: boolean,
   semanticSurface: string,
