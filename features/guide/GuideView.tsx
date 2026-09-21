@@ -672,7 +672,7 @@ export const GuideView = memo(function GuideView({
       opacity: visible ? 1 : 0,
       transform: [{ translateX: left }],
     };
-  }, [nowInWindow, nowX, programmeViewportWidth]);
+  }, [currentMarkerBodyWidth, nowInWindow, nowX, programmeViewportWidth]);
 
   const currentMarkerPointerStyle = useAnimatedStyle(() => {
     const pointerX = nowX - scrollX.value;
