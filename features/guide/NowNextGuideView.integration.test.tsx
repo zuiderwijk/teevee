@@ -63,8 +63,18 @@ vi.mock('react-native-safe-area-context', () => ({
   useSafeAreaInsets: () => ({ top: 59, right: 0, bottom: 34, left: 0 }),
 }));
 vi.mock('./ChannelIdentity', () => ({
-  ChannelIdentity: ({ channel }: { channel: { displayName: string } }) =>
-    createElement('span', { 'data-channel-identity': channel.displayName }),
+  ChannelIdentity: ({
+    channel,
+    accessible = true,
+  }: {
+    channel: { displayName: string };
+    accessible?: boolean;
+  }) =>
+    createElement('span', {
+      'data-channel-identity': channel.displayName,
+      'data-channel-accessible': String(accessible),
+      'aria-label': accessible ? channel.displayName : undefined,
+    }),
 }));
 
 vi.mock('react-native', async () => {
@@ -567,6 +577,124 @@ describe('Nu & Straks production interaction boundary', () => {
     }
   });
 
+  it('recentres live rail exactly once when the nearest quarter changes while exact live semantics continue advancing', async () => {
+    await act(async () =>
+      root.render(
+        <NowNextGuideView
+          guideDataVersion={1}
+          presentationNavigation={<span />}
+          onSelectProgramme={vi.fn()}
+        />,
+      ),
+    );
+
+    const initialScrollCalls = native.railScrollTo.mock.calls.length;
+    expect(
+      getByTestId(container, 'now-next-time-slot-57').getAttribute('aria-selected'),
+    ).toBe('true');
+    expect(
+      getByTestId(container, 'now-next-reference-one-one-ref').getAttribute(
+        'aria-label',
+      ),
+    ).toContain('nu bezig');
+
+    clock.nowMs = Date.parse('2026-09-18T18:23:00.000Z');
+    await act(async () =>
+      root.render(
+        <NowNextGuideView
+          guideDataVersion={1}
+          presentationNavigation={<span />}
+          onSelectProgramme={vi.fn()}
+        />,
+      ),
+    );
+
+    expect(native.railScrollTo).toHaveBeenCalledTimes(initialScrollCalls + 1);
+    expect(native.railScrollTo).toHaveBeenLastCalledWith({
+      x: 58 * 48,
+      animated: false,
+    });
+    expect(
+      getByTestId(container, 'now-next-time-slot-58').getAttribute('aria-selected'),
+    ).toBe('true');
+
+    clock.nowMs = Date.parse('2026-09-18T18:24:00.000Z');
+    await act(async () =>
+      root.render(
+        <NowNextGuideView
+          guideDataVersion={1}
+          presentationNavigation={<span />}
+          onSelectProgramme={vi.fn()}
+        />,
+      ),
+    );
+    expect(native.railScrollTo).toHaveBeenCalledTimes(initialScrollCalls + 1);
+
+    clock.nowMs = Date.parse('2026-09-18T18:31:00.000Z');
+    await act(async () =>
+      root.render(
+        <NowNextGuideView
+          guideDataVersion={1}
+          presentationNavigation={<span />}
+          onSelectProgramme={vi.fn()}
+        />,
+      ),
+    );
+    expect(native.railScrollTo).toHaveBeenCalledTimes(initialScrollCalls + 1);
+    expect(
+      getByTestId(
+        container,
+        'now-next-reference-one-one-follow-1',
+      ).getAttribute('aria-label'),
+    ).toContain('nu bezig');
+  });
+
+  it('stops clock-driven live recentering synchronously when native browse drag begins', async () => {
+    await act(async () =>
+      root.render(
+        <NowNextGuideView
+          guideDataVersion={1}
+          presentationNavigation={<span />}
+          onSelectProgramme={vi.fn()}
+        />,
+      ),
+    );
+
+    const rail = native.scrollProps.get('now-next-time-rail');
+    if (!rail?.onScrollBeginDrag || !rail.onMomentumScrollEnd) {
+      throw new Error('Rail interaction handlers missing');
+    }
+    const initialScrollCalls = native.railScrollTo.mock.calls.length;
+
+    await act(async () => {
+      rail.onScrollBeginDrag?.();
+    });
+
+    clock.nowMs = Date.parse('2026-09-18T18:23:00.000Z');
+    await act(async () =>
+      root.render(
+        <NowNextGuideView
+          guideDataVersion={1}
+          presentationNavigation={<span />}
+          onSelectProgramme={vi.fn()}
+        />,
+      ),
+    );
+
+    expect(native.railScrollTo).toHaveBeenCalledTimes(initialScrollCalls);
+    expect(
+      getByTestId(container, 'now-next-time-slot-57').getAttribute('aria-selected'),
+    ).toBe('true');
+
+    await act(async () => {
+      rail.onMomentumScrollEnd?.(scrollEvent(58 * 48, 1));
+    });
+    expect(native.railScrollTo).toHaveBeenCalledTimes(initialScrollCalls);
+    expect(
+      getByTestId(container, 'now-next-time-slot-58').getAttribute('aria-selected'),
+    ).toBe('true');
+  });
+
   it('commits native rail momentum semantically without a secondary scrollTo', async () => {
     await act(async () =>
       root.render(
@@ -707,6 +835,78 @@ describe('Nu & Straks production interaction boundary', () => {
     expect(
       getByTestId(container, 'now-next-time-slot-58').getAttribute('aria-selected'),
     ).toBe('true');
+  });
+
+  it('restores Nu deterministically on the same television day using the frozen wall clock', async () => {
+    await act(async () =>
+      root.render(
+        <NowNextGuideView
+          guideDataVersion={1}
+          presentationNavigation={<span />}
+          onSelectProgramme={vi.fn()}
+        />,
+      ),
+    );
+
+    const rail = native.scrollProps.get('now-next-time-rail');
+    if (!rail?.onScrollBeginDrag || !rail.onScrollEndDrag) {
+      throw new Error('Rail drag handlers missing');
+    }
+    await act(async () => {
+      rail.onScrollBeginDrag?.();
+      rail.onScrollEndDrag?.(scrollEvent(58 * 48, 0));
+    });
+
+    clock.nowMs = Date.parse('2026-09-18T18:17:00.000Z');
+    expect(Date.now()).toBe(clock.nowMs);
+    const beforeNow = native.railScrollTo.mock.calls.length;
+    await act(async () => getByTestId(container, 'now-next-now').click());
+
+    expect(native.railScrollTo).toHaveBeenCalledTimes(beforeNow + 1);
+    expect(native.railScrollTo).toHaveBeenLastCalledWith({
+      x: 57 * 48,
+      animated: true,
+    });
+    expect(
+      getByTestId(container, 'now-next-time-slot-57').getAttribute('aria-selected'),
+    ).toBe('true');
+    expect(getByTestId(container, 'now-next-now-current')).toBeDefined();
+  });
+
+  it('restores Nu deterministically across the 06:00 television-day boundary', async () => {
+    await act(async () =>
+      root.render(
+        <NowNextGuideView
+          guideDataVersion={1}
+          presentationNavigation={<span />}
+          onSelectProgramme={vi.fn()}
+        />,
+      ),
+    );
+
+    const rail = native.scrollProps.get('now-next-time-rail');
+    if (!rail?.onScrollBeginDrag || !rail.onScrollEndDrag) {
+      throw new Error('Rail drag handlers missing');
+    }
+    await act(async () => {
+      rail.onScrollBeginDrag?.();
+      rail.onScrollEndDrag?.(scrollEvent(58 * 48, 0));
+    });
+
+    clock.nowMs = Date.parse('2026-09-19T04:02:00.000Z');
+    expect(Date.now()).toBe(clock.nowMs);
+    const beforeNow = native.railScrollTo.mock.calls.length;
+    await act(async () => getByTestId(container, 'now-next-now').click());
+
+    expect(native.railScrollTo).toHaveBeenCalledTimes(beforeNow + 1);
+    expect(native.railScrollTo).toHaveBeenLastCalledWith({
+      x: 0,
+      animated: false,
+    });
+    expect(
+      getByTestId(container, 'now-next-time-slot-0').getAttribute('aria-selected'),
+    ).toBe('true');
+    expect(getByTestId(container, 'now-next-now-current')).toBeDefined();
   });
 
   it('preserves vertical channel context through rail, Nu, Primetime and Programme Detail round-trips', async () => {
@@ -858,6 +1058,10 @@ describe('Nu & Straks production interaction boundary', () => {
     const utilityContext = getByTestId(container, 'now-next-utility-context');
     channelScroll.scrollTop = 360;
 
+    expect(
+      container.querySelectorAll('[data-channel-identity][aria-label]'),
+    ).toHaveLength(0);
+
     await act(async () => {
       getByTestId(container, 'now-next-time-slot-58').click();
     });
@@ -891,6 +1095,12 @@ describe('Nu & Straks production interaction boundary', () => {
     ].map((node) => node.getAttribute('data-channel-identity'));
     expect(identities).toEqual(['NPO 1', 'NPO 2']);
     expect(identities).not.toContain('Generic fixture');
+    expect(
+      container.querySelectorAll('[data-channel-identity][aria-label="NPO 1"]'),
+    ).toHaveLength(1);
+    expect(
+      container.querySelectorAll('[data-channel-identity][aria-label="NPO 2"]'),
+    ).toHaveLength(1);
     expect(
       container.querySelectorAll(
         '[data-testid="now-next-schedule-state-unavailable"]',
@@ -933,6 +1143,9 @@ describe('Nu & Straks production interaction boundary', () => {
       container.querySelectorAll(
         '[data-testid="now-next-schedule-state-unavailable"]',
       ),
+    ).toHaveLength(0);
+    expect(
+      container.querySelectorAll('[data-channel-identity][aria-label]'),
     ).toHaveLength(0);
     expect(
       container.querySelectorAll(
