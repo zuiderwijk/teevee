@@ -23,14 +23,24 @@ Shared typography contract: `design/current/TYPOGRAPHY.md`.
 
 ## Frozen constraints
 - Instrument Sans as the accepted UI typeface; historical Söhne-like screenshot typography is superseded for family choice only.
-- Near-white neutral light canvas / dark-anthracite dark canvas.
-- Open 2D time/channel grid.
-- Channel logos in the left identity rail.
-- Programme geometry represents real schedule duration.
-- Restrained separators and whitespace instead of card stacking.
-- Compact red current-time marker only; no full-height red line.
-- Programme title first; no genre/artwork clutter.
-- Bottom navigation stays quiet and stable.
+- Totaal remains a 2D Guide: horizontal movement is time, vertical movement is channels.
+- Programme geometry continues to represent real schedule duration.
+- Native inertia, bounce, directional lock and the proven partial-left readability behaviour remain intact.
+- Programme Detail round-trip preserves day/time/channel/scroll context.
+- The proven bounded horizontal programme-windowing/performance architecture remains intact.
+- Light/dark/system and substantive Dynamic Type remain product-quality requirements.
+
+## Current candidate visual direction — not frozen
+The existing references currently suggest, but do **not** yet canonically require:
+- near-white neutral light canvas / dark-anthracite dark canvas;
+- visually open timeline treatment rather than stacked cards;
+- logo-first left identity rail;
+- restrained separators and whitespace;
+- compact current-time marker rather than a full-height line;
+- programme-title-first cells with little low-value metadata;
+- quiet bottom navigation/chrome.
+
+These are inputs for Totaal Design / UX Exploration and may change through owner-approved refinement.
 
 ## Accepted day navigation sub-contract
 - One compact typographic date selector plus a separate `Nu` action.
