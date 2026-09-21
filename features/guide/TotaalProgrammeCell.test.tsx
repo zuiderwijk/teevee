@@ -268,11 +268,13 @@ describe('TotaalProgrammeCell', () => {
     ).not.toBeNull();
   });
 
-  it('uses Semibold ellipsis only for the exact current microcell', async () => {
+  it('keeps an ultra-current microcell visually empty while retaining exact current accessibility semantics', async () => {
+    const selected: string[] = [];
     const currentMicro = programme(
       'current-micro',
       '2026-09-21T18:30:00.000Z',
-      '2026-09-21T18:45:00.000Z',
+      '2026-09-21T18:35:00.000Z',
+      'Ultra kort nieuws',
     );
 
     await act(async () => {
@@ -280,21 +282,34 @@ describe('TotaalProgrammeCell', () => {
         <TotaalProgrammeCell
           channel={channel}
           programme={currentMicro}
-          nowMs={Date.parse('2026-09-21T18:35:00.000Z')}
+          nowMs={Date.parse('2026-09-21T18:32:00.000Z')}
           windowStartMs={Date.parse('2026-09-21T18:00:00.000Z')}
           minuteWidth={3}
           fontScale={1}
           repeatedTitleRunMember={false}
-          onSelectProgramme={() => undefined}
+          onSelectProgramme={({ programme: selectedProgramme }) =>
+            selected.push(selectedProgramme.id)
+          }
         />,
       );
     });
 
+    const button = container.querySelector<HTMLElement>(
+      '[data-testid="programme-current-micro"]',
+    );
+    expect(button?.dataset.width).toBe('15');
     expect(
-      container.querySelector<HTMLElement>(
-        '[data-testid="totaal-programme-micro-current-micro"]',
-      )?.dataset.fontFamily,
-    ).toBe(TOTAAL_TYPOGRAPHY.currentProgrammeTitle.fontFamily);
+      container.querySelector('[data-testid="totaal-programme-micro-current-micro"]'),
+    ).toBeNull();
+    expect(button?.getAttribute('aria-label')).toBe(
+      'NPO 1 volledig, Ultra kort nieuws, 20:30 tot 20:35, nu bezig',
+    );
+    expect(
+      container.querySelector('[data-testid="totaal-programme-boundary-current-micro"]'),
+    ).not.toBeNull();
+
+    await act(async () => button?.click());
+    expect(selected).toEqual(['current-micro']);
   });
 
   it('keeps repeated-run members as individual programme actions while the visual overlay owns their label', async () => {
