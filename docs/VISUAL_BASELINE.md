@@ -81,14 +81,14 @@ Accepted characteristics:
 
 The sticky/condensed visual predates the Per-zender Primetime amendment and later owner-approved refinements. It remains canonical for overall condensation, stickiness and structural intent, but its Per-zender state is **SUPERSEDED** where it omits `Primetime`, implies static utility-button treatment, implies a permanently 72-pt settled condensed channel strip, adds selected-channel text outside the rail, uses the old long relative date labels, or implies wrapped temporal chrome. The written rules in `PER_ZENDER.md`, `GUIDE_DAY_SELECTOR.md` and `docs/PER_ZENDER_VISUAL_CONVERGENCE.md` win for those details.
 
-These assets **supersede only the stale date/day controls** in the earlier Totaal and Per-zender canonical screenshots. They do not replace the accepted schedule composition, gestures, logo treatment or general visual character of those surfaces. Typography follows the canonical Instrument Sans rule above.
+These assets **supersede only the stale date/day controls**. For Per-zender they amend an accepted production composition. For Totaal they constrain day navigation but **do not finalize the still-open production visual design**. Typography follows the canonical Instrument Sans rule above.
 
 ### Totaal
-Status: **ACCEPTED**
-Owner-approved direction: 2026-09-13; day-navigation amendment 2026-09-15; typography amendment 2026-09-17
+Status: **PROVISIONAL — PRODUCTION VISUAL DESIGN OPEN**
+Owner correction: 2026-09-21. The earlier repository status incorrectly treated the current Totaal references as a completed owner-approved production design.
 Detailed manifest: `design/current/guide/TOTAAL.md`
 
-Canonical visual assets in the user's Teevee Library:
+Current reference assets in the user's Teevee Library:
 - light: `/Teevee/Nederlandse tv-gids op smartphone.png`
   - Library file id: `file_0000000015ac81f4ab067e5473ed692d`
 - dark: `/Teevee/Donkere Nederlandse tv-gidsinterface.png`
@@ -98,19 +98,13 @@ Canonical visual assets in the user's Teevee Library:
 - sticky day-navigation behaviour: `/Teevee/Teevee Guide day selector - sticky scroll behavior.png`
   - Library file id: `file_00000000314481f69f6a34d18ece1c21`
 
-Accepted visual characteristics:
-- **Instrument Sans** UI typography; the historical screenshot's Söhne-like family is superseded for family choice only;
-- near-white neutral light canvas and calm dark-anthracite dark canvas;
-- open 2D schedule geometry, not stacked programme cards;
-- channel logos form the left identity rail;
-- programme block width/position reflects real schedule time;
-- restrained separators and generous whitespace;
-- compact red current-time marker; **no full-height red time line**;
-- programme titles dominate; low-value metadata is absent;
-- current cells may prioritise useful end-time context;
-- accepted day selector follows `GUIDE_DAY_SELECTOR.md`.
+Frozen/accepted sub-decisions that constrain future Totaal design:
+- **Instrument Sans** is the shared UI typeface;
+- shared D-2..D+7 day selector + separate `Nu` follows `GUIDE_DAY_SELECTOR.md`;
+- the proven 2D time/channel interaction, real schedule-duration geometry, native inertia/bounce/directional lock, partial-left readability, Programme Detail round-trip and bounded horizontal programme windowing remain architectural/interaction constraints;
+- light/dark/system and substantive Dynamic Type remain product requirements.
 
-The date/day control in the original 13 September Totaal images is **SUPERSEDED**. Preserve the rest of their visual hierarchy and use the accepted shared day-selector assets for date navigation. Their typeface family is also superseded by `design/current/TYPOGRAPHY.md` without reopening their composition.
+The existing light/dark Totaal images and the open-grid/logo-first/restrained-current-time ideas are **exploration references, not final production pixels**. They may inform the next design round, but they must not be treated as a frozen composition or as authority to start production visual convergence.
 
 ### Per zender
 Status: **ACCEPTED**
