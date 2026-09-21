@@ -35,8 +35,21 @@ function flattenStyle(style: MockStyle): Record<string, unknown> {
 }
 
 vi.mock('react-native', () => {
-  const View = ({ children, testID }: MockProps) =>
-    createElement('div', { 'data-testid': testID }, children);
+  const View = ({ children, testID, style }: MockProps) => {
+    const resolved =
+      typeof style === 'function'
+        ? flattenStyle(style({ pressed: false }))
+        : flattenStyle(style);
+    return createElement(
+      'div',
+      {
+        'data-testid': testID,
+        'data-align-items': resolved.alignItems,
+        'data-justify-content': resolved.justifyContent,
+      },
+      children,
+    );
+  };
   const Text = ({ children, testID, numberOfLines, style }: MockProps) => {
     const resolved =
       typeof style === 'function'
@@ -232,6 +245,21 @@ describe('TotaalProgrammeCell', () => {
     expect(
       container.querySelector('[data-testid="totaal-programme-micro-short"]')?.textContent,
     ).toBe('…');
+    expect(
+      container.querySelector<HTMLElement>(
+        '[data-testid="totaal-programme-micro-short"]',
+      )?.dataset.fontFamily,
+    ).toBe(TOTAAL_TYPOGRAPHY.programmeTitle.fontFamily);
+    expect(
+      container.querySelector<HTMLElement>(
+        '[data-testid="totaal-programme-micro-content-short"]',
+      )?.dataset.alignItems,
+    ).toBe('center');
+    expect(
+      container.querySelector<HTMLElement>(
+        '[data-testid="totaal-programme-micro-content-short"]',
+      )?.dataset.justifyContent,
+    ).toBe('center');
     expect(button?.getAttribute('aria-label')).toBe(
       'NPO 1 volledig, Volledige microtitel, 20:30 tot 20:45',
     );
