@@ -1,12 +1,12 @@
 # Teevee — Totaal production visual convergence
 
-Status: **OWNER-APPROVED DESIGN → IMPLEMENTATION SPECIFICATION**
+Status: **PROPOSED PRODUCTION IMPLEMENTATION SPEC — OWNER REVIEW REQUIRED**
 Date: 2026-09-21
 Canonical visual approved: 2026-09-21
 
-This document is the single production implementation handoff for the accepted **Totaal** Guide presentation. It replaces the stale pre-approval draft that previously occupied this path.
+This document is the proposed single production implementation handoff for the accepted **Totaal** Guide presentation. It replaces the stale pre-approval draft as the review candidate, but it is not canonical until the owner explicitly accepts it and the PR is merged.
 
-This is Accepted Design Refinement, not Design / UX Exploration. Development must implement this specification without reopening the accepted Totaal composition or changing the frozen Guide interaction/data architecture.
+This is Accepted Design Refinement, not Design / UX Exploration. No runtime implementation may start from these calibrations before owner acceptance. After acceptance, Development must implement the merged specification without reopening the accepted Totaal composition or changing the frozen Guide interaction/data architecture.
 
 ## 1. Authority and source-of-truth order
 
@@ -1111,15 +1111,15 @@ Development must treat these as implementation constraints:
 
 Development must not substitute local alternatives without concrete physical/technical evidence and an owner-approved spec update.
 
-## 28. Owner escalation status
+## 28. Owner decision status
 
-No new fundamental owner decision is required to start Development after this specification is merged.
+No new fundamental product or interaction decision is required. **Owner acceptance is still required for the production calibration register in §27 as one package before this specification becomes canonical and Development may start.**
 
 One explicit future evidence gate remains: very short real-time programme cells can be narrower than 44/48 because real duration geometry is frozen and essential. The production rule is no geometry falsification and no overlapping hitSlop. If physical iPhone/Android validation shows materially poor direct-touch usability, escalate a dedicated interaction solution to the owner rather than inventing one during implementation.
 
 ## 29. Development handoff
 
-After this specification is canonical on `main`:
+Only after explicit owner acceptance and merge of this specification to `main`:
 
 **Next step: Development — Totaal production visual convergence.**
 
