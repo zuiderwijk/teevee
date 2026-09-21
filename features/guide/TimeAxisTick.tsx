@@ -2,7 +2,7 @@ import { memo } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 
 import { COMPACT_GUIDE_MAX_FONT_SIZE_MULTIPLIER } from './guideVisualMetrics';
-import { GUIDE_TIME_TICK_LABEL_OFFSET } from './timeAxis';
+import { centredTimeAxisLabelLeft } from './timeAxis';
 import { TOTAAL_TYPOGRAPHY } from './totaal';
 
 type TimeAxisTickProps = {
@@ -38,7 +38,11 @@ export const TimeAxisTick = memo(function TimeAxisTick({
           maxFontSizeMultiplier={COMPACT_GUIDE_MAX_FONT_SIZE_MULTIPLIER}
           style={[
             styles.tickLabel,
-            { width: labelWidth, color: labelColor },
+            {
+              left: centredTimeAxisLabelLeft(labelWidth),
+              width: labelWidth,
+              color: labelColor,
+            },
           ]}
         >
           {label}
@@ -68,7 +72,7 @@ const styles = StyleSheet.create({
   tickLabel: {
     position: 'absolute',
     top: 6,
-    left: GUIDE_TIME_TICK_LABEL_OFFSET,
+    textAlign: 'center',
     ...TOTAAL_TYPOGRAPHY.axisLabel,
   },
   tickMark: {
