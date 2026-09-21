@@ -54,6 +54,7 @@ Semantic categories:
 - rail positional tick (`railTick`), separate from generic separators where physical navigation marks need stronger contrast;
 - accent/interactive;
 - current/reference-time indicator;
+- on-current-time foreground (`onCurrentTime`) where text sits inside a current-time marker;
 - programme states;
 - success/warning/error;
 - focus/pressed/disabled.
@@ -67,6 +68,8 @@ Rail positional ticks use the dedicated semantic `railTick` token rather than th
 Red is an accent, not a structural fill. Use it for meaningful selected/current/primary-action emphasis, not as a large permanent chrome treatment.
 
 Avoid a redundant full-height red current-time line when a compact time indicator/marker already provides sufficient temporal orientation. State must never depend on red alone.
+
+Totaal's compact current-time marker uses the accepted `currentTime` fill plus **`onCurrentTime = #0D0D0D`** for the small clock label. This foreground is intentionally theme-invariant because it preserves >=4.5:1 contrast against both accepted light/dark `currentTime` fills. Other Guide current-time marks without text do not need this foreground token.
 
 ## Surfaces, spacing and shape
 - prefer continuous/open surfaces over stacked cards;
@@ -150,7 +153,7 @@ Accepted production visual language:
 - dark mode preserves the same open hierarchy rather than substituting filled dark cards;
 - bottom navigation uses the same shared app-shell treatment as Per zender.
 
-Exact typography, row height, rail width/logo box, tick contrast and current-time-marker dimensions remain production-spec calibrations rather than global design-system tokens until physically validated.
+Exact Totaal calibration is defined in `docs/TOTAAL_VISUAL_CONVERGENCE.md`: typography, row/rail/time-axis geometry, tick hierarchy, current-time marker and responsive formulas stay surface-specific rather than becoming global Guide metrics. They become implementation authority only after owner acceptance + merge and still require the documented physical-device gate.
 
 ### Per zender
 Use an open vertical schedule, not a card stack. Keep the sticky horizontal channel-logo strip visually grouped with temporal controls while giving programme content clearer separation: **4 pt rail→utilities** in expanded/rest, then **24 pt utilities→schedule**. Horizontal schedule swipe changes channel; no decorative previous/next arrows are required when gesture behaviour and logo strip make navigation understandable.
