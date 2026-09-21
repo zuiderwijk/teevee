@@ -145,6 +145,8 @@ Accepted production visual language:
 - one continuous open timeline canvas; no permanent rounded/fill programme cards;
 - programme title carries the primary hierarchy; do not add genres or artwork;
 - current programme secondary copy prioritises `tot HH:MM`; future/non-current cells prioritise start time;
+- Totaal microcells use a deterministic surface-specific readability rule: full frame `< 48 × S` shows a centred `…` rather than a clipped title fragment; repeated adjacent same-title microcells may share one run-bounded title once visible run width reaches `48 × S`;
+- micro/repeated-title presentation never merges programme geometry, boundaries, hit ownership or accessibility semantics;
 - no in-cell progress bars;
 - one compact current-time marker on the time axis; no full-height current-time line through schedule rows;
 - whole and half hours are text-labelled on the axis; quarter hours use unlabeled minor ticks;
