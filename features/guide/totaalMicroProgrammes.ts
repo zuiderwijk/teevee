@@ -189,6 +189,31 @@ export function totaalRepeatedTitleRunsForTimeWindow(
   );
 }
 
+export type TotaalRepeatedTitleRunPresentation = {
+  run: TotaalRepeatedTitleRun;
+  programmes: readonly Programme[];
+};
+
+/**
+ * Run identity/membership is full-schedule and immutable across programme-window buckets.
+ * Presentation members are derived only from the already-bounded programme window so a
+ * long repeated run cannot remount offscreen ellipsis nodes outside the canonical window.
+ */
+export function totaalRepeatedTitleRunPresentationsForWindow(
+  runs: readonly TotaalRepeatedTitleRun[],
+  repeatedRunByProgrammeId: ReadonlyMap<string, string>,
+  windowedProgrammesByChannel: ReadonlyMap<string, readonly Programme[]>,
+  fromMs: number,
+  toMs: number,
+): TotaalRepeatedTitleRunPresentation[] {
+  return totaalRepeatedTitleRunsForTimeWindow(runs, fromMs, toMs).map((run) => ({
+    run,
+    programmes: (windowedProgrammesByChannel.get(run.channelId) ?? []).filter(
+      (programme) => repeatedRunByProgrammeId.get(programme.id) === run.id,
+    ),
+  }));
+}
+
 export function totaalRepeatedRunVisibleLayout(
   runStartX: number,
   runEndX: number,
