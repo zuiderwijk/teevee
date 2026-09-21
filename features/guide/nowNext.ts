@@ -9,7 +9,7 @@ import {
   guideTelevisionDayTime,
 } from '@/data/domain/guideTime';
 
-export const NOW_NEXT_SLOT_MINUTES = 30;
+export const NOW_NEXT_SLOT_MINUTES = 15;
 export const NOW_NEXT_FOLLOWING_COUNT = 3;
 
 export type NowNextProgrammeSet = {
