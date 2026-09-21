@@ -153,8 +153,13 @@ describe('parseHostedRefreshRequest', () => {
       parseHostedRefreshRequest(
         { from: '2026-10-24T22:00:00Z', to: '2026-10-25T23:00:00Z' },
         providerIds,
-      ).to,
-    ).toBe('2026-10-25T23:00:00.000Z');
+      ),
+    ).toEqual({
+      mode: 'window',
+      from: '2026-10-24T22:00:00.000Z',
+      to: '2026-10-25T23:00:00.000Z',
+      providerChannelIds: ['NPO1.nl', 'RTL4.nl'],
+    });
 
     expect(() =>
       parseHostedRefreshRequest(
