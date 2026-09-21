@@ -87,6 +87,9 @@ Purpose: compare multiple channels across time.
 - future/non-current programmes prioritise start time; end time is normally unnecessary in the grid;
 - programme cells use the accepted open-grid language: no permanent rounded/fill card treatment merely to define every cell;
 - title is the primary programme signal; avoid genres and other low-value metadata inside compact schedule cells;
+- genuine microcells (`full frame width < 48 × S`, with `S = max(1, effectiveFontScale)`) show one centred `…` instead of a meaningless clipped title fragment and omit secondary time;
+- >=2 directly adjacent same-title microcells may share one visual title when their visible combined run width is at least `48 × S`; the shared label is bounded/sticky within the run only;
+- repeated-title sharing is presentation-only: internal boundaries, exact duration frames, hit targets, accessibility actions and Programme Detail destinations remain programme-by-programme;
 - use the accepted shared Guide day selector for D-2..D+7 navigation;
 - `Nu` returns to the actual current instant and corresponding television day;
 - browsing through midnight is continuous and does not require selecting the next calendar day;
