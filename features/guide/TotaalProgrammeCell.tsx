@@ -14,7 +14,10 @@ import {
   totaalProgrammePressBackgroundColor,
   totaalProgrammeSecondaryLabel,
 } from './totaal';
-import { totaalIsMicroProgrammeFrameWidth } from './totaalMicroProgrammes';
+import {
+  totaalIsMicroProgrammeFrameWidth,
+  totaalMicroProgrammeShowsEllipsis,
+} from './totaalMicroProgrammes';
 
 type TotaalProgrammeCellProps = {
   channel: Channel;
@@ -43,6 +46,8 @@ export const TotaalProgrammeCell = memo(function TotaalProgrammeCell({
   const endMs = Date.parse(programme.endAt);
   const current = isProgrammeCurrent(programme, nowMs);
   const microcell = totaalIsMicroProgrammeFrameWidth(frame.width, fontScale);
+  const showMicroEllipsis =
+    microcell && totaalMicroProgrammeShowsEllipsis(frame.width, fontScale);
   const content = totaalProgrammeContentPresentation(frame.width);
   const accessibilityStatus = current ? ', nu bezig' : '';
   const secondary = totaalProgrammeSecondaryLabel(
@@ -72,7 +77,7 @@ export const TotaalProgrammeCell = memo(function TotaalProgrammeCell({
       ]}
     >
       {microcell ? (
-        repeatedTitleRunMember ? null : (
+        repeatedTitleRunMember || !showMicroEllipsis ? null : (
           <View
             testID={`totaal-programme-micro-content-${programme.id}`}
             style={styles.microContent}
