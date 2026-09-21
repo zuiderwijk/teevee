@@ -284,7 +284,7 @@ describe('TotaalMicroProgrammeOverlay', () => {
     );
   });
 
-  it('falls back to per-cell ellipses when only a sub-threshold run remainder is visible', async () => {
+  it('keeps a sub-threshold repeated-run remainder visually quiet when its members are ultra-micro', async () => {
     const programmes = [
       programme('a', 0),
       programme('b', 5),
@@ -328,5 +328,9 @@ describe('TotaalMicroProgrammeOverlay', () => {
         `[data-testid="totaal-repeated-run-ellipses-${run.id}"]`,
       )?.dataset.opacity,
     ).toBe('1');
+    expect(
+      container.querySelectorAll('[data-testid^="totaal-run-micro-"]'),
+    ).toHaveLength(0);
+    expect(run.programmes).toHaveLength(4);
   });
 });
