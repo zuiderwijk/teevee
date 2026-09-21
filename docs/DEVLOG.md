@@ -11,6 +11,20 @@ Doel: chronologisch, begrijpelijk overzicht van substantiële milestones, verifi
 
 ---
 
+## 21 september 2026 — PR #96 implements final standard-text following density
+
+Existing runtime PR #96 is reconciled with canonical `main` `957125a607dac7d69b46cdfb87618c568ed09044`, preserving the PR #104 design/docs baseline exactly.
+
+Runtime changes are limited to the standard-text following-list content placement requested by the final Lead handoff. At fontScale <=1.35 the existing 44-pt iOS / 48-dp Android following Pressables remain adjacent and non-overlapping, while the one-line visible content uses `visibleSlack = targetHeight - 20` with progressive top offsets of 2/3, 1/3 and 0. This resolves to **16 / 8 / 0 pt on iOS** and **19 / 9 / 0 dp on Android**. The content remains inside its own target. Above fontScale 1.35 no offset is applied: the already physically accepted inline accessibility and extreme stacked fallback compositions remain vertically centred and keep their existing height formulas.
+
+All other accepted Nu & Straks behaviour and geometry remain unchanged, including the 64-pt bottom-aligned reference block, 0-pt reference→following gap, 12-pt channel bottom padding, 216/228 base row totals, 52+52=104 functional stack, rail-bottom `railTick`, 15-minute rail semantics, native momentum ownership, vertical context preservation, Programme Detail round-trip, Per-zender shell reconciliation, unavailable-data behaviour and deferred loading.
+
+Deterministic coverage now locks the 16/8/0 and 19/9/0 standard offsets, content containment through fontScale 1.35, adjacent 44/48-safe target rects, and centred Larger Text behaviour without changing the frozen row/layout formulas.
+
+**Verification:** exact-head CI is required before handoff. **Next step:** Lead exact-head re-review, then one focused physical iPhone recheck of following-list density plus minimal regression smoke. Independent QA remains blocked until physical PASS.
+
+---
+
 ## 21 september 2026 — Nu & Straks final standard-text following density micro-refinement
 
 Physical iPhone review of PR #96 exact head `3cafcc6bee996eb1923549bb3b65fdabb6666262` accepted the final reference-time removal, rail-bottom treatment, dark mode, Larger Text, 15-minute rail/ticks, Nu/Primetime, vertical channel-position preservation and the tightened reference→first-following transition. One visual issue remained: at standard text, following #1→#2 and #2→#3 still read too loose because each one-line content block was centred in its independent 44-pt iOS / 48-dp Android Pressable.
