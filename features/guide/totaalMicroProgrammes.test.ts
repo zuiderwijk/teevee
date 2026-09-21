@@ -6,6 +6,8 @@ import { windowGuideProgrammesByChannel } from './guideProgrammeWindow';
 import {
   deriveTotaalMicroProgrammeMetadata,
   totaalIsMicroProgrammeFrameWidth,
+  totaalMicroProgrammeEllipsisMinWidth,
+  totaalMicroProgrammeShowsEllipsis,
   totaalMicroProgrammeThreshold,
   totaalNormaliseRepeatedProgrammeTitle,
   totaalRepeatedRunVisibleLayout,
@@ -59,6 +61,16 @@ describe('Totaal micro-programme classification', () => {
     const clippedRemainder = 20;
     expect(totaalIsMicroProgrammeFrameWidth(fullFrameWidth, 1)).toBe(false);
     expect(clippedRemainder).toBeLessThan(totaalMicroProgrammeThreshold(1));
+  });
+
+  it('derives the ultra-micro ellipsis floor from one title em plus existing micro insets', () => {
+    expect(totaalMicroProgrammeEllipsisMinWidth(1)).toBe(27);
+    expect(totaalMicroProgrammeShowsEllipsis(26.999, 1)).toBe(false);
+    expect(totaalMicroProgrammeShowsEllipsis(27, 1)).toBe(true);
+    expect(totaalMicroProgrammeShowsEllipsis(45, 1)).toBe(true);
+    expect(totaalMicroProgrammeEllipsisMinWidth(1.5)).toBe(40.5);
+    expect(totaalMicroProgrammeShowsEllipsis(40.499, 1.5)).toBe(false);
+    expect(totaalMicroProgrammeShowsEllipsis(40.5, 1.5)).toBe(true);
   });
 });
 
