@@ -13,14 +13,16 @@ import {
   nowNextFollowingTargetRects,
   nowNextMinimumTouchTarget,
   nowNextProgrammePressBackgroundColor,
+  nowNextRailSlotPresentation,
+  nowNextReferenceBlockHeight,
   nowNextSafeAreaLayout,
   nowNextStableScrollVisuals,
 } from './nowNextLayout';
 
 describe('Nu & Straks deterministic channel geometry', () => {
   it('uses canonical equal-height base rows on iOS and Android', () => {
-    expect(nowNextChannelRowLayout('ios', 1).rowHeight).toBe(228);
-    expect(nowNextChannelRowLayout('android', 1).rowHeight).toBe(240);
+    expect(nowNextChannelRowLayout('ios', 1).rowHeight).toBe(216);
+    expect(nowNextChannelRowLayout('android', 1).rowHeight).toBe(228);
 
     const missingDataRow = nowNextChannelRowLayout('ios', 1);
     const longTitleRow = nowNextChannelRowLayout('ios', 1);
@@ -35,9 +37,39 @@ describe('Nu & Straks deterministic channel geometry', () => {
     ).toBe(NOW_NEXT_VISUAL_METRICS.programmeColumnX);
     expect(NOW_NEXT_VISUAL_METRICS.programmeColumnX).toBe(100);
     expect(NOW_NEXT_VISUAL_METRICS.programmeRightInset).toBe(24);
-    expect(NOW_NEXT_VISUAL_METRICS.timeSlotWidth).toBe(76);
+    expect(NOW_NEXT_VISUAL_METRICS.timeSlotWidth).toBe(48);
     expect(NOW_NEXT_VISUAL_METRICS.timeSlotHeight).toBe(48);
+    expect(NOW_NEXT_VISUAL_METRICS.referenceProgrammeMinHeight).toBe(64);
+    expect(NOW_NEXT_VISUAL_METRICS.referenceToFollowingGap).toBe(4);
     expect(NOW_NEXT_VISUAL_METRICS.bottomClearance).toBe(16);
+  });
+
+  it('renders labels only on whole/half-hour targets and uses distinct canonical ticks', () => {
+    expect(nowNextRailSlotPresentation(0)).toEqual({
+      showsLabel: true,
+      tickHeight: 10,
+    });
+    expect(nowNextRailSlotPresentation(1)).toEqual({
+      showsLabel: false,
+      tickHeight: 6,
+    });
+    expect(nowNextRailSlotPresentation(2)).toEqual({
+      showsLabel: true,
+      tickHeight: 10,
+    });
+    expect(nowNextRailSlotPresentation(3)).toEqual({
+      showsLabel: false,
+      tickHeight: 6,
+    });
+    expect(NOW_NEXT_VISUAL_METRICS.railTickWidth).toBe(1);
+    expect(NOW_NEXT_VISUAL_METRICS.referenceMarkerWidth).toBe(2);
+    expect(NOW_NEXT_VISUAL_METRICS.referenceMarkerHeight).toBe(12);
+  });
+
+  it('sizes the reference block for two title lines without reserving removed visible metadata', () => {
+    expect(nowNextReferenceBlockHeight(1)).toBe(64);
+    expect(nowNextReferenceBlockHeight(1.35)).toBe(64);
+    expect(nowNextReferenceBlockHeight(2)).toBe(88);
   });
 
   it('uses Instrument Sans static families for all Nu & Straks production typography', () => {
@@ -62,7 +94,7 @@ describe('Nu & Straks deterministic channel geometry', () => {
     const targets = nowNextFollowingTargetRects(platform, scale);
     expect(targets).toHaveLength(3);
     for (let index = 1; index < targets.length; index += 1) {
-      expect(targets[index - 1]!.bottom).toBeLessThanOrEqual(targets[index]!.top);
+      expect(targets[index - 1]!.bottom).toBe(targets[index]!.top);
     }
   });
 
@@ -70,7 +102,7 @@ describe('Nu & Straks deterministic channel geometry', () => {
     expect(nowNextFollowingLayoutMode(1)).toBe('horizontal');
     expect(nowNextFollowingLayoutMode(1.35)).toBe('horizontal');
     expect(nowNextFollowingLayoutMode(1.351)).toBe('stacked');
-    expect(nowNextChannelRowLayout('ios', 1.8).rowHeight).toBeGreaterThan(228);
+    expect(nowNextChannelRowLayout('ios', 1.8).rowHeight).toBeGreaterThan(216);
   });
 });
 
