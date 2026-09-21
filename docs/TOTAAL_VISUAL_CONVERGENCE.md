@@ -3,6 +3,7 @@
 Status: **OWNER-APPROVED PRODUCTION SPECIFICATION — CANONICAL ON MERGE; DO NOT IMPLEMENT BEFORE MERGE**
 Date: 2026-09-21
 Owner-approved: 2026-09-21
+Micro-programme refinement owner-approved: 2026-09-21
 Canonical visual baseline: 2026-09-21
 
 This document converts the owner-approved Totaal production visual into one concrete production implementation contract. It is accepted-design convergence, not exploration and not runtime implementation.
@@ -435,7 +436,7 @@ Every non-current programme, future or historical:
 
 ## 15. Width-aware programme degradation
 
-Use the existing proven width bands as production thresholds, measured on the currently visible programme remainder after left-edge clipping:
+Use the existing proven width bands for normal programmes, measured on the currently visible programme remainder after left-edge clipping:
 
 ### Compact — visible width < 64 pt
 - horizontal padding: **6 pt**;
@@ -460,26 +461,159 @@ Long title:
 - never move the programme block;
 - full title remains accessibility/Programme Detail content.
 
-Very short programme:
-- real temporal geometry remains authoritative;
-- title may be the only visible content;
-- do not overlap adjacent hit areas to manufacture a nominal 44/48 horizontal target;
-- screen-reader traversal still exposes the programme as its own action;
-- direct pointer/touch ownership follows the exact non-overlapping programme frame.
+### 15.1 Micro-programme threshold
 
-A 15-minute programme is 45 pt wide at base scale; shorter broadcasts are an intentional spatial-density edge case rather than a reason to falsify duration.
+Physical iPhone validation of PR #114 established that genuine very-short programme frames can produce meaningless fragments such as `B`, `Ha...` or `R...`. This refinement changes only title presentation for those frames; it does **not** change programme geometry or any existing Totaal production metric.
+
+Let:
+
+`S = max(1, effectiveFontScale)`.
+
+A programme is a **microcell** when its **full real programme-frame width** is:
+
+`frameWidth < 48 × S pt`.
+
+Important:
+- the threshold is based on the programme's full real frame, not merely the currently visible remainder after viewport clipping;
+- real start/end geometry remains authoritative;
+- there is no minimum programme width;
+- a base-scale 15-minute programme is 45 pt and therefore qualifies as a microcell;
+- normal programmes do not become microcells merely because horizontal scrolling clips them to a narrow visible remainder.
+
+### 15.2 Individual microcell presentation
+
+When a microcell is not represented by an active repeated-title run:
+- suppress the programme title fragment completely;
+- suppress secondary start/end copy;
+- render exactly one visible **`…`** as the content affordance;
+- centre the `…` within the programme frame;
+- use the existing programme-title typography size/line-height;
+- non-current microcell: Instrument Sans **Medium**;
+- actual-current microcell: Instrument Sans **Semibold**;
+- colour: semantic primary text;
+- no fill, radius, shadow, badge, icon or additional metadata;
+- the `…` is presentation only; the full exact programme frame remains the tappable action.
+
+The microcell clips its visual affordance to its real frame. Do not let the ellipsis overflow into adjacent programme geometry to manufacture readability.
+
+### 15.3 Repeated-title run formation
+
+A **repeated-title run** exists when **at least 2** consecutive programmes on the same channel all satisfy every condition below:
+
+1. each programme is a microcell under §15.1;
+2. each programme directly abuts the next: programme N `endAt` equals programme N+1 `startAt`;
+3. there is no temporal gap and no overlap;
+4. titles are identical after:
+   - trimming leading/trailing whitespace;
+   - collapsing internal whitespace runs to one space;
+5. title comparison is otherwise exact/case-sensitive; do not use fuzzy matching, case folding, punctuation stripping, stemming or editorial equivalence.
+
+Use the original programme title for display. The normalised form exists only for run membership.
+
+Run membership must be derived from the chronological channel schedule **before viewport programme windowing**, so bucket/overscan transitions cannot split or redefine a run.
+
+A same-title normal-width programme breaks the run; repeated-title sharing applies only to consecutive microcells.
+
+### 15.4 Shared repeated-title presentation
+
+A repeated-title run shows one shared visual title only when the **currently visible intersection of the complete run and the programme viewport** is at least:
+
+`48 × S pt`.
+
+When that condition is met:
+- suppress the individual `…` affordances for the run's visible microcells;
+- render one shared programme title across the visible run region;
+- one line only;
+- **15/19 Instrument Sans Medium** at base scale, substantive/un-capped Dynamic Type;
+- semantic primary text;
+- left aligned at the first visible run position + the existing compact **6-pt** programme inset;
+- use normal tail ellipsis if the full title still does not fit;
+- hard-clip the shared label to the true run bounds and viewport intersection;
+- do not add a background, fill, radius or merged-cell surface.
+
+The title may visually span multiple underlying microcells. This is a text-presentation layer only: it does not create a combined programme action or combined duration.
+
+If the visible run intersection drops below `48 × S pt`, remove the shared title and return to the individual microcell `…` presentation.
+
+### 15.5 Repeated-title boundaries and actions
+
+Every underlying programme in a repeated-title run remains:
+- its own exact start→end frame;
+- its own temporal boundary;
+- its own press state;
+- its own pointer/touch hit area;
+- its own accessibility action;
+- its own Programme Detail destination.
+
+Internal 1-pt programme boundaries retain the canonical §18.1 geometry and remain visible above and below the text line. The shared title may naturally occlude only the tiny part of a boundary directly underneath its glyphs; do not erase or merge the boundary itself.
+
+The shared title layer must use `pointerEvents="none"` / equivalent non-interactive semantics. A tap at X belonging to programme 3 in a four-cell run must open programme 3, even when the visible title began over programme 1.
+
+### 15.6 Partial visibility of a repeated-title run
+
+The shared run title is **sticky only within its own run bounds**.
+
+For viewport-left clipping:
+- visible run start = `max(runStartX, viewportLeftX)`;
+- title anchor = visible run start + **6 pt**;
+- the title may move right as earlier microcells leave the viewport;
+- it may never anchor before the real run start.
+
+For viewport-right clipping:
+- visible run end = `min(runEndX, viewportRightX)`;
+- clip the title at that visible/run end;
+- do not move programme boundaries or extend title content beyond the run.
+
+The label therefore remains readable while the start of a repeated run scrolls offscreen, but it never behaves like a global sticky row label.
+
+### 15.7 Current state inside a repeated-title run
+
+A shared repeated-title label remains **Medium**, even if one of the underlying microcells is the actual-current programme. Do not make the entire shared title Semibold because that would imply that the complete repeated run is one current programme.
+
+For a repeated run:
+- current programme semantics remain on the exact underlying programme action;
+- the compact current-time axis marker continues to identify the exact current instant;
+- no run-level current fill, stripe, badge or secondary `tot` copy is added.
+
+When the shared title is not active and individual `…` affordances are shown, the actual-current microcell uses Semibold while neighbouring microcells remain Medium.
+
+### 15.8 Dynamic Type, accessibility and themes
+
+Dynamic Type:
+- micro threshold = `48 × S`;
+- shared-title visibility threshold = `48 × S`;
+- title/`…` remain substantive and uncapped;
+- the existing minuteWidth/channelWidth/rowHeight formulas remain unchanged;
+- the compact 6-pt inset and programme-boundary metrics are not retuned.
+
+Accessibility:
+- visual `…` never replaces semantic programme content;
+- every underlying programme action exposes full channel display name, full title, start, end and actual-current state as already specified;
+- the shared run title is not a separate accessibility element/focus stop;
+- individual visual ellipses are not separately announced;
+- screen-reader traversal remains programme-by-programme in chronological order.
+
+Light/Dark/System:
+- identical geometry and run logic;
+- title/`…` use semantic primary text;
+- boundaries continue to use the existing semantic border treatment;
+- no new microcell-specific colour token or surface is introduced.
+
+A micro-programme refinement must never falsify duration geometry merely to fit text.
 
 ## 16. Partial-left readability
 
 Preserve the proven EdgeReadabilityOverlay / masking contract.
 
-When horizontal scrolling cuts through a programme:
+For normal/non-micro programmes, when horizontal scrolling cuts through a programme:
 - programme geometry remains unchanged;
 - readable title content may re-anchor into the visible remainder;
 - the duplicated readability layer must not create a second accessibility focus target;
 - when visible remainder <52 pt, secondary time disappears;
 - reverse scrolling must not briefly collapse newly visible text because a stale settled viewport lies beyond the programme;
 - exact programme-boundary switching remains deterministic.
+
+Microcells use §15.2 rather than exposing clipped title fragments. Repeated-title runs use the run-bounded sticky shared-title rule in §15.6. These layers must coexist with EdgeReadabilityOverlay without producing duplicate visible labels or duplicate accessibility targets.
 
 Do not replace this with cell repositioning or per-frame React layout.
 
@@ -491,8 +625,9 @@ Production treatment:
 - same open canvas as all other programmes;
 - no permanent programmeCurrent fill;
 - no card/radius;
-- title weight changes Medium → Semibold;
-- secondary copy changes to 'tot HH:MM';
+- title weight changes Medium → Semibold for normal programmes;
+- secondary copy changes to 'tot HH:MM' for normal programmes;
+- micro/repeated-title programmes use the explicit current-state exceptions in §15.7;
 - current semantics remain in accessibility;
 - no local progress bar;
 - no red border/dot/stripe inside the row.
@@ -538,7 +673,8 @@ Use semantic theme tokens:
 - temporal programme boundaries: border at 0.55;
 - axis ticks/baseline: railTick with the opacities in §9;
 - current marker: currentTime;
-- pressed programme: surfaceElevated.
+- pressed programme: surfaceElevated;
+- micro `…` and repeated-run shared titles: semantic primary text with no dedicated fill/token.
 
 Do not use programme / programmeCurrent as permanent Totaal fills. Do not delete or globally redefine those tokens because other surfaces may still use them.
 
@@ -730,7 +866,7 @@ Every visible programme action label includes:
 - end time;
 - 'nu bezig' only for the actual current programme.
 
-Visual truncation never truncates accessibility text.
+Visual truncation, microcell `…` substitution and repeated-title sharing never truncate or merge accessibility semantics. A repeated-title visual run still exposes every underlying broadcast as its own programme action.
 
 ### 26.2 Channel rail
 
@@ -790,6 +926,13 @@ Development must cover at least:
 7. non-current copy uses start time;
 8. compact/standard/comfortable thresholds 64/126;
 9. secondary time hides below 52 pt remaining visible width;
+9a. microcell threshold uses full frame width `< 48 × S`, not clipped remainder;
+9b. individual microcell renders exactly one centred `…`, no title fragment/secondary copy;
+9c. repeated-title run requires >=2 directly adjacent microcells with exact title equality after trim/whitespace collapse;
+9d. shared run title appears only when visible run intersection >= `48 × S` and is clipped/sticky within run bounds;
+9e. repeated-title internal boundaries, separate programme actions and hit ownership remain intact;
+9f. repeated-run membership is stable across programme-window bucket transitions;
+9g. shared run title is accessibility-hidden/pointer-transparent and actual-current shared title remains Medium;
 10. no Totaal programme progress bar;
 11. no permanent programme fill/radius;
 12. no full-height current-time line;
@@ -905,32 +1048,37 @@ Physical validation must use the exact implementation head and the exact canonic
 41. Press feedback is visible but does not leave a card state.
 
 ### Edge cases
-42. 15-minute programme remains understandable.
-43. Sub-15-minute programme does not overlap neighbour touch ownership.
-44. Very long title truncates gracefully and full title opens in Detail.
-45. Programme crossing left edge remains readable during and after momentum.
-46. Rapid horizontal reversal does not flash missing/stale text.
-47. Crossing midnight remains continuous.
-48. Stable anchor crossing 06:00 changes date once/coherently.
-49. DST representative day does not assume 24 hours.
+42. At base scale, a 15-minute / 45-pt programme uses the accepted microcell `…` treatment unless it participates in an eligible repeated-title run.
+43. Sub-15-minute programme does not overlap neighbour touch ownership; each microcell remains a separate Programme Detail action.
+44. Two or more directly adjacent same-title microcells form a stable run, but shared title appears only once visible combined run width reaches `48 × S`.
+45. Four consecutive 5-minute same-title programmes at base scale retain four 15-pt frames/boundaries/actions while showing one run-bounded shared title across the 60-pt run.
+46. Three consecutive 5-minute same-title programmes at base scale total 45 pt and therefore remain individual `…` cells.
+47. Partial-left/right repeated-title scrolling keeps the shared label within real run bounds and falls back to `…` below the visible threshold.
+48. Current microcell `…` is Semibold when individual; a shared repeated-run title stays Medium even when one underlying broadcast is current.
+49. Very long title truncates gracefully and full title opens in Detail.
+50. Programme crossing left edge remains readable during and after momentum.
+51. Rapid horizontal reversal does not flash missing/stale text.
+52. Crossing midnight remains continuous.
+53. Stable anchor crossing 06:00 changes date once/coherently.
+54. DST representative day does not assume 24 hours.
 
 ### Dynamic Type/accessibility
-50. Default text hierarchy matches canonical board.
-51. Around 1.35: no clipping in programme content.
-52. Above 1.35 shared tabs use accepted 64/max-two-line state.
-53. At representative accessibility text, programme titles/times still scale and row geometry grows.
-54. Compact date/Nu/axis chrome stays usable with 1.20 cap.
-55. VoiceOver programme labels contain channel/title/start/end/current state.
-56. Channel logos do not add redundant focus stops in normal schedule state.
-57. Day sheet focus/modal behaviour is usable.
-58. System appearance change does not reset day/scroll/presentation.
+55. Default text hierarchy matches canonical board.
+56. Around 1.35: no clipping in programme content.
+57. Above 1.35 shared tabs use accepted 64/max-two-line state.
+58. At representative accessibility text, programme titles/times still scale and row geometry grows.
+59. Compact date/Nu/axis chrome stays usable with 1.20 cap.
+60. VoiceOver programme labels contain channel/title/start/end/current state.
+61. Channel logos do not add redundant focus stops in normal schedule state.
+62. Day sheet focus/modal behaviour is usable.
+63. System appearance change does not reset day/scroll/presentation.
 
 ### Performance/context
-59. Realistic channel volume vertical fling remains smooth.
-60. Horizontal hard fling through multiple programme-window buckets shows no blank grid.
-61. Fixture→hosted transition preserves styling and context.
-62. Programme Detail open/close preserves exact Totaal context.
-63. Detail personal-state changes do not remount the Guide.
+64. Realistic channel volume vertical fling remains smooth.
+65. Horizontal hard fling through multiple programme-window buckets shows no blank grid.
+66. Fixture→hosted transition preserves styling and context.
+67. Programme Detail open/close preserves exact Totaal context.
+68. Detail personal-state changes do not remount the Guide.
 
 ## 31. Android physical validation — deferred device gate
 
@@ -978,6 +1126,9 @@ Owner-approved production values frozen by this specification:
 16. Dynamic minuteWidth = 3+1.2×(S−1); channelWidth = 84+28×(S−1); rowHeight = max(round(76+40×(S−1)), ceil(56×S+13)).
 17. Programme window bucket/overscan remains one viewport /1.5 viewports.
 18. Instrument Sans throughout; substantive programme copy uncapped.
+19. Microcell: full frame width `< 48 × S`; individual presentation = centred `…`; no secondary copy.
+20. Repeated-title run: >=2 adjacent microcells, exact title after trim/whitespace collapse, shared label only when visible run width >= `48 × S`; shared title Medium/one-line/6-pt inset and bounded to the run.
+21. Repeated-title runs preserve every internal 1-pt boundary, exact hit frame, accessibility action and Programme Detail action; shared label is pointer-transparent/accessibility-hidden.
 
 These owner-approved values become implementation constraints when this specification is merged to `main`. Development must not substitute local alternatives after that point without new physical/UX evidence.
 
@@ -1011,6 +1162,8 @@ The owner explicitly accepted the production-calibration package in §32 on 2026
 - open-grid separator/tick contrast;
 - compact current-marker geometry;
 - typographic-only current-programme treatment;
-- Dynamic Type formulas.
+- Dynamic Type formulas;
+- **micro-programme threshold `48 × S`** with centred `…` fallback;
+- repeated-title run sharing across >=2 adjacent same-title microcells while preserving boundaries/actions and using the same `48 × S` visible-run threshold.
 
 Merge this documentation/design PR first. Only after the owner-approved specification is canonical on `main` may Development begin Totaal runtime visual convergence.
