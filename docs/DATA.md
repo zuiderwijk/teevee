@@ -217,7 +217,7 @@ Proved:
 - deterministic fixture fallback;
 - physical fixture -> hosted transition and context retention on iPhone.
 
-The historical two-calendar-day mobile loader has been superseded by PR #64. The rolling three-calendar-day development refresh buffer remains temporary operational support only.
+The historical two-calendar-day mobile loader has been superseded by PR #64. The former rolling three-calendar-day development refresh buffer has been superseded by the server-side `guide-horizon` refresh. Development refresh now materialises independent 06:00 Europe/Amsterdam television-day windows from D-3 through D+8; D-3 and D+8 are operational safety buffers only and do not change the D-2..D+7 product horizon.
 
 ### Phase 4 — closed
 Owns:
