@@ -36,11 +36,9 @@ export const ChannelIdentity = memo(function ChannelIdentity({
   const detail = variant === 'detail';
   const compactLogoIdentity = totaal || perChannelStrip || nowNext;
   const showVisibleName = compactLogoIdentity ? !showLogo : true;
-  const visibleName = totaal
-    ? channel.displayName
-    : compactLogoIdentity
-      ? channel.shortName ?? channel.displayName
-      : channel.displayName;
+  const visibleName = compactLogoIdentity
+    ? channel.shortName ?? channel.displayName
+    : channel.displayName;
 
   return (
     <View
