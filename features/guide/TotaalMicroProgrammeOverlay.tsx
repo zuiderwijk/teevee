@@ -16,6 +16,7 @@ import {
 import {
   TOTAAL_MICRO_PROGRAMME_INSET_X,
   type TotaalRepeatedTitleRun,
+  type TotaalRepeatedTitleRunPresentation,
   totaalRepeatedRunVisibleLayout,
 } from './totaalMicroProgrammes';
 
