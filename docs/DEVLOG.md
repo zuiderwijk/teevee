@@ -11,6 +11,18 @@ Doel: chronologisch, begrijpelijk overzicht van substantiële milestones, verifi
 
 ---
 
+## 21 september 2026 — Nu & Straks physical accessibility refinement canonical via PR #100
+
+The owner accepted the targeted refinement derived from physical iPhone rejection of PR #96 exact head `32db9459d265e8546c7137baf82e623f015ad652`. Design/spec PR #100 merged with exact design head `d2ece22771b35f369d40e58a51f8b85ffb461933`; merge commit `319e3caad758d0d7b511f2a01180ad91847a293f`. Post-merge docs/design CI #695 is green.
+
+The refinement remains narrow. Rail ticks keep their 1-pt geometry but move from generic `border` to a dedicated `railTick` semantic: light `#80807A`, dark `#72726B`, major opacity 1.00 and quarter opacity 0.78. Larger-text shared Guide tabs become 64 pt / max two lines above fontScale 1.35 while retaining the 1.20 compact-label cap. Nu & Straks reference/utilities become an 88-pt 40+48 two-lane context above 1.35, producing a 140-pt persistent accessibility functional stack. Following programmes above 1.35 now use an inline time+title, maximum-two-line composition; stacked time-above-title is reserved for the extreme fontScale >2.0 plus programme-width <180 pt fallback. The three following touch targets remain independent 44/48 minimums, while visible content is clustered #1 bottom / #2 centre / #3 top to tighten perceived rhythm.
+
+The shared presentation-tab accessibility rule also updates the Per-zender canonical shell geometry above fontScale 1.35, without changing its 52-pt temporal context or product/content model.
+
+**Next step:** Development updates the existing PR #96 against the PR #100 canonical baseline, including deterministic tests for the new railTick, responsive shared shell and larger-text/density rules. Physical iPhone acceptance remains paused until Lead accepts the new exact runtime head for another physical pass; Independent QA remains after physical PASS.
+
+---
+
 ## 21 september 2026 — Nu & Straks physical candidate not accepted
 
 Runtime PR #96 was successfully reconciled to the PR #97 canonical baseline and reached exact head `32db9459d265e8546c7137baf82e623f015ad652`. Exact-head CI #691 was green with 62 test files / 424 tests, exports and native/config checks. Lead opened the physical iPhone gate.
