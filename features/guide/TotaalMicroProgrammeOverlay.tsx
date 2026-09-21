@@ -17,6 +17,7 @@ import {
   TOTAAL_MICRO_PROGRAMME_INSET_X,
   type TotaalRepeatedTitleRun,
   type TotaalRepeatedTitleRunPresentation,
+  totaalMicroProgrammeShowsEllipsis,
   totaalRepeatedRunVisibleLayout,
 } from './totaalMicroProgrammes';
 
@@ -137,6 +138,7 @@ const RepeatedTitleRunOverlay = memo(function RepeatedTitleRunOverlay({
       >
         {programmes.map((programme) => {
           const frame = programmeFrame(programme, windowStartMs, minuteWidth);
+          if (!totaalMicroProgrammeShowsEllipsis(frame.width, fontScale)) return null;
           const current = isProgrammeCurrent(programme, nowMs);
           return (
             <View
