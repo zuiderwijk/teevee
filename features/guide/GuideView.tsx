@@ -64,6 +64,7 @@ import {
   totaalCollapseProgressForScrollOffset,
   totaalCurrentTimeMarkerBodyX,
   totaalNativeOffsetForScheduleOffset,
+  totaalPreservedChannelScheduleOffset,
   totaalScheduleOffsetForNativeOffset,
   totaalSafeAreaLayout,
   totaalStableScrollGeometry,
