@@ -1,9 +1,9 @@
-import type { Channel } from '@/data/domain/epg';
-import { guideTelevisionDayStart } from '@/data/domain/guideTime';
+import type { Channel } from '../../data/domain/epg.ts';
+import { guideTelevisionDayStart } from '../../data/domain/guideTime.ts';
 
-import { ingestProviderSchedule } from './ingest';
-import type { ChannelMapping, EpgProvider } from './provider';
-import type { ScheduleRepository } from './scheduleRepository';
+import { ingestProviderSchedule } from './ingest.ts';
+import type { ChannelMapping, EpgProvider } from './provider.ts';
+import type { ScheduleRepository } from './scheduleRepository.ts';
 
 export const GUIDE_REFRESH_MIN_DAY_OFFSET = -3;
 export const GUIDE_REFRESH_MAX_DAY_OFFSET = 8;

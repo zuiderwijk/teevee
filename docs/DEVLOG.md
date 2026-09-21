@@ -11,6 +11,18 @@ Doel: chronologisch, begrijpelijk overzicht van substantiële milestones, verifi
 
 ---
 
+## 21 september 2026 — PR #116 live rollout exposed epg-refresh BOOT_ERROR
+
+After PR #116 merged and exact-main CI #837 passed, the updated `epg-refresh` Edge Function was deployed as live version 5 and the guide-horizon migration was applied. The first protected one-shot refresh through `teevee.enqueue_development_epg_refresh()` returned request id 87, but `net._http_response` recorded HTTP 503 with `BOOT_ERROR`: the function failed before request-handler logging or EPG ingestion began. No new 06:00 television-day coverage was written; the canonical store therefore still contained the previous calendar-midnight windows.
+
+The hotfix branch `hotfix/epg-refresh-edge-boot` removes the new horizon module's dependence on runtime alias/sloppy-import resolution by using explicit relative `.ts` module specifiers. A dedicated regression test walks the deployed `epg-refresh` runtime import graph with the TypeScript AST and rejects runtime `@/` aliases, extensionless relative imports and unsupported bare imports. This targets the only new boot-time module-resolution dependency introduced by the horizon refresh while leaving horizon semantics, provider coverage classification, canonical replacement rules, auth, cron and client behaviour unchanged.
+
+The migration-history timestamp mismatch created by the Management API deployment remains operational cleanup only; do not run a normal `db push` until remote history is reconciled with canonical repo migration `20260921213000_refresh_guide_television_day_horizon.sql`.
+
+**Verification:** hotfix exact-head CI, Independent QA and live redeployment/retry are still required. **Next step:** finish the hotfix PR gates, redeploy `epg-refresh`, re-trigger the protected guide-horizon refresh, prove 06:00 canonical coverage, then reconcile migration history and perform the focused physical iPhone smoke.
+
+---
+
 ## 21 september 2026 — Totaal production visual specification canonical via PR #112
 
 The owner-approved Totaal visual baseline from PR #110 is now converted into an implementation-ready production specification. PR #112 exact design/spec head `6c68202bce249c8eff2e198699e2a582bce55ede` passed docs-only CI #783 and merged as `4638f0574c60f3ad2f0d723c55a9291c9aff1e29`; post-merge CI #784 succeeded. The earlier one-file PR #111 review proposal was superseded and closed unmerged.
