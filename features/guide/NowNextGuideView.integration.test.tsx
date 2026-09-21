@@ -520,9 +520,18 @@ describe('Nu & Straks production interaction boundary', () => {
       'now-next-following-one-0-one-follow-1',
     ).querySelector('span:last-child');
     expect(followingTitle?.getAttribute('data-number-of-lines')).toBe('2');
+
+    for (const slot of [0, 1, 2]) {
+      const contentStyle = getByTestId(
+        container,
+        `now-next-following-content-one-${slot}`,
+      ).getAttribute('data-style');
+      expect(contentStyle).toContain('"justifyContent":"center"');
+      expect(contentStyle).toContain('"paddingTop":0');
+    }
   });
 
-  it('bottom-aligns the reference title and centres all three following content bands without changing hit geometry', async () => {
+  it('bottom-aligns the reference title and applies standard iOS following offsets inside unchanged targets', async () => {
     await act(async () =>
       root.render(
         <NowNextGuideView
@@ -539,12 +548,16 @@ describe('Nu & Straks production interaction boundary', () => {
     ).getAttribute('data-style');
     expect(referenceStyle).toContain('"justifyContent":"flex-end"');
 
+    const expectedOffsets = [16, 8, 0];
     for (const slot of [0, 1, 2]) {
       const contentStyle = getByTestId(
         container,
         `now-next-following-content-one-${slot}`,
       ).getAttribute('data-style');
-      expect(contentStyle).toContain('"justifyContent":"center"');
+      expect(contentStyle).toContain('"justifyContent":"flex-start"');
+      expect(contentStyle).toContain(
+        `"paddingTop":${expectedOffsets[slot]}`,
+      );
 
       const targetStyle = getByTestId(
         container,
