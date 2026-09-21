@@ -1,7 +1,10 @@
 import type { Channel, GuideFixture, GuideSchedule } from '@/data/domain/epg';
 import { TEEVEE_FONT_FAMILIES } from '@/theme/typography';
 
-import { guideChromeExpandedHeight } from './guideVisualMetrics';
+import {
+  COMPACT_GUIDE_MAX_FONT_SIZE_MULTIPLIER,
+  guideChromeExpandedHeight,
+} from './guideVisualMetrics';
 
 export const TOTAAL_PROGRAMME_READABILITY_THRESHOLDS = [64, 126] as const;
 
@@ -35,6 +38,12 @@ export const TOTAAL_VISUAL_METRICS = {
   nowRadius: 10,
   dateInsetX: 20,
   scheduleBottomClearance: 16,
+} as const;
+
+export const TOTAAL_VERTICAL_SCROLL_ENDPOINT_POLICY = {
+  bounces: false,
+  alwaysBounceVertical: false,
+  overScrollMode: 'never',
 } as const;
 
 export const TOTAAL_TYPOGRAPHY = {
@@ -74,6 +83,22 @@ export type TotaalProgrammeContentPresentation = {
 
 function normaliseScale(fontScale: number) {
   return Number.isFinite(fontScale) && fontScale > 0 ? Math.max(1, fontScale) : 1;
+}
+
+/**
+ * Keep the frozen 38-pt marker minimum as readable label space and reserve the
+ * frozen 5-pt padding outside it. The readable label box follows the same compact
+ * 1.20 Dynamic Type cap as the marker text.
+ */
+export function totaalCurrentTimeMarkerBodyWidth(fontScale = 1) {
+  const compactScale = Math.min(
+    normaliseScale(fontScale),
+    COMPACT_GUIDE_MAX_FONT_SIZE_MULTIPLIER,
+  );
+  return Math.ceil(
+    TOTAAL_VISUAL_METRICS.currentMarkerMinWidth * compactScale +
+      TOTAAL_VISUAL_METRICS.currentMarkerPaddingX * 2,
+  );
 }
 
 export function totaalProgrammeContentPresentation(
