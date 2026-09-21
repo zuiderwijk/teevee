@@ -380,7 +380,11 @@ describe('Nu & Straks production interaction boundary', () => {
 
     expect(getByTestId(container, 'shared-presentation-nav')).toBeDefined();
     expect(container.textContent).not.toContain('TEEVEE');
-    expect(getByTestId(container, 'now-next-utility-context')).toBeDefined();
+    const utilityContext = getByTestId(container, 'now-next-utility-context');
+    expect(utilityContext.getAttribute('data-style')).toContain('"height":52');
+    expect(
+      container.querySelector('[data-testid="now-next-reference-time"]'),
+    ).toBeNull();
     expect(getByTestId(container, 'now-next-time-rail-shell')).toBeDefined();
 
     expect(
