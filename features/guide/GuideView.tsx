@@ -70,6 +70,7 @@ import {
   totaalStableScrollGeometry,
   totaalStableScrollVisuals,
   totaalTimeAxisTickPresentation,
+  totaalVerticalContentExtent,
 } from './totaal';
 import { TotaalProgrammeCell } from './TotaalProgrammeCell';
 import { useGuideClock } from './useGuideClock';
@@ -242,6 +243,10 @@ export const GuideView = memo(function GuideView({
     layout.minuteWidth,
   );
   const stableScrollGeometry = totaalStableScrollGeometry(effectiveFontScale);
+  const verticalContentExtent = totaalVerticalContentExtent(
+    stableScrollGeometry.contentTopInset,
+    guideHeight,
+  );
   const safeAreaLayout = totaalSafeAreaLayout(safeAreaInsets.top, effectiveFontScale);
   const scheduleStatus =
     schedulePresentation.schedule === null
@@ -384,14 +389,14 @@ export const GuideView = memo(function GuideView({
   const syncViewedChannel = useCallback(
     (nativeY: number, progress: number) => {
       if (runtimeFixture.channels.length === 0) return;
-      const scheduleOffset = totaalScheduleOffsetForNativeOffset(nativeY, progress);
+      const scheduleOffset = totaalScheduleOffsetForNativeOffset(nativeY, progress, reduceMotion);
       viewedChannelIdRef.current = totaalChannelIdForScheduleOffset(
         runtimeFixture.channels.map(({ id }) => id),
         layout.rowHeight,
         scheduleOffset,
       );
     },
-    [layout.rowHeight, runtimeFixture.channels],
+    [layout.rowHeight, reduceMotion, runtimeFixture.channels],
   );
 
   const verticalScrollHandler = useAnimatedScrollHandler(
@@ -425,6 +430,8 @@ export const GuideView = memo(function GuideView({
         translateY: totaalStableScrollVisuals(
           collapseProgress.value,
           effectiveFontScale,
+          scrollY.value,
+          reduceMotion,
         ).contentTranslateY,
       },
     ],
@@ -588,6 +595,7 @@ export const GuideView = memo(function GuideView({
     const currentScheduleOffset = totaalScheduleOffsetForNativeOffset(
       scrollY.value,
       collapseProgress.value,
+      reduceMotion,
     );
     const previousChannelIds =
       previousChannelIdsRef.current.length > 0
@@ -621,6 +629,7 @@ export const GuideView = memo(function GuideView({
     const nativeY = totaalNativeOffsetForScheduleOffset(
       nextScheduleOffset,
       collapseProgress.value,
+      reduceMotion,
     );
     scrollY.value = nativeY;
     const frame = requestAnimationFrame(() => {
@@ -630,6 +639,7 @@ export const GuideView = memo(function GuideView({
   }, [
     collapseProgress,
     layout.rowHeight,
+    reduceMotion,
     runtimeFixture.channels,
     scrollY,
   ]);
@@ -861,7 +871,7 @@ export const GuideView = memo(function GuideView({
           <Animated.View
             style={[
               styles.channelContent,
-              { height: stableScrollGeometry.contentTopInset + guideHeight },
+              { height: verticalContentExtent },
               channelContentStyle,
             ]}
           >
@@ -921,7 +931,7 @@ export const GuideView = memo(function GuideView({
             onScroll={verticalScrollHandler}
             style={{ width }}
             contentContainerStyle={{
-              minHeight: stableScrollGeometry.contentTopInset + guideHeight,
+              minHeight: verticalContentExtent,
             }}
           >
             <Animated.View
@@ -929,7 +939,7 @@ export const GuideView = memo(function GuideView({
                 styles.scheduleContent,
                 {
                   width,
-                  minHeight: stableScrollGeometry.contentTopInset + guideHeight,
+                  minHeight: verticalContentExtent,
                   paddingTop: stableScrollGeometry.contentTopInset,
                 },
                 scheduleContentStyle,
@@ -987,6 +997,7 @@ export const GuideView = memo(function GuideView({
             contentTopInset={stableScrollGeometry.contentTopInset}
             collapseProgress={collapseProgress}
             fontScale={effectiveFontScale}
+            reduceMotion={reduceMotion}
           />
         </View>
 
