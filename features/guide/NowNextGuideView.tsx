@@ -61,6 +61,7 @@ import {
   nowNextChannelRowLayout,
   nowNextChromeCondensedForProgress,
   nowNextCollapseProgressForScrollOffset,
+  nowNextFollowingContentPlacement,
   nowNextProgrammePressBackgroundColor,
   nowNextRailSlotPresentation,
   nowNextSafeAreaLayout,
@@ -221,6 +222,11 @@ const ChannelRow = memo(function ChannelRow({
             }
 
             const stackedFallback = rowLayout.mode === 'stacked-fallback';
+            const contentPlacement = nowNextFollowingContentPlacement(
+              platform,
+              fontScale,
+              slotIndex,
+            );
             return (
               <Pressable
                 key={programme.id}
@@ -247,7 +253,13 @@ const ChannelRow = memo(function ChannelRow({
                 <View
                   testID={`now-next-following-content-${channel.id}-${slotIndex}`}
                   pointerEvents="none"
-                  style={styles.followingContentBand}
+                  style={[
+                    styles.followingContentBand,
+                    {
+                      justifyContent: contentPlacement.justifyContent,
+                      paddingTop: contentPlacement.topOffset,
+                    },
+                  ]}
                 >
                   <View
                     style={
@@ -1016,7 +1028,6 @@ const styles = StyleSheet.create({
   followingContentBand: {
     flex: 1,
     width: '100%',
-    justifyContent: 'center',
   },
   followingContentInline: {
     width: '100%',
