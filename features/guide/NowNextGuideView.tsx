@@ -316,6 +316,8 @@ export const NowNextGuideView = memo(function NowNextGuideView({
   const nowMs = useGuideClock();
   const [dayAnchorMs, setDayAnchorMs] = useState(() => nowMs);
   const [live, setLive] = useState(true);
+  const liveRef = useRef(true);
+  const lastLiveCentredSlotMsRef = useRef<number | null>(null);
   const [pinnedReferenceMs, setPinnedReferenceMs] = useState(() => nowMs);
   const [condensed, setCondensed] = useState(false);
 
@@ -334,6 +336,7 @@ export const NowNextGuideView = memo(function NowNextGuideView({
   const referenceMsRef = useRef(referenceMs);
   referenceMsRef.current = referenceMs;
   const selectedSlotIndex = nearestSlotIndex(slots, referenceMs);
+  const selectedSlotMs = slots[selectedSlotIndex] ?? null;
   const temporalControlStates = resolveNowNextTemporalControlStates({
     live,
     referenceMs,
@@ -404,6 +407,7 @@ export const NowNextGuideView = memo(function NowNextGuideView({
   useEffect(() => {
     const nextDayStartMs = nowNextTelevisionDayBounds(nowMs).startMs;
     if (nextDayStartMs === dayStartMs) return;
+    liveRef.current = true;
     setDayAnchorMs(nowMs);
     setPinnedReferenceMs(nowMs);
     setLive(true);
@@ -423,6 +427,7 @@ export const NowNextGuideView = memo(function NowNextGuideView({
     (index: number) => {
       const slot = slots[index];
       if (slot === undefined) return;
+      liveRef.current = false;
       setPinnedReferenceMs(slot);
       setLive(false);
     },
@@ -460,14 +465,16 @@ export const NowNextGuideView = memo(function NowNextGuideView({
   );
 
   const browseFromLive = useCallback(() => {
-    if (!live) return;
-    setPinnedReferenceMs(referenceMs);
+    if (!liveRef.current) return;
+    liveRef.current = false;
+    setPinnedReferenceMs(referenceMsRef.current);
     setLive(false);
-  }, [live, referenceMs]);
+  }, []);
 
   const goNow = useCallback(() => {
     const currentNow = Date.now();
     const nextDayStartMs = nowNextTelevisionDayBounds(currentNow).startMs;
+    liveRef.current = true;
     setPinnedReferenceMs(currentNow);
     setLive(true);
 
@@ -476,13 +483,16 @@ export const NowNextGuideView = memo(function NowNextGuideView({
       return;
     }
 
+    const nextSlotIndex = nearestSlotIndex(slots, currentNow);
+    lastLiveCentredSlotMsRef.current = slots[nextSlotIndex] ?? null;
     centreTime(
-      nearestSlotIndex(slots, currentNow),
+      nextSlotIndex,
       explicitRailActionAnimation(reduceMotion),
     );
   }, [centreTime, dayStartMs, reduceMotion, slots]);
 
   const goPrimetime = useCallback(() => {
+    liveRef.current = false;
     setPinnedReferenceMs(primetimeMs);
     setLive(false);
     centreTime(
@@ -492,11 +502,17 @@ export const NowNextGuideView = memo(function NowNextGuideView({
   }, [centreTime, primetimeMs, reduceMotion, slots]);
 
   useEffect(() => {
+    if (!live || selectedSlotMs === null) return;
+    if (lastLiveCentredSlotMsRef.current === selectedSlotMs) return;
+
     const frame = requestAnimationFrame(() => {
-      centreTime(nearestSlotIndex(slots, referenceMsRef.current), false);
+      if (!liveRef.current) return;
+      if (lastLiveCentredSlotMsRef.current === selectedSlotMs) return;
+      lastLiveCentredSlotMsRef.current = selectedSlotMs;
+      centreTime(selectedSlotIndex, false);
     });
     return () => cancelAnimationFrame(frame);
-  }, [centreTime, slots]);
+  }, [centreTime, live, selectedSlotIndex, selectedSlotMs]);
 
   const collapseProgress = useSharedValue(0);
   const syncCondensed = useCallback((next: boolean) => {
@@ -797,8 +813,6 @@ export const NowNextGuideView = memo(function NowNextGuideView({
                 ]}
               >
                 <View
-                  importantForAccessibility="no-hide-descendants"
-                  accessibilityElementsHidden
                   style={[
                     styles.channelIdentityZone,
                     { height: rowLayout.referenceHeight },
@@ -809,7 +823,7 @@ export const NowNextGuideView = memo(function NowNextGuideView({
                     textColor={theme.colors.text}
                     mutedTextColor={theme.colors.textMuted}
                     variant="now-next"
-                    accessible={false}
+                    accessible
                   />
                 </View>
 
