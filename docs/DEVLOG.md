@@ -11,6 +11,20 @@ Doel: chronologisch, begrijpelijk overzicht van substantiële milestones, verifi
 
 ---
 
+## 21 september 2026 — PR #114 reconciled with canonical main after EPG horizon closeout
+
+PR #114 Totaal production visual convergence was reconciled with canonical `main` `c990ee5dcf757c88d7721ccccc82e6585402d185` after PR #116, PR #117 and PR #118 closed the Guide EPG horizon incident. The reconciliation uses a true merge commit with the prior PR #114 head and current main as parents. Main-only EPG/data/runtime files are inherited byte-identically from canonical main; the only overlapping path since the common base was `docs/DEVLOG.md`, which was merged additively so both the canonical EPG incident history and the existing Totaal convergence history remain intact.
+
+No Totaal runtime conflict required product or metric reinterpretation. All owner-approved/frozen Totaal work remains unchanged: 120-pt viewed-time anchor, 1.5× programme overscan, horizontal single-source gesture ownership, worklet-safe current-time marker, first-open positioning, distance-aware `Nu`, micro-programme `…` treatment, repeated-title run identity and bounded repeated-run presentation, exact programme duration geometry and the accepted production shell/collapse metrics.
+
+The reconciled client still uses `useSelectedGuideDaySchedule` with selected television-day loading; Totaal requests the selected day plus following day only when that following day is selectable, and `loadTwoTelevisionDayGuideSchedule` retains the all-or-nothing contract by returning `null` when either independent hosted canonical television-day read is unavailable. `HostedGuideScheduleClient` remains the client data source; no XMLTV/provider fallback or client-side horizon workaround was introduced.
+
+Canonical PR #116/#117/#118 EPG files, including the server-side `guide-horizon` refresh, hosted transport policy, XMLTV provider fix, deployed Edge Function source and television-day horizon migration, are inherited unchanged from main. The live-proven 06:00 Europe/Amsterdam television-day semantics and D-2..D+7 product horizon therefore remain canonical.
+
+**Next step:** exact-head CI, then Lead exact-head review followed by renewed owner physical iPhone acceptance. Do not merge and do not request Independent QA before those gates pass.
+
+---
+
 ## 21 september 2026 — Guide EPG horizon incident operationally closed
 
 PR #117 merged as `c875922225e27c825fa9b0c6cbde2d08b8d22205`; exact-main CI #839 succeeded. `epg-refresh` was redeployed as live version 6 and protected refresh request 88 completed with HTTP 200 in `guide-horizon` mode. Canonical storage now materialises true 06:00 Europe/Amsterdam television-day windows. Complete D0..D+5 windows were stored for all 12 development channels, while incomplete historical/future windows were correctly skipped without destructive replacement.
