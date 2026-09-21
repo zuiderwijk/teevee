@@ -518,6 +518,38 @@ describe('Nu & Straks production interaction boundary', () => {
     expect(followingTitle?.getAttribute('data-number-of-lines')).toBe('2');
   });
 
+  it('bottom-aligns the reference title and centres all three following content bands without changing hit geometry', async () => {
+    await act(async () =>
+      root.render(
+        <NowNextGuideView
+          guideDataVersion={1}
+          presentationNavigation={<span />}
+          onSelectProgramme={vi.fn()}
+        />,
+      ),
+    );
+
+    const referenceStyle = getByTestId(
+      container,
+      'now-next-reference-one-one-ref',
+    ).getAttribute('data-style');
+    expect(referenceStyle).toContain('"justifyContent":"flex-end"');
+
+    for (const slot of [0, 1, 2]) {
+      const contentStyle = getByTestId(
+        container,
+        `now-next-following-content-one-${slot}`,
+      ).getAttribute('data-style');
+      expect(contentStyle).toContain('"justifyContent":"center"');
+
+      const targetStyle = getByTestId(
+        container,
+        `now-next-following-one-${slot}-one-follow-${slot + 1}`,
+      ).getAttribute('data-style');
+      expect(targetStyle).toContain('"height":44');
+    }
+  });
+
   it('commits native rail momentum semantically without a secondary scrollTo', async () => {
     await act(async () =>
       root.render(
