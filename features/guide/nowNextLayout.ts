@@ -7,13 +7,9 @@ import {
 } from './guideVisualMetrics';
 
 export const NOW_NEXT_VISUAL_METRICS = {
-  referenceContextHeight: 52,
-  accessibilityReferenceContextHeight: 88,
-  accessibilityReferenceTimeLaneHeight: 40,
-  accessibilityUtilitiesLaneHeight: 48,
+  utilityContextHeight: 52,
   timeRailHeight: 52,
   functionalStackHeight: 104,
-  accessibilityFunctionalStackHeight: 140,
   collapseDistance: 56,
   reduceMotionSwitchOffset: 28,
   timeSlotWidth: 48,
@@ -42,8 +38,8 @@ export const NOW_NEXT_VISUAL_METRICS = {
   programmeRightInset: 24,
   channelTopPadding: 8,
   referenceProgrammeMinHeight: 64,
-  referenceToFollowingGap: 4,
-  channelBottomPadding: 8,
+  referenceToFollowingGap: 0,
+  channelBottomPadding: 12,
   followingTimeWidth: 52,
   followingTimeTitleGap: 8,
   followingInlinePaddingY: 4,
@@ -51,18 +47,12 @@ export const NOW_NEXT_VISUAL_METRICS = {
   followingStackedPaddingY: 6,
   followingExtremeWidthThreshold: 180,
   followingExtremeFontScaleThreshold: 2,
-  followingBiasInset: 2,
   baseRowHeightIos: 216,
   baseRowHeightAndroid: 228,
   bottomClearance: 16,
 } as const;
 
 export const NOW_NEXT_TYPOGRAPHY = {
-  referenceTime: {
-    fontFamily: TEEVEE_FONT_FAMILIES.semibold,
-    fontSize: 18,
-    lineHeight: 22,
-  },
   utility: {
     fontFamily: TEEVEE_FONT_FAMILIES.semibold,
     fontSize: 14,
@@ -113,22 +103,10 @@ export function nowNextUsesAccessibilityLayout(fontScale: number) {
   return normalizedFontScale(fontScale) > GUIDE_ACCESSIBILITY_FONT_SCALE_THRESHOLD;
 }
 
-export function nowNextReferenceContextLayout(fontScale: number) {
-  const accessibility = nowNextUsesAccessibilityLayout(fontScale);
+export function nowNextUtilityContextLayout() {
   return {
-    mode: accessibility ? 'two-lane' : 'horizontal',
-    height: accessibility
-      ? NOW_NEXT_VISUAL_METRICS.accessibilityReferenceContextHeight
-      : NOW_NEXT_VISUAL_METRICS.referenceContextHeight,
-    referenceLaneHeight: accessibility
-      ? NOW_NEXT_VISUAL_METRICS.accessibilityReferenceTimeLaneHeight
-      : NOW_NEXT_VISUAL_METRICS.referenceContextHeight,
-    utilitiesLaneHeight: accessibility
-      ? NOW_NEXT_VISUAL_METRICS.accessibilityUtilitiesLaneHeight
-      : NOW_NEXT_VISUAL_METRICS.referenceContextHeight,
-    functionalStackHeight: accessibility
-      ? NOW_NEXT_VISUAL_METRICS.accessibilityFunctionalStackHeight
-      : NOW_NEXT_VISUAL_METRICS.functionalStackHeight,
+    height: NOW_NEXT_VISUAL_METRICS.utilityContextHeight,
+    functionalStackHeight: NOW_NEXT_VISUAL_METRICS.functionalStackHeight,
   } as const;
 }
 
@@ -253,47 +231,6 @@ export function nowNextFollowingTargetRects(
   }));
 }
 
-export function nowNextFollowingContentBias(index: number) {
-  if (index <= 0) {
-    return {
-      justifyContent: 'flex-end',
-      paddingTop: 0,
-      paddingBottom: NOW_NEXT_VISUAL_METRICS.followingBiasInset,
-    } as const;
-  }
-  if (index >= 2) {
-    return {
-      justifyContent: 'flex-start',
-      paddingTop: NOW_NEXT_VISUAL_METRICS.followingBiasInset,
-      paddingBottom: 0,
-    } as const;
-  }
-  return {
-    justifyContent: 'center',
-    paddingTop: 0,
-    paddingBottom: 0,
-  } as const;
-}
-
-export function nowNextFollowingStackedContentPadding(index: number) {
-  if (index <= 0) {
-    return {
-      paddingTop: 8,
-      paddingBottom: 2,
-    } as const;
-  }
-  if (index >= 2) {
-    return {
-      paddingTop: 2,
-      paddingBottom: 8,
-    } as const;
-  }
-  return {
-    paddingTop: 6,
-    paddingBottom: 6,
-  } as const;
-}
-
 export function nowNextProgrammePressBackgroundColor(
   pressed: boolean,
   semanticSurface: string,
@@ -319,10 +256,9 @@ export function nowNextChromeCondensedForProgress(progress: number) {
 }
 
 export function nowNextStableScrollGeometry(fontScale: number) {
-  const context = nowNextReferenceContextLayout(fontScale);
   const contentTopInset = guideChromeExpandedHeight(fontScale);
   return {
-    viewportTop: context.functionalStackHeight,
+    viewportTop: NOW_NEXT_VISUAL_METRICS.functionalStackHeight,
     contentTopInset,
     scrollCompensation:
       contentTopInset - NOW_NEXT_VISUAL_METRICS.collapseDistance,
@@ -346,9 +282,7 @@ export function nowNextStableScrollVisuals(
     (accessibility
       ? GUIDE_VISUAL_METRICS.presentationNavAccessibilityHeight
       : GUIDE_VISUAL_METRICS.presentationNavHeight);
-  const functionalStackHeight = accessibility
-    ? NOW_NEXT_VISUAL_METRICS.accessibilityFunctionalStackHeight
-    : NOW_NEXT_VISUAL_METRICS.functionalStackHeight;
+  const functionalStackHeight = NOW_NEXT_VISUAL_METRICS.functionalStackHeight;
   const scrollCompensation =
     guideChromeExpanded - NOW_NEXT_VISUAL_METRICS.collapseDistance;
 
