@@ -42,11 +42,11 @@ Physical iPhone evidence on the production-convergence candidates justified reop
 - all standalone visible reference-time copy is removed, including `Referentietijd`, live `Nu · HH:MM` and browse `HH:MM`; the rail itself carries visible temporal orientation;
 - visible reference-programme `tot HH:MM` metadata is removed because the following programme start time normally communicates the same boundary; full start/end times remain available to accessibility and Programme Detail;
 - the reference programme block remains minimum 64 pt but its title is bottom-aligned; the dedicated reference→following gap is **0 pt**, with the former 4 pt moved to row-bottom padding so base row height remains unchanged;
-- the three following programme rows remain directly adjacent with no additional interaction gap while retaining independent minimum 44 pt iOS / 48 dp Android touch targets; visible content is centred in all three targets;
+- the three following programme rows remain directly adjacent with no additional interaction gap while retaining independent minimum 44 pt iOS / 48 dp Android touch targets; at standard text, visible content uses the accepted progressive target-slack offsets (#1 = 2/3, #2 = 1/3, #3 = 0) while Larger Text remains centred;
 - rail ticks keep 1-pt thickness but use dedicated `railTick` contrast: light `#80807A`, dark `#72726B`; major opacity 1.00, quarter opacity 0.78;
 - above font scale 1.35, shared Guide tabs remain 64 pt / max two lines; Nu & Straks itself stays on the same **52-pt utility-only context** because the reference-time lane has been removed;
 - above font scale 1.35, following programmes use an inline time+title composition with at most two visible lines; stacked time-above-title is reserved for the extreme >2.0 / <180-pt width fallback;
-- the three normal following targets keep their 44/48 interaction geometry and all three visible content blocks are centred; compact continuation now comes from reference-title bottom alignment plus the 0-pt reference→following spacer;
+- the three normal following targets keep their 44/48 interaction geometry; standard-text visible content is progressively lifted through the available target slack (#1 2/3, #2 1/3, #3 0), while Larger Text remains centred; compact continuation also retains reference-title bottom alignment plus the 0-pt reference→following spacer;
 - active/current `Nu` and return-to-live `Nu` must be visually and semantically distinct. The same control treatment may not represent both states.
 
 Exact production metrics and acceptance criteria are frozen in `docs/NU_EN_STRAKS_VISUAL_CONVERGENCE.md`.
@@ -60,7 +60,7 @@ The former compact following-row debt is resolved by the owner-approved producti
 - above `1.35`, following content remains substantive and uncapped but uses the accepted inline time+title two-line composition to avoid excessive vertical expansion;
 - stacked time/title is only the extreme-width fallback when font scale >2.0 and programme width <180 pt;
 - compact functional chrome keeps the documented 1.20 cap; shared presentation tabs still use the accepted 64-pt Larger Text state while Nu & Straks utility context remains 52 pt at all scales;
-- visible following content is centred inside the unchanged non-overlapping 44/48 touch geometry;
+- standard-text following content uses the canonical progressive slack offsets inside unchanged non-overlapping 44/48 touch geometry; Larger Text content remains centred;
 - reference/following hierarchy remains typographic and open: no cards, artwork, progress, chevrons or extra labels are introduced.
 
 Exact metrics, safe-area rules, shell condensation, Nu/Primetime states, time-rail geometry, pressed states, empty-data behaviour, Programme Detail round-trip and physical validation criteria live in `docs/NU_EN_STRAKS_VISUAL_CONVERGENCE.md`.
@@ -76,7 +76,7 @@ The following prototype/runtime treatments are also non-canonical:
 - 88-pt/two-lane Nu & Straks reference-time context above font scale 1.35;
 - standalone visible reference-time copy (`Nu · HH:MM` / browse `HH:MM`) or an empty lane reserved for it;
 - automatic stacked following layout for every font scale above 1.35;
-- #1 bottom / #2 centre / #3 top following-content bias;
+- the older fixed #1 bottom / #2 centre / #3 top bias; the current standard-text rule is the proportional 2/3, 1/3, 0 target-slack progression;
 - a 4-pt dedicated reference→following spacer;
 - generic `border`/hairline treatment for the rail-bottom line;
 - rounding live `Nu` semantics to the nearest rail slot;

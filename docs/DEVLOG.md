@@ -11,19 +11,13 @@ Doel: chronologisch, begrijpelijk overzicht van substantiële milestones, verifi
 
 ---
 
-## 21 september 2026 — PR #96 reconciled to final PR #102 Nu & Straks composition
+## 21 september 2026 — Nu & Straks final standard-text following density micro-refinement
 
-Existing runtime PR #96 is reconciled with canonical `main` `1d25b93dd0a45d397983aef4ea512cb9c460761d`, preserving PR #102 design/spec and PR #103 project-state closeout exactly.
+Physical iPhone review of PR #96 exact head `3cafcc6bee996eb1923549bb3b65fdabb6666262` accepted the final reference-time removal, rail-bottom treatment, dark mode, Larger Text, 15-minute rail/ticks, Nu/Primetime, vertical channel-position preservation and the tightened reference→first-following transition. One visual issue remained: at standard text, following #1→#2 and #2→#3 still read too loose because each one-line content block was centred in its independent 44-pt iOS / 48-dp Android Pressable.
 
-The runtime delta is intentionally narrow. Nu & Straks no longer renders standalone reference-time copy or reserves the former Larger Text reference lane: Primetime/Nu now occupy one 52-pt utility-only context at every font scale, so the persistent functional stack is always 104 pt. Shared GuideChrome remains responsive at 100/116 pt, retaining 56-pt native collapse with 44/60 visual compensation and 204/220 rest-overlay endpoints converging to 104 pt.
+The interaction geometry remains frozen. The final owner correction changes only standard-text content placement inside the existing targets. With `visibleSlack = followingTargetHeight - 20`, following #1 uses top offset `round(slack × 2/3)`, #2 uses `round(slack × 1/3)`, and #3 uses 0. This produces approximately 16-pt visible gaps on iOS and 18–19-dp gaps on Android while retaining separate, adjacent, non-overlapping targets and keeping all visible content inside its own Pressable. Larger Text (>1.35) remains physically accepted and vertically centred.
 
-The time-rail bottom baseline now uses an explicit 1-pt semantic `railTick` line at opacity 0.78, matching the physically accepted quarter-hour ticks without changing global `border`. Reference programme content is bottom-aligned, the dedicated reference→following gap is 0 pt and channel bottom padding is 12 pt, preserving 216/228 base row totals. All three following content bands are vertically centred again while the independent adjacent 44-pt iOS / 48-dp Android Pressables and the already accepted Larger Text inline/extreme-fallback formulas remain unchanged.
-
-Deterministic coverage is updated for the utility-only 52/104 stack, 204/220→104 collapse endpoints, explicit rail baseline, 64/0/12 reference geometry, bottom-aligned reference content, centred following bands, non-overlapping minimum targets and all existing rail/DST/momentum/Detail/deferred-loading regressions.
-
-Verification on runtime candidate `a2b6b8725fd2fb46cdfafd023e98b827510e1507` passed CI #738: strict TypeScript, lint, **64 test files / 438 tests**, iOS/Android/web Expo export and classifier-selected Android native/config checks all succeeded; PR arm64 debug APK compilation ended `BUILD SUCCESSFUL`.
-
-**Next step:** Lead exact-head re-review of the final documentation-updated candidate and focused physical iPhone revalidation of only the final PR #102 deltas plus regression smoke of frozen PASS items. Independent QA remains blocked until physical PASS.
+**Next step:** update the existing PR #96 only for this standard-text content-placement rule, add deterministic coverage, run exact-head CI and perform one final focused physical iPhone recheck. Independent QA remains blocked until physical PASS.
 
 ---
 
