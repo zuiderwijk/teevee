@@ -2,9 +2,9 @@
 
 Status: **CANONICAL PRODUCTION IMPLEMENTATION SPEC — owner-approved**
 Date: 2026-09-18
-Owner refinement: 2026-09-21
+Owner refinements: 2026-09-21 — temporal/density refinement plus post-PR #96 physical refinement
 
-This document converts the accepted Nu & Straks direction into a production implementation contract. It is convergence, not redesign. The 21 September owner refinement supersedes only the exact temporal-rail, reference-copy and default-density calibrations explicitly amended below.
+This document converts the accepted Nu & Straks direction into a production implementation contract. It is convergence, not redesign. Physical iPhone review of PR #96 exact head `32db9459d265e8546c7137baf82e623f015ad652` rejected only rail-tick legibility, larger-text composition and the perceived rhythm of the three following programmes. The post-PR #96 owner refinement below supersedes only those calibrations; all other accepted Nu & Straks contracts remain frozen.
 
 ## 1. Authority
 
@@ -95,7 +95,7 @@ These are Development corrections, not owner decisions.
 
 Nu & Straks uses the same Guide chrome hierarchy as the other production Guide presentations.
 
-### 5.1 Expanded/rest composition
+### 5.1 Standard expanded/rest composition — fontScale <= 1.35
 
 From top to content:
 1. top safe area;
@@ -105,52 +105,105 @@ From top to content:
 5. time rail;
 6. vertically scrollable channel rows.
 
-Shared metrics already canonical elsewhere remain:
+Standard metrics:
 - horizontal screen inset: **20 pt**;
 - brand top inset: **8 pt**;
 - brand mark box: **56 × 44 pt**;
-- Guide presentation navigation height: **48 pt**;
-- expanded shared brand + presentation chrome: **100 pt**, excluding top safe area.
+- Guide presentation navigation: **48 pt**, one-line labels;
+- expanded shared brand + presentation chrome: **100 pt**, excluding top safe area;
+- reference-time context: **52 pt**;
+- time rail: **52 pt**;
+- persistent functional stack: **104 pt**.
 
 Do not add a Nu & Straks-specific duplicate heading below the shared presentation navigation.
 
-### 5.2 Sticky/condensed composition
+### 5.2 Responsive accessibility composition — fontScale > 1.35
+
+Physical iPhone evidence proves that keeping the shared presentation tabs and Nu & Straks temporal controls inside the standard one-line geometry causes unacceptable truncation.
+
+The shared Guide presentation selector therefore uses its accepted accessibility state:
+- navigation height: **64 pt**;
+- visible labels remain `Totaal`, `Per zender`, `Nu & Straks`; do not abbreviate them;
+- labels may use **maximum 2 lines**;
+- text remains centred;
+- compact-label `maximumFontSizeMultiplier = 1.20` remains in force;
+- the full 64-pt tab remains the interactive target;
+- selected indicator remains the canonical **2.5-pt** underline treatment.
+
+The brand row remains **52 pt**, so expanded shared brand + presentation chrome becomes **116 pt**.
+
+Nu & Straks reference context becomes **88 pt** in this mode:
+- upper reference-time lane: **40 pt**;
+- lower utilities lane: **48 pt**.
+
+The rail remains **52 pt**. The persistent functional stack is therefore **140 pt** in accessibility mode.
+
+This is responsive accessibility composition, not a separate product state.
+
+### 5.3 Sticky/condensed composition
 
 Vertical channel scrolling may condense only non-functional shared brand/presentation chrome.
 
-The persistent functional stack is:
-1. reference-time context: **52 pt**;
-2. time rail: **52 pt**.
-
-Settled condensed functional height: **104 pt**, excluding top safe area.
+Persistent functional stack:
+- standard mode: **52 reference + 52 rail = 104 pt**;
+- accessibility mode: **88 reference/utilities + 52 rail = 140 pt**.
 
 No date row, selected-channel label, compact channel title or other extra context is added.
 
-Normal-motion calibration:
-- collapse is coupled monotonically to the first **56 pt** of vertical channel-scroll;
-- disappearing shared chrome may translate upward by at most **12 pt**;
-- no scroll-direction hide/reveal behaviour;
-- no spring-based toolbar behaviour;
-- the visible channel/list anchor must remain stable through collapse.
+Normal-motion calibration remains:
+- native collapse distance: **56 pt**;
+- disappearing shared chrome translate: max **12 pt** upward;
+- no scroll-direction hide/reveal;
+- no spring;
+- stable visible channel/list anchor throughout collapse.
+
+Fixed-native-viewport visual compensation is derived from the responsive expanded GuideChrome:
+- standard: **100 - 56 = 44 pt**;
+- accessibility: **116 - 56 = 60 pt**.
 
 Reduce Motion:
-- use a discrete expanded/condensed switch at **28 pt** vertical schedule offset;
-- preserve the same final geometry.
+- discrete expanded/condensed switch at **28 pt** vertical schedule offset;
+- preserve the applicable standard/accessibility final geometry.
 
 ## 6. Reference-time context
 
-The reference-time context remains a fixed **52-pt** functional row with **20-pt** horizontal insets.
+The former `Referentietijd` caption remains removed.
 
-The former `Referentietijd` caption is removed. The temporal value is the only left-hand text anchor:
+### 6.1 Standard mode — fontScale <= 1.35
+
+The context is a fixed **52-pt** horizontal row with **20-pt** horizontal insets.
+
+Left:
 - value: **18/22, Instrument Sans Semibold**;
-- live: `Nu · HH:MM`, using the **actual current minute**;
+- live: `Nu · HH:MM`, using the exact actual minute;
 - browse: `HH:MM`, using the settled 15-minute browse reference.
 
-The value is vertically centred within the 52-pt row. Do not replace the removed caption with another explanatory label.
+Right:
+- Primetime + Nu in the same row.
 
-All compact reference-time chrome uses a hard maximum font-size multiplier of **1.20**. This cap does not apply to programme content.
+The value is vertically centred. Do not replace the removed caption with another explanatory label.
 
-### 6.1 Nu and Primetime geometry
+### 6.2 Accessibility mode — fontScale > 1.35
+
+The context becomes **88 pt**, split into two non-competing lanes.
+
+Upper reference lane — **40 pt**:
+- left inset **20 pt**;
+- same `Nu · HH:MM` / `HH:MM` copy;
+- **18/22 Semibold**;
+- one line;
+- tabular numerals where supported.
+
+Lower utility lane — **48 pt**:
+- Primetime + Nu align to the trailing side;
+- same **8-pt** inter-control gap;
+- same 36-pt visible controls;
+- same platform-safe 44/48 touch targets;
+- same semantic states.
+
+All compact reference/utility chrome keeps the hard **1.20** maximum font-size multiplier. Programme content remains substantive and uncapped.
+
+### 6.3 Nu and Primetime geometry
 
 Production calibration:
 - visible control height: **36 pt**;
@@ -161,7 +214,7 @@ Production calibration:
 - Nu horizontal padding: **12 pt**;
 - label: **14/18, Instrument Sans Semibold**.
 
-### 6.2 Nu and Primetime semantic states
+### 6.4 Nu and Primetime semantic states
 
 Live:
 - Nu = active/current;
@@ -179,7 +232,7 @@ If actual Now and the Primetime semantic context overlap, **Nu wins while the pr
 
 Active/current is never disabled. Disabled is reserved for genuinely unavailable actions.
 
-Current state must not rely on colour alone; expose selected/current semantics to accessibility and use the restrained canonical current-state indicator rather than a permanent heavy pill. In particular, active/current `Nu` must **not** reuse the return-to-live pill/surface treatment: live `Nu` is a current-state treatment, while browse `Nu` is an action treatment.
+Current state must not rely on colour alone; expose selected/current semantics to accessibility. Active/current `Nu` must not reuse the return-to-live pill/surface treatment.
 
 ## 7. Time rail
 
