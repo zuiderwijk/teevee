@@ -20,7 +20,6 @@ import Animated, {
 import { scheduleOnRN } from 'react-native-worklets';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { isProgrammeCurrent } from '@/data/domain/epg';
 import { guideTelevisionDayStart } from '@/data/domain/guideTime';
 import { buildRuntimeGuideFixture } from '@/data/fixtures/runtimeGuideFixture';
 import { runtimeGuideScheduleFor } from '@/data/runtime/guideScheduleRuntime';
@@ -45,7 +44,7 @@ import {
   windowGuideProgrammesByChannel,
 } from './guideProgrammeWindow';
 import { formatGuideTime, indexGuideProgrammesByChannel } from './guideRenderData';
-import { buildTimeTicks, programmeFrame, timeToX, timelineWidth } from './geometry';
+import { buildTimeTicks, timeToX, timelineWidth } from './geometry';
 import {
   COMPACT_GUIDE_MAX_FONT_SIZE_MULTIPLIER,
   GUIDE_TYPOGRAPHY,
@@ -57,21 +56,18 @@ import { TimeAxisLeftMask } from './TimeAxisLeftMask';
 import { TimeAxisTick } from './TimeAxisTick';
 import {
   resolveTotaalSchedulePresentation,
-  TOTAAL_TYPOGRAPHY,
   TOTAAL_VISUAL_METRICS,
   totaalChromeCondensedForProgress,
   totaalCollapseProgressForScrollOffset,
   totaalCurrentTimeMarkerBodyX,
   totaalNativeOffsetForScheduleOffset,
-  totaalProgrammeContentPresentation,
-  totaalProgrammePressBackgroundColor,
-  totaalProgrammeSecondaryLabel,
   totaalScheduleOffsetForNativeOffset,
   totaalSafeAreaLayout,
   totaalStableScrollGeometry,
   totaalStableScrollVisuals,
   totaalTimeAxisTickPresentation,
 } from './totaal';
+import { TotaalProgrammeCell } from './TotaalProgrammeCell';
 import { useGuideClock } from './useGuideClock';
 import { useSelectedGuideDaySchedule } from './useSelectedGuideDaySchedule';
 
@@ -918,83 +914,17 @@ export const GuideView = memo(function GuideView({
                     ]}
                   >
                     {(windowedProgrammesByChannel.get(channel.id) ?? []).map(
-                      (programme) => {
-                        const frame = programmeFrame(
-                          programme,
-                          windowStart,
-                          layout.minuteWidth,
-                        );
-                        const startMs = Date.parse(programme.startAt);
-                        const endMs = Date.parse(programme.endAt);
-                        const isCurrent = isProgrammeCurrent(programme, nowMs);
-                        const content = totaalProgrammeContentPresentation(frame.width);
-                        const accessibilityStatus = isCurrent ? ', nu bezig' : '';
-                        const secondary = totaalProgrammeSecondaryLabel(
-                          isCurrent,
-                          formatGuideTime(startMs),
-                          formatGuideTime(endMs),
-                        );
-
-                        return (
-                          <Pressable
-                            key={programme.id}
-                            testID={`programme-${programme.id}`}
-                            accessibilityRole="button"
-                            accessibilityLabel={`${channel.displayName}, ${programme.title}, ${formatGuideTime(startMs)} tot ${formatGuideTime(endMs)}${accessibilityStatus}`}
-                            accessibilityHint="Opent programmadetails"
-                            onPress={() => onSelectProgramme({ programme, channel })}
-                            style={({ pressed }) => [
-                              styles.programme,
-                              {
-                                left: frame.left,
-                                width: frame.width,
-                                paddingHorizontal: content.paddingX,
-                                backgroundColor: totaalProgrammePressBackgroundColor(
-                                  pressed,
-                                  theme.colors.surfaceElevated,
-                                ),
-                              },
-                            ]}
-                          >
-                            <View style={styles.programmeTextContent}>
-                              <Text
-                                numberOfLines={content.titleLines}
-                                ellipsizeMode="tail"
-                                style={[
-                                  isCurrent
-                                    ? styles.currentProgrammeTitle
-                                    : styles.programmeTitle,
-                                  { color: theme.colors.text },
-                                ]}
-                              >
-                                {programme.title}
-                              </Text>
-                              {content.showSecondary ? (
-                                <Text
-                                  numberOfLines={1}
-                                  style={[
-                                    styles.programmeSecondary,
-                                    { color: theme.colors.textSecondary },
-                                  ]}
-                                >
-                                  {secondary}
-                                </Text>
-                              ) : null}
-                            </View>
-                            <View
-                              pointerEvents="none"
-                              style={[
-                                styles.programmeBoundary,
-                                {
-                                  backgroundColor: theme.colors.border,
-                                  opacity:
-                                    TOTAAL_VISUAL_METRICS.programmeBoundaryOpacity,
-                                },
-                              ]}
-                            />
-                          </Pressable>
-                        );
-                      },
+                      (programme) => (
+                        <TotaalProgrammeCell
+                          key={programme.id}
+                          channel={channel}
+                          programme={programme}
+                          nowMs={nowMs}
+                          windowStartMs={windowStart}
+                          minuteWidth={layout.minuteWidth}
+                          onSelectProgramme={onSelectProgramme}
+                        />
+                      ),
                     )}
                   </View>
                 ))}
@@ -1188,37 +1118,6 @@ const styles = StyleSheet.create({
     position: 'absolute',
     left: 0,
     borderBottomWidth: 1,
-  },
-  programme: {
-    position: 'absolute',
-    top: 0,
-    bottom: 0,
-    borderRadius: 0,
-    paddingVertical: 0,
-    justifyContent: 'center',
-    overflow: 'hidden',
-  },
-  programmeTextContent: {
-    minWidth: 0,
-    flexShrink: 1,
-    justifyContent: 'center',
-  },
-  programmeTitle: {
-    ...TOTAAL_TYPOGRAPHY.programmeTitle,
-  },
-  currentProgrammeTitle: {
-    ...TOTAAL_TYPOGRAPHY.currentProgrammeTitle,
-  },
-  programmeSecondary: {
-    ...TOTAAL_TYPOGRAPHY.programmeSecondary,
-    marginTop: 3,
-  },
-  programmeBoundary: {
-    position: 'absolute',
-    right: 0,
-    top: TOTAAL_VISUAL_METRICS.programmeBoundaryInsetY,
-    bottom: TOTAAL_VISUAL_METRICS.programmeBoundaryInsetY,
-    width: TOTAAL_VISUAL_METRICS.programmeBoundaryWidth,
   },
   edgeOverlayFrame: {
     position: 'absolute',
