@@ -1,0 +1,116 @@
+name: Temporary EPG horizon inspection
+
+on:
+  push:
+    branches:
+      - fix/guide-epg-television-day-horizon
+
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Inspect live development XMLTV horizon
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl --fail --silent --show-error --location --max-time 90 \
+            https://iptv-epg.org/files/epg-nl.xml -o /tmp/epg-nl.xml
+          python3 - <<'PY'
+          import json
+          import xml.etree.ElementTree as ET
+          from collections import defaultdict
+          from datetime import datetime, timedelta, time, timezone
+          from zoneinfo import ZoneInfo
+
+          channels = [
+              'NPO1.nl','NPO2.nl','NPO3.nl','RTL4.nl','RTL5.nl','SBS6.nl',
+              'RTL7.nl','RTL8.nl','Net5.nl','VeronicaDisneyXD.nl','SBS9.nl','RTLZ.nl'
+          ]
+          wanted = set(channels)
+          intervals = defaultdict(list)
+          global_min = None
+          global_max = None
+          programme_count = 0
+
+          def parse_xmltv(value):
+              raw = value.strip()
+              dt = datetime.strptime(raw[:14] + raw[15:], '%Y%m%d%H%M%S%z')
+              return dt.astimezone(timezone.utc)
+
+          for event, elem in ET.iterparse('/tmp/epg-nl.xml', events=('end',)):
+              if elem.tag != 'programme':
+                  continue
+              programme_count += 1
+              channel = elem.attrib.get('channel')
+              try:
+                  start = parse_xmltv(elem.attrib['start'])
+                  end = parse_xmltv(elem.attrib['stop'])
+              except Exception:
+                  elem.clear()
+                  continue
+              if end <= start:
+                  elem.clear()
+                  continue
+              global_min = start if global_min is None or start < global_min else global_min
+              global_max = end if global_max is None or end > global_max else global_max
+              if channel in wanted:
+                  intervals[channel].append((start, end))
+              elem.clear()
+
+          for rows in intervals.values():
+              rows.sort()
+
+          amsterdam = ZoneInfo('Europe/Amsterdam')
+          now = datetime.now(timezone.utc)
+          local_now = now.astimezone(amsterdam)
+          label = local_now.date() if local_now.time() >= time(6) else local_now.date() - timedelta(days=1)
+
+          def tv_start(offset):
+              day = label + timedelta(days=offset)
+              return datetime.combine(day, time(6), tzinfo=amsterdam).astimezone(timezone.utc)
+
+          def covered(rows, start, end):
+              candidates = [(s, e) for s, e in rows if e > start and s < end]
+              if not candidates or candidates[0][0] > start:
+                  return False
+              until = max(start, candidates[0][1])
+              for s, e in candidates[1:]:
+                  if until >= end:
+                      return True
+                  if s > until:
+                      return False
+                  until = max(until, e)
+              return until >= end
+
+          windows = []
+          for offset in range(-3, 9):
+              start = tv_start(offset)
+              end = tv_start(offset + 1)
+              incomplete = [c for c in channels if not covered(intervals[c], start, end)]
+              windows.append({
+                  'offset': offset,
+                  'from': start.isoformat(),
+                  'to': end.isoformat(),
+                  'complete': not incomplete,
+                  'incompleteChannels': incomplete,
+              })
+
+          result = {
+              'inspectedAt': now.isoformat(),
+              'programmeCount': programme_count,
+              'globalMinStart': global_min.isoformat() if global_min else None,
+              'globalMaxEnd': global_max.isoformat() if global_max else None,
+              'channelRanges': {
+                  c: {
+                      'minStart': intervals[c][0][0].isoformat() if intervals[c] else None,
+                      'maxEnd': max((e for _, e in intervals[c]), default=None).isoformat()
+                          if intervals[c] else None,
+                      'count': len(intervals[c]),
+                  }
+                  for c in channels
+              },
+              'windows': windows,
+          }
+          print('EPG_HORIZON_RESULT=' + json.dumps(result, separators=(',', ':')))
+          PY
