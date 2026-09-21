@@ -158,7 +158,7 @@ Superseded examples include earlier Per-zender variants with programme imagery, 
 
 ### Nu & Straks
 Status: **ACCEPTED**
-Owner-approved direction: 2026-09-13; production accessibility/density and shell refinement 2026-09-18
+Owner-approved direction: 2026-09-13; production accessibility/density and shell refinement 2026-09-18; temporal/density refinement 2026-09-21
 Detailed manifest: `design/current/guide/NU_EN_STRAKS.md`
 Production specification: `docs/NU_EN_STRAKS_VISUAL_CONVERGENCE.md`
 
@@ -174,11 +174,15 @@ Accepted visual characteristics:
 - no genre labels;
 - no progress bars;
 - no chevrons or repeated `Daarna` labels;
-- compact shared time rail with the physically accepted native fling/settle behaviour;
+- compact shared time rail with **15-minute navigation increments** and the physically accepted native fling/settle behaviour;
+- whole and half hours show text plus longer thin vertical ticks; quarter hours use shorter unlabeled ticks; the selected/current marker remains strongest;
+- live `Nu` preserves the actual current minute semantically and is not rounded to a rail increment;
 - `Primetime` targets 20:30 on the active television day; `Nu` restores live when browsing;
 - horizontal movement changes reference time, vertical movement changes channel context;
 - channel order/vertical position remains stable while reference time changes;
 - each following programme has a real non-overlapping minimum target of 44 pt on iOS / 48 dp on Android;
+- the visible `Referentietijd` caption and reference-programme `tot HH:MM` metadata are removed; the reference block and transition into the following programmes are more compact while touch geometry remains production-safe;
+- active/current `Nu` and return-to-live `Nu` use distinct visual and semantic states;
 - at font scale above 1.35, following programmes stack time above title and grow vertically instead of shrinking or overlapping;
 - three following slot geometries remain reserved even when programme data is incomplete, preserving vertical channel position across reference-time changes;
 - production Nu & Straks uses the shared Guide shell; reference-time context plus time rail form the persistent **104-pt** functional stack after condensation;
@@ -187,7 +191,7 @@ Accepted visual characteristics:
 
 ADR 0008 changes the meaning of the active day around midnight: 00:00–05:59 remains part of the preceding television day. Nu & Straks still has no independent date selector.
 
-The exact 13 September visual remains canonical for composition and hierarchy. The written 18 September production specification supersedes it only for the explicit accessibility/density, shared-shell, Dynamic Type, touch-target, safe-area, pressed-state and production-calibration rules documented there. Current runtime prototype values are not automatically canonical.
+The exact 13 September visual remains canonical for composition and hierarchy. The written 18 September production specification plus the owner-approved 21 September refinement supersede it only for the explicit accessibility/density, shared-shell, Dynamic Type, touch-target, safe-area, pressed-state, time-rail and reference-programme presentation rules documented there. Current runtime prototype values are not automatically canonical.
 
 ## Programme Detail
 Status: **ACCEPTED DIRECTION**
