@@ -11,6 +11,22 @@ Doel: chronologisch, begrijpelijk overzicht van substantiële milestones, verifi
 
 ---
 
+## 21 september 2026 — PR #96 reconciled to canonical PR #100 accessibility refinement
+
+Existing runtime PR #96 is reconciled with canonical `main` `37aa97c8b106cc9574d30b10f535e1303e2a44dd`. The reconciliation preserves the merged PR #100 design/spec refinement and PR #101 project-state closeout exactly; older PR #96 documentation is not carried back over the canonical baseline.
+
+Runtime now implements the PR #100 physical refinement without reopening the rest of the accepted Nu & Straks model. The time rail uses a dedicated semantic `railTick` token (light `#80807A`, dark `#72726B`) while retaining 1×10 / 1×6 major/quarter geometry, 1.00 / 0.78 opacity and the stronger 2×12 `currentTime` marker. Generic `border` remains unchanged.
+
+Shared Guide tabs are responsive: 48 pt / one line through fontScale 1.35 and 64 pt / maximum two lines above 1.35, preserving the complete Totaal / Per zender / Nu & Straks labels and the 1.20 compact-chrome cap. This makes expanded GuideChrome 100 pt standard and 116 pt in accessibility mode. Per zender retains its fixed 112-pt settled functional viewport and 56-pt native collapse; the responsive shared chrome yields the canonical standard 252/140/84 and accessibility 268/156/100 rest/contraction/compensation geometry without changing semantic schedule anchors.
+
+Nu & Straks keeps the standard 52-pt horizontal context + 52-pt rail at normal text. Above 1.35 the context becomes the canonical 88-pt 40+48 two-lane composition, with a 140-pt persistent functional stack and 60-pt visual compensation while native collapse remains 56 pt. Following programmes no longer stack automatically above 1.35: standard text remains one-line inline; larger text uses inline time + title with the canonical `ceil(40 × fontScale + 8)` target formula; stacked time-above-title is reserved for the >2.0 plus <180-pt programme-width fallback and its canonical content-safe formula. The three adjacent 44/48 minimum Pressables remain separate, while visible content is bottom/centre/top biased to tighten perceived rhythm.
+
+All unaffected PR #96 contracts remain intact, including 15-minute/DST rail semantics, exact-minute live Nu, 06:00 television day, native momentum ownership without secondary rail `scrollTo()`, stable vertical channel context, mounted Programme Detail round-trip, established-catalogue outage handling, fixture→hosted continuity, deferred Nu & Straks import, Reduce Motion, themes/accessibility and the Expo Router app-tree guard.
+
+Deterministic coverage now includes the dedicated rail token/opacity hierarchy, responsive shared tabs/GuideChrome, 104/140 Nu & Straks functional stacks, 44/60 compensation, standard/inline/fallback following modes and formulas, visual content bias, and Per-zender responsive shared-shell geometry while retaining prior regressions. **Next step:** require fully green exact-head CI on the final PR #96 candidate, then return that exact head to Lead for re-review and a completely new physical iPhone pass from clean launch. Independent QA remains gated on physical PASS.
+
+---
+
 ## 21 september 2026 — Nu & Straks physical accessibility refinement canonical via PR #100
 
 The owner accepted the targeted refinement derived from physical iPhone rejection of PR #96 exact head `32db9459d265e8546c7137baf82e623f015ad652`. Design/spec PR #100 merged with exact design head `d2ece22771b35f369d40e58a51f8b85ffb461933`; merge commit `319e3caad758d0d7b511f2a01180ad91847a293f`. Post-merge docs/design CI #695 is green.
