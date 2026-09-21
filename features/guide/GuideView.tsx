@@ -78,11 +78,13 @@ import { TimeAxisTick } from './TimeAxisTick';
 import {
   resolveTotaalSchedulePresentation,
   TOTAAL_TYPOGRAPHY,
+  TOTAAL_VERTICAL_SCROLL_ENDPOINT_POLICY,
   TOTAAL_VISUAL_METRICS,
   totaalChannelIdForScheduleOffset,
   totaalChannelIdentityAccessible,
   totaalChromeCondensedForProgress,
   totaalCollapseProgressForScrollOffset,
+  totaalCurrentTimeMarkerBodyWidth,
   totaalCurrentTimeMarkerBodyX,
   totaalNativeOffsetForScheduleOffset,
   totaalPreservedChannelScheduleOffset,
@@ -102,7 +104,6 @@ import {
 import { useGuideClock } from './useGuideClock';
 import { useSelectedGuideDaySchedule } from './useSelectedGuideDaySchedule';
 
-const CURRENT_MARKER_BODY_WIDTH = TOTAAL_VISUAL_METRICS.currentMarkerMinWidth;
 
 type GuideViewProps = {
   guideDataVersion: number;
@@ -124,6 +125,9 @@ export const GuideView = memo(function GuideView({
   const { fontScale, width: windowWidth } = useWindowDimensions();
   const effectiveFontScale =
     Number.isFinite(fontScale) && fontScale > 0 ? Math.max(1, fontScale) : 1;
+  const currentMarkerBodyWidth = totaalCurrentTimeMarkerBodyWidth(effectiveFontScale);
+  const currentMarkerLabelWidth =
+    currentMarkerBodyWidth - TOTAAL_VISUAL_METRICS.currentMarkerPaddingX * 2;
   const minimumTouchTarget = minimumTouchTargetForPlatform(Platform.OS);
   const reduceMotion = useReducedMotion();
   const layout = useMemo(
@@ -662,7 +666,7 @@ export const GuideView = memo(function GuideView({
     const left = totaalCurrentTimeMarkerBodyX(
       pointerX,
       programmeViewportWidth,
-      CURRENT_MARKER_BODY_WIDTH,
+      currentMarkerBodyWidth,
     );
     return {
       opacity: visible ? 1 : 0,
@@ -1061,16 +1065,23 @@ export const GuideView = memo(function GuideView({
                   pointerEvents="none"
                   style={[
                     styles.currentMarkerBody,
-                    { backgroundColor: theme.colors.currentTime },
+                    {
+                      width: currentMarkerBodyWidth,
+                      backgroundColor: theme.colors.currentTime,
+                    },
                     currentMarkerBodyStyle,
                   ]}
                 >
                   <Text
+                    testID="totaal-current-time-marker-label"
                     numberOfLines={1}
                     maxFontSizeMultiplier={COMPACT_GUIDE_MAX_FONT_SIZE_MULTIPLIER}
                     style={[
                       styles.currentMarkerText,
-                      { color: theme.colors.onCurrentTime },
+                      {
+                        width: currentMarkerLabelWidth,
+                        color: theme.colors.onCurrentTime,
+                      },
                     ]}
                   >
                     {formatGuideTime(nowMs)}
@@ -1163,8 +1174,9 @@ export const GuideView = memo(function GuideView({
           <Animated.ScrollView
             ref={verticalRef}
             testID="guide-channel-scroll"
-            bounces
-            alwaysBounceVertical
+            bounces={TOTAAL_VERTICAL_SCROLL_ENDPOINT_POLICY.bounces}
+            alwaysBounceVertical={TOTAAL_VERTICAL_SCROLL_ENDPOINT_POLICY.alwaysBounceVertical}
+            overScrollMode={TOTAAL_VERTICAL_SCROLL_ENDPOINT_POLICY.overScrollMode}
             directionalLockEnabled
             nestedScrollEnabled
             decelerationRate="normal"
@@ -1361,7 +1373,6 @@ const styles = StyleSheet.create({
   currentMarkerBody: {
     position: 'absolute',
     bottom: TOTAAL_VISUAL_METRICS.currentMarkerPointerHeight,
-    width: CURRENT_MARKER_BODY_WIDTH,
     height: TOTAAL_VISUAL_METRICS.currentMarkerBodyHeight,
     paddingHorizontal: TOTAAL_VISUAL_METRICS.currentMarkerPaddingX,
     borderRadius: TOTAAL_VISUAL_METRICS.currentMarkerRadius,
@@ -1371,6 +1382,8 @@ const styles = StyleSheet.create({
   },
   currentMarkerText: {
     ...TOTAAL_TYPOGRAPHY.currentMarker,
+    flexShrink: 0,
+    textAlign: 'center',
     letterSpacing: 0,
   },
   currentMarkerPointer: {
