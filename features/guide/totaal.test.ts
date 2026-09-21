@@ -137,7 +137,8 @@ describe('Totaal production calibration', () => {
     expect(TOTAAL_VISUAL_METRICS.axisBaselineOpacity).toBe(0.42);
   });
 
-  it('centres the current marker body while keeping its pointer on exact time at viewport edges', () => {
+  it('keeps the current-marker helper explicitly workletized without changing its geometry', () => {
+    expect(totaalCurrentTimeMarkerBodyX.toString()).toContain('worklet');
     expect(totaalCurrentTimeMarkerBodyX(120, 300, 38)).toBe(101);
     expect(totaalCurrentTimeMarkerBodyX(3, 300, 38)).toBe(0);
     expect(totaalCurrentTimeMarkerBodyX(298, 300, 38)).toBe(262);
