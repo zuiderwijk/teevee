@@ -39,6 +39,8 @@ Deterministic coverage now includes responsive shared tabs/GuideChrome, railTick
 
 **Next step:** exact-head CI on the updated PR #96 candidate, then Lead exact-head re-review and a completely new physical iPhone pass from clean launch. Independent QA remains after physical PASS only.
 
+---
+
 ## 21 september 2026 — Nu & Straks physical accessibility refinement canonical via PR #100
 
 The owner accepted the targeted refinement derived from physical iPhone rejection of PR #96 exact head `32db9459d265e8546c7137baf82e623f015ad652`. Design/spec PR #100 merged with exact design head `d2ece22771b35f369d40e58a51f8b85ffb461933`; merge commit `319e3caad758d0d7b511f2a01180ad91847a293f`. Post-merge docs/design CI #695 is green.
