@@ -130,6 +130,12 @@ Use an open vertical schedule, not a card stack. Keep the sticky horizontal chan
 ### Nu & Straks
 Each channel presents one dominant programme at the selected reference time plus three quieter following programmes. No progress bars, genre chips, artwork, chevrons or `Daarna` labels. The hierarchy itself communicates current/reference versus following content.
 
+The time rail uses 15-minute navigation increments. Whole and half hours carry text labels plus longer thin vertical ticks; quarter hours carry shorter unlabeled ticks. The selected/current marker remains the strongest rail mark. Live mode preserves the exact current minute semantically rather than rounding to the navigation increment.
+
+The visible reference programme omits redundant `tot HH:MM` metadata; the next programme's start time normally communicates the same boundary. Keep full start/end times in accessibility semantics and Programme Detail. The reference block and the transition into the three following programmes are deliberately compact, but each following programme retains its own non-overlapping platform-safe touch target.
+
+`Nu` has two materially different states: active/current while live, and return-to-live while browsing. These must not share an indistinguishable visual treatment.
+
 ## Programme Detail
 Programme Detail is a calm information surface, not a streaming-service hero page.
 
