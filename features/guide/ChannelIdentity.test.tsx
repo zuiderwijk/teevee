@@ -214,7 +214,7 @@ describe('ChannelIdentity', () => {
     expect(container.querySelector('[aria-label]')).toBeNull();
   });
 
-  it('uses the full Totaal displayName as a max-two-line fallback and accessibility identity', async () => {
+  it('uses shortName as the visible Totaal fallback while accessibility keeps the full displayName', async () => {
     await act(async () => {
       root.render(
         <ChannelIdentity
@@ -222,6 +222,28 @@ describe('ChannelIdentity', () => {
             ...baseChannel,
             displayName: 'Publieke Omroep Volledig',
             shortName: 'PO',
+          }}
+          textColor="#111"
+          mutedTextColor="#777"
+          variant="totaal"
+          accessible
+        />,
+      );
+    });
+
+    expect(container.textContent).toBe('PO');
+    expect(container.querySelector('span')?.getAttribute('data-number-of-lines')).toBe('2');
+    expect(container.querySelector('[aria-label="Publieke Omroep Volledig"]')).not.toBeNull();
+  });
+
+  it('uses displayName as the visible Totaal fallback when shortName is absent', async () => {
+    await act(async () => {
+      root.render(
+        <ChannelIdentity
+          channel={{
+            ...baseChannel,
+            displayName: 'Publieke Omroep Volledig',
+            shortName: undefined,
           }}
           textColor="#111"
           mutedTextColor="#777"
