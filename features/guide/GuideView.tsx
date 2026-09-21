@@ -58,6 +58,7 @@ import {
   resolveTotaalSchedulePresentation,
   TOTAAL_TYPOGRAPHY,
   TOTAAL_VISUAL_METRICS,
+  totaalChannelIdForScheduleOffset,
   totaalChannelIdentityAccessible,
   totaalChromeCondensedForProgress,
   totaalCollapseProgressForScrollOffset,
@@ -107,6 +108,8 @@ export const GuideView = memo(function GuideView({
   const axisRef = useAnimatedRef<Animated.ScrollView>();
   const verticalRef = useRef<ScrollView>(null);
   const viewedChannelIdRef = useRef<string | null>(null);
+  const previousChannelIdsRef = useRef<readonly string[]>([]);
+  const previousRowHeightRef = useRef(layout.rowHeight);
   const scrollX = useSharedValue(0);
   const scrollY = useSharedValue(0);
   const collapseProgress = useSharedValue(0);
@@ -382,11 +385,11 @@ export const GuideView = memo(function GuideView({
     (nativeY: number, progress: number) => {
       if (runtimeFixture.channels.length === 0) return;
       const scheduleOffset = totaalScheduleOffsetForNativeOffset(nativeY, progress);
-      const index = Math.min(
-        runtimeFixture.channels.length - 1,
-        Math.max(0, Math.floor(scheduleOffset / layout.rowHeight)),
+      viewedChannelIdRef.current = totaalChannelIdForScheduleOffset(
+        runtimeFixture.channels.map(({ id }) => id),
+        layout.rowHeight,
+        scheduleOffset,
       );
-      viewedChannelIdRef.current = runtimeFixture.channels[index]?.id ?? null;
     },
     [layout.rowHeight, runtimeFixture.channels],
   );
@@ -575,17 +578,48 @@ export const GuideView = memo(function GuideView({
   );
 
   useEffect(() => {
-    if (runtimeFixture.channels.length === 0) return;
-    const rememberedId =
-      viewedChannelIdRef.current ?? runtimeFixture.channels[0]?.id ?? null;
-    viewedChannelIdRef.current = rememberedId;
-    const index = Math.max(
-      0,
-      runtimeFixture.channels.findIndex(({ id }) => id === rememberedId),
+    const nextChannelIds = runtimeFixture.channels.map(({ id }) => id);
+    if (nextChannelIds.length === 0) {
+      previousChannelIdsRef.current = nextChannelIds;
+      previousRowHeightRef.current = layout.rowHeight;
+      return;
+    }
+
+    const currentScheduleOffset = totaalScheduleOffsetForNativeOffset(
+      scrollY.value,
+      collapseProgress.value,
     );
-    const scheduleOffset = index * layout.rowHeight;
+    const previousChannelIds =
+      previousChannelIdsRef.current.length > 0
+        ? previousChannelIdsRef.current
+        : nextChannelIds;
+    const previousRowHeight = previousRowHeightRef.current;
+    const rememberedId =
+      viewedChannelIdRef.current ??
+      totaalChannelIdForScheduleOffset(
+        previousChannelIds,
+        previousRowHeight,
+        currentScheduleOffset,
+      ) ??
+      nextChannelIds[0] ??
+      null;
+    viewedChannelIdRef.current = rememberedId;
+
+    const nextScheduleOffset = totaalPreservedChannelScheduleOffset({
+      previousChannelIds,
+      nextChannelIds,
+      channelId: rememberedId,
+      previousRowHeight,
+      nextRowHeight: layout.rowHeight,
+      currentScheduleOffset,
+    });
+    previousChannelIdsRef.current = nextChannelIds;
+    previousRowHeightRef.current = layout.rowHeight;
+
+    if (Math.abs(nextScheduleOffset - currentScheduleOffset) < 0.5) return;
+
     const nativeY = totaalNativeOffsetForScheduleOffset(
-      scheduleOffset,
+      nextScheduleOffset,
       collapseProgress.value,
     );
     scrollY.value = nativeY;

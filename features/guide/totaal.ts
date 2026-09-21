@@ -205,6 +205,81 @@ export function totaalProgrammePressBackgroundColor(
   return pressed ? surfaceElevated : 'transparent';
 }
 
+export function totaalChannelIdForScheduleOffset(
+  channelIds: readonly string[],
+  rowHeight: number,
+  scheduleOffset: number,
+) {
+  if (channelIds.length === 0 || !Number.isFinite(rowHeight) || rowHeight <= 0) {
+    return null;
+  }
+  const safeOffset = Number.isFinite(scheduleOffset) ? Math.max(0, scheduleOffset) : 0;
+  const index = Math.min(
+    channelIds.length - 1,
+    Math.max(0, Math.floor(safeOffset / rowHeight)),
+  );
+  return channelIds[index] ?? null;
+}
+
+export function totaalPreservedChannelScheduleOffset({
+  previousChannelIds,
+  nextChannelIds,
+  channelId,
+  previousRowHeight,
+  nextRowHeight,
+  currentScheduleOffset,
+}: {
+  previousChannelIds: readonly string[];
+  nextChannelIds: readonly string[];
+  channelId: string | null;
+  previousRowHeight: number;
+  nextRowHeight: number;
+  currentScheduleOffset: number;
+}) {
+  if (nextChannelIds.length === 0 || nextRowHeight <= 0) return 0;
+
+  const safePreviousRowHeight =
+    Number.isFinite(previousRowHeight) && previousRowHeight > 0
+      ? previousRowHeight
+      : nextRowHeight;
+  const safeCurrentOffset = Number.isFinite(currentScheduleOffset)
+    ? Math.max(0, currentScheduleOffset)
+    : 0;
+  const fallbackPreviousIndex =
+    previousChannelIds.length > 0
+      ? Math.min(
+          previousChannelIds.length - 1,
+          Math.max(0, Math.floor(safeCurrentOffset / safePreviousRowHeight)),
+        )
+      : 0;
+  const semanticId =
+    channelId ?? previousChannelIds[fallbackPreviousIndex] ?? nextChannelIds[0] ?? null;
+  const previousIndex =
+    semanticId === null
+      ? fallbackPreviousIndex
+      : Math.max(
+          0,
+          previousChannelIds.indexOf(semanticId) >= 0
+            ? previousChannelIds.indexOf(semanticId)
+            : fallbackPreviousIndex,
+        );
+  const nextIndexForId =
+    semanticId === null ? -1 : nextChannelIds.indexOf(semanticId);
+  const nextIndex =
+    nextIndexForId >= 0
+      ? nextIndexForId
+      : Math.min(nextChannelIds.length - 1, previousIndex);
+  const intraRowOffset = Math.max(
+    0,
+    safeCurrentOffset - previousIndex * safePreviousRowHeight,
+  );
+
+  return (
+    nextIndex * nextRowHeight +
+    Math.min(intraRowOffset, Math.max(0, nextRowHeight - 1))
+  );
+}
+
 export function totaalNativeOffsetForScheduleOffset(
   scheduleOffset: number,
   collapseProgress: number,

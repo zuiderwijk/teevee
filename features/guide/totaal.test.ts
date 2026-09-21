@@ -8,6 +8,7 @@ import {
   TOTAAL_TYPOGRAPHY,
   TOTAAL_VISUAL_METRICS,
   resolveTotaalSchedulePresentation,
+  totaalChannelIdForScheduleOffset,
   totaalChannelIdentityAccessible,
   totaalChromeCondensedForProgress,
   totaalCollapseProgressForScrollOffset,
@@ -16,6 +17,7 @@ import {
   totaalProgrammeContentPresentation,
   totaalProgrammePressBackgroundColor,
   totaalProgrammeSecondaryLabel,
+  totaalPreservedChannelScheduleOffset,
   totaalSafeAreaLayout,
   totaalScheduleOffsetForNativeOffset,
   totaalStableScrollGeometry,
@@ -175,6 +177,34 @@ describe('Totaal production calibration', () => {
     expect(totaalCollapseProgressForScrollOffset(28, true)).toBe(1);
     expect(totaalChromeCondensedForProgress(0.49)).toBe(false);
     expect(totaalChromeCondensedForProgress(0.5)).toBe(true);
+  });
+
+  it('preserves semantic channel context without snapping when catalogue order is unchanged', () => {
+    const previous = ['npo-1', 'npo-2', 'rtl-4'];
+    expect(totaalChannelIdForScheduleOffset(previous, 76, 98)).toBe('npo-2');
+    expect(
+      totaalPreservedChannelScheduleOffset({
+        previousChannelIds: previous,
+        nextChannelIds: previous,
+        channelId: 'npo-2',
+        previousRowHeight: 76,
+        nextRowHeight: 76,
+        currentScheduleOffset: 98,
+      }),
+    ).toBe(98);
+  });
+
+  it('preserves the same semantic channel and intra-row context across catalogue reorder and row growth', () => {
+    expect(
+      totaalPreservedChannelScheduleOffset({
+        previousChannelIds: ['npo-1', 'npo-2', 'rtl-4'],
+        nextChannelIds: ['rtl-4', 'npo-1', 'npo-2'],
+        channelId: 'npo-2',
+        previousRowHeight: 76,
+        nextRowHeight: 97,
+        currentScheduleOffset: 76 + 22,
+      }),
+    ).toBe(97 * 2 + 22);
   });
 
   it('keeps semantic schedule offset isolated from the 56-pt native collapse', () => {
