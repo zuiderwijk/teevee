@@ -27,6 +27,18 @@ Deterministic coverage now includes the dedicated rail token/opacity hierarchy, 
 
 ---
 
+## 21 september 2026 — PR #96 reconciled to PR #100 physical-accessibility baseline
+
+The existing Nu & Straks runtime PR #96 has been reconciled with canonical main `37aa97c8b106cc9574d30b10f535e1303e2a44dd`, preserving the merged PR #100 refinement and PR #101 project-state closeout. The physically rejected head `32db9459d265e8546c7137baf82e623f015ad652` is no longer the candidate.
+
+Runtime now follows the post-device refinement without reopening unaffected interaction contracts. Rail ticks use the dedicated semantic `railTick` token (`#80807A` light / `#72726B` dark), retaining 1×10 major and 1×6 quarter geometry with 1.00/0.78 opacity while the 2×12 current marker remains `currentTime`. Shared Guide tabs stay 48 pt / one line through fontScale 1.35 and become 64 pt / max two lines above it, making GuideChrome 100 pt standard and 116 pt in accessibility mode. Nu & Straks uses a 52+52 = 104 pt functional stack at standard text and an 88+52 = 140 pt stack above 1.35, with 40-pt reference-time and 48-pt utility lanes, unchanged 56-pt native collapse and 44/60 visual compensation.
+
+Following programmes no longer stack automatically above fontScale 1.35. Standard text keeps the one-row layout; larger text uses inline time + title with max two visible lines and deterministic target height `max(platform minimum, ceil(40 × fontScale + 8))`. Stacked time-above-title is reserved for the canonical extreme fallback only when fontScale >2.0 and available programme width <180 pt. The three adjacent 44-pt iOS / 48-dp Android targets remain non-overlapping while their visible content is biased #1 bottom / #2 centre / #3 top for a tighter information rhythm. Shared Per-zender fixed-native-viewport geometry also accounts for the 64-pt accessibility tabs: 268 rest overlay / 156 contraction / 100 compensation above 1.35, while its 112-pt settled functional viewport, 52-pt temporal context, 56-pt native collapse and semantic scroll anchors remain unchanged.
+
+Deterministic coverage now includes responsive shared tabs/GuideChrome, railTick colour/opacity hierarchy, 104/140 Nu & Straks stacks, standard/inline/extreme following modes and formulas, following-content bias/non-overlap, and Per-zender 252/140/84 versus 268/156/100 shared-shell geometry while retaining the existing rail momentum, 06:00 television-day, Detail round-trip, unavailable-catalogue, deferred-import, Reduce Motion and Expo Router app-tree regressions.
+
+**Next step:** exact-head CI on the updated PR #96 candidate, then Lead exact-head re-review and a completely new physical iPhone pass from clean launch. Independent QA remains after physical PASS only.
+
 ## 21 september 2026 — Nu & Straks physical accessibility refinement canonical via PR #100
 
 The owner accepted the targeted refinement derived from physical iPhone rejection of PR #96 exact head `32db9459d265e8546c7137baf82e623f015ad652`. Design/spec PR #100 merged with exact design head `d2ece22771b35f369d40e58a51f8b85ffb461933`; merge commit `319e3caad758d0d7b511f2a01180ad91847a293f`. Post-merge docs/design CI #695 is green.
