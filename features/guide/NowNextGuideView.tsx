@@ -56,15 +56,17 @@ import {
   timeSlotsForDay,
 } from './nowNext';
 import {
-  NOW_NEXT_STABLE_SCROLL_GEOMETRY,
   NOW_NEXT_TYPOGRAPHY,
   NOW_NEXT_VISUAL_METRICS,
   nowNextChannelRowLayout,
   nowNextChromeCondensedForProgress,
   nowNextCollapseProgressForScrollOffset,
+  nowNextFollowingContentBias,
   nowNextProgrammePressBackgroundColor,
   nowNextRailSlotPresentation,
+  nowNextReferenceContextLayout,
   nowNextSafeAreaLayout,
+  nowNextStableScrollGeometry,
   nowNextStableScrollVisuals,
 } from './nowNextLayout';
 import { useGuideClock } from './useGuideClock';
@@ -83,6 +85,7 @@ type ChannelRowProps = {
   nowMs: number;
   fontScale: number;
   platform: string;
+  programmeWidth: number;
   onSelectProgramme: (selection: ProgrammeSelection) => void;
 };
 
@@ -114,10 +117,11 @@ const ChannelRow = memo(function ChannelRow({
   nowMs,
   fontScale,
   platform,
+  programmeWidth,
   onSelectProgramme,
 }: ChannelRowProps) {
   const theme = useTeeveeTheme();
-  const rowLayout = nowNextChannelRowLayout(platform, fontScale);
+  const rowLayout = nowNextChannelRowLayout(platform, fontScale, programmeWidth);
   const { referenceProgramme, followingProgrammes } = useMemo(
     () => programmesAroundReferenceFromProgrammes(programmes, referenceMs),
     [programmes, referenceMs],
@@ -218,7 +222,8 @@ const ChannelRow = memo(function ChannelRow({
               );
             }
 
-            const stacked = rowLayout.mode === 'stacked';
+            const stackedFallback = rowLayout.mode === 'stacked-fallback';
+            const contentBias = nowNextFollowingContentBias(slotIndex);
             return (
               <Pressable
                 key={programme.id}
@@ -233,7 +238,6 @@ const ChannelRow = memo(function ChannelRow({
                 onPress={() => openProgramme(programme)}
                 style={({ pressed }) => [
                   styles.followingRow,
-                  stacked ? styles.followingRowStacked : styles.followingRowHorizontal,
                   {
                     height: rowLayout.followingHeight,
                     backgroundColor: nowNextProgrammePressBackgroundColor(
@@ -243,27 +247,41 @@ const ChannelRow = memo(function ChannelRow({
                   },
                 ]}
               >
-                <Text
-                  numberOfLines={1}
-                  style={[
-                    styles.followingTime,
-                    stacked ? styles.followingTimeStacked : null,
-                    { color: theme.colors.textMuted },
-                  ]}
+                <View
+                  testID={`now-next-following-content-${channel.id}-${slotIndex}`}
+                  pointerEvents="none"
+                  style={[styles.followingContentBand, contentBias]}
                 >
-                  {formatTime(Date.parse(programme.startAt))}
-                </Text>
-                <Text
-                  numberOfLines={stacked ? 2 : 1}
-                  ellipsizeMode="tail"
-                  style={[
-                    styles.followingTitle,
-                    stacked ? styles.followingTitleStacked : null,
-                    { color: theme.colors.textSecondary },
-                  ]}
-                >
-                  {programme.title}
-                </Text>
+                  <View
+                    style={
+                      stackedFallback
+                        ? styles.followingContentStacked
+                        : styles.followingContentInline
+                    }
+                  >
+                    <Text
+                      numberOfLines={1}
+                      style={[
+                        styles.followingTime,
+                        stackedFallback ? styles.followingTimeStacked : null,
+                        { color: theme.colors.textMuted },
+                      ]}
+                    >
+                      {formatTime(Date.parse(programme.startAt))}
+                    </Text>
+                    <Text
+                      numberOfLines={rowLayout.mode === 'standard' ? 1 : 2}
+                      ellipsizeMode="tail"
+                      style={[
+                        styles.followingTitle,
+                        stackedFallback ? styles.followingTitleStacked : null,
+                        { color: theme.colors.textSecondary },
+                      ]}
+                    >
+                      {programme.title}
+                    </Text>
+                  </View>
+                </View>
               </Pressable>
             );
           })}
@@ -353,12 +371,27 @@ export const NowNextGuideView = memo(function NowNextGuideView({
         : new Map<string, Programme[]>(),
     [schedulePresentation.schedule],
   );
-  const rowLayout = nowNextChannelRowLayout(platform, effectiveFontScale);
+  const programmeWidth = Math.max(
+    0,
+    windowWidth -
+      NOW_NEXT_VISUAL_METRICS.programmeColumnX -
+      NOW_NEXT_VISUAL_METRICS.programmeRightInset,
+  );
+  const rowLayout = nowNextChannelRowLayout(
+    platform,
+    effectiveFontScale,
+    programmeWidth,
+  );
+  const referenceContextLayout = nowNextReferenceContextLayout(effectiveFontScale);
+  const stableScrollGeometry = nowNextStableScrollGeometry(effectiveFontScale);
   const railInset = Math.max(
     0,
     windowWidth / 2 - NOW_NEXT_VISUAL_METRICS.timeSlotWidth / 2,
   );
-  const safeAreaLayout = nowNextSafeAreaLayout(safeAreaInsets.top);
+  const safeAreaLayout = nowNextSafeAreaLayout(
+    safeAreaInsets.top,
+    effectiveFontScale,
+  );
 
   useEffect(() => {
     const nextDayStartMs = nowNextTelevisionDayBounds(nowMs).startMs;
@@ -485,8 +518,10 @@ export const NowNextGuideView = memo(function NowNextGuideView({
   const channelContentStyle = useAnimatedStyle(() => ({
     transform: [
       {
-        translateY: nowNextStableScrollVisuals(collapseProgress.value)
-          .contentTranslateY,
+        translateY: nowNextStableScrollVisuals(
+          collapseProgress.value,
+          effectiveFontScale,
+        ).contentTranslateY,
       },
     ],
   }));
@@ -513,10 +548,26 @@ export const NowNextGuideView = memo(function NowNextGuideView({
           testID="now-next-reference-context"
           style={[
             styles.referenceContext,
-            { backgroundColor: theme.colors.background },
+            referenceContextLayout.mode === 'two-lane'
+              ? styles.referenceContextAccessibility
+              : styles.referenceContextStandard,
+            {
+              height: referenceContextLayout.height,
+              backgroundColor: theme.colors.background,
+            },
           ]}
         >
-          <View style={styles.referenceCopy}>
+          <View
+            style={[
+              styles.referenceCopy,
+              referenceContextLayout.mode === 'two-lane'
+                ? {
+                    height: referenceContextLayout.referenceLaneHeight,
+                    paddingHorizontal: GUIDE_VISUAL_METRICS.screenInsetX,
+                  }
+                : null,
+            ]}
+          >
             <Text
               testID="now-next-reference-time"
               numberOfLines={1}
@@ -527,7 +578,17 @@ export const NowNextGuideView = memo(function NowNextGuideView({
             </Text>
           </View>
 
-          <View style={styles.utilityActions}>
+          <View
+            style={[
+              styles.utilityActions,
+              referenceContextLayout.mode === 'two-lane'
+                ? {
+                    height: referenceContextLayout.utilitiesLaneHeight,
+                    paddingHorizontal: GUIDE_VISUAL_METRICS.screenInsetX,
+                  }
+                : null,
+            ]}
+          >
             <Pressable
               testID="now-next-primetime"
               accessibilityRole="button"
@@ -693,7 +754,8 @@ export const NowNextGuideView = memo(function NowNextGuideView({
                       styles.timeSlotTick,
                       {
                         height: slotPresentation.tickHeight,
-                        backgroundColor: theme.colors.border,
+                        opacity: slotPresentation.tickOpacity,
+                        backgroundColor: theme.colors.railTick,
                       },
                     ]}
                   />
@@ -724,7 +786,7 @@ export const NowNextGuideView = memo(function NowNextGuideView({
         <Animated.View style={[styles.channelContent, channelContentStyle]}>
           <View
             pointerEvents="none"
-            style={{ height: NOW_NEXT_STABLE_SCROLL_GEOMETRY.contentTopInset }}
+            style={{ height: stableScrollGeometry.contentTopInset }}
           />
 
           {schedulePresentation.schedule ? (
@@ -738,6 +800,7 @@ export const NowNextGuideView = memo(function NowNextGuideView({
                 nowMs={nowMs}
                 fontScale={effectiveFontScale}
                 platform={platform}
+                programmeWidth={programmeWidth}
                 onSelectProgramme={onSelectProgramme}
               />
             ))
@@ -836,12 +899,19 @@ const styles = StyleSheet.create({
     zIndex: 2,
   },
   referenceContext: {
-    height: NOW_NEXT_VISUAL_METRICS.referenceContextHeight,
+    width: '100%',
+  },
+  referenceContextStandard: {
     paddingHorizontal: GUIDE_VISUAL_METRICS.screenInsetX,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     gap: NOW_NEXT_VISUAL_METRICS.shortcutGap,
+  },
+  referenceContextAccessibility: {
+    flexDirection: 'column',
+    alignItems: 'stretch',
+    justifyContent: 'flex-start',
   },
   referenceCopy: {
     minWidth: 0,
@@ -858,6 +928,7 @@ const styles = StyleSheet.create({
     flexShrink: 0,
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'flex-end',
     gap: NOW_NEXT_VISUAL_METRICS.shortcutGap,
   },
   utilityTouchTarget: {
@@ -986,13 +1057,18 @@ const styles = StyleSheet.create({
   followingRow: {
     width: '100%',
   },
-  followingRowHorizontal: {
-    flexDirection: 'row',
-    alignItems: 'center',
+  followingContentBand: {
+    flex: 1,
+    width: '100%',
   },
-  followingRowStacked: {
+  followingContentInline: {
+    width: '100%',
+    flexDirection: 'row',
     alignItems: 'flex-start',
-    justifyContent: 'center',
+  },
+  followingContentStacked: {
+    width: '100%',
+    alignItems: 'flex-start',
     paddingVertical: NOW_NEXT_VISUAL_METRICS.followingStackedPaddingY,
   },
   followingTime: {
