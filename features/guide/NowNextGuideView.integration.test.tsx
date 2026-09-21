@@ -394,6 +394,10 @@ describe('Nu & Straks production interaction boundary', () => {
     expect(getByTestId(container, 'now-next-reference-time').textContent).toBe(
       'Nu · 20:17',
     );
+    expect(native.railScrollTo).toHaveBeenCalledWith({
+      x: 57 * 48,
+      animated: false,
+    });
     expect(container.textContent).not.toContain('Referentietijd');
 
     expect(getByTestId(container, 'now-next-time-label-56').textContent).toBe(
@@ -402,6 +406,9 @@ describe('Nu & Straks production interaction boundary', () => {
     expect(
       container.querySelector('[data-testid="now-next-time-label-57"]'),
     ).toBeNull();
+    expect(getByTestId(container, 'now-next-time-slot-57').getAttribute('aria-label')).toBe(
+      'Tijd 20:15',
+    );
     expect(getByTestId(container, 'now-next-time-label-58').textContent).toBe(
       '20:30',
     );
@@ -481,6 +488,14 @@ describe('Nu & Straks production interaction boundary', () => {
 
     expect(native.railScrollTo).toHaveBeenCalledTimes(initialScrollCalls);
     expect(getByTestId(container, 'now-next-reference-time').textContent).toBe('20:15');
+    const browsedReference = getByTestId(
+      container,
+      'now-next-reference-one-one-ref',
+    );
+    expect(browsedReference.textContent).toBe('Referentieprogramma');
+    expect(browsedReference.getAttribute('aria-label')).toBe(
+      'NPO 1, Referentieprogramma, 20:00 tot 20:30',
+    );
     expect(getByTestId(container, 'now-next-now-return')).toBeDefined();
     expect(getByTestId(container, 'now-next-now').getAttribute('aria-selected')).toBe(
       'false',
