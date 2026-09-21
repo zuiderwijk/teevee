@@ -11,6 +11,16 @@ Doel: chronologisch, begrijpelijk overzicht van substantiële milestones, verifi
 
 ---
 
+## 21 september 2026 — Nu & Straks physical candidate not accepted
+
+Runtime PR #96 was successfully reconciled to the PR #97 canonical baseline and reached exact head `32db9459d265e8546c7137baf82e623f015ad652`. Exact-head CI #691 was green with 62 test files / 424 tests, exports and native/config checks. Lead opened the physical iPhone gate.
+
+Physical review did **not** accept this candidate. Dark mode as a whole is accepted, but three targeted issues remain: time-rail major/quarter hairlines are physically too low-contrast (especially dark mode); large-text/Dynamic Type composition produces material chrome truncation and excessive following-row growth; and the three following programmes still read visually too loose even though the runtime already meets the current 44/48 minimum-target and zero-extra-gap numeric spec.
+
+This is therefore classified as a canonical refinement, not an ordinary implementation miss. Physical validation, Independent QA and merge of PR #96 remain paused. Next step is targeted Design / UX refinement of rail-tick contrast, large-text composition and visual density while preserving independent minimum touch targets and the rest of the accepted Nu & Straks interaction model.
+
+---
+
 ## 21 september 2026 — Nu & Straks owner refinement canonical via PR #97
 
 Fysieke iPhone-review van de open Nu & Straks production-convergence candidate leverde concrete UX/visual evidence op voor een kleine owner-approved refinement van de canonical baseline. Design/spec PR #97 is gemergd met exacte design-head `d0834ce2f25ec25c9e969354bc5241790960e10a`; merge-commit op `main`: `8b838fc71e2dd3aea601731defb11e9680a5d99b`. Post-merge docs/design CI #677 is groen.
