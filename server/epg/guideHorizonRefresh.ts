@@ -14,6 +14,17 @@ export type GuideRefreshWindow = {
   to: string;
 };
 
+export type GuideHorizonRefreshResult = GuideRefreshWindow & {
+  result: Awaited<ReturnType<typeof ingestProviderSchedule>>;
+};
+
+/**
+ * Refresh one safety-buffered hosted Guide horizon using television-day windows.
+ *
+ * Product navigation is D-2..D+7. Totaal can require the following television day
+ * for continuity, so D+8 must also be materialised when the provider supplies it.
+ * D-3 is retained as a symmetric historical safety buffer.
+ */
 export function guideRefreshWindows(anchorMs: number): GuideRefreshWindow[] {
   const windows: GuideRefreshWindow[] = [];
   for (
@@ -38,9 +49,11 @@ export async function refreshGuideHorizon(input: {
   providerChannelIds: string[];
   anchorMs?: number;
   clock?: () => Date;
-}) {
-  const windows = guideRefreshWindows(input.anchorMs ?? Date.now());
-  const results = [];
+}): Promise<GuideHorizonRefreshResult[]> {
+  const observedAt = input.clock?.() ?? new Date();
+  const anchorMs = input.anchorMs ?? observedAt.getTime();
+  const windows = guideRefreshWindows(anchorMs);
+  const results: GuideHorizonRefreshResult[] = [];
 
   for (const window of windows) {
     const result = await ingestProviderSchedule({
@@ -51,7 +64,7 @@ export async function refreshGuideHorizon(input: {
       providerChannelIds: input.providerChannelIds,
       from: new Date(window.from),
       to: new Date(window.to),
-      ...(input.clock ? { clock: input.clock } : {}),
+      clock: () => observedAt,
     });
     results.push({ ...window, result });
   }
