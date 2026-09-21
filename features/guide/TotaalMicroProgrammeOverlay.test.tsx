@@ -2,6 +2,7 @@
 import { act, createElement, type ReactNode } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import type { SharedValue } from 'react-native-reanimated';
 
 import type { Programme } from '@/data/domain/epg';
 
@@ -94,6 +95,10 @@ vi.mock('@/theme/useTeeveeTheme', () => ({
 }));
 
 const START = Date.parse('2026-09-21T04:00:00.000Z');
+function sharedValue(value: number): SharedValue<number> {
+  return { value } as unknown as SharedValue<number>;
+}
+
 function programme(id: string, startMinutes: number): Programme {
   return {
     id,
@@ -133,9 +138,9 @@ describe('TotaalMicroProgrammeOverlay', () => {
       3,
       1,
     ).repeatedTitleRuns[0]!;
-    const scrollX = { value: 0 };
-    const scrollY = { value: 0 };
-    const collapseProgress = { value: 0 };
+    const scrollX = sharedValue(0);
+    const scrollY = sharedValue(0);
+    const collapseProgress = sharedValue(0);
 
     await act(async () => {
       root.render(
@@ -190,7 +195,7 @@ describe('TotaalMicroProgrammeOverlay', () => {
       3,
       1,
     ).repeatedTitleRuns[0]!;
-    const scrollX = { value: 20 };
+    const scrollX = sharedValue(20);
 
     await act(async () => {
       root.render(
@@ -203,9 +208,9 @@ describe('TotaalMicroProgrammeOverlay', () => {
           viewportWidth={40}
           nowMs={START}
           scrollX={scrollX}
-          scrollY={{ value: 0 }}
+          scrollY={sharedValue(0)}
           contentTopInset={100}
-          collapseProgress={{ value: 0 }}
+          collapseProgress={sharedValue(0)}
           fontScale={1}
           reduceMotion={false}
         />,
