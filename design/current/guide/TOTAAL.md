@@ -1,9 +1,11 @@
-# Totaal — current accepted visual
+# Totaal — current provisional visual direction
 
-Status: **ACCEPTED**
-Accepted: 2026-09-13; day-selector behaviour accepted 2026-09-15; Instrument Sans typography accepted 2026-09-17
+Status: **PROVISIONAL — PRODUCTION VISUAL DESIGN NOT YET OWNER-APPROVED**
+Owner correction: 2026-09-21. Earlier repository wording incorrectly promoted the current reference direction to a completed production design.
 
-## Canonical assets
+Accepted sub-decisions that remain constraints: shared Guide day-selector behaviour (2026-09-15) and Instrument Sans typography (2026-09-17). Proven Totaal interaction/data/performance mechanics remain frozen unless concrete regression evidence requires change.
+
+## Current exploration references
 - Light: `/Teevee/Nederlandse tv-gids op smartphone.png`
   - file id: `file_0000000015ac81f4ab067e5473ed692d`
 - Dark: `/Teevee/Donkere Nederlandse tv-gidsinterface.png`
@@ -17,9 +19,9 @@ Accepted: 2026-09-13; day-selector behaviour accepted 2026-09-15; Instrument San
 
 Detailed shared day-selector contract: `design/current/guide/GUIDE_DAY_SELECTOR.md`.
 Shared typography contract: `design/current/TYPOGRAPHY.md`.
-Development visual-convergence handoff: `docs/TOTAAL_VISUAL_CONVERGENCE.md`.
+`docs/TOTAAL_VISUAL_CONVERGENCE.md` is currently a **draft/inactive candidate handoff**. Do not use it to start production implementation until the owner has accepted the final Totaal production design and that specification is explicitly reactivated.
 
-## Preserve
+## Frozen constraints
 - Instrument Sans as the accepted UI typeface; historical Söhne-like screenshot typography is superseded for family choice only.
 - Near-white neutral light canvas / dark-anthracite dark canvas.
 - Open 2D time/channel grid.
@@ -30,7 +32,7 @@ Development visual-convergence handoff: `docs/TOTAAL_VISUAL_CONVERGENCE.md`.
 - Programme title first; no genre/artwork clutter.
 - Bottom navigation stays quiet and stable.
 
-## Accepted day navigation
+## Accepted day navigation sub-contract
 - One compact typographic date selector plus a separate `Nu` action.
 - Tapping the date selector opens the bounded D-2..D+7 bottom sheet; no unrestricted calendar or horizontal ten-day rail.
 - Changing day preserves the viewed wall-clock time where practical.
@@ -38,8 +40,8 @@ Development visual-convergence handoff: `docs/TOTAAL_VISUAL_CONVERGENCE.md`.
 - During vertical Guide scrolling, date + `Nu` + time axis remain available while non-functional brand/header chrome condenses away.
 - During horizontal browsing, date context follows the stable time-navigation anchor and updates when that anchor crosses the 06:00 television-day boundary.
 
-## Screenshot authority note
-The exact historical date control visible in the original 13 September light/dark images is **SUPERSEDED** by `GUIDE_DAY_SELECTOR.md` and the two accepted day-selector assets above. The typeface shown in those screenshots is also **SUPERSEDED for family choice only** by `design/current/TYPOGRAPHY.md`. Preserve the rest of their visual hierarchy and composition.
+## Reference authority note
+The exact historical date control visible in the 13 September light/dark references is **SUPERSEDED** by `GUIDE_DAY_SELECTOR.md`, and their typeface family is superseded by `design/current/TYPOGRAPHY.md`. The remaining visual hierarchy/composition is **not frozen production design**; it is input for the next Totaal design round.
 
 ## Superseded
 Earlier Totaal explorations with card-like programme blocks, a full-height red current-time line, dense metadata, more decorative chrome or a different typography direction are not current.
