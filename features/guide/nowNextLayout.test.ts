@@ -145,18 +145,22 @@ describe('Nu & Straks deterministic channel geometry', () => {
     ['ios', 44],
     ['android', 48],
   ] as const)(
-    'keeps standard visible content inside each %s target',
+    'keeps standard visible content inside each %s target through fontScale 1.35',
     (platform, targetHeight) => {
-      for (const slotIndex of [0, 1, 2]) {
-        const placement = nowNextFollowingContentPlacement(
-          platform,
-          1,
-          slotIndex,
-        );
-        expect(
-          placement.topOffset +
-            NOW_NEXT_VISUAL_METRICS.followingStandardVisibleContentHeight,
-        ).toBeLessThanOrEqual(targetHeight);
+      for (const scale of [1, 1.35]) {
+        for (const slotIndex of [0, 1, 2]) {
+          const placement = nowNextFollowingContentPlacement(
+            platform,
+            scale,
+            slotIndex,
+          );
+          const scaledVisibleHeight =
+            NOW_NEXT_VISUAL_METRICS.followingStandardVisibleContentHeight *
+            scale;
+          expect(placement.topOffset + scaledVisibleHeight).toBeLessThanOrEqual(
+            targetHeight,
+          );
+        }
       }
     },
   );
