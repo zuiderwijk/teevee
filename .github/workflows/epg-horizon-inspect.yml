@@ -5,8 +5,12 @@ on:
     branches:
       - fix/guide-epg-television-day-horizon
 
+permissions:
+  contents: write
+
 jobs:
   inspect:
+    if: github.actor != 'github-actions[bot]'
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
@@ -112,5 +116,24 @@ jobs:
               },
               'windows': windows,
           }
+          payload = json.dumps(result, indent=2, sort_keys=True)
           print('EPG_HORIZON_RESULT=' + json.dumps(result, separators=(',', ':')))
+          with open('/tmp/provider-horizon.json', 'w') as handle:
+              handle.write(payload + '\\n')
           PY
+      - name: Persist temporary result
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p docs
+          cp /tmp/provider-horizon.json docs/provider_horizon_temp.json
+          git init
+          git remote add origin "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git"
+          git fetch --depth=1 origin "${{ github.ref_name }}"
+          git checkout -B "${{ github.ref_name }}" FETCH_HEAD
+          cp /tmp/provider-horizon.json docs/provider_horizon_temp.json
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add docs/provider_horizon_temp.json
+          git commit -m "chore(epg): persist temporary horizon evidence"
+          git push origin HEAD:"${{ github.ref_name }}"
