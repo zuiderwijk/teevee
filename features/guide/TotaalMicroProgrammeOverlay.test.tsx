@@ -131,6 +131,54 @@ afterEach(async () => {
 });
 
 describe('TotaalMicroProgrammeOverlay', () => {
+  it('renders only the bounded member subset while shared geometry keeps the complete run bounds', async () => {
+    const programmes = Array.from({ length: 20 }, (_, index) =>
+      programme(`p-${index}`, index * 5),
+    );
+    const run = deriveTotaalMicroProgrammeMetadata(
+      new Map([['one', programmes]]),
+      3,
+      1,
+    ).repeatedTitleRuns[0]!;
+    const boundedProgrammes = programmes.slice(8, 12);
+
+    await act(async () => {
+      root.render(
+        <TotaalMicroProgrammeOverlay
+          runPresentations={[{ run, programmes: boundedProgrammes }]}
+          channelRowIndex={new Map([['one', 0]])}
+          windowStartMs={START}
+          minuteWidth={3}
+          rowHeight={76}
+          viewportWidth={300}
+          nowMs={START}
+          scrollX={sharedValue(120)}
+          scrollY={sharedValue(0)}
+          contentTopInset={100}
+          collapseProgress={sharedValue(0)}
+          fontScale={1}
+          reduceMotion={false}
+        />,
+      );
+    });
+
+    expect(container.querySelectorAll('[data-testid^="totaal-run-micro-"]')).toHaveLength(4);
+    for (const programme of boundedProgrammes) {
+      expect(
+        container.querySelector(`[data-testid="totaal-run-micro-${programme.id}"]`),
+      ).not.toBeNull();
+    }
+    expect(
+      container.querySelector(`[data-testid="totaal-run-micro-${programmes[0]!.id}"]`),
+    ).toBeNull();
+
+    const runViewport = container.querySelector<HTMLElement>(
+      `[data-testid="totaal-repeated-run-${run.id}"]`,
+    );
+    expect(runViewport?.dataset.width).toBe('180');
+    expect(run.programmes).toHaveLength(20);
+  });
+
   it('keeps shared-title presentation pointer-transparent, accessibility-hidden and Medium', async () => {
     const programmes = [
       programme('a', 0),
@@ -150,7 +198,7 @@ describe('TotaalMicroProgrammeOverlay', () => {
     await act(async () => {
       root.render(
         <TotaalMicroProgrammeOverlay
-          runs={[run]}
+          runPresentations={[{ run, programmes: run.programmes }]}
           channelRowIndex={new Map([['one', 0]])}
           windowStartMs={START}
           minuteWidth={3}
@@ -209,7 +257,7 @@ describe('TotaalMicroProgrammeOverlay', () => {
     await act(async () => {
       root.render(
         <TotaalMicroProgrammeOverlay
-          runs={[run]}
+          runPresentations={[{ run, programmes: run.programmes }]}
           channelRowIndex={new Map([['one', 0]])}
           windowStartMs={START}
           minuteWidth={3}
@@ -253,7 +301,7 @@ describe('TotaalMicroProgrammeOverlay', () => {
     await act(async () => {
       root.render(
         <TotaalMicroProgrammeOverlay
-          runs={[run]}
+          runPresentations={[{ run, programmes: run.programmes }]}
           channelRowIndex={new Map([['one', 0]])}
           windowStartMs={START}
           minuteWidth={3}
