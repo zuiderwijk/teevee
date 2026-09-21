@@ -5,6 +5,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { Channel, Programme } from '@/data/domain/epg';
 
+import { TOTAAL_TYPOGRAPHY } from './totaal';
 import { TotaalProgrammeCell } from './TotaalProgrammeCell';
 
 type MockStyle =
@@ -36,15 +37,19 @@ function flattenStyle(style: MockStyle): Record<string, unknown> {
 vi.mock('react-native', () => {
   const View = ({ children, testID }: MockProps) =>
     createElement('div', { 'data-testid': testID }, children);
-  const Text = ({ children, testID, numberOfLines }: MockProps) =>
-    createElement(
+  const Text = ({ children, testID, numberOfLines, style }: MockProps) => {
+    const resolved = flattenStyle(style);
+    return createElement(
       'span',
       {
         'data-testid': testID,
         'data-number-of-lines': numberOfLines,
+        'data-font-family': resolved.fontFamily,
+        'data-color': resolved.color,
       },
       children,
     );
+  };
   const Pressable = ({
     children,
     testID,
@@ -140,6 +145,8 @@ describe('TotaalProgrammeCell', () => {
           nowMs={Date.parse('2026-09-21T18:15:00.000Z')}
           windowStartMs={Date.parse('2026-09-21T18:00:00.000Z')}
           minuteWidth={3}
+          fontScale={1}
+          repeatedTitleRunMember={false}
           onSelectProgramme={() => undefined}
         />,
       );
@@ -170,6 +177,8 @@ describe('TotaalProgrammeCell', () => {
           nowMs={Date.parse('2026-09-21T18:15:00.000Z')}
           windowStartMs={Date.parse('2026-09-21T18:00:00.000Z')}
           minuteWidth={3}
+          fontScale={1}
+          repeatedTitleRunMember={false}
           onSelectProgramme={() => undefined}
         />,
       );
@@ -185,11 +194,12 @@ describe('TotaalProgrammeCell', () => {
     ).toBe('NPO 1 volledig, Nieuwsuur, 20:00 tot 20:30, nu bezig');
   });
 
-  it('uses start-time copy for non-current programmes and degrades short broadcasts without overlap', async () => {
+  it('renders a 15-minute microcell as one centred ellipsis with full action semantics', async () => {
     const short = programme(
       'short',
       '2026-09-21T18:30:00.000Z',
       '2026-09-21T18:45:00.000Z',
+      'Volledige microtitel',
     );
 
     await act(async () => {
@@ -200,6 +210,8 @@ describe('TotaalProgrammeCell', () => {
           nowMs={Date.parse('2026-09-21T18:00:00.000Z')}
           windowStartMs={Date.parse('2026-09-21T18:00:00.000Z')}
           minuteWidth={3}
+          fontScale={1}
+          repeatedTitleRunMember={false}
           onSelectProgramme={() => undefined}
         />,
       );
@@ -209,12 +221,91 @@ describe('TotaalProgrammeCell', () => {
     expect(button?.dataset.left).toBe('90');
     expect(button?.dataset.width).toBe('45');
     expect(
+      container.querySelector('[data-testid="totaal-programme-title-short"]'),
+    ).toBeNull();
+    expect(
       container.querySelector('[data-testid="totaal-programme-secondary-short"]'),
     ).toBeNull();
     expect(
-      container.querySelector('[data-testid="totaal-programme-title-short"]')
-        ?.getAttribute('data-number-of-lines'),
-    ).toBe('1');
+      container.querySelector('[data-testid="totaal-programme-micro-short"]')?.textContent,
+    ).toBe('…');
+    expect(button?.getAttribute('aria-label')).toBe(
+      'NPO 1 volledig, Volledige microtitel, 20:30 tot 20:45',
+    );
+    expect(
+      container.querySelector('[data-testid="totaal-programme-boundary-short"]'),
+    ).not.toBeNull();
+  });
+
+  it('uses Semibold ellipsis only for the exact current microcell', async () => {
+    const currentMicro = programme(
+      'current-micro',
+      '2026-09-21T18:30:00.000Z',
+      '2026-09-21T18:45:00.000Z',
+    );
+
+    await act(async () => {
+      root.render(
+        <TotaalProgrammeCell
+          channel={channel}
+          programme={currentMicro}
+          nowMs={Date.parse('2026-09-21T18:35:00.000Z')}
+          windowStartMs={Date.parse('2026-09-21T18:00:00.000Z')}
+          minuteWidth={3}
+          fontScale={1}
+          repeatedTitleRunMember={false}
+          onSelectProgramme={() => undefined}
+        />,
+      );
+    });
+
+    expect(
+      container.querySelector<HTMLElement>(
+        '[data-testid="totaal-programme-micro-current-micro"]',
+      )?.dataset.fontFamily,
+    ).toBe(TOTAAL_TYPOGRAPHY.currentProgrammeTitle.fontFamily);
+  });
+
+  it('keeps repeated-run members as individual programme actions while the visual overlay owns their label', async () => {
+    const selected: string[] = [];
+    const member = programme(
+      'run-member',
+      '2026-09-21T18:30:00.000Z',
+      '2026-09-21T18:35:00.000Z',
+      'Herhaalde editie',
+    );
+
+    await act(async () => {
+      root.render(
+        <TotaalProgrammeCell
+          channel={channel}
+          programme={member}
+          nowMs={Date.parse('2026-09-21T18:00:00.000Z')}
+          windowStartMs={Date.parse('2026-09-21T18:00:00.000Z')}
+          minuteWidth={3}
+          fontScale={1}
+          repeatedTitleRunMember
+          onSelectProgramme={({ programme: selectedProgramme }) =>
+            selected.push(selectedProgramme.id)
+          }
+        />,
+      );
+    });
+
+    expect(
+      container.querySelector('[data-testid="totaal-programme-micro-run-member"]'),
+    ).toBeNull();
+    expect(
+      container.querySelector('[data-testid="totaal-programme-title-run-member"]'),
+    ).toBeNull();
+    expect(
+      container.querySelector('[data-testid="totaal-programme-boundary-run-member"]'),
+    ).not.toBeNull();
+
+    await act(async () => {
+      container.querySelector<HTMLElement>('[data-testid="programme-run-member"]')?.click();
+    });
+    expect(selected).toEqual(['run-member']);
   });
 
   it('allows two title lines and visible start time only at comfortable width', async () => {
@@ -232,6 +323,8 @@ describe('TotaalProgrammeCell', () => {
           nowMs={Date.parse('2026-09-21T18:00:00.000Z')}
           windowStartMs={Date.parse('2026-09-21T18:00:00.000Z')}
           minuteWidth={3}
+          fontScale={1}
+          repeatedTitleRunMember={false}
           onSelectProgramme={() => undefined}
         />,
       );

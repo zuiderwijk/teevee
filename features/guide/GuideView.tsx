@@ -93,7 +93,12 @@ import {
   totaalTimeAxisTickPresentation,
   totaalVerticalContentExtent,
 } from './totaal';
+import { TotaalMicroProgrammeOverlay } from './TotaalMicroProgrammeOverlay';
 import { TotaalProgrammeCell } from './TotaalProgrammeCell';
+import {
+  deriveTotaalMicroProgrammeMetadata,
+  totaalRepeatedTitleRunsForTimeWindow,
+} from './totaalMicroProgrammes';
 import { useGuideClock } from './useGuideClock';
 import { useSelectedGuideDaySchedule } from './useSelectedGuideDaySchedule';
 
@@ -220,6 +225,22 @@ export const GuideView = memo(function GuideView({
     () => indexGuideProgrammesByChannel(runtimeFixture),
     [runtimeFixture],
   );
+  const microProgrammeMetadata = useMemo(
+    () =>
+      deriveTotaalMicroProgrammeMetadata(
+        programmesByChannel,
+        layout.minuteWidth,
+        effectiveFontScale,
+      ),
+    [effectiveFontScale, layout.minuteWidth, programmesByChannel],
+  );
+  const channelRowIndex = useMemo(
+    () =>
+      new Map(
+        runtimeFixture.channels.map((channel, rowIndex) => [channel.id, rowIndex]),
+      ),
+    [runtimeFixture.channels],
+  );
 
   const pendingTargetTimeRef = useRef<number | null>(null);
   const pendingDirectHorizontalPositionRef = useRef<{
@@ -278,6 +299,19 @@ export const GuideView = memo(function GuideView({
         programmeTimeWindow.toMs,
       ),
     [programmesByChannel, programmeTimeWindow.fromMs, programmeTimeWindow.toMs],
+  );
+  const windowedRepeatedTitleRuns = useMemo(
+    () =>
+      totaalRepeatedTitleRunsForTimeWindow(
+        microProgrammeMetadata.repeatedTitleRuns,
+        programmeTimeWindow.fromMs,
+        programmeTimeWindow.toMs,
+      ),
+    [
+      microProgrammeMetadata.repeatedTitleRuns,
+      programmeTimeWindow.fromMs,
+      programmeTimeWindow.toMs,
+    ],
   );
   const followingDayBoundaryX = timeToX(
     followingDayStartMs,
@@ -1172,6 +1206,10 @@ export const GuideView = memo(function GuideView({
                           nowMs={nowMs}
                           windowStartMs={windowStart}
                           minuteWidth={layout.minuteWidth}
+                          fontScale={effectiveFontScale}
+                          repeatedTitleRunMember={microProgrammeMetadata.repeatedRunByProgrammeId.has(
+                            programme.id,
+                          )}
                           onSelectProgramme={onSelectProgramme}
                         />
                       ),
@@ -1190,6 +1228,21 @@ export const GuideView = memo(function GuideView({
             { left: layout.channelWidth },
           ]}
         >
+          <TotaalMicroProgrammeOverlay
+            runs={windowedRepeatedTitleRuns}
+            channelRowIndex={channelRowIndex}
+            windowStartMs={windowStart}
+            minuteWidth={layout.minuteWidth}
+            rowHeight={layout.rowHeight}
+            viewportWidth={programmeViewportWidth}
+            nowMs={nowMs}
+            scrollX={scrollX}
+            scrollY={scrollY}
+            contentTopInset={stableScrollGeometry.contentTopInset}
+            collapseProgress={collapseProgress}
+            fontScale={effectiveFontScale}
+            reduceMotion={reduceMotion}
+          />
           <EdgeReadabilityOverlay
             fixture={runtimeFixture}
             layout={layout}

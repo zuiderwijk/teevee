@@ -21,6 +21,7 @@ import {
   type EdgeReadableProgramme,
 } from './edgeReadability';
 import { formatGuideTime } from './guideRenderData';
+import { programmeFrame } from './geometry';
 import type { GuideLayoutMetrics } from './layout';
 import {
   TOTAAL_PROGRAMME_READABILITY_THRESHOLDS,
@@ -29,6 +30,7 @@ import {
   totaalProgrammeContentPresentation,
   totaalStableScrollVisuals,
 } from './totaal';
+import { totaalIsMicroProgrammeFrameWidth } from './totaalMicroProgrammes';
 
 const MIN_READABLE_TEXT_WIDTH = 16;
 
@@ -170,24 +172,33 @@ export function EdgeReadabilityOverlay({
 }: EdgeReadabilityOverlayProps) {
   const theme = useTeeveeTheme();
 
+  const normalProgrammes = useMemo(
+    () =>
+      fixture.programmes.filter((programme) => {
+        const frame = programmeFrame(programme, windowStart, layout.minuteWidth);
+        return !totaalIsMicroProgrammeFrameWidth(frame.width, fontScale);
+      }),
+    [fixture.programmes, fontScale, layout.minuteWidth, windowStart],
+  );
+
   const programmesByChannel = useMemo(() => {
     const map = new Map<string, Programme[]>();
     for (const channel of fixture.channels) map.set(channel.id, []);
-    for (const programme of fixture.programmes) {
+    for (const programme of normalProgrammes) {
       map.get(programme.channelId)?.push(programme);
     }
     return map;
-  }, [fixture]);
+  }, [fixture.channels, normalProgrammes]);
 
   const boundaries = useMemo(
     () =>
       edgeBoundaryXs(
-        fixture.programmes,
+        normalProgrammes,
         windowStart,
         layout.minuteWidth,
         TOTAAL_PROGRAMME_READABILITY_THRESHOLDS,
       ),
-    [fixture.programmes, layout.minuteWidth, windowStart],
+    [layout.minuteWidth, normalProgrammes, windowStart],
   );
 
   const buildEdges = useCallback(

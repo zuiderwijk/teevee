@@ -14,6 +14,7 @@ import {
   totaalProgrammePressBackgroundColor,
   totaalProgrammeSecondaryLabel,
 } from './totaal';
+import { totaalIsMicroProgrammeFrameWidth } from './totaalMicroProgrammes';
 
 type TotaalProgrammeCellProps = {
   channel: Channel;
@@ -21,6 +22,8 @@ type TotaalProgrammeCellProps = {
   nowMs: number;
   windowStartMs: number;
   minuteWidth: number;
+  fontScale: number;
+  repeatedTitleRunMember: boolean;
   onSelectProgramme: (selection: ProgrammeSelection) => void;
 };
 
@@ -30,6 +33,8 @@ export const TotaalProgrammeCell = memo(function TotaalProgrammeCell({
   nowMs,
   windowStartMs,
   minuteWidth,
+  fontScale,
+  repeatedTitleRunMember,
   onSelectProgramme,
 }: TotaalProgrammeCellProps) {
   const theme = useTeeveeTheme();
@@ -37,6 +42,7 @@ export const TotaalProgrammeCell = memo(function TotaalProgrammeCell({
   const startMs = Date.parse(programme.startAt);
   const endMs = Date.parse(programme.endAt);
   const current = isProgrammeCurrent(programme, nowMs);
+  const microcell = totaalIsMicroProgrammeFrameWidth(frame.width, fontScale);
   const content = totaalProgrammeContentPresentation(frame.width);
   const accessibilityStatus = current ? ', nu bezig' : '';
   const secondary = totaalProgrammeSecondaryLabel(
@@ -57,7 +63,7 @@ export const TotaalProgrammeCell = memo(function TotaalProgrammeCell({
         {
           left: frame.left,
           width: frame.width,
-          paddingHorizontal: content.paddingX,
+          paddingHorizontal: microcell ? 0 : content.paddingX,
           backgroundColor: totaalProgrammePressBackgroundColor(
             pressed,
             theme.colors.surfaceElevated,
@@ -65,31 +71,49 @@ export const TotaalProgrammeCell = memo(function TotaalProgrammeCell({
         },
       ]}
     >
-      <View style={styles.programmeTextContent}>
-        <Text
-          testID={`totaal-programme-title-${programme.id}`}
-          numberOfLines={content.titleLines}
-          ellipsizeMode="tail"
-          style={[
-            current ? styles.currentProgrammeTitle : styles.programmeTitle,
-            { color: theme.colors.text },
-          ]}
-        >
-          {programme.title}
-        </Text>
-        {content.showSecondary ? (
+      {microcell ? (
+        repeatedTitleRunMember ? null : (
+          <View style={styles.microContent}>
+            <Text
+              testID={`totaal-programme-micro-${programme.id}`}
+              accessible={false}
+              numberOfLines={1}
+              style={[
+                current ? styles.currentProgrammeTitle : styles.programmeTitle,
+                { color: theme.colors.text },
+              ]}
+            >
+              …
+            </Text>
+          </View>
+        )
+      ) : (
+        <View style={styles.programmeTextContent}>
           <Text
-            testID={`totaal-programme-secondary-${programme.id}`}
-            numberOfLines={1}
+            testID={`totaal-programme-title-${programme.id}`}
+            numberOfLines={content.titleLines}
+            ellipsizeMode="tail"
             style={[
-              styles.programmeSecondary,
-              { color: theme.colors.textSecondary },
+              current ? styles.currentProgrammeTitle : styles.programmeTitle,
+              { color: theme.colors.text },
             ]}
           >
-            {secondary}
+            {programme.title}
           </Text>
-        ) : null}
-      </View>
+          {content.showSecondary ? (
+            <Text
+              testID={`totaal-programme-secondary-${programme.id}`}
+              numberOfLines={1}
+              style={[
+                styles.programmeSecondary,
+                { color: theme.colors.textSecondary },
+              ]}
+            >
+              {secondary}
+            </Text>
+          ) : null}
+        </View>
+      )}
       <View
         testID={`totaal-programme-boundary-${programme.id}`}
         pointerEvents="none"
@@ -119,6 +143,13 @@ const styles = StyleSheet.create({
     minWidth: 0,
     flexShrink: 1,
     justifyContent: 'center',
+  },
+  microContent: {
+    flex: 1,
+    minWidth: 0,
+    alignItems: 'center',
+    justifyContent: 'center',
+    overflow: 'hidden',
   },
   programmeTitle: {
     ...TOTAAL_TYPOGRAPHY.programmeTitle,
