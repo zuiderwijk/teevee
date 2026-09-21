@@ -11,6 +11,22 @@ Doel: chronologisch, begrijpelijk overzicht van substantiële milestones, verifi
 
 ---
 
+## 21 september 2026 — Totaal initial-positioning and long-distance Nu polish
+
+Further physical iPhone validation of PR #114 confirmed that the mount-time crash was gone, then exposed two non-crashing presentation/runtime defects: Totaal could visibly paint around the television-day start before jumping to the intended viewed-time position, and a long animated `Nu` return could temporarily outrun the coarse programme window and expose an empty schedule while the channel rail remained visible.
+
+Development kept the accepted 120-pt viewed-time anchor, native horizontal ownership state machine, 1.5-viewport programme overscan, visual metrics, collapse/Reduce Motion and Guide data contracts unchanged. The first Totaal render now derives its authoritative horizontal offset and programme bucket synchronously from the initial viewed time. The mount/day positioning path was moved from a one-frame-delayed `requestAnimationFrame` effect to pre-paint `useLayoutEffect`, so the schedule and time axis are positioned together against an already-correct render bucket rather than first presenting the 06:00-side window.
+
+Programmatic navigation now derives its animation policy from the existing programme-window overscan rather than adding another arbitrary timing/distance constant. Requested native animation is retained while the full travel is at most **1.5 programme viewports**, which is exactly the distance already covered safely by the source bucket's frozen overscan. Longer travel is converted to a direct two-phase jump: the target programme bucket commits first, then a layout effect positions the authoritative `scrollX`, schedule and time axis together. This prevents a long `Nu` animation from crossing more buckets than React windowing can guarantee while preserving native animation for nearby jumps. Reduce Motion continues to request direct positioning as before.
+
+Deterministic windowing coverage now verifies target-bucket ownership on the first visible viewport, the exact 1.5-viewport animated boundary, long-distance target prealignment/direct navigation, and explicitly non-animated positioning. The existing horizontal ownership regression suite remains unchanged. Runtime head `89ff4294324feefbe40ee4c123d4cd47a39f39ba` passed CI #817 / run `35642921488`: npm ci, strict TypeScript, lint, **67 test files / 491 tests**, and iOS/Android/web Expo export. The runtime-ui classifier correctly skipped the native/config Android job.
+
+No micro-programme rendering was implemented here; that remains intentionally deferred until the separate owner-approved Design/UX refinement is canonical. No Per-zender or Nu & Straks contract changed.
+
+**Next step:** focused physical iPhone revalidation of initial Totaal presentation and both short/long `Nu` navigation on the final exact PR head, then continue the broader Totaal acceptance flow. Do not merge or request Independent QA yet.
+
+---
+
 ## 21 september 2026 — Totaal mount-time Reanimated worklet contract fix
 
 Focused physical iPhone revalidation still failed on exact head `3a50e2a39fefce80e7981f853735c85174593aff`: switching from another Guide presentation to Totaal continued to terminate the app immediately. The previously added horizontal single-source ownership state machine remains technically valid and is intentionally unchanged, but device evidence showed that reciprocal scroll ownership was not the direct mount-time termination cause.
