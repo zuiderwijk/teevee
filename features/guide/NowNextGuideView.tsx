@@ -61,11 +61,8 @@ import {
   nowNextChannelRowLayout,
   nowNextChromeCondensedForProgress,
   nowNextCollapseProgressForScrollOffset,
-  nowNextFollowingContentBias,
-  nowNextFollowingStackedContentPadding,
   nowNextProgrammePressBackgroundColor,
   nowNextRailSlotPresentation,
-  nowNextReferenceContextLayout,
   nowNextSafeAreaLayout,
   nowNextStableScrollGeometry,
   nowNextStableScrollVisuals,
@@ -224,10 +221,6 @@ const ChannelRow = memo(function ChannelRow({
             }
 
             const stackedFallback = rowLayout.mode === 'stacked-fallback';
-            const contentBias = nowNextFollowingContentBias(slotIndex);
-            const stackedContentPadding = stackedFallback
-              ? nowNextFollowingStackedContentPadding(slotIndex)
-              : null;
             return (
               <Pressable
                 key={programme.id}
@@ -254,15 +247,14 @@ const ChannelRow = memo(function ChannelRow({
                 <View
                   testID={`now-next-following-content-${channel.id}-${slotIndex}`}
                   pointerEvents="none"
-                  style={[styles.followingContentBand, contentBias]}
+                  style={styles.followingContentBand}
                 >
                   <View
-                    style={[
+                    style={
                       stackedFallback
                         ? styles.followingContentStacked
-                        : styles.followingContentInline,
-                      stackedContentPadding,
-                    ]}
+                        : styles.followingContentInline
+                    }
                   >
                     <Text
                       numberOfLines={1}
@@ -387,7 +379,6 @@ export const NowNextGuideView = memo(function NowNextGuideView({
     effectiveFontScale,
     programmeWidth,
   );
-  const referenceContextLayout = nowNextReferenceContextLayout(effectiveFontScale);
   const stableScrollGeometry = nowNextStableScrollGeometry(effectiveFontScale);
   const railInset = Math.max(
     0,
@@ -550,52 +541,13 @@ export const NowNextGuideView = memo(function NowNextGuideView({
         />
 
         <View
-          testID="now-next-reference-context"
+          testID="now-next-utility-context"
           style={[
-            styles.referenceContext,
-            referenceContextLayout.mode === 'two-lane'
-              ? styles.referenceContextAccessibility
-              : styles.referenceContextStandard,
-            {
-              height: referenceContextLayout.height,
-              backgroundColor: theme.colors.background,
-            },
+            styles.utilityContext,
+            { backgroundColor: theme.colors.background },
           ]}
         >
-          <View
-            style={[
-              styles.referenceCopy,
-              referenceContextLayout.mode === 'two-lane'
-                ? {
-                    height: referenceContextLayout.referenceLaneHeight,
-                    paddingHorizontal: GUIDE_VISUAL_METRICS.screenInsetX,
-                  }
-                : null,
-            ]}
-          >
-            <Text
-              testID="now-next-reference-time"
-              numberOfLines={1}
-              maxFontSizeMultiplier={COMPACT_GUIDE_MAX_FONT_SIZE_MULTIPLIER}
-              style={[styles.referenceTime, { color: theme.colors.text }]}
-            >
-              {live ? `Nu · ${formatTime(referenceMs)}` : formatTime(referenceMs)}
-            </Text>
-          </View>
-
-          <View
-            style={[
-              styles.utilityActions,
-              referenceContextLayout.mode === 'two-lane'
-                ? {
-                    width: '100%',
-                    height: referenceContextLayout.utilitiesLaneHeight,
-                    marginLeft: 0,
-                    paddingHorizontal: GUIDE_VISUAL_METRICS.screenInsetX,
-                  }
-                : null,
-            ]}
-          >
+          <View style={styles.utilityActions}>
             <Pressable
               testID="now-next-primetime"
               accessibilityRole="button"
@@ -690,12 +642,20 @@ export const NowNextGuideView = memo(function NowNextGuideView({
           testID="now-next-time-rail-shell"
           style={[
             styles.timeRailShell,
-            {
-              backgroundColor: theme.colors.background,
-              borderBottomColor: theme.colors.border,
-            },
+            { backgroundColor: theme.colors.background },
           ]}
         >
+          <View
+            testID="now-next-time-rail-baseline"
+            pointerEvents="none"
+            style={[
+              styles.timeRailBaseline,
+              {
+                backgroundColor: theme.colors.railTick,
+                opacity: NOW_NEXT_VISUAL_METRICS.quarterRailTickOpacity,
+              },
+            ]}
+          />
           <View
             pointerEvents="none"
             style={[
@@ -905,30 +865,13 @@ const styles = StyleSheet.create({
     right: 0,
     zIndex: 2,
   },
-  referenceContext: {
+  utilityContext: {
     width: '100%',
-  },
-  referenceContextStandard: {
+    height: NOW_NEXT_VISUAL_METRICS.utilityContextHeight,
     paddingHorizontal: GUIDE_VISUAL_METRICS.screenInsetX,
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
-    gap: NOW_NEXT_VISUAL_METRICS.shortcutGap,
-  },
-  referenceContextAccessibility: {
-    flexDirection: 'column',
-    alignItems: 'stretch',
-    justifyContent: 'flex-start',
-  },
-  referenceCopy: {
-    minWidth: 0,
-    flexShrink: 1,
-    justifyContent: 'center',
-  },
-  referenceTime: {
-    ...NOW_NEXT_TYPOGRAPHY.referenceTime,
-    letterSpacing: 0,
-    fontVariant: ['tabular-nums'],
+    justifyContent: 'flex-end',
   },
   utilityActions: {
     marginLeft: 'auto',
@@ -977,8 +920,14 @@ const styles = StyleSheet.create({
   },
   timeRailShell: {
     height: NOW_NEXT_VISUAL_METRICS.timeRailHeight,
-    borderBottomWidth: StyleSheet.hairlineWidth,
     justifyContent: 'center',
+  },
+  timeRailBaseline: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: 0,
+    height: 1,
   },
   referenceMarker: {
     position: 'absolute',
@@ -1041,7 +990,7 @@ const styles = StyleSheet.create({
     minWidth: 0,
   },
   referenceProgramme: {
-    justifyContent: 'center',
+    justifyContent: 'flex-end',
     paddingRight: 0,
   },
   referenceTitle: {
@@ -1067,6 +1016,7 @@ const styles = StyleSheet.create({
   followingContentBand: {
     flex: 1,
     width: '100%',
+    justifyContent: 'center',
   },
   followingContentInline: {
     width: '100%',
@@ -1076,6 +1026,7 @@ const styles = StyleSheet.create({
   followingContentStacked: {
     width: '100%',
     alignItems: 'flex-start',
+    paddingVertical: NOW_NEXT_VISUAL_METRICS.followingStackedPaddingY,
   },
   followingTime: {
     ...NOW_NEXT_TYPOGRAPHY.followingTime,
