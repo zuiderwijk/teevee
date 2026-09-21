@@ -11,6 +11,20 @@ Doel: chronologisch, begrijpelijk overzicht van substantiële milestones, verifi
 
 ---
 
+## 21 september 2026 — Totaal physical iPhone crash: horizontal ownership fix candidate
+
+Physical iPhone validation of PR #114 exact head `397fc54e3695a45d72442c0b7c15c38b5e29a1b7` failed immediately when switching to Totaal: the app terminated before visual validation could begin. Lead traced the highest-confidence runtime cause to reciprocal native horizontal mirroring between the independently draggable programme schedule and sticky time axis: each surface treated every `onScroll`, including the peer's programmatic mirror event, as authoritative and immediately scrolled the other surface back.
+
+Development replaced that reciprocal path with a small worklet-safe single-source ownership state machine while preserving both native draggable surfaces. A schedule drag owns authoritative `scrollX` and mirrors only to the passive axis; an axis drag does the inverse. Passive mirror events are ignored, ownership survives the initiating surface's native momentum and is released only after settle, and only an idle surface may become the next gesture owner. Animated Nu movement uses the schedule as the temporary native programmatic owner so programme-window buckets continue to follow real native viewport movement. Initial positioning, day selection and other non-animated programmatic jumps set the authoritative offset and both native peers directly while ownership is idle, so their resulting native events cannot mirror back.
+
+Deterministic regression coverage now exercises schedule→axis/no-back-mirror, axis→schedule/no-back-mirror, momentum retention, post-settle ownership transfer, loop-free direct positioning, animated Nu ownership, day-selection/120-pt-anchor alignment, authoritative programme-window bucket changes and non-momentum release. No visual metric, Reduce Motion geometry, programme-window parameter, ChannelIdentity, Per-zender or Nu & Straks contract changed. Runtime candidate `d092d83e2dd991ce599e07cd064b103ef424ac38` passed CI #811 with strict TypeScript, lint, **67 test files / 487 tests**, and iOS/Android/web Expo export; the runtime-ui classifier correctly skipped the native/config Android job.
+
+Physical acceptance remains explicitly **FAILED/CLOSED** until Lead reviews the final exact head and switching to Totaal is revalidated on physical iPhone.
+
+**Next step:** exact-head Lead review, then repeat physical iPhone validation; do not merge and do not request Independent QA before physical PASS.
+
+---
+
 ## 21 september 2026 — Totaal production visual convergence implemented in PR #114
 
 Development converged Totaal to the owner-approved production visual specification without replacing the proven 2D Guide architecture. The runtime now uses the shared GuideChrome/tabs, the fixed native schedule viewport with 56-pt collapse isolation, a persistent 52-pt day/Nu context plus 44-pt time axis, the 84-pt base logo-first channel rail and deterministic Dynamic Type geometry. Programme cells keep exact start/duration geometry at 3.00 pt/min base scale with zero permanent gap, no card fill/radius/progress treatment, Instrument Sans title hierarchy, current `tot HH:MM` copy, restrained temporal boundaries and semantic pressed-only elevation.
