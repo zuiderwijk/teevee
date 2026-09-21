@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import type { GuideFixture, GuideSchedule, Programme } from '@/data/domain/epg';
 
 import {
+  NOW_NEXT_SLOT_MINUTES,
   clampReferenceTime,
   explicitRailActionAnimation,
   nearestSlotIndex,
@@ -90,12 +91,13 @@ describe('Nu & Straks television-day semantics', () => {
   });
 
   it.each([
-    ['spring', '2026-03-28T12:00:00Z', 46],
-    ['normal', '2026-09-18T12:00:00Z', 48],
-    ['fall', '2026-10-24T12:00:00Z', 50],
-  ] as const)('creates %s television-day rail with %s half-hour slots', (_label, anchor, count) => {
+    ['spring', '2026-03-28T12:00:00Z', 92],
+    ['normal', '2026-09-18T12:00:00Z', 96],
+    ['fall', '2026-10-24T12:00:00Z', 100],
+  ] as const)('creates %s television-day rail with %s quarter-hour targets', (_label, anchor, count) => {
     const { startMs, endMs } = nowNextTelevisionDayBounds(Date.parse(anchor));
-    expect((endMs - startMs) / HOUR_MS).toBe(count / 2);
+    expect(NOW_NEXT_SLOT_MINUTES).toBe(15);
+    expect((endMs - startMs) / HOUR_MS).toBe(count / 4);
     expect(timeSlotsForDay(startMs, endMs)).toHaveLength(count);
   });
 });
@@ -151,16 +153,16 @@ describe('reference-time and rail helpers', () => {
   });
 
   it('keeps the actual live instant while resolving only the nearest visual slot', () => {
-    const slots = [0, 30, 60, 90].map((minutes) => minutes * 60_000);
-    const liveInstant = 44 * 60_000;
-    expect(clampReferenceTime(liveInstant, slots[0]!, 120 * 60_000)).toBe(liveInstant);
+    const slots = [0, 15, 30, 45].map((minutes) => minutes * 60_000);
+    const liveInstant = 17 * 60_000;
+    expect(clampReferenceTime(liveInstant, slots[0]!, 60 * 60_000)).toBe(liveInstant);
     expect(nearestSlotIndex(slots, liveInstant)).toBe(1);
   });
 
   it('commits the nearest native settled slot without requiring a second scroll command', () => {
-    expect(railSlotIndexForOffset(151, 48, 76)).toBe(2);
-    expect(railSlotIndexForOffset(-100, 48, 76)).toBe(0);
-    expect(railSlotIndexForOffset(99999, 48, 76)).toBe(47);
+    expect(railSlotIndexForOffset(97, 96, 48)).toBe(2);
+    expect(railSlotIndexForOffset(-100, 96, 48)).toBe(0);
+    expect(railSlotIndexForOffset(99999, 96, 48)).toBe(95);
   });
 
   it('commits end-drag only when native momentum is effectively absent', () => {
@@ -200,7 +202,7 @@ describe('Nu and Primetime semantic states', () => {
     expect(
       resolveNowNextTemporalControlStates({
         live: false,
-        referenceMs: primetimeMs + 30 * 60_000,
+        referenceMs: primetimeMs + 15 * 60_000,
         primetimeMs,
       }),
     ).toEqual({ nu: 'action', primetime: 'action' });
