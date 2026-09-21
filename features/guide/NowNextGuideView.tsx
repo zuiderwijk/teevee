@@ -62,6 +62,7 @@ import {
   nowNextChromeCondensedForProgress,
   nowNextCollapseProgressForScrollOffset,
   nowNextFollowingContentBias,
+  nowNextFollowingStackedContentPadding,
   nowNextProgrammePressBackgroundColor,
   nowNextRailSlotPresentation,
   nowNextReferenceContextLayout,
@@ -224,6 +225,9 @@ const ChannelRow = memo(function ChannelRow({
 
             const stackedFallback = rowLayout.mode === 'stacked-fallback';
             const contentBias = nowNextFollowingContentBias(slotIndex);
+            const stackedContentPadding = stackedFallback
+              ? nowNextFollowingStackedContentPadding(slotIndex)
+              : null;
             return (
               <Pressable
                 key={programme.id}
@@ -253,11 +257,12 @@ const ChannelRow = memo(function ChannelRow({
                   style={[styles.followingContentBand, contentBias]}
                 >
                   <View
-                    style={
+                    style={[
                       stackedFallback
                         ? styles.followingContentStacked
-                        : styles.followingContentInline
-                    }
+                        : styles.followingContentInline,
+                      stackedContentPadding,
+                    ]}
                   >
                     <Text
                       numberOfLines={1}
@@ -1071,7 +1076,6 @@ const styles = StyleSheet.create({
   followingContentStacked: {
     width: '100%',
     alignItems: 'flex-start',
-    paddingVertical: NOW_NEXT_VISUAL_METRICS.followingStackedPaddingY,
   },
   followingTime: {
     ...NOW_NEXT_TYPOGRAPHY.followingTime,
