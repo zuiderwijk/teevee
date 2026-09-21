@@ -11,6 +11,22 @@ Doel: chronologisch, begrijpelijk overzicht van substantiële milestones, verifi
 
 ---
 
+## 21 september 2026 — Totaal repeated-run overlay bounded to canonical programme window
+
+Lead review of the first owner-approved micro-programme implementation found one performance-architecture blocker: repeated-title run **identity and geometry** were correctly full-schedule and bucket-stable, but the overlay still rendered `run.programmes.map(...)`. A sufficiently long repeated-title run could therefore mount ellipsis presentation nodes far outside the frozen coarse programme render window and partially bypass the accepted 1.5× overscan architecture.
+
+The correction keeps the two responsibilities separate. Canonical run derivation remains based on the complete chronological channel schedule before viewport windowing, so run ID, membership, start/end geometry, shared-title threshold and partial-left/right behaviour remain unchanged across bucket transitions. A new bounded presentation layer is then derived from the already-windowed programmes for the current coarse render window. `TotaalMicroProgrammeOverlay` receives the full run plus only the intersecting member subset and renders per-cell `…` nodes from that bounded subset. Shared-title geometry still uses the complete run start/end, so the title remains sticky/clipped against the true run bounds rather than the current bucket.
+
+Deterministic coverage now proves that a long 24-member repeated run keeps the same full run ID/membership while two distant programme windows expose only their six intersecting overlay members. Component coverage additionally verifies that a 20-member run can render a four-member bounded subset while the overlay width/visible layout still follows the full run geometry. Existing 4×5-minute / 3×5-minute behaviour, per-programme Pressables, boundaries, accessibility/Programme Detail ownership and normal EdgeReadabilityOverlay semantics are unchanged.
+
+Code head `53c2f5da50a24934b383abef94a33ae59b828062` passed CI #834 / run `35649144128`: npm ci, strict TypeScript, lint, **69 test files / 515 tests**, and iOS/Android/web Expo export. The runtime-ui classifier correctly skipped the native/config Android job. No visual metric, micro threshold, scroll ownership, programme-window size/overscan, Guide geometry, EPG/data contract, Per-zender or Nu & Straks behaviour changed.
+
+Physical iPhone acceptance remains open because the repeated-title overlay is native-scroll-coupled presentation. The device gate should additionally hard-fling across bucket transitions and confirm no duplicate/flashing shared title while the bounded member subset swaps underneath the same canonical run identity.
+
+**Next step:** Lead exact-head review of the final PR #114 head, then owner physical iPhone validation. Do not merge and do not request Independent QA yet.
+
+---
+
 ## 21 september 2026 — Totaal micro-programme refinement reconciled and implemented
 
 PR #114 was first reconciled with canonical `main` `a6d57197b78d62ea3757f4be170f0a1181f11413`, which contains the owner-approved micro-programme design/spec merge from PR #115. The existing Totaal production runtime, horizontal ownership fix, mount-time Reanimated worklet fix, first-open positioning refinement and distance-aware long-range `Nu` navigation were preserved unchanged.
