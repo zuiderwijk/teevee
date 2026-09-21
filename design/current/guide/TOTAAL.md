@@ -1,63 +1,182 @@
-# Totaal — current provisional visual direction
+# Totaal — current accepted production visual design
 
-Status: **PROVISIONAL — PRODUCTION VISUAL DESIGN NOT YET OWNER-APPROVED**
-Owner correction: 2026-09-21. Earlier repository wording incorrectly promoted the current reference direction to a completed production design.
+Status: **ACCEPTED — PRODUCTION VISUAL DESIGN OWNER-APPROVED**
+Owner-approved: 2026-09-21
 
-Accepted sub-decisions that remain constraints: shared Guide day-selector behaviour (2026-09-15) and Instrument Sans typography (2026-09-17). Proven Totaal interaction/data/performance mechanics remain frozen unless concrete regression evidence requires change.
+This manifest defines the accepted Totaal production visual direction. It freezes composition, hierarchy and visual language, but it is **not yet the production implementation specification**. Exact implementation metrics and acceptance criteria still require the dedicated production visual-convergence specification before Development starts.
 
-## Current exploration references
-- Light: `/Teevee/Nederlandse tv-gids op smartphone.png`
-  - file id: `file_0000000015ac81f4ab067e5473ed692d`
-- Dark: `/Teevee/Donkere Nederlandse tv-gidsinterface.png`
-  - file id: `file_000000008448821095d8432693d09bd8`
-- Accepted Guide day-selector states / bottom sheet:
-  - `/Teevee/Teevee Guide day selector - states and bottom sheet.png`
-  - file id: `file_00000000390c8210b76256621721592b`
-- Accepted sticky / condensed day-selector behaviour:
-  - `/Teevee/Teevee Guide day selector - sticky scroll behavior.png`
-  - file id: `file_00000000314481f69f6a34d18ece1c21`
+## Canonical visual asset
 
-Detailed shared day-selector contract: `design/current/guide/GUIDE_DAY_SELECTOR.md`.
-Shared typography contract: `design/current/TYPOGRAPHY.md`.
-`docs/TOTAAL_VISUAL_CONVERGENCE.md` is currently a **draft/inactive candidate handoff**. Do not use it to start production implementation until the owner has accepted the final Totaal production design and that specification is explicitly reactivated.
+- `/Teevee/Totaal production design - light dark expanded condensed.png`
+  - Library file id: `file_00000000aafc8230b3218e6577a1d912`
+  - Library file id (stable record): `libfile_1f6afbdcf8748191b5d524a7aad5e0df`
 
-## Frozen constraints
-- Instrument Sans as the accepted UI typeface; historical Söhne-like screenshot typography is superseded for family choice only.
-- Totaal remains a 2D Guide: horizontal movement is time, vertical movement is channels.
-- Programme geometry continues to represent real schedule duration.
-- Native inertia, bounce, directional lock and the proven partial-left readability behaviour remain intact.
-- Programme Detail round-trip preserves day/time/channel/scroll context.
-- The proven bounded horizontal programme-windowing/performance architecture remains intact.
-- Light/dark/system and substantive Dynamic Type remain product-quality requirements.
+The board contains:
+- light / expanded-rest state;
+- light / condensed-scrolled state;
+- dark / expanded-rest state;
+- dark / condensed-scrolled state.
 
-## Current candidate visual direction — not frozen
-The existing references currently suggest, but do **not** yet canonically require:
-- near-white neutral light canvas / dark-anthracite dark canvas;
-- visually open timeline treatment rather than stacked cards;
-- logo-first left identity rail;
-- restrained separators and whitespace;
-- compact current-time marker rather than a full-height line;
-- programme-title-first cells with little low-value metadata;
-- quiet bottom navigation/chrome.
+The programme titles, exact broadcaster mix and generated icon artwork in the board are illustrative schedule content. The accepted production channel-logo registry and shared app-shell/navigation components remain authoritative for exact assets.
 
-These are inputs for Totaal Design / UX Exploration and may change through owner-approved refinement.
+## Frozen interaction/data constraints
 
-## Accepted day navigation sub-contract
-- One compact typographic date selector plus a separate `Nu` action.
-- Tapping the date selector opens the bounded D-2..D+7 bottom sheet; no unrestricted calendar or horizontal ten-day rail.
-- Changing day preserves the viewed wall-clock time where practical.
-- `Nu` restores the actual current instant and corresponding television day.
-- During vertical Guide scrolling, date + `Nu` + time axis remain available while non-functional brand/header chrome condenses away.
-- During horizontal browsing, date context follows the stable time-navigation anchor and updates when that anchor crosses the 06:00 television-day boundary.
+The visual design does not reopen:
+- horizontal = time, vertical = channels;
+- real programme start/duration determines horizontal geometry;
+- native inertia, bounce and directional lock;
+- proven partial-left-title/time-axis readability behaviour;
+- D-2 through D+7 Guide horizon;
+- 06:00 Europe/Amsterdam television-day boundary;
+- shared day selector + separate `Nu`;
+- Programme Detail direct open and round-trip context preservation;
+- bounded horizontal programme windowing/performance architecture;
+- provider/data architecture;
+- Instrument Sans;
+- light/dark/system;
+- Dynamic Type and accessibility.
 
-## Reference authority note
-The exact historical date control visible in the 13 September light/dark references is **SUPERSEDED** by `GUIDE_DAY_SELECTOR.md`, and their typeface family is superseded by `design/current/TYPOGRAPHY.md`. The remaining visual hierarchy/composition is **not frozen production design**; it is input for the next Totaal design round.
+## Accepted expanded/rest composition
 
-## Superseded
-Earlier Totaal explorations with card-like programme blocks, a full-height red current-time line, dense metadata, more decorative chrome or a different typography direction are not current.
+Top to content:
+1. shared Teevee Guide shell with `tv.` brand mark;
+2. shared Search + secondary/settings action area;
+3. shared Guide presentation tabs: `Totaal · Per zender · Nu & Straks`, with Totaal selected;
+4. compact date selector + separate `Nu`;
+5. compact time axis;
+6. open 2D schedule grid with logo-first channel rail;
+7. existing shared bottom navigation, visually identical in structure to Per zender.
 
-Also superseded for day navigation:
-- prototype permanent `Vandaag` / `Morgen` buttons;
-- unrestricted calendar treatments;
-- horizontal ten-day date rails;
-- previous/next-day arrow chrome.
+Do not restore a large standalone `Gids` heading or the floating bottom Guide-presentation pill.
+
+## Accepted condensed/scrolled composition
+
+On vertical scroll:
+- non-functional brand/action chrome and Guide presentation tabs condense away;
+- **do not retain the `tv.` mark** in the condensed functional stack;
+- date selector + `Nu` remain available;
+- time axis remains available;
+- schedule/channel context continues underneath without being covered;
+- returning to the top restores the expanded hierarchy naturally;
+- bottom navigation remains stable.
+
+The exact collapse distance/animation calibration is not frozen by this visual board and must be specified against the existing proven scroll architecture rather than guessed from pixels.
+
+## Accepted date-label presentation
+
+Totaal now follows the same compact temporal wording as Per zender:
+- from 06:00–23:59, current television day = **`Vandaag`** only;
+- next television day = **`Morgen`** only;
+- all other days use abbreviated weekday + date, e.g. **`Zo 20 sep`**;
+- from 00:00–05:59, use explicit weekday + date for every day option/context; do not use `Vandaag` or `Morgen`.
+
+No redundant date suffix follows `Vandaag` or `Morgen`.
+
+The bounded D-2..D+7 bottom-sheet contract remains defined by `design/current/guide/GUIDE_DAY_SELECTOR.md`.
+
+## Accepted schedule visual language
+
+### Open grid
+- no permanent rounded programme cards;
+- no permanent programme fill used merely to define every cell;
+- the schedule reads as one continuous timeline canvas;
+- whitespace and restrained separators define structure;
+- programme geometry continues to communicate real duration.
+
+### Programme typography and metadata
+- Instrument Sans;
+- programme title is the primary visual information;
+- running programme: secondary copy prioritises **`tot HH:MM`**;
+- future/non-current programme: secondary copy uses the start time when useful;
+- secondary time copy is visually quieter than the title;
+- for narrow/partially clipped cells, title survives before secondary time metadata;
+- exact font sizes/weights/row metrics remain to be frozen in the production spec and validated physically.
+
+### Current programme
+- no in-cell progress bar;
+- no heavy permanent current-programme card treatment;
+- current state may use restrained typography or an extremely subtle local surface only if the production specification can prove it improves scanning without adding noise;
+- current/live status remains explicit in accessibility semantics.
+
+### Current-time indicator
+- one compact red current-time marker anchored to the time axis;
+- visible current clock copy may sit inside the compact marker;
+- small pointer/notch may connect the marker to the axis;
+- **no full-height red line through all channel rows**;
+- current state is never colour-only semantically.
+
+## Accepted time axis
+
+- calm, light timeline rather than a heavy bar/raster;
+- text labels on whole and half hours;
+- quarter hours use unlabeled minor ticks;
+- no extra dense intermediate tick rhythm by default;
+- existing proven left-edge masking/readability behaviour remains intact;
+- exact tick lengths/contrast and current-marker dimensions remain production-spec details.
+
+## Accepted channel rail
+
+- logo-first identity;
+- no visible `ZENDER` heading;
+- when a readable logo exists, do not duplicate the channel name visually underneath it;
+- text fallback only when a logo is unavailable/unusable;
+- full channel display name remains available to accessibility;
+- logos use one consistent optical identity box while preserving original proportions;
+- no arbitrary recolouring or distortion;
+- rail shares the calm Guide canvas rather than reading as a separate card/sidebar;
+- use only a restrained boundary where orientation benefits from it.
+
+## Separators and surfaces
+
+Light:
+- near-white neutral canvas;
+- subtle horizontal channel separation;
+- temporal/programme boundaries are lighter than channel separation;
+- no patchwork of grey cards.
+
+Dark:
+- calm dark-anthracite canvas;
+- same open-grid hierarchy and geometry;
+- separators remain subordinate to text/channel marks;
+- do not convert light open-grid whitespace into dark filled cards.
+
+## Bottom navigation
+
+Use the same canonical bottom-navigation structure and behaviour as Per zender. The generated board is composition reference, not authority for exact glyph drawing.
+
+## Accessibility and larger text
+
+- substantive programme content remains Dynamic-Type/font-scale aware;
+- do not preserve screenshot density by globally disabling scaling;
+- channel text fallback remains readable and distinguishable;
+- compact shared Guide controls follow their existing documented scaling rules;
+- touch targets remain platform-safe;
+- light/dark/system retain equivalent hierarchy and semantics;
+- physical validation must cover representative larger-text settings.
+
+## What the visual board does not freeze
+
+The owner-approved board freezes **direction and composition**, not every generated pixel. The production design specification must still determine and physically calibrate:
+- exact programme title/time typography;
+- exact standard row height and responsive larger-text row geometry;
+- exact channel-rail width/logo optical box;
+- exact separator/tick contrast;
+- exact current-time marker dimensions;
+- exact condensed collapse/compensation metrics compatible with the existing Totaal scroll architecture;
+- edge cases for very short programmes, long titles and missing logos.
+
+## Superseded Totaal visual treatments
+
+This accepted production design supersedes:
+- the previous provisional light image `/Teevee/Nederlandse tv-gids op smartphone.png`;
+- the previous provisional dark image `/Teevee/Donkere Nederlandse tv-gidsinterface.png`;
+- large standalone `TEEVEE / Gids` Totaal header treatment;
+- floating bottom Guide-presentation selector;
+- permanent rounded/filled programme cards;
+- in-cell progress bars;
+- full-height red current-time line;
+- visible `ZENDER` heading;
+- duplicate channel-name captions beneath readable broadcaster logos;
+- `Vandaag, <date>` / `Morgen, <date>` wording.
+
+Git history remains the archive for the earlier directions.

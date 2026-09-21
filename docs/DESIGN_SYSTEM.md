@@ -92,7 +92,7 @@ Rules:
 All three Guide presentations share one visual shell.
 
 At rest the shell may show brand identity and the Guide-view selector. During vertical scrolling, nonessential brand chrome may condense to return space to schedule content. Essential context is view-specific:
-- Totaal: selected day, `Nu`, and time axis/context;
+- Totaal: expanded/rest uses the shared `tv.` brand/action row plus Guide presentation tabs; condensed/scrolled removes that non-functional chrome completely and keeps selected day, `Nu`, and time axis/context;
 - Per zender: channel-logo strip plus compact date/Primetime/Nu temporal context; selected-channel identity is not duplicated in text outside the persistent rail;
 - Nu & Straks: compact Primetime/Nu utility context plus the persistent time rail; the reference instant remains semantic state but has no standalone visible reference-time copy.
 
@@ -119,7 +119,7 @@ System rules:
 - opening the selector uses a bounded bottom sheet rather than an unrestricted calendar;
 - selection uses semantic selected state plus an explicit non-colour indicator;
 - labels may use `Vandaag` / `Morgen` only when semantically correct for the active television day;
-- Per zender uses the accepted compact override: `Vandaag`/`Morgen` only from 06:00–23:59; from 00:00–05:59 use explicit weekday + date labels only;
+- Totaal and Per zender use the same accepted compact wording: `Vandaag`/`Morgen` only from 06:00–23:59 and with no extra date suffix; other days use abbreviated weekday + date; from 00:00–05:59 use explicit weekday + date labels only;
 - Per-zender date/Primetime/Nu chrome uses a documented hard 1.20 font-size multiplier cap and remains one line; this exception does not apply to substantive programme content;
 - light/dark/system use semantic surface, border and text tokens rather than separate interaction variants.
 
@@ -136,7 +136,21 @@ Exact canonical assets and state semantics are defined by `design/current/guide/
 
 ## Guide-specific density
 ### Totaal
-This is the densest presentation because spatial geometry itself communicates schedule information. Keep cells typographic and restrained. Do not add genres or artwork. Current programme context may prioritise end time; future cells prioritise start time.
+This is the densest presentation because spatial geometry itself communicates schedule information.
+
+Accepted production visual language:
+- one continuous open timeline canvas; no permanent rounded/fill programme cards;
+- programme title carries the primary hierarchy; do not add genres or artwork;
+- current programme secondary copy prioritises `tot HH:MM`; future/non-current cells prioritise start time;
+- no in-cell progress bars;
+- one compact current-time marker on the time axis; no full-height current-time line through schedule rows;
+- whole and half hours are text-labelled on the axis; quarter hours use unlabeled minor ticks;
+- logo-first channel rail with one consistent optical logo box, no visible `ZENDER` heading and no duplicate visible channel-name caption when a readable logo exists;
+- rail and schedule share the calm canvas; subtle horizontal channel separators may be stronger than temporal/programme boundaries;
+- dark mode preserves the same open hierarchy rather than substituting filled dark cards;
+- bottom navigation uses the same shared app-shell treatment as Per zender.
+
+Exact typography, row height, rail width/logo box, tick contrast and current-time-marker dimensions remain production-spec calibrations rather than global design-system tokens until physically validated.
 
 ### Per zender
 Use an open vertical schedule, not a card stack. Keep the sticky horizontal channel-logo strip visually grouped with temporal controls while giving programme content clearer separation: **4 pt rail→utilities** in expanded/rest, then **24 pt utilities→schedule**. Horizontal schedule swipe changes channel; no decorative previous/next arrows are required when gesture behaviour and logo strip make navigation understandable.

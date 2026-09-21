@@ -18,7 +18,7 @@ Shared system:
 - `TYPOGRAPHY.md` — accepted Instrument Sans UI typography system across Teevee.
 
 Guide:
-- `guide/TOTAAL.md` — **provisional direction; production visual design still owner-open**
+- `guide/TOTAAL.md` — accepted owner-approved Totaal production visual design; production implementation spec remains separate
 - `guide/PER_ZENDER.md`
 - `guide/NU_EN_STRAKS.md`
 - `guide/GUIDE_DAY_SELECTOR.md` — accepted shared Totaal/Per-zender day-navigation and sticky-context contract.
