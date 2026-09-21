@@ -153,7 +153,7 @@ Accepted production visual language:
 - dark mode preserves the same open hierarchy rather than substituting filled dark cards;
 - bottom navigation uses the same shared app-shell treatment as Per zender.
 
-Exact Totaal calibration is defined in `docs/TOTAAL_VISUAL_CONVERGENCE.md`: typography, row/rail/time-axis geometry, tick hierarchy, current-time marker and responsive formulas stay surface-specific rather than becoming global Guide metrics. They become implementation authority only after owner acceptance + merge and still require the documented physical-device gate.
+Exact Totaal calibration is owner-approved in `docs/TOTAAL_VISUAL_CONVERGENCE.md`: typography, row/rail/time-axis geometry, tick hierarchy, current-time marker and responsive formulas stay surface-specific rather than becoming global Guide metrics. They become implementation authority when that documentation/design specification is merged to `main` and still require the documented physical-device gate.
 
 ### Per zender
 Use an open vertical schedule, not a card stack. Keep the sticky horizontal channel-logo strip visually grouped with temporal controls while giving programme content clearer separation: **4 pt rail→utilities** in expanded/rest, then **24 pt utilities→schedule**. Horizontal schedule swipe changes channel; no decorative previous/next arrows are required when gesture behaviour and logo strip make navigation understandable.
