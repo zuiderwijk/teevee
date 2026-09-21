@@ -11,6 +11,18 @@ Doel: chronologisch, begrijpelijk overzicht van substantiële milestones, verifi
 
 ---
 
+## 21 september 2026 — Totaal production visual specification canonical via PR #112
+
+The owner-approved Totaal visual baseline from PR #110 is now converted into an implementation-ready production specification. PR #112 exact design/spec head `6c68202bce249c8eff2e198699e2a582bce55ede` passed docs-only CI #783 and merged as `4638f0574c60f3ad2f0d723c55a9291c9aff1e29`; post-merge CI #784 succeeded. The earlier one-file PR #111 review proposal was superseded and closed unmerged.
+
+The canonical specification is now `docs/TOTAAL_VISUAL_CONVERGENCE.md`. It freezes the remaining production calibration without reopening the proven Guide architecture: 84-pt base channel rail, 76-pt base row, 3.00 pt/min horizontal scale, 52-pt day/Nu + 44-pt axis = 96-pt persistent functional stack, shared GuideChrome 100/116, native collapse56 with 44/60 compensation, deterministic Dynamic Type formulas, Instrument Sans programme hierarchy, logo-first rail, open no-card schedule treatment, 15-minute time axis, compact current-time marker, accessibility semantics, DST/loading/partial-left/short-programme edge cases and physical-device acceptance criteria.
+
+No runtime code changed in PR #112. The owner-approved design/spec is now frozen Development authority; physical iPhone evidence remains required on the eventual implementation head.
+
+**Next step:** Development performs Totaal production visual convergence on the existing proven Totaal architecture, followed by exact-head Lead review, physical iPhone validation and Independent QA. Phase 5 Search remains paused until this work closes.
+
+---
+
 ## 21 september 2026 — Owner correction: Totaal production visual design is still open
 
 The owner corrected an over-broad project closeout: Totaal has a proven and physically accepted **interaction/technical baseline** plus accepted shared day-navigation and typography contracts, but its **final production visual design has not yet been completed or owner-approved**.
