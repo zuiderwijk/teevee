@@ -21,7 +21,9 @@ The time-rail bottom baseline now uses an explicit 1-pt semantic `railTick` line
 
 Deterministic coverage is updated for the utility-only 52/104 stack, 204/220→104 collapse endpoints, explicit rail baseline, 64/0/12 reference geometry, bottom-aligned reference content, centred following bands, non-overlapping minimum targets and all existing rail/DST/momentum/Detail/deferred-loading regressions.
 
-**Next step:** exact-head CI must pass on the final PR #96 candidate, then Lead exact-head re-review and focused physical iPhone revalidation of only the final PR #102 deltas plus regression smoke of frozen PASS items. Independent QA remains blocked until physical PASS.
+Verification on runtime candidate `a2b6b8725fd2fb46cdfafd023e98b827510e1507` passed CI #738: strict TypeScript, lint, **64 test files / 438 tests**, iOS/Android/web Expo export and classifier-selected Android native/config checks all succeeded; PR arm64 debug APK compilation ended `BUILD SUCCESSFUL`.
+
+**Next step:** Lead exact-head re-review of the final documentation-updated candidate and focused physical iPhone revalidation of only the final PR #102 deltas plus regression smoke of frozen PASS items. Independent QA remains blocked until physical PASS.
 
 ---
 
