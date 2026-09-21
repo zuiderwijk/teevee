@@ -11,6 +11,20 @@ Doel: chronologisch, begrijpelijk overzicht van substantiële milestones, verifi
 
 ---
 
+## 21 september 2026 — Phase 4 closed; persistent schedule cache not selected
+
+Phase 4 Core Guide MVP hardening is closed on iPhone after Totaal performance hardening, Per-zender production convergence, Programme Detail production convergence and Nu & Straks production convergence were merged and accepted. Nu & Straks PR #96 merged as `b0df0cc08f565aa1a36edf794e60ced0f391f67c`; exact-main CI #754 succeeded including the main/release full-ABI Android build. Canonical closeout PR #105 merged as `958f0ebd68ffbc4e2ca7d4bc36816446ef451128`; exact-main docs CI #758 succeeded.
+
+The final Phase 4 architecture decision is **not to add persistent mobile schedule caching now**. Issue #67 measured the cold Guide path before any cache/prefetch change and showed the dominant bottleneck was Totaal React/render + large-grid commit/mount work rather than network. Issues #70/#73 and the accepted bounded horizontal programme-windowing work resolved that performance path without persistent storage, eager horizon prefetch or a new dependency. No separate measured offline requirement was found that would justify SQLite, TanStack Query or another schedule-persistence layer during Phase 4.
+
+Current graceful degradation remains deterministic fixture-first rendering plus preservation of usable in-memory runtime schedule state across failed refreshes. The PRODUCT MVP promise for local caching/graceful offline fallback is not deleted: true no-network cold-start behaviour and any concrete persistent-cache technology selection remain a Phase 9 release-like hardening gate, where standalone/dev-build evidence can actually prove the requirement outside Expo Go.
+
+Physical Android interaction validation remains deferred because Android hardware is not available; native compilation is not physical acceptance.
+
+**Next step:** Phase 5 Search and Discovery starts with Search. Tonight remains later in Phase 5 only after its value and data requirements are clear.
+
+---
+
 ## 21 september 2026 — Nu & Straks production convergence merged through PR #96
 
 Nu & Straks production convergence is merged to `main` through PR #96. Final exact implementation head `f7e88a4a2cb3a212d59a4827e7f28c1e2e665975` passed exact-head CI #753 with **64 test files / 448 tests**, strict TypeScript, lint, iOS/Android/web exports and the PR native Android/config gate. Owner physical iPhone validation passed on the final visual/product composition and, after Independent QA found two implementation-correctness blockers, a focused physical revalidation passed the corrected live rail ownership and unavailable-state VoiceOver behaviour on the final head. Independent QA then returned PASS on that exact head.
