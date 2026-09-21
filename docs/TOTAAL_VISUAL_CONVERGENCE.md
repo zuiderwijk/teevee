@@ -1,22 +1,25 @@
 # Teevee — Totaal visual convergence handoff
 
-Status: **DRAFT / INACTIVE — NOT AN IMPLEMENTATION HANDOFF**
+Status: **DRAFT / INACTIVE — STALE PRE-APPROVAL HANDOFF; DO NOT IMPLEMENT**
 Date: 2026-09-15
-Owner correction 2026-09-21: Totaal final production visual design is not yet complete. Shared day-selector, typography, interaction/data and accessibility contracts remain valid constraints; the Totaal-specific visual composition below is provisional until explicitly owner-approved.
+Owner-approved visual baseline: 2026-09-21
+
+The Totaal production visual design is now owner-approved and canonical in `design/current/guide/TOTAAL.md` + `docs/VISUAL_BASELINE.md`. This older draft predates that approval and therefore remains inactive until it is rewritten against the accepted 21 September baseline.
 
 ## Purpose
 
-Preserve the prior candidate convergence thinking as input for the next Totaal design round **without authorizing runtime implementation**.
+Preserve the earlier candidate convergence thinking as historical implementation input **without authorizing runtime implementation**.
 
-The proven interaction mechanics must remain intact, but the final production visual composition is still open. **Do not start Development from this document.** First complete Totaal Design / UX Exploration, obtain explicit owner acceptance, then rewrite/reactivate this file as the canonical production visual-convergence specification. Until then, Totaal-specific visual details below are candidate direction only; shared accepted contracts such as day navigation, typography, accessibility, data semantics and gesture ownership remain binding.
+The visual-design exploration is now complete and owner-approved, but **this document has not yet been reconciled into the production implementation specification**. Do not start Development from this draft. The next design handoff is to rewrite/reactivate this file from the accepted Totaal baseline, freeze exact metrics/edge cases/acceptance criteria, merge that specification to `main`, and only then begin runtime visual convergence. Frozen interaction/data/performance mechanics remain binding.
 
 ## Canonical visual references
 
-Totaal core composition:
-- light: `/Teevee/Nederlandse tv-gids op smartphone.png`
-  - file id: `file_0000000015ac81f4ab067e5473ed692d`
-- dark: `/Teevee/Donkere Nederlandse tv-gidsinterface.png`
-  - file id: `file_000000008448821095d8432693d09bd8`
+Current owner-approved Totaal composition:
+- `/Teevee/Totaal production design - light dark expanded condensed.png`
+  - file id: `file_00000000aafc8230b3218e6577a1d912`
+  - stable Library record: `libfile_1f6afbdcf8748191b5d524a7aad5e0df`
+
+The previous 13 September light/dark images are superseded as production references and remain historical exploration only.
 
 Accepted day selector and sticky state:
 - `/Teevee/Teevee Guide day selector - states and bottom sheet.png`
