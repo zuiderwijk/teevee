@@ -62,7 +62,7 @@ Semantic categories:
 Do not use a visibly creamy/off-white background merely to signal premium. The accepted direction is a near-white neutral canvas in light mode and a calm dark-anthracite canvas in dark mode. Exact token values remain implementation decisions subject to contrast/device validation.
 
 ## Colour
-Rail positional ticks use the dedicated semantic `railTick` token rather than the generic `border` token when physical legibility requires stronger positional contrast. Accepted Guide calibration: light **#80807A**, dark **#72726B**. Major whole/half-hour ticks use opacity **1.00**; quarter-hour ticks use opacity **0.78**. Tick width remains 1 pt; the selected/current marker remains stronger through the semantic `currentTime` token.
+Rail positional ticks use the dedicated semantic `railTick` token rather than the generic `border` token when physical legibility requires stronger positional contrast. Accepted Guide calibration: light **#80807A**, dark **#72726B**. Major whole/half-hour ticks use opacity **1.00**; quarter-hour ticks use opacity **0.78**. Tick width remains 1 pt; the selected/current marker remains stronger through the semantic `currentTime` token. In Nu & Straks, the horizontal rail-bottom line uses the same **1-pt `railTick` @0.78** treatment as quarter-hour ticks; do not change the global `border` token or substitute platform hairline width.
 
 Red is an accent, not a structural fill. Use it for meaningful selected/current/primary-action emphasis, not as a large permanent chrome treatment.
 
@@ -94,7 +94,7 @@ All three Guide presentations share one visual shell.
 At rest the shell may show brand identity and the Guide-view selector. During vertical scrolling, nonessential brand chrome may condense to return space to schedule content. Essential context is view-specific:
 - Totaal: selected day, `Nu`, and time axis/context;
 - Per zender: channel-logo strip plus compact date/Primetime/Nu temporal context; selected-channel identity is not duplicated in text outside the persistent rail;
-- Nu & Straks: reference-time context/selector.
+- Nu & Straks: compact Primetime/Nu utility context plus the persistent time rail; the reference instant remains semantic state but has no standalone visible reference-time copy.
 
 Bottom navigation remains stable. Avoid making the `tv.` brand mark consume permanent vertical space when it is no longer functionally useful during scroll.
 
@@ -146,13 +146,13 @@ Each channel presents one dominant programme at the selected reference time plus
 
 The time rail uses 15-minute navigation increments. Whole and half hours carry text labels plus longer 1-pt `railTick` marks; quarter hours carry shorter unlabeled 1-pt `railTick` marks. The selected/current marker remains the strongest rail mark. Live mode preserves the exact current minute semantically rather than rounding to the navigation increment.
 
-The visible reference programme omits redundant `tot HH:MM` metadata; the next programme's start time normally communicates the same boundary. Keep full start/end times in accessibility semantics and Programme Detail. The reference block and the transition into the three following programmes are deliberately compact, but each following programme retains its own non-overlapping platform-safe touch target.
+The visible reference programme omits redundant `tot HH:MM` metadata; the next programme's start time normally communicates the same boundary. Keep full start/end times in accessibility semantics and Programme Detail. The reference title is bottom-aligned within its deterministic block and the dedicated reference→following spacer is 0 pt, so the following list reads as a direct continuation. Each following programme still retains its own non-overlapping platform-safe touch target.
 
 `Nu` has two materially different states: active/current while live, and return-to-live while browsing. These must not share an indistinguishable visual treatment.
 
-At larger text, Nu & Straks keeps programme content substantive and uncapped while adapting composition: above font scale 1.35, reference time and utilities use separate lanes and following programmes use an inline time+title flow with maximum two visible lines. Interaction geometry stays non-overlapping. Stacked time-above-title is reserved for the extreme >2.0 / <180-pt programme-width fallback.
+At larger text, Nu & Straks keeps programme content substantive and uncapped while adapting programme composition: following programmes use an inline time+title flow with maximum two visible lines. The utility-only Primetime/Nu context remains **52 pt at all font scales** because there is no separate reference-time lane. Shared Guide presentation tabs retain their accepted 64-pt/max-two-line Larger Text state. Interaction geometry stays non-overlapping. Stacked time-above-title is reserved for the extreme >2.0 / <180-pt programme-width fallback.
 
-For the three following programmes, interaction and visual rhythm are intentionally separate: independent 44-pt iOS / 48-dp Android targets remain adjacent, while visible content is grouped by biasing programme #1 toward the bottom of its target, #2 centrally and #3 toward the top. Content never leaves its own target.
+For the three following programmes, interaction and visual rhythm are intentionally separate: independent 44-pt iOS / 48-dp Android targets remain adjacent and all three visible content blocks are vertically centred. Compact continuity comes from bottom-aligning the reference title and removing the dedicated reference→following spacer, not from shrinking or overlapping touch targets.
 
 ## Programme Detail
 Programme Detail is a calm information surface, not a streaming-service hero page.
