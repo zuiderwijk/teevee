@@ -583,7 +583,9 @@ export const NowNextGuideView = memo(function NowNextGuideView({
               styles.utilityActions,
               referenceContextLayout.mode === 'two-lane'
                 ? {
+                    width: '100%',
                     height: referenceContextLayout.utilitiesLaneHeight,
+                    marginLeft: 0,
                     paddingHorizontal: GUIDE_VISUAL_METRICS.screenInsetX,
                   }
                 : null,
