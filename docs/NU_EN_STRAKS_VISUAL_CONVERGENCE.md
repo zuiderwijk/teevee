@@ -2,8 +2,9 @@
 
 Status: **CANONICAL PRODUCTION IMPLEMENTATION SPEC — owner-approved**
 Date: 2026-09-18
+Owner refinement: 2026-09-21
 
-This document converts the accepted Nu & Straks direction into a production implementation contract. It is convergence, not redesign.
+This document converts the accepted Nu & Straks direction into a production implementation contract. It is convergence, not redesign. The 21 September owner refinement supersedes only the exact temporal-rail, reference-copy and default-density calibrations explicitly amended below.
 
 ## 1. Authority
 
@@ -64,7 +65,7 @@ Preserve:
 - midnight is not a Nu & Straks day boundary;
 - 00:00–05:59 belongs to the preceding television day;
 - Nu & Straks has no independent date selector;
-- live mode follows the actual current instant;
+- live mode follows the actual current instant and is never semantically rounded to a rail navigation increment;
 - horizontal rail interaction leaves live mode and pins browse mode;
 - Nu restores the actual current instant and containing television day;
 - Primetime targets 20:30 on the active television day, including the preceding-evening 20:30 target between 00:00 and 05:59;
@@ -138,17 +139,14 @@ Reduce Motion:
 
 ## 6. Reference-time context
 
-The reference-time context is a fixed **52-pt** functional row with **20-pt** horizontal insets.
+The reference-time context remains a fixed **52-pt** functional row with **20-pt** horizontal insets.
 
-Left hierarchy:
-- caption 'Referentietijd': **11/14, Instrument Sans Medium**;
-- value: **18/22, Instrument Sans Semibold**.
+The former `Referentietijd` caption is removed. The temporal value is the only left-hand text anchor:
+- value: **18/22, Instrument Sans Semibold**;
+- live: `Nu · HH:MM`, using the **actual current minute**;
+- browse: `HH:MM`, using the settled 15-minute browse reference.
 
-Live value:
-- 'Nu · HH:MM'.
-
-Browse value:
-- 'HH:MM'.
+The value is vertically centred within the 52-pt row. Do not replace the removed caption with another explanatory label.
 
 All compact reference-time chrome uses a hard maximum font-size multiplier of **1.20**. This cap does not apply to programme content.
 
@@ -181,7 +179,7 @@ If actual Now and the Primetime semantic context overlap, **Nu wins while the pr
 
 Active/current is never disabled. Disabled is reserved for genuinely unavailable actions.
 
-Current state must not rely on colour alone; expose selected/current semantics to accessibility and use the restrained canonical current-state indicator rather than a permanent heavy pill.
+Current state must not rely on colour alone; expose selected/current semantics to accessibility and use the restrained canonical current-state indicator rather than a permanent heavy pill. In particular, active/current `Nu` must **not** reuse the return-to-live pill/surface treatment: live `Nu` is a current-state treatment, while browse `Nu` is an action treatment.
 
 ## 7. Time rail
 
@@ -190,12 +188,12 @@ Current state must not rely on colour alone; expose selected/current semantics t
 The rail covers exactly the active television day:
 - start: 06:00 Europe/Amsterdam;
 - end: 06:00 the following local date;
-- interval: **30 minutes**.
+- navigation interval: **15 minutes**.
 
 Therefore:
-- 23-hour spring-DST television day: **46 slots**;
-- normal 24-hour television day: **48 slots**;
-- 25-hour fall-DST television day: **50 slots**.
+- 23-hour spring-DST television day: **92 slots**;
+- normal 24-hour television day: **96 slots**;
+- 25-hour fall-DST television day: **100 slots**.
 
 Do not assume a fixed 24-hour duration.
 
@@ -203,21 +201,22 @@ Do not assume a fixed 24-hour duration.
 
 Production calibration:
 - rail height: **52 pt**;
-- slot width: **76 pt**;
+- quarter-hour slot width: **48 pt**;
 - slot interactive height: **48 pt**;
-- label: **13/18**;
-- inactive label: Instrument Sans Medium;
-- selected label: Instrument Sans Semibold;
-- reference marker: **2 × 8 pt**, using the semantic currentTime token;
-- viewport insets centre the first and last slots as well as interior slots.
+- every slot remains an accessible time target, including unlabeled quarter hours;
+- whole and half hours: visible **13/18** label, Instrument Sans Medium; selected label Semibold;
+- whole/half-hour positional tick: **1 × 10 pt** semantic `border` hairline, directly beneath the label anchor;
+- quarter-hour positional tick: **1 × 6 pt** semantic `border` hairline, no visible text label;
+- selected/current reference marker: **2 × 12 pt**, semantic `currentTime`, visually stronger than either hairline;
+- viewport insets centre the first and last quarter-hour targets as well as interior targets.
 
-The marker is compact temporal orientation, not a full-height line through content.
+The hairlines belong only to the rail and do not continue through programme content.
 
 ### 7.3 Live positioning
 
-Live reference time remains the actual current instant. Do not round live semantics to a 30-minute slot.
+Live reference time remains the actual current instant. Do not round live semantics to a 15-minute slot.
 
-The rail may centre the nearest navigation slot while the reference copy/programme resolver uses the actual live instant.
+The rail may centre the nearest quarter-hour navigation target while the visible live copy and programme resolver use the exact actual instant. Entering browse mode commits the settled quarter-hour target as the semantic reference.
 
 ### 7.4 Snap and physically accepted fling/settle contract
 
@@ -226,7 +225,7 @@ Preserve the interaction behaviour physically accepted after PR #24:
 - platform bounce/elasticity where appropriate;
 - directional lock;
 - fast rail deceleration;
-- snap interval = **76 pt**, one 30-minute slot;
+- snap interval = **48 pt**, one 15-minute slot;
 - beginning a user rail drag switches live → browse;
 - programme/reference semantics do not update on every scroll frame;
 - a fast drag commits from native momentum-end;
@@ -254,19 +253,20 @@ These values keep channel identity visually distinct while aligning programme co
 
 ### 8.2 Base vertical geometry
 
-Per channel:
+Per channel at normal text:
 - top padding: **8 pt**;
-- reference-programme block: minimum **72 pt**;
-- reference → following gap: **8 pt**;
+- reference-programme block: minimum **64 pt**;
+- reference → following gap: **4 pt**;
 - each following programme on iOS: minimum **44 pt**;
 - each following programme on Android: minimum **48 dp**;
+- following rows are directly adjacent: **0 pt additional inter-row gap**;
 - bottom padding: **8 pt**.
 
 Base channel-row height:
-- iOS: **228 pt**;
-- Android: **240 dp**.
+- iOS: **216 pt**;
+- Android: **228 dp**.
 
-This extra height is the intentional accessibility/density correction. Do not compress three independent interactive programmes back into 24-pt lines.
+This is deliberately denser than the 18 September calibration while preserving three independent production-safe programme targets. Do not compress the following targets below their platform minima.
 
 No cards, artwork, extra labels or decorative containers are added to justify the extra geometry.
 
@@ -291,17 +291,11 @@ The reference programme remains the visual anchor for each channel.
 Typography:
 - title: **18/22, Instrument Sans Semibold**;
 - maximum **2 lines**;
-- primary text colour;
-- metadata: **13/18, Instrument Sans Regular**.
+- primary text colour.
 
-Live/current reference:
-- visible metadata: 'Nu · tot HH:MM';
-- current state is also included semantically for screen readers.
+No visible end-time metadata is shown in the reference block. In ordinary continuous schedules, the first following programme's start time communicates the same boundary with less repetition.
 
-Browse reference:
-- visible metadata: 'tot HH:MM';
-- use quiet secondary text;
-- do not visually imply live/current state.
+Live/current state and full start/end time remain present in accessibility semantics. Browse mode likewise keeps the full start/end time available to accessibility and Programme Detail without rendering `tot HH:MM` in the row.
 
 The full reference block is one programme button.
 
@@ -387,7 +381,7 @@ Two deliberate categories apply.
 
 ### Compact functional chrome — hard 1.20 cap
 - Guide presentation labels;
-- reference-time caption/value;
+- reference-time value;
 - Nu;
 - Primetime;
 - time-rail labels.
@@ -556,7 +550,7 @@ Development must add coverage for at least:
 2. 00:00–05:59 membership in the preceding television day;
 3. 05:59→06:00 rollover;
 4. Primetime after midnight resolves to the preceding evening's 20:30;
-5. 46/48/50 time-slot counts across 23/24/25-hour television days;
+5. 92/96/100 quarter-hour time-slot counts across 23/24/25-hour television days;
 6. start-inclusive/end-exclusive reference semantics;
 7. reference programme + exactly three following programmes;
 8. honest gap + next three known programmes;
@@ -578,7 +572,13 @@ Development must add coverage for at least:
 24. Programme Detail following-programme round-trip;
 25. incomplete/empty schedule behaviour;
 26. light/dark semantic token usage;
-27. deferred NowNextGuideView import remains deferred.
+27. deferred NowNextGuideView import remains deferred;
+28. only whole/half-hour rail slots render text labels;
+29. whole/half-hour and quarter-hour ticks use distinct accepted hairline lengths;
+30. live `Nu` copy uses the exact current minute while browse commits quarter-hour references;
+31. reference programmes render no visible `tot HH:MM` metadata while accessibility retains start/end time;
+32. default reference/following geometry uses the accepted 64/4/44-or-48 compact calibration;
+33. active/current `Nu` and return-to-live `Nu` render distinct state treatments.
 
 Time-sensitive tests use injected/fixed instants. No wall-clock sleeps.
 
@@ -607,16 +607,16 @@ Do not introduce unrelated Guide/data refactors.
 
 Physical validation on the exact implementation head must include:
 
-1. Light/live state against the canonical Nu & Straks visual.
+1. Light/live state against the canonical Nu & Straks visual plus the 21 September refinement: exact `Nu · HH:MM`, no `Referentietijd` caption, quarter-hour ticks and no visible reference `tot` metadata.
 2. Dark/live state with identical geometry and hierarchy.
 3. Primetime jump to 20:30 and correct browse/current semantics.
 4. Ordinary browse time: Nu becomes the clear return action.
-5. Slow rail drag settles to one unambiguous slot.
+5. Slow rail drag settles to one unambiguous **15-minute** slot; whole/half-hour labels and quarter-hour-only ticks remain visually clear.
 6. Repeated hard fling + reversal reproducing the old PR #24 failure pattern: no oscillation, tug-of-war or inescapable slot.
 7. Direct time-slot tap changes the programme set once and centres calmly.
 8. Stable vertical context: scroll midway down the channel list, then change reference through rail, Primetime and Nu; the same channel context remains in the viewport.
 9. All three following programmes can be tapped individually without an adjacent programme opening.
-10. Default text remains visually compact/premium despite production-safe targets.
+10. Default text remains visually compact/premium: 64-pt reference block, 4-pt transition and directly adjacent following targets without visual crowding.
 11. Representative ~135% text shows no clipping/overlap.
 12. Accessibility text >1.35 switches following programmes to stacked layout with fully separate targets.
 13. VoiceOver focus order and labels for reference/following programmes, rail slots, Nu and Primetime.
@@ -638,14 +638,14 @@ Values frozen by this owner-approved production refinement:
 1. Shared Guide screen inset 20; shared brand box 56×44; presentation navigation 48.
 2. Persistent Nu & Straks functional chrome: 52 reference context + 52 time rail = **104 pt**.
 3. Shared chrome collapse: 56-pt vertical distance; max 12-pt upward translation; Reduce Motion discrete switch at 28.
-4. Reference caption 11/14 Medium; reference time 18/22 Semibold; compact chrome max multiplier 1.20.
-5. Nu/Primetime visible height 36; gap 8; platform touch minimum 44/48; labels 14/18 Semibold.
-6. Time rail: height 52; slot 76×48; label 13/18 Medium, selected Semibold; marker 2×8.
+4. Reference-time value 18/22 Semibold with no caption; compact chrome max multiplier 1.20; live value uses exact actual minute.
+5. Nu/Primetime visible height 36; gap 8; platform touch minimum 44/48; labels 14/18 Semibold; active/current Nu and return-action Nu are visibly distinct.
+6. Time rail: height 52; quarter slot 48×48; whole/half labels 13/18 Medium, selected Semibold; major hairline 1×10; quarter hairline 1×6; marker 2×12; snap interval 48.
 7. Channel geometry: left inset 20; identity zone 64; gap 16; programme X100; right inset24.
-8. Reference block min72; reference title18/22 Semibold max2; metadata13/18 Regular.
-9. Following rows: min44 iOS /48 Android; time width52; gap8; time13/18 Regular; title15/20 Medium.
+8. Reference block min64; reference title18/22 Semibold max2; no visible end-time metadata; reference→following gap4.
+9. Following rows: min44 iOS /48 Android; 0 additional inter-row gap; time width52; gap8; time13/18 Regular; title15/20 Medium.
 10. Following accessibility switch: fontScale >1.35 → stacked time/title, 3-pt gap, title max2; content-safe formula from §11.2.
-11. Base channel row: 228 iOS /240 Android at normal font scale.
+11. Base channel row: 216 iOS /228 Android at normal font scale.
 12. Three following slot geometries always remain reserved even when programme data is missing.
 13. Programme press = transient semantic surface fill, no permanent card/opacity-first treatment.
 14. No artwork, genres, progressbars, chevrons or repeated 'Daarna' labels.
@@ -684,6 +684,12 @@ Do not treat these current/prototype runtime values as canonical:
 - system-font/fontWeight programme styling instead of Instrument Sans;
 - opacity 0.58 as the primary programme pressed state;
 - a rail settle path that issues a second scrollTo after native snapping;
-- layout that changes a channel row's height when programme availability/title length changes.
+- layout that changes a channel row's height when programme availability/title length changes;
+- 30-minute-only rail navigation;
+- rail time labels without positional whole/half-hour and quarter-hour hairlines;
+- visible `Referentietijd` caption;
+- visible reference-programme `tot HH:MM` metadata;
+- default 72-pt reference block / 8-pt transition calibration;
+- identical visual treatment for active/current `Nu` and return-to-live `Nu`.
 
 The exact canonical visual remains accepted for composition and hierarchy outside the explicit production refinements above.
