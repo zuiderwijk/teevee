@@ -11,6 +11,20 @@ Doel: chronologisch, begrijpelijk overzicht van substantiële milestones, verifi
 
 ---
 
+## 21 september 2026 — PR #96 reconciled to final PR #102 Nu & Straks composition
+
+Existing runtime PR #96 is reconciled with canonical `main` `1d25b93dd0a45d397983aef4ea512cb9c460761d`, preserving PR #102 design/spec and PR #103 project-state closeout exactly.
+
+The runtime delta is intentionally narrow. Nu & Straks no longer renders standalone reference-time copy or reserves the former Larger Text reference lane: Primetime/Nu now occupy one 52-pt utility-only context at every font scale, so the persistent functional stack is always 104 pt. Shared GuideChrome remains responsive at 100/116 pt, retaining 56-pt native collapse with 44/60 visual compensation and 204/220 rest-overlay endpoints converging to 104 pt.
+
+The time-rail bottom baseline now uses an explicit 1-pt semantic `railTick` line at opacity 0.78, matching the physically accepted quarter-hour ticks without changing global `border`. Reference programme content is bottom-aligned, the dedicated reference→following gap is 0 pt and channel bottom padding is 12 pt, preserving 216/228 base row totals. All three following content bands are vertically centred again while the independent adjacent 44-pt iOS / 48-dp Android Pressables and the already accepted Larger Text inline/extreme-fallback formulas remain unchanged.
+
+Deterministic coverage is updated for the utility-only 52/104 stack, 204/220→104 collapse endpoints, explicit rail baseline, 64/0/12 reference geometry, bottom-aligned reference content, centred following bands, non-overlapping minimum targets and all existing rail/DST/momentum/Detail/deferred-loading regressions.
+
+**Next step:** exact-head CI must pass on the final PR #96 candidate, then Lead exact-head re-review and focused physical iPhone revalidation of only the final PR #102 deltas plus regression smoke of frozen PASS items. Independent QA remains blocked until physical PASS.
+
+---
+
 ## 21 september 2026 — Nu & Straks final physical composition canonical via PR #102
 
 Physical iPhone review of PR #96 exact head `224e7df1d47dbb5c42694cb36469de673496e7d5` produced a partial PASS: dark mode, Larger Text/Dynamic Type composition, vertical channel-position preservation, Nu, Primetime, 15-minute navigation and the vertical rail ticks were accepted. Three presentation details remained open and were owner-refined in design/spec PR #102.
