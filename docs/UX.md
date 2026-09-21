@@ -134,12 +134,12 @@ Purpose: answer quickly what is on now/at a chosen time and what follows on each
 - whole and half hours are text-labelled on the rail; quarter hours remain unlabeled but have a shorter thin positional tick, while whole/half hours use a longer thin tick;
 - common reference time applies to every channel row;
 - time selector remains available/sticky while browsing vertically;
-- live mode follows the **actual current instant** and is never semantically rounded to a 15-minute rail position; visible live context uses `Nu · HH:MM` with the actual minute;
+- live mode follows the **actual current instant** and is never semantically rounded to a 15-minute rail position; there is no standalone visible reference-time copy because the rail itself provides temporal orientation;
 - moving away from live pins the selected time (browse mode); clock ticks do not pull it back;
 - a clear `Nu` affordance returns to live mode; active/current `Nu` and return-to-live `Nu` must use visibly and semantically distinct states;
 - `Primetime` is the explicit shortcut to the evening/prime-time reference point. Between midnight and 05:59 this may refer back to the preceding evening's primetime because that is still the active television day;
 - each channel shows the programme airing at the reference instant plus **three following programmes**;
-- the reference-programme block and its transition to the following list are deliberately compact; the three following programme targets sit directly adjacent without extra inter-row spacing while retaining separate platform-safe touch targets;
+- the reference-programme block and its transition to the following list are deliberately compact: the reference title sits toward the bottom of its deterministic block and the dedicated reference→following spacer is 0 pt; the three following programme targets sit directly adjacent without extra inter-row spacing while retaining separate platform-safe touch targets;
 - the current/reference programme is visually dominant; the three following programmes use lower typographic weight/contrast;
 - the reference programme does **not** show visible `tot …` end-time metadata; in normal continuous schedules the next programme's start time already communicates that boundary. Full start/end time remains part of accessibility semantics and Programme Detail;
 - following programmes show their start times; their end times are unnecessary;
@@ -151,8 +151,8 @@ Purpose: answer quickly what is on now/at a chosen time and what follows on each
 - the selector is bounded to the active television day, while following programmes may naturally cross its 06:00 boundary;
 - each following programme owns a real, non-overlapping platform-safe touch target: minimum **44 pt on iOS / 48 dp on Android**;
 - the three following slot geometries remain reserved even when programme data is incomplete, so changing reference time does not shift the user's vertical channel context;
-- at effective font scale above **1.35**, following-programme time/title content may stack and rows grow vertically rather than shrinking text or creating overlapping targets;
-- substantive programme content keeps Dynamic Type; only compact functional chrome may use the documented narrow scaling cap;
+- at effective font scale above **1.35**, following-programme content uses the accepted inline time+title composition with up to two visible lines; stacked time-above-title is reserved for the extreme >2.0 / <180-pt programme-width fallback;
+- substantive programme content keeps Dynamic Type; only compact functional chrome may use the documented narrow scaling cap. Nu & Straks keeps a **52-pt utility-only Primetime/Nu context at all font scales**; the shared Guide tabs independently use their accepted 64-pt/max-two-line Larger Text state;
 - production shell/detail metrics and physical validation criteria are defined in `docs/NU_EN_STRAKS_VISUAL_CONVERGENCE.md`.
 
 The design intentionally differentiates itself from TVgids.nl by showing three following programmes while using less interface and lower visual density.
