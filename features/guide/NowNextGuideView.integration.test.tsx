@@ -30,7 +30,7 @@ const runtime = vi.hoisted(() => ({
   fixture: null as GuideSchedule | null,
 }));
 const clock = vi.hoisted(() => ({
-  nowMs: Date.parse('2026-09-18T18:15:00.000Z'),
+  nowMs: Date.parse('2026-09-18T18:17:00.000Z'),
 }));
 const viewport = vi.hoisted(() => ({
   width: 390,
@@ -332,7 +332,7 @@ beforeEach(() => {
   vi.stubGlobal('cancelAnimationFrame', vi.fn());
   runtime.schedule = schedule;
   runtime.fixture = schedule;
-  clock.nowMs = Date.parse('2026-09-18T18:15:00.000Z');
+  clock.nowMs = Date.parse('2026-09-18T18:17:00.000Z');
   viewport.width = 390;
   viewport.fontScale = 1;
   viewport.platform = 'ios';
@@ -380,6 +380,57 @@ describe('Nu & Straks production interaction boundary', () => {
     ).toHaveLength(2);
   });
 
+  it('renders the refined rail labels/ticks and keeps exact live/reference accessibility semantics', async () => {
+    await act(async () =>
+      root.render(
+        <NowNextGuideView
+          guideDataVersion={1}
+          presentationNavigation={<span />}
+          onSelectProgramme={vi.fn()}
+        />,
+      ),
+    );
+
+    expect(getByTestId(container, 'now-next-reference-time').textContent).toBe(
+      'Nu · 20:17',
+    );
+    expect(container.textContent).not.toContain('Referentietijd');
+
+    expect(getByTestId(container, 'now-next-time-label-56').textContent).toBe(
+      '20:00',
+    );
+    expect(
+      container.querySelector('[data-testid="now-next-time-label-57"]'),
+    ).toBeNull();
+    expect(getByTestId(container, 'now-next-time-label-58').textContent).toBe(
+      '20:30',
+    );
+    expect(
+      container.querySelector('[data-testid="now-next-time-label-59"]'),
+    ).toBeNull();
+
+    expect(getByTestId(container, 'now-next-time-tick-56')).toBeDefined();
+    expect(getByTestId(container, 'now-next-time-tick-57')).toBeDefined();
+
+    const reference = getByTestId(
+      container,
+      'now-next-reference-one-one-ref',
+    );
+    expect(reference.textContent).toBe('Referentieprogramma');
+    expect(reference.textContent).not.toContain('tot');
+    expect(reference.getAttribute('aria-label')).toBe(
+      'NPO 1, Referentieprogramma, 20:00 tot 20:30, nu bezig',
+    );
+
+    expect(getByTestId(container, 'now-next-now-current')).toBeDefined();
+    expect(
+      container.querySelector('[data-testid="now-next-now-return"]'),
+    ).toBeNull();
+    expect(getByTestId(container, 'now-next-now').getAttribute('aria-selected')).toBe(
+      'true',
+    );
+  });
+
   it('commits native rail momentum semantically without a secondary scrollTo', async () => {
     await act(async () =>
       root.render(
@@ -399,7 +450,7 @@ describe('Nu & Straks production interaction boundary', () => {
 
     await act(async () => {
       rail.onScrollBeginDrag?.();
-      rail.onMomentumScrollEnd?.(scrollEvent(28 * 76, 1));
+      rail.onMomentumScrollEnd?.(scrollEvent(56 * 48, 1));
     });
 
     expect(native.railScrollTo).toHaveBeenCalledTimes(initialScrollCalls);
@@ -425,14 +476,18 @@ describe('Nu & Straks production interaction boundary', () => {
     const initialScrollCalls = native.railScrollTo.mock.calls.length;
     await act(async () => {
       rail.onScrollBeginDrag?.();
-      rail.onScrollEndDrag?.(scrollEvent(27 * 76, 0));
+      rail.onScrollEndDrag?.(scrollEvent(57 * 48, 0));
     });
 
     expect(native.railScrollTo).toHaveBeenCalledTimes(initialScrollCalls);
-    expect(getByTestId(container, 'now-next-reference-time').textContent).toBe('19:30');
+    expect(getByTestId(container, 'now-next-reference-time').textContent).toBe('20:15');
+    expect(getByTestId(container, 'now-next-now-return')).toBeDefined();
+    expect(getByTestId(container, 'now-next-now').getAttribute('aria-selected')).toBe(
+      'false',
+    );
 
     await act(async () => {
-      getByTestId(container, 'now-next-time-slot-29').click();
+      getByTestId(container, 'now-next-time-slot-58').click();
     });
     expect(native.railScrollTo).toHaveBeenCalledTimes(initialScrollCalls + 1);
     expect(getByTestId(container, 'now-next-reference-time').textContent).toBe('20:30');
@@ -441,7 +496,11 @@ describe('Nu & Straks production interaction boundary', () => {
       getByTestId(container, 'now-next-now').click();
     });
     expect(native.railScrollTo).toHaveBeenCalledTimes(initialScrollCalls + 2);
-    expect(getByTestId(container, 'now-next-reference-time').textContent).toBe('Nu · 20:15');
+    expect(getByTestId(container, 'now-next-reference-time').textContent).toBe('Nu · 20:17');
+    expect(getByTestId(container, 'now-next-now-current')).toBeDefined();
+    expect(getByTestId(container, 'now-next-now').getAttribute('aria-selected')).toBe(
+      'true',
+    );
 
     await act(async () => {
       getByTestId(container, 'now-next-primetime').click();
@@ -465,7 +524,7 @@ describe('Nu & Straks production interaction boundary', () => {
     }
     await act(async () => {
       rail.onScrollBeginDrag?.();
-      rail.onMomentumScrollEnd?.(scrollEvent(29 * 76, 1));
+      rail.onMomentumScrollEnd?.(scrollEvent(58 * 48, 1));
     });
     expect(getByTestId(container, 'now-next-channel-scroll')).toBe(channelScroll);
     expect(channelScroll.scrollTop).toBe(420);
@@ -483,9 +542,9 @@ describe('Nu & Straks production interaction boundary', () => {
     expect(channelScroll.scrollTop).toBe(420);
 
     const settledRail = getByTestId(container, 'now-next-time-rail');
-    settledRail.scrollLeft = 28 * 76;
+    settledRail.scrollLeft = 57 * 48;
     expect(getByTestId(container, 'now-next-reference-time').textContent).toBe(
-      'Nu · 20:15',
+      'Nu · 20:17',
     );
 
     await act(async () => {
@@ -497,9 +556,9 @@ describe('Nu & Straks production interaction boundary', () => {
     expect(getByTestId(container, 'now-next-channel-scroll')).toBe(channelScroll);
     expect(channelScroll.scrollTop).toBe(420);
     expect(getByTestId(container, 'now-next-time-rail')).toBe(settledRail);
-    expect(settledRail.scrollLeft).toBe(28 * 76);
+    expect(settledRail.scrollLeft).toBe(57 * 48);
     expect(getByTestId(container, 'now-next-reference-time').textContent).toBe(
-      'Nu · 20:15',
+      'Nu · 20:17',
     );
 
     for (const [slot, id] of [
@@ -515,9 +574,9 @@ describe('Nu & Straks production interaction boundary', () => {
       expect(getByTestId(container, 'now-next-channel-scroll')).toBe(channelScroll);
       expect(channelScroll.scrollTop).toBe(420);
       expect(getByTestId(container, 'now-next-time-rail')).toBe(settledRail);
-      expect(settledRail.scrollLeft).toBe(28 * 76);
+      expect(settledRail.scrollLeft).toBe(57 * 48);
       expect(getByTestId(container, 'now-next-reference-time').textContent).toBe(
-        'Nu · 20:15',
+        'Nu · 20:17',
       );
     }
   });
@@ -546,7 +605,7 @@ describe('Nu & Straks production interaction boundary', () => {
     }
     await act(async () => {
       rail.onScrollBeginDrag?.();
-      rail.onMomentumScrollEnd?.(scrollEvent(29 * 76, 1));
+      rail.onMomentumScrollEnd?.(scrollEvent(58 * 48, 1));
     });
     expect(getByTestId(container, 'now-next-reference-time').textContent).toBe('20:30');
 
@@ -596,7 +655,7 @@ describe('Nu & Straks production interaction boundary', () => {
     channelScroll.scrollTop = 360;
 
     await act(async () => {
-      getByTestId(container, 'now-next-time-slot-29').click();
+      getByTestId(container, 'now-next-time-slot-58').click();
     });
     expect(getByTestId(container, 'now-next-reference-time').textContent).toBe(
       '20:30',
@@ -715,7 +774,7 @@ describe('Nu & Straks production interaction boundary', () => {
     native.railScrollTo.mockClear();
     await act(async () => getByTestId(container, 'now-next-primetime').click());
     expect(native.railScrollTo).toHaveBeenCalledWith({
-      x: 29 * 76,
+      x: 58 * 48,
       animated: false,
     });
   });
