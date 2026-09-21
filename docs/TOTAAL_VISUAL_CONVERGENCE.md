@@ -308,9 +308,10 @@ Geometry:
 - label: actual local HH:MM;
 - label: **10/12 Instrument Sans Semibold**;
 - compact font cap: **1.20**;
-- marker fill: semantic currentTime.
+- marker fill: semantic currentTime;
+- marker label foreground: semantic **onCurrentTime = #0D0D0D** in both themes.
 
-The visible label foreground must meet at least 4.5:1 contrast against the marker fill. Do not blindly copy the generated screenshot's foreground colour when that fails the active theme.
+`#0D0D0D` is intentional: it keeps the small marker label above 4.5:1 against both accepted currentTime fills (`#D64B42` light and `#F06B61` dark). The generated board's light label is compositional reference, not authority where it misses production contrast.
 
 Behaviour:
 - the pointer remains at the exact time coordinate;
@@ -405,6 +406,11 @@ Secondary time:
 - semantic textSecondary.
 
 Title→secondary gap: **3 pt**.
+
+Visible programme content block:
+- vertically centred inside the deterministic channel row;
+- comfortable/two-line title mode plus secondary time keeps at least **6 pt** top and bottom content breathing room through the supported Dynamic Type formula;
+- content positioning never changes the programme frame or channel-row height.
 
 Programme content is substantive:
 - no global font cap;
@@ -501,6 +507,8 @@ This typographic-only current treatment is chosen because it matches the accepte
 At a programme end:
 - draw at most one **1-pt semantic border** line;
 - opacity **0.55**;
+- vertical inset: **10 pt top / 10 pt bottom** at base scale;
+- keep the same 10-pt structural inset at larger text rather than scaling a decorative separator;
 - vertical extent remains inside that channel row;
 - adjacent programmes must not each draw a duplicate line.
 
@@ -960,10 +968,10 @@ Owner-review values proposed by this specification:
 7. Channel logo optical max48×36; fallback12/14 Bold cap1.20.
 8. Time axis44; label11/14 Medium cap1.20; :00/:30 text only.
 9. Major tick1×10 railTick@0.78; quarter1×6@0.50; baseline1@0.42.
-10. Current marker body18, min width38, padding5, radius5, pointer6×4, label10/12 Semibold cap1.20.
+10. Current marker body18, min width38, padding5, radius5, pointer6×4, label10/12 Semibold cap1.20, `onCurrentTime #0D0D0D`.
 11. Programme title15/19 Medium; actual-current Semibold; secondary13/18 Regular; title→time gap3.
 12. Width modes: compact<64 / standard64–125 / comfortable>=126; hide secondary when remaining width<52.
-13. Programme permanent gap0; temporal boundary1 pt border@0.55; row separator1 pt border@1.00.
+13. Programme permanent gap0; temporal boundary1 pt border@0.55 with 10/10 vertical insets; row separator1 pt border@1.00.
 14. Current programme = typography + 'tot HH:MM' only; no fill/progress.
 15. Pressed programme = temporary surfaceElevated fill, no radius.
 16. Dynamic minuteWidth = 3+1.2×(S−1); channelWidth = 84+28×(S−1); rowHeight = max(round(76+40×(S−1)), ceil(56×S+13)).
