@@ -46,6 +46,17 @@ import {
 import { formatGuideTime, indexGuideProgrammesByChannel } from './guideRenderData';
 import { buildTimeTicks, timeToX, timelineWidth } from './geometry';
 import {
+  TOTAAL_HORIZONTAL_SURFACE,
+  totaalHorizontalBeginDrag,
+  totaalHorizontalEndDrag,
+  totaalHorizontalIdleOwnership,
+  totaalHorizontalMomentumBegin,
+  totaalHorizontalMomentumEnd,
+  totaalHorizontalProgrammaticPlan,
+  totaalHorizontalProgrammaticTargetReached,
+  totaalHorizontalScrollDecision,
+} from './horizontalScrollOwnership';
+import {
   COMPACT_GUIDE_MAX_FONT_SIZE_MULTIPLIER,
   GUIDE_TYPOGRAPHY,
   minimumTouchTargetForPlatform,
@@ -112,6 +123,8 @@ export const GuideView = memo(function GuideView({
   const previousChannelIdsRef = useRef<readonly string[]>([]);
   const previousRowHeightRef = useRef(layout.rowHeight);
   const scrollX = useSharedValue(0);
+  const horizontalOwnership = useSharedValue(totaalHorizontalIdleOwnership());
+  const horizontalProgrammaticTargetX = useSharedValue(-1);
   const scrollY = useSharedValue(0);
   const collapseProgress = useSharedValue(0);
   const nowMs = useGuideClock();
@@ -350,40 +363,144 @@ export const GuideView = memo(function GuideView({
 
   const horizontalScrollHandler = useAnimatedScrollHandler(
     {
+      onBeginDrag: () => {
+        horizontalProgrammaticTargetX.value = -1;
+        horizontalOwnership.value = totaalHorizontalBeginDrag(
+          horizontalOwnership.value,
+          TOTAAL_HORIZONTAL_SURFACE.schedule,
+        );
+      },
       onScroll: (event) => {
+        const decision = totaalHorizontalScrollDecision(
+          horizontalOwnership.value,
+          TOTAAL_HORIZONTAL_SURFACE.schedule,
+        );
+        if (!decision.authoritative) return;
+
         const viewportX = Math.max(0, event.contentOffset.x);
         scrollX.value = viewportX;
         scrollTo(axisRef, viewportX, 0, false);
+
+        if (
+          totaalHorizontalProgrammaticTargetReached(
+            horizontalOwnership.value,
+            TOTAAL_HORIZONTAL_SURFACE.schedule,
+            viewportX,
+            horizontalProgrammaticTargetX.value,
+          )
+        ) {
+          horizontalOwnership.value = totaalHorizontalIdleOwnership();
+          horizontalProgrammaticTargetX.value = -1;
+          scheduleOnRN(syncHorizontalAnchor, viewportX);
+        }
       },
       onEndDrag: (event) => {
+        const before = horizontalOwnership.value;
+        if (before.owner !== TOTAAL_HORIZONTAL_SURFACE.schedule) return;
+
         const viewportX = Math.max(0, event.contentOffset.x);
-        scheduleOnRN(syncHorizontalAnchor, viewportX);
+        const next = totaalHorizontalEndDrag(
+          before,
+          TOTAAL_HORIZONTAL_SURFACE.schedule,
+          event.velocity?.x,
+        );
+        horizontalOwnership.value = next;
+        if (next.owner === TOTAAL_HORIZONTAL_SURFACE.none) {
+          scheduleOnRN(syncHorizontalAnchor, viewportX);
+        }
+      },
+      onMomentumBegin: () => {
+        horizontalOwnership.value = totaalHorizontalMomentumBegin(
+          horizontalOwnership.value,
+          TOTAAL_HORIZONTAL_SURFACE.schedule,
+        );
       },
       onMomentumEnd: (event) => {
+        const before = horizontalOwnership.value;
+        if (before.owner !== TOTAAL_HORIZONTAL_SURFACE.schedule) return;
+
         const viewportX = Math.max(0, event.contentOffset.x);
+        scrollX.value = viewportX;
+        scrollTo(axisRef, viewportX, 0, false);
         scheduleOnRN(syncHorizontalAnchor, viewportX);
+        horizontalOwnership.value = totaalHorizontalMomentumEnd(
+          before,
+          TOTAAL_HORIZONTAL_SURFACE.schedule,
+        );
+        horizontalProgrammaticTargetX.value = -1;
       },
     },
-    [axisRef, scrollX, syncHorizontalAnchor],
+    [
+      axisRef,
+      horizontalOwnership,
+      horizontalProgrammaticTargetX,
+      scrollX,
+      syncHorizontalAnchor,
+    ],
   );
 
   const axisScrollHandler = useAnimatedScrollHandler(
     {
+      onBeginDrag: () => {
+        horizontalProgrammaticTargetX.value = -1;
+        horizontalOwnership.value = totaalHorizontalBeginDrag(
+          horizontalOwnership.value,
+          TOTAAL_HORIZONTAL_SURFACE.axis,
+        );
+      },
       onScroll: (event) => {
+        const decision = totaalHorizontalScrollDecision(
+          horizontalOwnership.value,
+          TOTAAL_HORIZONTAL_SURFACE.axis,
+        );
+        if (!decision.authoritative) return;
+
         const viewportX = Math.max(0, event.contentOffset.x);
         scrollX.value = viewportX;
         scrollTo(horizontalRef, viewportX, 0, false);
       },
       onEndDrag: (event) => {
+        const before = horizontalOwnership.value;
+        if (before.owner !== TOTAAL_HORIZONTAL_SURFACE.axis) return;
+
         const viewportX = Math.max(0, event.contentOffset.x);
-        scheduleOnRN(syncHorizontalAnchor, viewportX);
+        const next = totaalHorizontalEndDrag(
+          before,
+          TOTAAL_HORIZONTAL_SURFACE.axis,
+          event.velocity?.x,
+        );
+        horizontalOwnership.value = next;
+        if (next.owner === TOTAAL_HORIZONTAL_SURFACE.none) {
+          scheduleOnRN(syncHorizontalAnchor, viewportX);
+        }
+      },
+      onMomentumBegin: () => {
+        horizontalOwnership.value = totaalHorizontalMomentumBegin(
+          horizontalOwnership.value,
+          TOTAAL_HORIZONTAL_SURFACE.axis,
+        );
       },
       onMomentumEnd: (event) => {
+        const before = horizontalOwnership.value;
+        if (before.owner !== TOTAAL_HORIZONTAL_SURFACE.axis) return;
+
         const viewportX = Math.max(0, event.contentOffset.x);
+        scrollX.value = viewportX;
+        scrollTo(horizontalRef, viewportX, 0, false);
         scheduleOnRN(syncHorizontalAnchor, viewportX);
+        horizontalOwnership.value = totaalHorizontalMomentumEnd(
+          before,
+          TOTAAL_HORIZONTAL_SURFACE.axis,
+        );
       },
     },
-    [horizontalRef, scrollX, syncHorizontalAnchor],
+    [
+      horizontalOwnership,
+      horizontalProgrammaticTargetX,
+      horizontalRef,
+      scrollX,
+      syncHorizontalAnchor,
+    ],
   );
 
   const syncViewedChannel = useCallback(
@@ -509,16 +626,34 @@ export const GuideView = memo(function GuideView({
         timeToX(target, windowStart, layout.minuteWidth) - TOTAAL_VISUAL_METRICS.viewedTimeAnchor,
       );
       const prealignmentX = guideProgrammaticScrollPrealignmentX(x, animated);
+      const plan = totaalHorizontalProgrammaticPlan(x, animated);
+
+      horizontalOwnership.value = plan.ownership;
+      horizontalProgrammaticTargetX.value = animated ? x : -1;
+
       if (prealignmentX !== null) {
         syncProgrammeWindowForViewportX(prealignmentX);
-        scrollX.value = prealignmentX;
       }
-      horizontalRef.current?.scrollTo({ x, animated });
-      if (!animated) axisRef.current?.scrollTo({ x, animated: false });
+      if (plan.authoritativeX !== null) {
+        scrollX.value = plan.authoritativeX;
+      }
+
+      horizontalRef.current?.scrollTo({
+        x: plan.scheduleTargetX,
+        animated,
+      });
+      if (plan.axisTargetX !== null) {
+        axisRef.current?.scrollTo({
+          x: plan.axisTargetX,
+          animated: false,
+        });
+      }
     },
     [
       axisRef,
       commitViewedTime,
+      horizontalOwnership,
+      horizontalProgrammaticTargetX,
       layout.minuteWidth,
       scrollX,
       syncProgrammeWindowForViewportX,
