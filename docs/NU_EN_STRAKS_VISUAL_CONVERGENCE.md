@@ -361,44 +361,72 @@ There are always exactly three following **slots** in the channel-row geometry. 
 
 This preserves stable vertical channel context while keeping the information hierarchy unchanged.
 
-### 11.1 Normal text layout
+### 11.1 Standard text layout — fontScale <= 1.35
 
-At effective font scale **≤ 1.35**:
-- one horizontal row;
+Each following target remains:
 - time column width: **52 pt**;
 - time → title gap: **8 pt**;
 - time: **13/18, Instrument Sans Regular**, tabular numerals where supported;
 - title: **15/20, Instrument Sans Medium**;
-- title: maximum **1 line**, ellipsis at tail;
-- the complete row is one non-overlapping programme button;
-- row minimum = **44 pt iOS / 48 dp Android**.
+- title maximum **1 line**, tail ellipsis;
+- complete target minimum **44 pt iOS / 48 dp Android**;
+- **0 pt** interaction gap between adjacent targets.
 
-### 11.2 Larger/accessibility text layout
+The target geometry is not the visual rhythm. To make the three programmes read as one compact information group while keeping three independent targets:
+- following #1 visible content band is **bottom-biased**, with **2 pt** bottom inset;
+- following #2 visible content band is vertically **centred**;
+- following #3 visible content band is **top-biased**, with **2 pt** top inset.
 
-At effective font scale **> 1.35**:
-- switch each following slot to a stacked layout;
-- start time appears first;
-- **3 pt** time → title gap;
-- title may use maximum **2 lines**;
-- both time and title keep substantive Dynamic Type;
-- do not shrink text to retain screenshot density.
+All visible content remains inside its own Pressable. Touch targets remain adjacent and non-overlapping. No extra separator is added between the three programmes.
 
-Content-safe row height is:
+### 11.2 Larger/accessibility text layout — fontScale > 1.35
 
-max(platform minimum touch target,
-ceil(18 × fontScale + 3 + 40 × fontScale + 12))
+Do **not** switch automatically to a separate time line above a two-line title. Physical iPhone evidence shows that treatment expands each following target excessively.
 
-The 12 pt term represents 6 pt top + 6 pt bottom content padding.
+Primary accessibility composition is an **inline time + title flow**:
+- start time retains **13/18 Regular, textMuted**;
+- title retains **15/20 Medium, textSecondary**;
+- inline time → title separation: **8 pt**;
+- programme content keeps full Dynamic Type scaling;
+- title may wrap so the combined visible programme occupies maximum **2 lines**;
+- full programme title and start/end times remain available to assistive technology.
 
-Rows therefore grow substantially at accessibility sizes. This is intentional: legibility and separate touch targets take precedence over showing more channels per viewport.
+Content-safe following target height:
 
-### 11.3 Non-overlap invariant
+`max(platform minimum touch target, ceil(40 × fontScale + 8))`
+
+The 8-pt term is **4 pt top + 4 pt bottom** content allowance. The time shares the first line with the title and therefore does not reserve a separate vertical line.
+
+The same visual grouping bias applies to grown targets:
+- #1 content block toward the bottom, 2-pt inset;
+- #2 centred;
+- #3 toward the top, 2-pt inset.
+
+### 11.3 Extreme-width fallback
+
+Only when **both** conditions apply:
+- effective `fontScale > 2.0`; and
+- available programme-content width is **< 180 pt**;
+
+the target may fall back to stacked time then title:
+- time line first;
+- **3 pt** gap;
+- title maximum 2 lines;
+- 6 pt top + 6 pt bottom content padding.
+
+Fallback height:
+
+`max(platform minimum touch target, ceil(18 × fontScale + 3 + 40 × fontScale + 12))`
+
+This is a last-resort width fallback, not the default larger-text mode.
+
+### 11.4 Non-overlap invariant
 
 Following-programme targets must never overlap spatially.
 
 Do not use oversized hitSlop that extends one programme target into an adjacent programme target.
 
-Automated layout tests should prove non-overlap for supported font-scale/layout modes.
+Automated layout tests must prove non-overlap for standard, inline-accessibility and extreme fallback modes.
 
 ## 12. Deterministic channel-row height and stable vertical context
 
@@ -440,16 +468,22 @@ Two deliberate categories apply.
 - Primetime;
 - time-rail labels.
 
+The cap is paired with responsive geometry rather than truncation:
+- Guide presentation nav = **48 pt / 1 line** at fontScale <=1.35;
+- Guide presentation nav = **64 pt / max 2 lines** above 1.35;
+- Nu & Straks reference context = **52 pt horizontal** at <=1.35;
+- Nu & Straks reference context = **88 pt, 40+48 two-lane** above 1.35.
+
 ### Substantive content — no global cap
 - reference programme title;
-- reference programme time/status;
+- reference programme time/status in accessibility semantics;
 - following programme times;
 - following programme titles;
 - channel text fallback.
 
-Substantive content adapts by increasing geometry and, for following rows, switching to the accepted stacked layout above fontScale 1.35.
+Above fontScale 1.35, following programmes use the inline two-line accessibility composition from §11.2. Stacked time/title is reserved only for the extreme-width fallback in §11.3.
 
-Do not solve density by clipping essential copy or overlapping interaction areas.
+Do not solve density by clipping essential copy, reducing substantive font scaling or overlapping interaction areas.
 
 ## 15. Empty and incomplete data
 
