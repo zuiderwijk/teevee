@@ -11,6 +11,26 @@ Doel: chronologisch, begrijpelijk overzicht van substantiële milestones, verifi
 
 ---
 
+## 21 september 2026 — Totaal micro-programme refinement reconciled and implemented
+
+PR #114 was first reconciled with canonical `main` `a6d57197b78d62ea3757f4be170f0a1181f11413`, which contains the owner-approved micro-programme design/spec merge from PR #115. The existing Totaal production runtime, horizontal ownership fix, mount-time Reanimated worklet fix, first-open positioning refinement and distance-aware long-range `Nu` navigation were preserved unchanged.
+
+The runtime now classifies a programme as a microcell from its **full real frame width** using the canonical strict `frameWidth < 48 × S` rule, with `S = max(1, effectiveFontScale)`. Individual microcells keep their exact programme action/frame/boundary but suppress title fragments and secondary time in favour of one centred semantic-primary `…`; current microcells use the existing Semibold title weight while non-current microcells use Medium. No minimum width, gap, fill, radius, shadow or duration retuning was introduced.
+
+Repeated-title runs are derived once from the complete chronological programmes-per-channel before viewport windowing. Membership requires at least two adjacent microcells, exact temporal abutment and exact/case-sensitive title equality after trim plus whitespace collapse. Run IDs and membership therefore remain stable across programme-window buckets. The underlying programme cells continue to own every hit target, press state, accessibility label and Programme Detail destination.
+
+A dedicated non-interactive presentation overlay renders repeated-title runs without creating a second accessibility tree or gesture surface. It uses the existing Reanimated `scrollX` shared value to compute the visible run intersection on the UI thread, so the shared title can re-anchor inside true run bounds during partial-left scrolling without React state updates per frame. At a visible intersection of at least `48 × S`, per-cell ellipses are suppressed and one Medium, one-line shared title is drawn with the frozen 6-pt inset. Below that threshold, the overlay returns to individually centred ellipses. The overlay is pointer-transparent/accessibility-hidden and has no background, so canonical underlying programme boundaries remain visible except where glyphs naturally cross them. Normal/non-micro partial-left readability continues through the existing `EdgeReadabilityOverlay`; microcells are explicitly excluded from that normal-title duplication path.
+
+Deterministic coverage was added for strict threshold/equality behaviour, Dynamic Type scaling, full-frame classification, individual/current microcells, run formation and all break conditions, whitespace normalization/case sensitivity, bucket-independent membership, exact shared-title threshold, four×5-minute and three×5-minute examples, partial-left/right run geometry, fallback to ellipses, action/boundary ownership, pointer/accessibility transparency, Medium shared-current typography, centred micro affordance and semantic primary text usage across appearance tokens. Existing Guide/windowing/detail/accessibility tests remain green.
+
+Implementation code head `2a8401efa90c87e7a0cbc9eb61bbe83e3aa26061` passed CI #829 / run `35645887273`: npm ci, strict TypeScript, lint, **69 test files / 513 tests**, and iOS/Android/web Expo export; the runtime-ui classifier correctly skipped the native/config Android job.
+
+This implementation does not claim physical acceptance. The remaining gate is owner iPhone validation of individual microcells, repeated-title runs, per-programme tap ownership, partial-left/right transitions, Larger Text, light/dark, programme-window transitions and regression checks for first-open positioning plus short/long `Nu` navigation.
+
+**Next step:** Lead exact-head review, then owner physical iPhone validation on the final PR #114 head. Do not merge and do not request Independent QA yet.
+
+---
+
 ## 21 september 2026 — Totaal initial-positioning and long-distance Nu polish
 
 Further physical iPhone validation of PR #114 confirmed that the mount-time crash was gone, then exposed two non-crashing presentation/runtime defects: Totaal could visibly paint around the television-day start before jumping to the intended viewed-time position, and a long animated `Nu` return could temporarily outrun the coarse programme window and expose an empty schedule while the channel rail remained visible.
