@@ -93,7 +93,7 @@ export function GuidePresentationSelector({
                 },
               ]}
             >
-              {loading ? 'Laden…' : presentation.label}
+              {loading && !tabs ? 'Laden…' : presentation.label}
             </Text>
             {tabs && active ? (
               <View
