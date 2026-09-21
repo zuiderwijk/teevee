@@ -694,9 +694,9 @@ describe('Nu & Straks production interaction boundary', () => {
 
     const settledRail = getByTestId(container, 'now-next-time-rail');
     settledRail.scrollLeft = 57 * 48;
-    expect(getByTestId(container, 'now-next-reference-time').textContent).toBe(
-      'Nu · 20:17',
-    );
+    expect(
+      container.querySelector('[data-testid="now-next-reference-time"]'),
+    ).toBeNull();
 
     await act(async () => {
       getByTestId(container, 'now-next-reference-one-one-ref').click();
@@ -708,9 +708,9 @@ describe('Nu & Straks production interaction boundary', () => {
     expect(channelScroll.scrollTop).toBe(420);
     expect(getByTestId(container, 'now-next-time-rail')).toBe(settledRail);
     expect(settledRail.scrollLeft).toBe(57 * 48);
-    expect(getByTestId(container, 'now-next-reference-time').textContent).toBe(
-      'Nu · 20:17',
-    );
+    expect(
+      container.querySelector('[data-testid="now-next-reference-time"]'),
+    ).toBeNull();
 
     for (const [slot, id] of [
       [0, 'one-follow-1'],
@@ -726,9 +726,9 @@ describe('Nu & Straks production interaction boundary', () => {
       expect(channelScroll.scrollTop).toBe(420);
       expect(getByTestId(container, 'now-next-time-rail')).toBe(settledRail);
       expect(settledRail.scrollLeft).toBe(57 * 48);
-      expect(getByTestId(container, 'now-next-reference-time').textContent).toBe(
-        'Nu · 20:17',
-      );
+      expect(
+        container.querySelector('[data-testid="now-next-reference-time"]'),
+      ).toBeNull();
     }
   });
 
@@ -806,15 +806,15 @@ describe('Nu & Straks production interaction boundary', () => {
     );
 
     const channelScroll = getByTestId(container, 'now-next-channel-scroll');
-    const referenceContext = getByTestId(container, 'now-next-utility-context');
+    const utilityContext = getByTestId(container, 'now-next-utility-context');
     channelScroll.scrollTop = 360;
 
     await act(async () => {
       getByTestId(container, 'now-next-time-slot-58').click();
     });
-    expect(getByTestId(container, 'now-next-reference-time').textContent).toBe(
-      '20:30',
-    );
+    expect(
+      getByTestId(container, 'now-next-time-slot-58').getAttribute('aria-selected'),
+    ).toBe('true');
 
     runtime.schedule = null;
     runtime.fixture = genericFixture;
@@ -831,11 +831,11 @@ describe('Nu & Straks production interaction boundary', () => {
     expect(getByTestId(container, 'now-next-channel-scroll')).toBe(channelScroll);
     expect(channelScroll.scrollTop).toBe(360);
     expect(getByTestId(container, 'now-next-utility-context')).toBe(
-      referenceContext,
+      utilityContext,
     );
-    expect(getByTestId(container, 'now-next-reference-time').textContent).toBe(
-      '20:30',
-    );
+    expect(
+      getByTestId(container, 'now-next-time-slot-58').getAttribute('aria-selected'),
+    ).toBe('true');
 
     const identities = [
       ...container.querySelectorAll<HTMLElement>('[data-channel-identity]'),
@@ -875,11 +875,11 @@ describe('Nu & Straks production interaction boundary', () => {
     expect(getByTestId(container, 'now-next-channel-scroll')).toBe(channelScroll);
     expect(channelScroll.scrollTop).toBe(360);
     expect(getByTestId(container, 'now-next-utility-context')).toBe(
-      referenceContext,
+      utilityContext,
     );
-    expect(getByTestId(container, 'now-next-reference-time').textContent).toBe(
-      '20:30',
-    );
+    expect(
+      getByTestId(container, 'now-next-time-slot-58').getAttribute('aria-selected'),
+    ).toBe('true');
     expect(
       container.querySelectorAll(
         '[data-testid="now-next-schedule-state-unavailable"]',
