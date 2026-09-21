@@ -11,6 +11,20 @@ Doel: chronologisch, begrijpelijk overzicht van substantiële milestones, verifi
 
 ---
 
+## 21 september 2026 — Nu & Straks production convergence merged through PR #96
+
+Nu & Straks production convergence is merged to `main` through PR #96. Final exact implementation head `f7e88a4a2cb3a212d59a4827e7f28c1e2e665975` passed exact-head CI #753 with **64 test files / 448 tests**, strict TypeScript, lint, iOS/Android/web exports and the PR native Android/config gate. Owner physical iPhone validation passed on the final visual/product composition and, after Independent QA found two implementation-correctness blockers, a focused physical revalidation passed the corrected live rail ownership and unavailable-state VoiceOver behaviour on the final head. Independent QA then returned PASS on that exact head.
+
+The final QA corrections keep live semantics on the exact clock minute while recentering the rail once when a live session crosses to a new nearest-quarter target; entering native browse/drag relinquishes that clock-driven rail ownership synchronously so momentum is never fought. During temporary schedule unavailability, an already established channel catalogue now remains semantically discoverable to VoiceOver/TalkBack; normal programme-present rows continue to avoid redundant channel focus stops because programme actions already carry the full channel name.
+
+PR #96 merge commit: `b0df0cc08f565aa1a36edf794e60ced0f391f67c`. Exact-main CI #754 completed **SUCCESS**, including strict TypeScript, lint, the full test suite, iOS/Android/web exports and the main/release **full-ABI Android debug APK build**.
+
+Physical Android interaction validation remains deferred because Android hardware is not available; successful native compilation is not represented as physical Android acceptance.
+
+**Next step:** complete the canonical project-state closeout. The remaining Phase 4 decision is whether measured MVP/offline requirements justify local schedule persistence/cache; do not add it speculatively.
+
+---
+
 ## 21 september 2026 — PR #96 Independent QA correctness fixes
 
 Independent QA on exact head `ea2c45d65837903724684a7cd99c77314ef9a2d3` found two implementation correctness blockers without reopening any accepted Nu & Straks visual/layout contract.
