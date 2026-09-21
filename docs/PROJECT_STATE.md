@@ -1,9 +1,9 @@
 # Teevee — Canonical Project State
 
 Last updated: 2026-09-21.
-Status: ACTIVE — **Phase 5 Search and Discovery**.
-Current phase: **Phase 5 — Search and Discovery**
-Previous phase: **Phase 4 — Core Guide MVP hardening — CLOSED**
+Status: ACTIVE — **Phase 4 Core Guide MVP hardening**.
+Current phase: **Phase 4 — Core Guide MVP hardening**
+Previous phase: **Phase 3 — Real Data Vertical Slice — CLOSED**
 
 > Mandatory start point for every development-agent session. Read `AGENTS.md` and this file before changing the repository. Historical implementation detail belongs in Git history, `DEVLOG.md`, accepted PRs/issues and timestamped evidence documents; this file stays focused on current canonical state and the single next step.
 
@@ -19,12 +19,12 @@ Previous phase: **Phase 4 — Core Guide MVP hardening — CLOSED**
 - Relevant durable architecture contracts are ADR 0001 through ADR 0008.
 
 ## Phase status
-1. **Phase 1A — Totaal:** complete and physically accepted on iPhone.
+1. **Phase 1A — Totaal interaction/technical baseline:** complete and physically accepted on iPhone. This does **not** mean the final Totaal production visual design is complete; that design remains owner-open.
 2. **Phase 1B — Per zender / Nu & Straks:** complete and physically accepted on iPhone.
 3. **Phase 2 — App Shell:** complete and physically accepted on iPhone.
 4. **Phase 3 — Real Data Vertical Slice:** complete and physically accepted on iPhone. Real provider -> hosted ingest -> canonical persistence -> public typed read -> mobile canonical datasource is proven, including fixture-first startup, real-data transition, fallback and context retention.
-5. **Phase 4 — Core Guide MVP hardening:** **CLOSED**. The 06:00 television-day foundation, television-day-aware runtime, D-2..D+7 navigation/date context, measured Totaal performance hardening, Per-zender production convergence, Programme Detail production convergence and Nu & Straks production convergence are merged and physically accepted on iPhone. The final Nu & Straks runtime head `f7e88a4a2cb3a212d59a4827e7f28c1e2e665975` passed exact-head CI, owner physical iPhone validation and Independent QA before merge through PR #96; exact-main CI #754 and the docs closeout exact-main CI #758 succeeded. The Phase 4 cache decision is **no persistent mobile schedule cache now**: measurement showed the dominant cold Guide cost was render/mount work rather than network/cache, and no separate measured offline requirement justifies SQLite/TanStack Query/server-state persistence at this stage. Fixture-first rendering plus preservation of usable in-memory runtime state remains the current graceful degradation. True no-network cold start and any persistent-cache technology decision remain a release-like Phase 9 gate. Physical Android interaction acceptance remains deferred until Android hardware is available.
-6. **Phase 5 — Search and Discovery:** active. Deliver Search first. Add Tonight only after its value and data requirements are clear; do not turn it into editorial/news or infinite-engagement scope.
+5. **Phase 4 — Core Guide MVP hardening:** **ACTIVE**. The 06:00 television-day foundation, television-day-aware runtime, D-2..D+7 navigation/date context, measured Totaal performance hardening, Per-zender production convergence, Programme Detail production convergence and Nu & Straks production convergence are merged and physically accepted on iPhone. **Totaal production visual design is still open and has not yet been owner-approved as a final production design; therefore Totaal production visual convergence is not complete and Phase 4 is not closed.** The final Nu & Straks runtime head `f7e88a4a2cb3a212d59a4827e7f28c1e2e665975` passed exact-head CI, owner physical iPhone validation and Independent QA before merge through PR #96; exact-main CI #754 and the docs closeout exact-main CI #758 succeeded. The cache decision remains **no persistent mobile schedule cache now** absent new measured evidence; true no-network cold start and any persistence technology decision remain a release-like Phase 9 gate. Physical Android interaction acceptance remains deferred until Android hardware is available.
+6. **Phase 5 — Search and Discovery:** planned, **not active yet**. Search remains the first intended Phase 5 slice after Totaal production design/convergence is completed; Tonight remains later and provisional.
 
 ## Frozen television-day and Guide-horizon semantics
 ADR 0008 is canonical:
@@ -141,7 +141,7 @@ Independent QA then found one blocking animated same-window `Nu` ownership case.
 ## Canonical visual handoff
 `docs/VISUAL_BASELINE.md`, `design/current/` and the accepted Guide visual-convergence documentation are the source of truth for visual implementation. Current runtime appearance is not automatically the accepted visual target. Do not mix unapproved brand explorations into production implementation.
 
-For Totaal, the accepted direction is an open, premium schedule rather than stacked programme cards: restrained surfaces/separators, logo-first channel rail, lighter time axis, compact current-time marker without a full-height red line, no in-cell current progress bar, and the shared selector integrated into the Guide hierarchy. Existing gestures, data semantics, programme geometry and Programme Detail context must remain intact.
+For Totaal, the **production visual design is still open**. Existing references describe a provisional open/premium direction and useful constraints, not a final owner-approved production composition. Frozen interaction/data constraints remain intact: 2D time/channel navigation, real programme geometry, shared day selector + `Nu`, native inertia/bounce/directional lock, Programme Detail context, Instrument Sans and the proven performance/windowing architecture. Do not start Totaal production visual convergence until the owner has accepted the final design and the canonical Totaal design/spec has been updated.
 
 ## Android status
 Physical Android interaction acceptance remains OPEN/DEFERRED because no Android device is available. CI proves Android JS/native export, clean prebuild and debug APK compilation, not system Back, nested-gesture feel or device performance.
@@ -157,9 +157,9 @@ Physical Android interaction acceptance remains OPEN/DEFERRED because no Android
 - physical Android validation.
 
 ## EXACT NEXT STEP
-**Start Phase 5 with Search. First inspect the existing domain/API/runtime boundaries and accepted UX/product constraints, then define the smallest production Search vertical slice for programmes and channels without coupling Search to provider-specific IDs, editorial/news content, mandatory accounts or Tonight. Preserve all frozen Guide behaviour and do not reopen the completed Phase 4 cache decision without new measured evidence.**
+**Return to Totaal Design / UX Exploration. The owner has explicitly corrected the repository status: Totaal's interaction/technical baseline and performance work are proven, but its final production visual design is **not done**. Start from the frozen interaction/data/day-selector/typography constraints and the existing Totaal reference assets only as provisional direction. Do not treat `design/current/guide/TOTAAL.md` or `docs/TOTAAL_VISUAL_CONVERGENCE.md` as an accepted production implementation target until the owner explicitly accepts the final Totaal design. After owner acceptance: update the canonical design manifest/spec first, then Development performs production visual convergence on the existing proven Guide architecture, followed by exact-head CI, physical validation and Independent QA. Phase 5 Search remains planned but is not the active next step.**
 
 Owner checkout: `~/projects/teevee`.
 
 ## Resume instruction
-> Read `AGENTS.md`, this file, `docs/PRODUCT.md`, `docs/UX.md`, `docs/ARCHITECTURE.md`, `docs/DATA.md`, `docs/ENGINEERING_QUALITY_POLICY.md` and the relevant ADRs before changing the repository. Phase 4 is CLOSED on iPhone: Totaal performance hardening, Per-zender, Programme Detail and Nu & Straks production convergence are merged. Persistent mobile schedule caching was explicitly not selected at Phase 4 closeout because measured evidence did not justify it; current fallback remains fixture-first plus preserved in-memory runtime state, while true offline cold-start/persistence is deferred to Phase 9 release-like hardening. Phase 5 is active. Deliver Search first; Tonight remains later within Phase 5 only after its value/data requirements are clear. Preserve the accepted Guide visual/layout/gesture/data contracts and the provider-independent domain boundary. Physical Android interaction validation remains deferred until Android hardware is available.
+> Read `AGENTS.md`, this file, `docs/PRODUCT.md`, `docs/UX.md`, `docs/ARCHITECTURE.md`, `docs/DATA.md`, `docs/ENGINEERING_QUALITY_POLICY.md` and the relevant ADRs before changing the repository. Phase 4 remains ACTIVE. Per-zender, Programme Detail and Nu & Straks production convergence are merged and accepted on iPhone. Totaal interaction mechanics, television-day semantics and performance hardening are proven, but **Totaal final production visual design is still owner-open**; the current Totaal manifest/convergence document is provisional and must not be used as an implementation-ready production target. The next step is Totaal Design / UX Exploration, followed by owner acceptance and canonical spec update before runtime visual convergence. Phase 5 Search is planned but not active. Preserve frozen Guide mechanics and the provider-independent domain boundary. Physical Android interaction validation remains deferred until Android hardware is available.

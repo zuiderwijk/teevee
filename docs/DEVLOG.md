@@ -11,6 +11,20 @@ Doel: chronologisch, begrijpelijk overzicht van substantiële milestones, verifi
 
 ---
 
+## 21 september 2026 — Owner correction: Totaal production visual design is still open
+
+The owner corrected an over-broad project closeout: Totaal has a proven and physically accepted **interaction/technical baseline** plus accepted shared day-navigation and typography contracts, but its **final production visual design has not yet been completed or owner-approved**.
+
+This supersedes the Phase 4/Phase 5 status wording introduced by the earlier closeout. Per-zender, Programme Detail and Nu & Straks production convergence remain closed and accepted; Totaal performance/windowing, television-day semantics, gestures and Programme Detail context also remain frozen. What is reopened is specifically the **Totaal production visual design and subsequent visual convergence**.
+
+The existing Totaal light/dark assets, `design/current/guide/TOTAAL.md` and `docs/TOTAAL_VISUAL_CONVERGENCE.md` are therefore demoted from an accepted production target to **provisional design direction / inactive candidate handoff**. They may inform exploration but must not trigger Development until the owner explicitly accepts the final Totaal design and the canonical spec is updated.
+
+Phase 4 remains ACTIVE for this work. Phase 5 Search remains planned but is not the current next step.
+
+**Next step:** Totaal Design / UX Exploration using the frozen interaction/data/day-selector/typography constraints; after owner acceptance, canonicalize the final production design/spec before Development.
+
+---
+
 ## 21 september 2026 — Phase 4 closed; persistent schedule cache not selected
 
 Phase 4 Core Guide MVP hardening is closed on iPhone after Totaal performance hardening, Per-zender production convergence, Programme Detail production convergence and Nu & Straks production convergence were merged and accepted. Nu & Straks PR #96 merged as `b0df0cc08f565aa1a36edf794e60ced0f391f67c`; exact-main CI #754 succeeded including the main/release full-ABI Android build. Canonical Nu & Straks closeout PR #105 merged as `958f0ebd68ffbc4e2ca7d4bc36816446ef451128`; exact-main docs CI #758 succeeded. PR #106 then clarified historical ledger wording without changing runtime or scope.
