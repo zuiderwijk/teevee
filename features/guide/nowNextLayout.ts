@@ -44,6 +44,7 @@ export const NOW_NEXT_VISUAL_METRICS = {
   channelBottomPadding: 12,
   followingTimeWidth: 52,
   followingTimeTitleGap: 8,
+  followingStandardVisibleContentHeight: 20,
   followingInlinePaddingY: 4,
   followingStackedGap: 3,
   followingStackedPaddingY: 6,
@@ -231,6 +232,32 @@ export function nowNextFollowingTargetRects(
     bottom: firstTop + (index + 1) * layout.followingHeight,
     height: layout.followingHeight,
   }));
+}
+
+export function nowNextFollowingContentPlacement(
+  platform: string,
+  fontScale: number,
+  slotIndex: number,
+) {
+  const scale = normalizedFontScale(fontScale);
+  if (scale > GUIDE_ACCESSIBILITY_FONT_SCALE_THRESHOLD) {
+    return {
+      justifyContent: 'center',
+      topOffset: 0,
+    } as const;
+  }
+
+  const targetHeight = nowNextFollowingSlotHeight(platform, scale);
+  const visibleSlack = Math.max(
+    0,
+    targetHeight - NOW_NEXT_VISUAL_METRICS.followingStandardVisibleContentHeight,
+  );
+  const weight = slotIndex <= 0 ? 2 / 3 : slotIndex === 1 ? 1 / 3 : 0;
+
+  return {
+    justifyContent: 'flex-start',
+    topOffset: Math.round(visibleSlack * weight),
+  } as const;
 }
 
 export function nowNextProgrammePressBackgroundColor(
