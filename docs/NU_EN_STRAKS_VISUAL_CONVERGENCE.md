@@ -258,12 +258,13 @@ Production calibration:
 - slot interactive height: **48 pt**;
 - every slot remains an accessible time target, including unlabeled quarter hours;
 - whole and half hours: visible **13/18** label, Instrument Sans Medium; selected label Semibold;
-- whole/half-hour positional tick: **1 × 10 pt** semantic `border` hairline, directly beneath the label anchor;
-- quarter-hour positional tick: **1 × 6 pt** semantic `border` hairline, no visible text label;
-- selected/current reference marker: **2 × 12 pt**, semantic `currentTime`, visually stronger than either hairline;
+- whole/half-hour positional tick: **1 × 10 pt** semantic `railTick`, opacity **1.00**, directly beneath the label anchor;
+- quarter-hour positional tick: **1 × 6 pt** semantic `railTick`, opacity **0.78**, no visible text label;
+- semantic `railTick`: light **#80807A**, dark **#72726B**;
+- selected/current reference marker: **2 × 12 pt**, semantic `currentTime`, opacity **1.00**, visually stronger than either hairline;
 - viewport insets centre the first and last quarter-hour targets as well as interior targets.
 
-The hairlines belong only to the rail and do not continue through programme content.
+The hairlines belong only to the rail and do not continue through programme content. `railTick` is intentionally distinct from the quieter generic `border` separator token: these marks are positional navigation signals and must remain physically legible, especially in dark mode. Keep the 1-pt tick width; improve legibility through semantic contrast rather than thickness.
 
 ### 7.3 Live positioning
 
