@@ -237,6 +237,7 @@ export function totaalCurrentTimeMarkerBodyX(
   viewportWidth: number,
   bodyWidth: number,
 ) {
+  'worklet';
   const safeViewport = Number.isFinite(viewportWidth) ? Math.max(0, viewportWidth) : 0;
   const safeBody = Number.isFinite(bodyWidth)
     ? Math.max(TOTAAL_VISUAL_METRICS.currentMarkerMinWidth, bodyWidth)
