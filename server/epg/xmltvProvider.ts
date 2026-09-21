@@ -192,6 +192,7 @@ export class XmltvEpgProvider implements EpgProvider {
   readonly key: string;
   private readonly url: string;
   private readonly fetcher: typeof fetch;
+  private documentPromise: Promise<ParsedDocument> | null = null;
 
   constructor(options: XmltvProviderOptions = {}) {
     this.key = options.key?.trim() || 'development-xmltv';
@@ -199,14 +200,17 @@ export class XmltvEpgProvider implements EpgProvider {
     this.fetcher = options.fetcher ?? fetch;
   }
 
-  private async document(): Promise<ParsedDocument> {
-    const response = await this.fetcher(this.url, {
-      headers: { Accept: 'application/xml,text/xml;q=0.9,*/*;q=0.1' },
-    });
-    if (!response.ok) {
-      throw new Error(`XMLTV provider request failed with HTTP ${response.status}`);
-    }
-    return parseXmltvDocument(await response.text());
+  private document(): Promise<ParsedDocument> {
+    this.documentPromise ??= (async () => {
+      const response = await this.fetcher(this.url, {
+        headers: { Accept: 'application/xml,text/xml;q=0.9,*/*;q=0.1' },
+      });
+      if (!response.ok) {
+        throw new Error(`XMLTV provider request failed with HTTP ${response.status}`);
+      }
+      return parseXmltvDocument(await response.text());
+    })();
+    return this.documentPromise;
   }
 
   async getChannels(): Promise<ExternalChannel[]> {
