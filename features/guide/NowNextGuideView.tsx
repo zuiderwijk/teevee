@@ -503,6 +503,7 @@ export const NowNextGuideView = memo(function NowNextGuideView({
 
   useEffect(() => {
     if (!live || selectedSlotMs === null) return;
+    if (nowNextTelevisionDayBounds(nowMs).startMs !== dayStartMs) return;
     if (lastLiveCentredSlotMsRef.current === selectedSlotMs) return;
 
     const frame = requestAnimationFrame(() => {
@@ -512,7 +513,7 @@ export const NowNextGuideView = memo(function NowNextGuideView({
       centreTime(selectedSlotIndex, false);
     });
     return () => cancelAnimationFrame(frame);
-  }, [centreTime, live, selectedSlotIndex, selectedSlotMs]);
+  }, [centreTime, dayStartMs, live, nowMs, selectedSlotIndex, selectedSlotMs]);
 
   const collapseProgress = useSharedValue(0);
   const syncCondensed = useCallback((next: boolean) => {
