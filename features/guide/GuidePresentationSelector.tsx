@@ -7,6 +7,7 @@ import {
   COMPACT_GUIDE_MAX_FONT_SIZE_MULTIPLIER,
   GUIDE_TYPOGRAPHY,
   GUIDE_VISUAL_METRICS,
+  guidePresentationNavigationMetrics,
 } from './guideVisualMetrics';
 import { GUIDE_PRESENTATIONS, type GuidePresentation } from './guidePresentation';
 
@@ -24,8 +25,9 @@ export function GuidePresentationSelector({
   variant = 'pill',
 }: GuidePresentationSelectorProps) {
   const theme = useTeeveeTheme();
-  const { width } = useWindowDimensions();
+  const { width, fontScale = 1 } = useWindowDimensions();
   const tabs = variant === 'tabs';
+  const presentationNavigation = guidePresentationNavigationMetrics(fontScale);
   const tabWidth = Math.max(
     0,
     (width - GUIDE_VISUAL_METRICS.screenInsetX * 2) / GUIDE_PRESENTATIONS.length,
@@ -41,7 +43,7 @@ export function GuidePresentationSelector({
       accessibilityRole="tablist"
       style={[
         tabs ? styles.tabsContainer : styles.pillContainer,
-        tabs ? null : { backgroundColor: theme.colors.surfaceElevated, borderColor: theme.colors.border },
+        tabs ? { height: presentationNavigation.height } : { backgroundColor: theme.colors.surfaceElevated, borderColor: theme.colors.border },
       ]}
     >
       {GUIDE_PRESENTATIONS.map((presentation) => {
@@ -58,7 +60,7 @@ export function GuidePresentationSelector({
             disabled={loading}
             onPress={() => onSelect(presentation.id)}
             style={({ pressed }) => [
-              tabs ? styles.tabItem : styles.pillItem,
+              tabs ? [styles.tabItem, { minHeight: presentationNavigation.height }] : styles.pillItem,
               tabs
                 ? null
                 : { backgroundColor: active ? theme.colors.accent : 'transparent' },
@@ -72,7 +74,7 @@ export function GuidePresentationSelector({
             ]}
           >
             <Text
-              numberOfLines={1}
+              numberOfLines={tabs ? presentationNavigation.maxLines : 1}
               maxFontSizeMultiplier={COMPACT_GUIDE_MAX_FONT_SIZE_MULTIPLIER}
               style={[
                 tabs
