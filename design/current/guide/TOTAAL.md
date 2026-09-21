@@ -1,10 +1,9 @@
 # Totaal — current accepted production visual design
 
-Status: **ACCEPTED — PRODUCTION VISUAL DESIGN + IMPLEMENTATION CALIBRATION**
+Status: **ACCEPTED — PRODUCTION VISUAL DESIGN OWNER-APPROVED**
 Owner-approved: 2026-09-21
-Production specification: `docs/TOTAAL_VISUAL_CONVERGENCE.md`
 
-This manifest defines the accepted Totaal production visual direction. The dedicated production specification now freezes the exact implementation metrics, responsive rules, edge cases and validation contract. This file remains the concise visual manifest; Development uses `docs/TOTAAL_VISUAL_CONVERGENCE.md` as the implementation handoff.
+This manifest defines the accepted Totaal production visual direction. It freezes composition, hierarchy and visual language, but it is **not yet the production implementation specification**. Exact implementation metrics and acceptance criteria still require the dedicated production visual-convergence specification before Development starts.
 
 ## Canonical visual asset
 
@@ -61,7 +60,7 @@ On vertical scroll:
 - returning to the top restores the expanded hierarchy naturally;
 - bottom navigation remains stable.
 
-Production collapse calibration is frozen in `docs/TOTAAL_VISUAL_CONVERGENCE.md`: fixed-native-viewport isolation, 56-pt native collapse, 12-pt maximum chrome translation, 28-pt Reduce Motion switch and responsive 44/60-pt visual compensation. The persistent Totaal functional stack is 52-pt date/Nu + 44-pt time axis = 96 pt.
+The exact collapse distance/animation calibration is not frozen by this visual board and must be specified against the existing proven scroll architecture rather than guessed from pixels.
 
 ## Accepted date-label presentation
 
@@ -91,7 +90,7 @@ The bounded D-2..D+7 bottom-sheet contract remains defined by `design/current/gu
 - future/non-current programme: secondary copy uses the start time when useful;
 - secondary time copy is visually quieter than the title;
 - for narrow/partially clipped cells, title survives before secondary time metadata;
-- production typography is 15/19 Instrument Sans Medium for programme titles, 15/19 Semibold for actual-current titles and 13/18 Regular for secondary time; base row height is 76 pt with the responsive formula defined in the production specification.
+- exact font sizes/weights/row metrics remain to be frozen in the production spec and validated physically.
 
 ### Current programme
 - no in-cell progress bar;
@@ -113,7 +112,7 @@ The bounded D-2..D+7 bottom-sheet contract remains defined by `design/current/gu
 - quarter hours use unlabeled minor ticks;
 - no extra dense intermediate tick rhythm by default;
 - existing proven left-edge masking/readability behaviour remains intact;
-- production axis calibration: 44-pt axis; 15-minute positions; :00/:30 labels; 1×10 major and 1×6 quarter ticks using `railTick`; compact 46×20 current-time marker with 6×4 notch. Exact opacity/token rules live in the production specification.
+- exact tick lengths/contrast and current-marker dimensions remain production-spec details.
 
 ## Accepted channel rail
 
@@ -155,21 +154,16 @@ Use the same canonical bottom-navigation structure and behaviour as Per zender. 
 - light/dark/system retain equivalent hierarchy and semantics;
 - physical validation must cover representative larger-text settings.
 
-## Production calibration now frozen
+## What the visual board does not freeze
 
-The owner-approved board freezes direction and composition; `docs/TOTAAL_VISUAL_CONVERGENCE.md` now freezes the production calibration. Key values:
-- shared GuideChrome 100 pt standard / 116 pt above fontScale 1.35;
-- date + Nu row 52 pt;
-- time axis 44 pt;
-- persistent functional stack 96 pt;
-- fixed-native-viewport collapse 56 pt with 44/60 pt visual compensation;
-- channel rail 84 pt base with responsive Dynamic-Type width;
-- logo optical box max 52×40 pt;
-- schedule row 76 pt base with deterministic responsive growth;
-- programme title 15/19 Medium, actual-current title 15/19 Semibold, secondary time 13/18 Regular;
-- real programme frame width is not shortened for cosmetic gaps;
-- programme cells use open boundaries rather than cards;
-- exact short-programme, partial-left, loading, DST, accessibility and physical-validation contracts are defined in the production specification.
+The owner-approved board freezes **direction and composition**, not every generated pixel. The production design specification must still determine and physically calibrate:
+- exact programme title/time typography;
+- exact standard row height and responsive larger-text row geometry;
+- exact channel-rail width/logo optical box;
+- exact separator/tick contrast;
+- exact current-time marker dimensions;
+- exact condensed collapse/compensation metrics compatible with the existing Totaal scroll architecture;
+- edge cases for very short programmes, long titles and missing logos.
 
 ## Superseded Totaal visual treatments
 
