@@ -17,11 +17,11 @@ Nu & Straks production convergence is merged to `main` through PR #96. Final exa
 
 The final QA corrections keep live semantics on the exact clock minute while recentering the rail once when a live session crosses to a new nearest-quarter target; entering native browse/drag relinquishes that clock-driven rail ownership synchronously so momentum is never fought. During temporary schedule unavailability, an already established channel catalogue now remains semantically discoverable to VoiceOver/TalkBack; normal programme-present rows continue to avoid redundant channel focus stops because programme actions already carry the full channel name.
 
-PR #96 merge commit: `b0df0cc08f565aa1a36edf794e60ced0f391f67c`. Exact-main CI #754 is the required post-merge release-like gate and was still running its full-ABI Android build when this closeout entry was prepared. The closeout PR must not merge until #754 reports SUCCESS.
+PR #96 merge commit: `b0df0cc08f565aa1a36edf794e60ced0f391f67c`. Exact-main CI #754 completed **SUCCESS**, including strict TypeScript, lint, the full test suite, iOS/Android/web exports and the main/release **full-ABI Android debug APK build**.
 
 Physical Android interaction validation remains deferred because Android hardware is not available; successful native compilation is not represented as physical Android acceptance.
 
-**Next step:** after exact-main CI #754 succeeds, complete the canonical project-state closeout. The remaining Phase 4 decision is whether measured MVP/offline requirements justify local schedule persistence/cache; do not add it speculatively.
+**Next step:** complete the canonical project-state closeout. The remaining Phase 4 decision is whether measured MVP/offline requirements justify local schedule persistence/cache; do not add it speculatively.
 
 ---
 
