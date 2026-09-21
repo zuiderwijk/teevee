@@ -243,7 +243,6 @@ describe('ChannelIdentity', () => {
           channel={{
             ...baseChannel,
             displayName: 'Publieke Omroep Volledig',
-            shortName: undefined,
           }}
           textColor="#111"
           mutedTextColor="#777"
