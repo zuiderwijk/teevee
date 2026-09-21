@@ -138,7 +138,15 @@ vi.mock('react-native', async () => {
     },
   };
   return {
-    AppState, View, Text, Image, Pressable, ScrollView, Modal, SafeAreaView: View,
+    AppState,
+    Platform: { OS: 'ios' },
+    View,
+    Text,
+    Image,
+    Pressable,
+    ScrollView,
+    Modal,
+    SafeAreaView: View,
     useWindowDimensions: () => ({ width: 390, height: 844, scale: 3, fontScale: 1 }),
     StyleSheet: { create: <T,>(value: T) => value, hairlineWidth: 1, absoluteFill: {} },
   };
@@ -171,7 +179,7 @@ vi.mock('react-native-gesture-handler', async () => {
   };
 });
 vi.mock('react-native-reanimated', async () => {
-  const { useState } = await import('react');
+  const { useRef, useState } = await import('react');
   const { ScrollView, Text, View } = await import('react-native');
   return {
     default: { View, ScrollView, Text },
@@ -179,6 +187,9 @@ vi.mock('react-native-reanimated', async () => {
       const [value] = useState(() => ({ value: initial }));
       return value;
     },
+    useAnimatedRef: () => useRef(null),
+    scrollTo: vi.fn(),
+    useReducedMotion: () => false,
     useAnimatedScrollHandler: (handlers: unknown) => handlers,
     useAnimatedReaction: vi.fn(),
     useAnimatedStyle: (callback: NonNullable<typeof motion.readStyle>) => {
