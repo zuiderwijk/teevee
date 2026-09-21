@@ -5,7 +5,7 @@ import Animated, {
   useAnimatedStyle,
 } from 'react-native-reanimated';
 
-import { isProgrammeCurrent } from '@/data/domain/epg';
+import { isProgrammeCurrent, type Programme } from '@/data/domain/epg';
 import { useTeeveeTheme } from '@/theme/useTeeveeTheme';
 
 import { programmeFrame, timeToX } from './geometry';
@@ -20,7 +20,7 @@ import {
 } from './totaalMicroProgrammes';
 
 type TotaalMicroProgrammeOverlayProps = {
-  runs: readonly TotaalRepeatedTitleRun[];
+  runPresentations: readonly TotaalRepeatedTitleRunPresentation[];
   channelRowIndex: ReadonlyMap<string, number>;
   windowStartMs: number;
   minuteWidth: number;
@@ -37,6 +37,7 @@ type TotaalMicroProgrammeOverlayProps = {
 
 type RepeatedTitleRunOverlayProps = {
   run: TotaalRepeatedTitleRun;
+  programmes: readonly Programme[];
   rowIndex: number;
   windowStartMs: number;
   minuteWidth: number;
@@ -50,6 +51,7 @@ type RepeatedTitleRunOverlayProps = {
 
 const RepeatedTitleRunOverlay = memo(function RepeatedTitleRunOverlay({
   run,
+  programmes,
   rowIndex,
   windowStartMs,
   minuteWidth,
@@ -132,7 +134,7 @@ const RepeatedTitleRunOverlay = memo(function RepeatedTitleRunOverlay({
           individualStyle,
         ]}
       >
-        {run.programmes.map((programme) => {
+        {programmes.map((programme) => {
           const frame = programmeFrame(programme, windowStartMs, minuteWidth);
           const current = isProgrammeCurrent(programme, nowMs);
           return (
@@ -184,7 +186,7 @@ const RepeatedTitleRunOverlay = memo(function RepeatedTitleRunOverlay({
 });
 
 export const TotaalMicroProgrammeOverlay = memo(function TotaalMicroProgrammeOverlay({
-  runs,
+  runPresentations,
   channelRowIndex,
   windowStartMs,
   minuteWidth,
@@ -226,12 +228,13 @@ export const TotaalMicroProgrammeOverlay = memo(function TotaalMicroProgrammeOve
       style={styles.overlay}
     >
       <Animated.View style={[styles.grid, gridStyle]}>
-        {runs.map((run) => {
+        {runPresentations.map(({ run, programmes }) => {
           const rowIndex = channelRowIndex.get(run.channelId);
           return rowIndex === undefined ? null : (
             <RepeatedTitleRunOverlay
               key={run.id}
               run={run}
+              programmes={programmes}
               rowIndex={rowIndex}
               windowStartMs={windowStartMs}
               minuteWidth={minuteWidth}
