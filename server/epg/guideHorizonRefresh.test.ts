@@ -6,7 +6,7 @@ import { guideTelevisionDayStart } from '@/data/domain/guideTime';
 
 import { guideRefreshWindows, refreshGuideHorizon } from './guideHorizonRefresh';
 import { InMemoryScheduleRepository } from './inMemoryScheduleRepository';
-import type { EpgProvider, ProviderScheduleQuery } from './provider';
+import type { EpgProvider, ProviderScheduleBatch, ProviderScheduleQuery } from './provider';
 import { RepositoryGuideScheduleApi } from './scheduleService';
 
 const channel: Channel = {
@@ -57,7 +57,7 @@ describe('refreshGuideHorizon', () => {
     const provider: EpgProvider = {
       key: 'horizon-fixture',
       getChannels: vi.fn(async () => [{ id: 'raw-one', name: 'Raw One' }]),
-      getSchedule: vi.fn(async (query: ProviderScheduleQuery) => ({
+      getSchedule: vi.fn(async (query: ProviderScheduleQuery): Promise<ProviderScheduleBatch> => ({
         coverage: query.from.getTime() < firstPartialStart ? 'complete' : 'partial',
         programmes: [
           {
