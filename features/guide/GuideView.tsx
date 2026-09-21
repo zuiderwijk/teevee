@@ -97,7 +97,7 @@ import { TotaalMicroProgrammeOverlay } from './TotaalMicroProgrammeOverlay';
 import { TotaalProgrammeCell } from './TotaalProgrammeCell';
 import {
   deriveTotaalMicroProgrammeMetadata,
-  totaalRepeatedTitleRunsForTimeWindow,
+  totaalRepeatedTitleRunPresentationsForWindow,
 } from './totaalMicroProgrammes';
 import { useGuideClock } from './useGuideClock';
 import { useSelectedGuideDaySchedule } from './useSelectedGuideDaySchedule';
@@ -300,17 +300,21 @@ export const GuideView = memo(function GuideView({
       ),
     [programmesByChannel, programmeTimeWindow.fromMs, programmeTimeWindow.toMs],
   );
-  const windowedRepeatedTitleRuns = useMemo(
+  const windowedRepeatedTitleRunPresentations = useMemo(
     () =>
-      totaalRepeatedTitleRunsForTimeWindow(
+      totaalRepeatedTitleRunPresentationsForWindow(
         microProgrammeMetadata.repeatedTitleRuns,
+        microProgrammeMetadata.repeatedRunByProgrammeId,
+        windowedProgrammesByChannel,
         programmeTimeWindow.fromMs,
         programmeTimeWindow.toMs,
       ),
     [
+      microProgrammeMetadata.repeatedRunByProgrammeId,
       microProgrammeMetadata.repeatedTitleRuns,
       programmeTimeWindow.fromMs,
       programmeTimeWindow.toMs,
+      windowedProgrammesByChannel,
     ],
   );
   const followingDayBoundaryX = timeToX(
@@ -1229,7 +1233,7 @@ export const GuideView = memo(function GuideView({
           ]}
         >
           <TotaalMicroProgrammeOverlay
-            runs={windowedRepeatedTitleRuns}
+            runPresentations={windowedRepeatedTitleRunPresentations}
             channelRowIndex={channelRowIndex}
             windowStartMs={windowStart}
             minuteWidth={layout.minuteWidth}
