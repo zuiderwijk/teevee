@@ -230,15 +230,16 @@ Production calibration:
 - quarter-hour positional tick: **1 × 6 pt** semantic `railTick`, opacity **0.78**, no visible text label;
 - semantic `railTick`: light **#80807A**, dark **#72726B**;
 - selected/current reference marker: **2 × 12 pt**, semantic `currentTime`, opacity **1.00**, visually stronger than either hairline;
+- horizontal rail-bottom line: **1 pt**, semantic `railTick`, opacity **0.78**, exactly matching quarter-hour tick colour/thickness/strength;
 - viewport insets centre the first and last quarter-hour targets as well as interior targets.
 
-The hairlines belong only to the rail and do not continue through programme content. `railTick` is intentionally distinct from the quieter generic `border` separator token: these marks are positional navigation signals and must remain physically legible, especially in dark mode. Keep the 1-pt tick width; improve legibility through semantic contrast rather than thickness.
+The ticks and rail-bottom line belong only to the rail and do not continue through programme content. `railTick` is intentionally distinct from the quieter generic `border` separator token: these marks are positional navigation signals and must remain physically legible, especially in dark mode. Keep the approved 1-pt tick/baseline width; do not use a generic hairline or change the global `border` token.
 
 ### 7.3 Live positioning
 
 Live reference time remains the actual current instant. Do not round live semantics to a 15-minute slot.
 
-The rail may centre the nearest quarter-hour navigation target while the visible live copy and programme resolver use the exact actual instant. Entering browse mode commits the settled quarter-hour target as the semantic reference.
+The rail may centre the nearest quarter-hour navigation target while the programme resolver uses the exact actual instant. There is no separate visible reference-time copy. Entering browse mode commits the settled quarter-hour target as the semantic reference.
 
 ### 7.4 Snap and physically accepted fling/settle contract
 
@@ -278,17 +279,17 @@ These values keep channel identity visually distinct while aligning programme co
 Per channel at normal text:
 - top padding: **8 pt**;
 - reference-programme block: minimum **64 pt**;
-- reference → following gap: **4 pt**;
+- reference → following gap: **0 pt**;
 - each following programme on iOS: minimum **44 pt**;
 - each following programme on Android: minimum **48 dp**;
 - following rows are directly adjacent: **0 pt additional inter-row gap**;
-- bottom padding: **8 pt**.
+- bottom padding: **12 pt**.
 
 Base channel-row height:
 - iOS: **216 pt**;
 - Android: **228 dp**.
 
-This is deliberately denser than the 18 September calibration while preserving three independent production-safe programme targets. Do not compress the following targets below their platform minima.
+The row total remains deliberately unchanged while the 4 pt formerly placed between reference and following content moves to the row bottom. This tightens the visible reference→following sequence without changing channel-position geometry or the three independent production-safe programme targets.
 
 No cards, artwork, extra labels or decorative containers are added to justify the extra geometry.
 
@@ -313,13 +314,15 @@ The reference programme remains the visual anchor for each channel.
 Typography:
 - title: **18/22, Instrument Sans Semibold**;
 - maximum **2 lines**;
-- primary text colour.
+- primary text colour;
+- title block is **bottom-aligned** within the deterministic reference programme height;
+- extra bottom inset: **0 pt**.
 
 No visible end-time metadata is shown in the reference block. In ordinary continuous schedules, the first following programme's start time communicates the same boundary with less repetition.
 
 Live/current state and full start/end time remain present in accessibility semantics. Browse mode likewise keeps the full start/end time available to accessibility and Programme Detail without rendering `tot HH:MM` in the row.
 
-The full reference block is one programme button.
+The full reference block is one programme button. Any two-line known-gap treatment uses the same bottom anchor so switching between programme/gap states does not reintroduce a large visual void before following content.
 
 Do not add progress, genre, artwork, chevron, repeat metadata or a separate 'Nu bezig' badge.
 
@@ -340,16 +343,18 @@ Each following target remains:
 - complete target minimum **44 pt iOS / 48 dp Android**;
 - **0 pt** interaction gap between adjacent targets.
 
-The target geometry is not the visual rhythm. To make the three programmes read as one compact information group while keeping three independent targets:
-- following #1 visible content band is **bottom-biased**, with **2 pt** bottom inset;
-- following #2 visible content band is vertically **centred**;
-- following #3 visible content band is **top-biased**, with **2 pt** top inset.
+Visible content in all three targets is now **vertically centred**. The previous #1 bottom / #2 centre / #3 top bias is superseded.
+
+The compact continuation is created by:
+- bottom-aligning the reference title;
+- removing the reference→following spacer;
+- keeping the first following content centred inside its unchanged safe target.
 
 All visible content remains inside its own Pressable. Touch targets remain adjacent and non-overlapping. No extra separator is added between the three programmes.
 
 ### 11.2 Larger/accessibility text layout — fontScale > 1.35
 
-Do **not** switch automatically to a separate time line above a two-line title. Physical iPhone evidence shows that treatment expands each following target excessively.
+The physically approved Larger Text composition remains frozen.
 
 Primary accessibility composition is an **inline time + title flow**:
 - start time retains **13/18 Regular, textMuted**;
@@ -357,18 +362,14 @@ Primary accessibility composition is an **inline time + title flow**:
 - inline time → title separation: **8 pt**;
 - programme content keeps full Dynamic Type scaling;
 - title may wrap so the combined visible programme occupies maximum **2 lines**;
-- full programme title and start/end times remain available to assistive technology.
+- full programme title and start/end times remain available to assistive technology;
+- content block is vertically **centred** within its target.
 
 Content-safe following target height:
 
 `max(platform minimum touch target, ceil(40 × fontScale + 8))`
 
 The 8-pt term is **4 pt top + 4 pt bottom** content allowance. The time shares the first line with the title and therefore does not reserve a separate vertical line.
-
-The same visual grouping bias applies to grown targets:
-- #1 content block toward the bottom, 2-pt inset;
-- #2 centred;
-- #3 toward the top, 2-pt inset.
 
 ### 11.3 Extreme-width fallback
 
@@ -380,13 +381,14 @@ the target may fall back to stacked time then title:
 - time line first;
 - **3 pt** gap;
 - title maximum 2 lines;
-- 6 pt top + 6 pt bottom content padding.
+- 6 pt top + 6 pt bottom content padding;
+- stacked content block remains vertically centred.
 
 Fallback height:
 
 `max(platform minimum touch target, ceil(18 × fontScale + 3 + 40 × fontScale + 12))`
 
-This is a last-resort width fallback, not the default larger-text mode.
+This remains a last-resort width fallback, not the default Larger Text mode.
 
 ### 11.4 Non-overlap invariant
 
