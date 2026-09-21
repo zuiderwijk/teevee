@@ -73,7 +73,10 @@ export const TotaalProgrammeCell = memo(function TotaalProgrammeCell({
     >
       {microcell ? (
         repeatedTitleRunMember ? null : (
-          <View style={styles.microContent}>
+          <View
+            testID={`totaal-programme-micro-content-${programme.id}`}
+            style={styles.microContent}
+          >
             <Text
               testID={`totaal-programme-micro-${programme.id}`}
               accessible={false}
