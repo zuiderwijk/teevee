@@ -56,6 +56,7 @@ import { TimeAxisLeftMask } from './TimeAxisLeftMask';
 import { TimeAxisTick } from './TimeAxisTick';
 import {
   resolveTotaalSchedulePresentation,
+  TOTAAL_TYPOGRAPHY,
   TOTAAL_VISUAL_METRICS,
   totaalChannelIdentityAccessible,
   totaalChromeCondensedForProgress,
