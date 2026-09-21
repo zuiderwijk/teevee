@@ -11,6 +11,20 @@ Doel: chronologisch, begrijpelijk overzicht van substantiële milestones, verifi
 
 ---
 
+## 21 september 2026 — Guide EPG horizon incident operationally closed
+
+PR #117 merged as `c875922225e27c825fa9b0c6cbde2d08b8d22205`; exact-main CI #839 succeeded. `epg-refresh` was redeployed as live version 6 and protected refresh request 88 completed with HTTP 200 in `guide-horizon` mode. Canonical storage now materialises true 06:00 Europe/Amsterdam television-day windows. Complete D0..D+5 windows were stored for all 12 development channels, while incomplete historical/future windows were correctly skipped without destructive replacement.
+
+Remote Supabase migration history was reconciled to the repository timestamps through `20260921213000_refresh_guide_television_day_horizon.sql`.
+
+Physical iPhone smoke on PR #114 exact head `4c3a2d97c67814d71861298ef8a8d341ad1924c2` passed the original regression: horizontal Vandaag→Morgen browsing and explicit Morgen selection both showed guide data. The first unavailable selected day was 26 September. That is expected with the current Totaal all-or-nothing two-day continuity loader: D+5 itself is complete, but its required following D+6 development-provider window is partial, so the composed Totaal read is unavailable.
+
+Durable evidence: `docs/PHYSICAL_EVIDENCE_2026-09-21_EPG_HORIZON.md`.
+
+**Next step:** continue the broader physical acceptance of open Totaal production-convergence PR #114; do not reopen the EPG horizon correction unless new regression evidence appears.
+
+---
+
 ## 21 september 2026 — PR #116 live rollout exposed epg-refresh BOOT_ERROR
 
 After PR #116 merged and exact-main CI #837 passed, the updated `epg-refresh` Edge Function was deployed as live version 5 and the guide-horizon migration was applied. The first protected one-shot refresh through `teevee.enqueue_development_epg_refresh()` returned request id 87, but `net._http_response` recorded HTTP 503 with `BOOT_ERROR`: the function failed before request-handler logging or EPG ingestion began. No new 06:00 television-day coverage was written; the canonical store therefore still contained the previous calendar-midnight windows.
