@@ -400,6 +400,18 @@ describe('Nu & Straks production interaction boundary', () => {
     });
     expect(container.textContent).not.toContain('Referentietijd');
 
+    const railTargets = [
+      ...container.querySelectorAll<HTMLButtonElement>(
+        'button[data-testid^="now-next-time-slot-"]',
+      ),
+    ];
+    expect(railTargets).toHaveLength(96);
+    expect(
+      railTargets.every((target) =>
+        target.getAttribute('aria-label')?.startsWith('Tijd '),
+      ),
+    ).toBe(true);
+
     expect(getByTestId(container, 'now-next-time-label-56').textContent).toBe(
       '20:00',
     );
