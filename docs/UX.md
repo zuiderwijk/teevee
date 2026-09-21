@@ -105,7 +105,7 @@ Accepted Totaal visual composition (owner-approved 2026-09-21):
 - channel rail is logo-first, has no visible `ZENDER` heading and does not duplicate a readable logo with a visible channel-name caption;
 - channel rail and schedule share one calm canvas with restrained separators rather than card/sidebar surfaces;
 - bottom navigation uses the same shared app-shell structure as Per zender;
-- exact production metrics remain to be frozen in the dedicated Totaal production visual-convergence specification.
+- exact production metrics, responsive rules and physical acceptance criteria are owner-approved in `docs/TOTAAL_VISUAL_CONVERGENCE.md` and become canonical Development authority when that specification is merged to `main`.
 
 ## Per zender — accepted interaction baseline
 Purpose: inspect the schedule of one channel while making adjacent-channel comparison effortless.
