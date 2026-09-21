@@ -1,6 +1,6 @@
 # Teevee Programme Data Strategy
 
-Status: **Phase 4 Core Guide MVP hardening**. Phase 3 completed and physically proved the provider-independent path from external development EPG through canonical hosted persistence/public read into the mobile Guide. Phase 4 now owns television-day-aware loading/navigation, the D-2..D+7 product horizon and multi-day cache/query semantics. Production provider selection and rights remain a later release gate.
+Status: **Phase 5 Search and Discovery**. Phase 3 proved the provider-independent hosted data path and Phase 4 closed the television-day-aware Guide runtime, D-2..D+7 navigation/horizon behaviour and production Guide convergence. The Phase 4 cache decision is to keep the current fixture-first + in-memory runtime fallback and not introduce persistent mobile schedule caching without new measured evidence. Production provider selection/rights remain a later release gate and release-like offline cold-start/persistent-cache validation remains Phase 9.
 
 ## Goal
 Teevee must support the complete core Guide without coupling the mobile experience to one EPG supplier. Replacing the temporary development source with an authorized Bindinc/TVgids or commercial provider must not require a Guide rewrite.
@@ -217,7 +217,7 @@ Proved:
 
 The historical two-calendar-day mobile loader has been superseded by PR #64. The rolling three-calendar-day development refresh buffer remains temporary operational support only.
 
-### Phase 4 — active
+### Phase 4 — closed
 Owns:
 - shared 06:00 television-day primitives and query keys — implemented for the current runtime boundary;
 - D-2..D+7 day selection/navigation in Totaal and Per zender — next;
@@ -227,8 +227,8 @@ Owns:
 - 06:00 television-day rollover and `Nu` behaviour;
 - deterministic fixture support under the same semantics;
 - context-preserving refresh/day changes;
-- realistic payload/render/performance measurement before selecting persistent cache technology;
-- explicit offline/stale-cache behaviour as persistent caching is introduced later.
+- realistic payload/render/performance measurement before selecting persistent cache technology — completed for the observed cold Guide bottleneck; evidence pointed to render/mount cost rather than cache/network;
+- explicit offline/stale-cache behaviour remains a later release-like hardening concern if persistent caching is introduced.
 
 ### Phase 8 — production provider / rights
 The production EPG provider must prove:
@@ -249,11 +249,11 @@ Preferred production target remains 14 days forward when the eventual licensed p
 The temporary development feed was observed to expose roughly one week in September 2026. That is development evidence only and cannot satisfy or prove the production contract by itself.
 
 ## Persistent cache/offline
-Persistent mobile schedule caching is not selected yet.
+Persistent mobile schedule caching was **not selected at Phase 4 closeout**. The measured cold Guide bottleneck was render/mount work, not network/cache, and it was addressed with bounded rendering rather than a persistence layer.
 
-Do not add SQLite, TanStack Query or another server-state/cache framework before measuring the television-day query pattern, payload sizes and realistic D-2..D+7 access behaviour. AppPreferences remains a small-settings layer and must not become schedule storage.
+Do not add SQLite, TanStack Query or another server-state/cache framework without new measured product/reliability evidence. AppPreferences remains a small-settings layer and must not become schedule storage.
 
-Current graceful degradation uses deterministic fixture-first rendering and preserves existing usable runtime state across failed refreshes. A true no-network cold start remains a release-like standalone/dev-build gate because Expo Go itself requires Metro/network after force-quit.
+Current graceful degradation uses deterministic fixture-first rendering and preserves existing usable runtime state across failed refreshes. The MVP product requirement for local caching/graceful offline fallback remains a release requirement; a true no-network cold start and any concrete persistent-cache technology decision remain a release-like Phase 9 standalone/dev-build gate because Expo Go itself requires Metro/network after force-quit.
 
 ## Updates and corrections
 - only `complete` batches may destructively replace canonical windows;
