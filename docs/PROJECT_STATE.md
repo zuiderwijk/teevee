@@ -1,9 +1,9 @@
 # Teevee — Canonical Project State
 
 Last updated: 2026-09-21.
-Status: ACTIVE — **Phase 4 Core Guide MVP hardening**.
-Current phase: **Phase 4 — Core Guide MVP hardening**
-Previous phase: **Phase 3 — Real Data Vertical Slice — CLOSED**
+Status: ACTIVE — **Phase 5 Search and Discovery**.
+Current phase: **Phase 5 — Search and Discovery**
+Previous phase: **Phase 4 — Core Guide MVP hardening — CLOSED**
 
 > Mandatory start point for every development-agent session. Read `AGENTS.md` and this file before changing the repository. Historical implementation detail belongs in Git history, `DEVLOG.md`, accepted PRs/issues and timestamped evidence documents; this file stays focused on current canonical state and the single next step.
 
@@ -23,7 +23,8 @@ Previous phase: **Phase 3 — Real Data Vertical Slice — CLOSED**
 2. **Phase 1B — Per zender / Nu & Straks:** complete and physically accepted on iPhone.
 3. **Phase 2 — App Shell:** complete and physically accepted on iPhone.
 4. **Phase 3 — Real Data Vertical Slice:** complete and physically accepted on iPhone. Real provider -> hosted ingest -> canonical persistence -> public typed read -> mobile canonical datasource is proven, including fixture-first startup, real-data transition, fallback and context retention.
-5. **Phase 4 — Core Guide MVP hardening:** active. The 06:00 television-day foundation, television-day-aware runtime, D-2..D+7 day navigation/date context, measured Totaal cold-switch performance hardening, Per-zender production convergence, Programme Detail production convergence and Nu & Straks production convergence are merged. Nu & Straks final runtime head `f7e88a4a2cb3a212d59a4827e7f28c1e2e665975` passed exact-head CI, owner physical iPhone validation and Independent QA before merge through PR #96. Physical Android interaction acceptance remains deferred until Android hardware is available.
+5. **Phase 4 — Core Guide MVP hardening:** **CLOSED**. The 06:00 television-day foundation, television-day-aware runtime, D-2..D+7 navigation/date context, measured Totaal performance hardening, Per-zender production convergence, Programme Detail production convergence and Nu & Straks production convergence are merged and physically accepted on iPhone. The final Nu & Straks runtime head `f7e88a4a2cb3a212d59a4827e7f28c1e2e665975` passed exact-head CI, owner physical iPhone validation and Independent QA before merge through PR #96; exact-main CI #754 and the docs closeout exact-main CI #758 succeeded. The Phase 4 cache decision is **no persistent mobile schedule cache now**: measurement showed the dominant cold Guide cost was render/mount work rather than network/cache, and no separate measured offline requirement justifies SQLite/TanStack Query/server-state persistence at this stage. Fixture-first rendering plus preservation of usable in-memory runtime state remains the current graceful degradation. True no-network cold start and any persistent-cache technology decision remain a release-like Phase 9 gate. Physical Android interaction acceptance remains deferred until Android hardware is available.
+6. **Phase 5 — Search and Discovery:** active. Deliver Search first. Add Tonight only after its value and data requirements are clear; do not turn it into editorial/news or infinite-engagement scope.
 
 ## Frozen television-day and Guide-horizon semantics
 ADR 0008 is canonical:
@@ -131,10 +132,11 @@ Focused PR #74 physical proof before the final animated-`Nu` correction:
 
 Independent QA then found one blocking animated same-window `Nu` ownership case. Development corrected it so animated programmatic scrolling leaves programme-window ownership tied to actual native scroll offsets. QA re-reviewed the final exact head with the blocker closed. Final focused physical iPhone acceptance passed Totaal day-switch responsiveness, animated same-window `Nu` continuity, hard horizontal fling/bounce and normal Guide scrolling. No persistent cache, eager horizon prefetch, provider/data-contract change, new dependency or full FlatList/FlashList virtualization was introduced.
 
-## Remaining Phase 4 responsibilities
-- decide local schedule persistence/cache only if measured MVP/offline requirements justify it; do not add it speculatively;
-- preserve schedule refresh/date/channel/time context and deterministic fixture fallback;
-- physical Android interaction acceptance remains open/deferred until an Android device is available.
+## Phase 4 closeout
+- no persistent mobile schedule cache is selected for Phase 4; issue #67/#70/#73 evidence identified render/mount work rather than network/cache as the dominant cold Guide bottleneck, and the accepted bounded-rendering fixes resolved that path without cache/prefetch architecture;
+- current graceful degradation remains deterministic fixture-first rendering plus preservation of usable in-memory runtime schedule state across failed refreshes;
+- PRODUCT's MVP-level local caching/graceful-offline requirement remains a release requirement, but true no-network cold start and the concrete persistence technology decision are deferred to release-like Phase 9 evidence outside Expo Go;
+- physical Android interaction acceptance remains open/deferred until an Android device is available and is not represented as passed.
 
 ## Canonical visual handoff
 `docs/VISUAL_BASELINE.md`, `design/current/` and the accepted Guide visual-convergence documentation are the source of truth for visual implementation. Current runtime appearance is not automatically the accepted visual target. Do not mix unapproved brand explorations into production implementation.
@@ -155,9 +157,9 @@ Physical Android interaction acceptance remains OPEN/DEFERRED because no Android
 - physical Android validation.
 
 ## EXACT NEXT STEP
-**Perform the Phase 4 closeout decision on local schedule persistence/cache. First establish whether a measured MVP/offline requirement actually justifies persistence beyond the current deterministic fixture-first + hosted canonical runtime. If there is no measured requirement, explicitly close Phase 4 without adding cache complexity. Preserve the now-merged Totaal, Per-zender, Programme Detail and Nu & Straks production baselines. Physical Android interaction validation remains a documented deferred device gate, not a reason to represent Android as physically accepted.**
+**Start Phase 5 with Search. First inspect the existing domain/API/runtime boundaries and accepted UX/product constraints, then define the smallest production Search vertical slice for programmes and channels without coupling Search to provider-specific IDs, editorial/news content, mandatory accounts or Tonight. Preserve all frozen Guide behaviour and do not reopen the completed Phase 4 cache decision without new measured evidence.**
 
 Owner checkout: `~/projects/teevee`.
 
 ## Resume instruction
-> Read `AGENTS.md`, this file, `docs/ENGINEERING_QUALITY_POLICY.md`, ADR 0007, ADR 0008 and the relevant accepted visual handoff before changing the repository. Phase 1A, Phase 1B, Phase 2 and Phase 3 are closed on iPhone. Phase 4 is active but the Guide production-convergence work is now merged: Per-zender is closed through PR #88/#89, Programme Detail through PR #92 and Nu & Straks through PR #96. Nu & Straks final exact runtime head `f7e88a4a2cb3a212d59a4827e7f28c1e2e665975` passed physical iPhone validation and Independent QA before merge commit `b0df0cc08f565aa1a36edf794e60ced0f391f67c`. Do not reopen accepted Guide visual/layout/gesture contracts without concrete regression evidence. The remaining Phase 4 decision is whether measured MVP/offline requirements justify local schedule persistence/cache; otherwise close Phase 4 without speculative caching. Physical Android interaction validation remains deferred until Android hardware is available.
+> Read `AGENTS.md`, this file, `docs/PRODUCT.md`, `docs/UX.md`, `docs/ARCHITECTURE.md`, `docs/DATA.md`, `docs/ENGINEERING_QUALITY_POLICY.md` and the relevant ADRs before changing the repository. Phase 4 is CLOSED on iPhone: Totaal performance hardening, Per-zender, Programme Detail and Nu & Straks production convergence are merged. Persistent mobile schedule caching was explicitly not selected at Phase 4 closeout because measured evidence did not justify it; current fallback remains fixture-first plus preserved in-memory runtime state, while true offline cold-start/persistence is deferred to Phase 9 release-like hardening. Phase 5 is active. Deliver Search first; Tonight remains later within Phase 5 only after its value/data requirements are clear. Preserve the accepted Guide visual/layout/gesture/data contracts and the provider-independent domain boundary. Physical Android interaction validation remains deferred until Android hardware is available.
