@@ -99,19 +99,6 @@ export function nowNextFollowingLayoutMode(fontScale: number) {
   return normalizedFontScale(fontScale) > 1.35 ? 'stacked' : 'horizontal';
 }
 
-export function nowNextRailSlotDecoration(index: number) {
-  const major = index % 2 === 0;
-  return {
-    showLabel: major,
-    tickWidth: major
-      ? NOW_NEXT_VISUAL_METRICS.majorTickWidth
-      : NOW_NEXT_VISUAL_METRICS.quarterTickWidth,
-    tickHeight: major
-      ? NOW_NEXT_VISUAL_METRICS.majorTickHeight
-      : NOW_NEXT_VISUAL_METRICS.quarterTickHeight,
-  } as const;
-}
-
 export function nowNextMinimumTouchTarget(platform: string) {
   return platform === 'android'
     ? GUIDE_VISUAL_METRICS.minimumTouchTarget
