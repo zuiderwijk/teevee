@@ -1,6 +1,7 @@
 import { TEEVEE_FONT_FAMILIES } from '@/theme/typography';
 
 export const COMPACT_GUIDE_MAX_FONT_SIZE_MULTIPLIER = 1.2;
+export const GUIDE_ACCESSIBILITY_FONT_SCALE_THRESHOLD = 1.35;
 
 export const GUIDE_VISUAL_METRICS = {
   screenInsetX: 20,
@@ -8,6 +9,7 @@ export const GUIDE_VISUAL_METRICS = {
   brandMarkBoxWidth: 56,
   brandMarkBoxHeight: 44,
   presentationNavHeight: 48,
+  presentationNavAccessibilityHeight: 64,
   chromeCollapseTranslateY: 12,
   presentationIndicatorWidth: 88,
   presentationIndicatorHeight: 2.5,
@@ -118,6 +120,35 @@ export const GUIDE_TYPOGRAPHY = {
     lineHeight: 22,
   },
 } as const;
+
+
+export function guideUsesAccessibilityChrome(fontScale: number) {
+  'worklet';
+  const scale =
+    Number.isFinite(fontScale) && fontScale > 0 ? Math.max(1, fontScale) : 1;
+  return scale > GUIDE_ACCESSIBILITY_FONT_SCALE_THRESHOLD;
+}
+
+export function guidePresentationNavigationMetrics(fontScale: number) {
+  'worklet';
+  const accessibility = guideUsesAccessibilityChrome(fontScale);
+  return {
+    accessibility,
+    height: accessibility
+      ? GUIDE_VISUAL_METRICS.presentationNavAccessibilityHeight
+      : GUIDE_VISUAL_METRICS.presentationNavHeight,
+    maxLines: accessibility ? 2 : 1,
+  } as const;
+}
+
+export function guideChromeExpandedHeight(fontScale: number) {
+  'worklet';
+  return (
+    GUIDE_VISUAL_METRICS.brandTopInset +
+    GUIDE_VISUAL_METRICS.brandMarkBoxHeight +
+    guidePresentationNavigationMetrics(fontScale).height
+  );
+}
 
 export function minimumTouchTargetForPlatform(platform: string) {
   return platform === 'android'
