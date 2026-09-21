@@ -12,6 +12,7 @@ import {
   nowNextFollowingContentBias,
   nowNextFollowingLayoutMode,
   nowNextFollowingSlotHeight,
+  nowNextFollowingStackedContentPadding,
   nowNextFollowingTargetRects,
   nowNextMinimumTouchTarget,
   nowNextProgrammePressBackgroundColor,
@@ -125,6 +126,35 @@ describe('Nu & Straks deterministic channel geometry', () => {
       }
     },
   );
+
+  it('keeps extreme fallback bias inside the canonical 12-pt padding budget', () => {
+    const bottomBias = nowNextFollowingContentBias(0);
+    const centreBias = nowNextFollowingContentBias(1);
+    const topBias = nowNextFollowingContentBias(2);
+    const bottomStack = nowNextFollowingStackedContentPadding(0);
+    const centreStack = nowNextFollowingStackedContentPadding(1);
+    const topStack = nowNextFollowingStackedContentPadding(2);
+
+    expect(
+      bottomStack.paddingTop +
+        bottomStack.paddingBottom +
+        bottomBias.paddingBottom,
+    ).toBe(12);
+    expect(
+      centreStack.paddingTop +
+        centreStack.paddingBottom +
+        centreBias.paddingTop +
+        centreBias.paddingBottom,
+    ).toBe(12);
+    expect(
+      topStack.paddingTop + topStack.paddingBottom + topBias.paddingTop,
+    ).toBe(12);
+
+    const scale = 2.1;
+    const targetHeight = nowNextFollowingSlotHeight('ios', scale, 179);
+    const visibleContentHeight = Math.ceil(18 * scale + 3 + 40 * scale);
+    expect(targetHeight - visibleContentHeight).toBeGreaterThanOrEqual(12);
+  });
 
   it('biases visible following content without changing or escaping target geometry', () => {
     expect(nowNextFollowingContentBias(0)).toEqual({
