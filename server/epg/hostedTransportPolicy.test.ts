@@ -77,6 +77,29 @@ describe('parseHostedGuideScheduleRequest', () => {
 });
 
 describe('parseHostedRefreshRequest', () => {
+  it('accepts server-derived Guide-horizon refresh without caller-owned time windows', () => {
+    expect(
+      parseHostedRefreshRequest(
+        { mode: 'guide-horizon', providerChannelIds: [' RTL4.nl ', 'RTL4.nl'] },
+        providerIds,
+      ),
+    ).toEqual({
+      mode: 'guide-horizon',
+      providerChannelIds: ['RTL4.nl'],
+    });
+
+    expect(() =>
+      parseHostedRefreshRequest(
+        {
+          mode: 'guide-horizon',
+          from: '2026-09-21T04:00:00Z',
+          to: '2026-09-22T04:00:00Z',
+        },
+        providerIds,
+      ),
+    ).toThrow('derives its own television-day windows');
+  });
+
   it('defaults to the allow-listed provider scope and canonicalises timestamps', () => {
     expect(
       parseHostedRefreshRequest(
@@ -87,6 +110,7 @@ describe('parseHostedRefreshRequest', () => {
         providerIds,
       ),
     ).toEqual({
+      mode: 'window',
       from: '2026-09-13T22:00:00.000Z',
       to: '2026-09-14T22:00:00.000Z',
       providerChannelIds: ['NPO1.nl', 'RTL4.nl'],
