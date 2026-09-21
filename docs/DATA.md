@@ -181,11 +181,13 @@ Those bounded windows are compatible with individual television-day requests. Ph
 - trusted refresh may use the server secret-key route or the validated scheduled-refresh token.
 
 ### Automatic development refresh
-A server-side `pg_cron` + `pg_net` job runs every six hours and refreshes a rolling three-calendar-day Amsterdam development buffer: current day, tomorrow and one rollover day.
+A server-side `pg_cron` + `pg_net` job runs every six hours. The cron requests one protected `guide-horizon` refresh; the Edge Function derives independent **06:00 Europe/Amsterdam television-day windows** from D-3 through D+8. D-2..D+7 remains the selectable product horizon; D-3/D+8 are backend safety buffers only.
+
+The XMLTV document is fetched and parsed once per refresh request, then reused across the independent windows. Each window still passes through the normal provider `complete | partial` classification and ADR 0007 replacement semantics. Partial windows are skipped and therefore cannot fabricate canonical coverage or erase previously retained authoritative history.
 
 The dedicated cron token is generated/stored encrypted in Supabase Vault; the real Supabase secret key stays inside the Edge Function environment.
 
-The buffer currently supports the development runtime's bounded D + D+1 television-day reads around midnight/06:00. It does **not** define the final product horizon and does not prove that the temporary feed can satisfy D+7 or historical D-2 in production.
+The former implementation refreshed three **calendar-midnight** windows. That could leave a 06:00 television-day query only partially covered even while overlapping programme rows existed. The 2026-09-21 investigation and correction are recorded in `docs/EPG_HORIZON_INVESTIGATION_2026-09-21.md`.
 
 ## Mobile runtime source
 The mobile boundary currently provides:
@@ -246,7 +248,7 @@ Backend storage/cache should retain a safety buffer beyond the visible guarantee
 
 Preferred production target remains 14 days forward when the eventual licensed provider supports it. That is headroom, not a replacement for the D-2 historical guarantee.
 
-The temporary development feed was observed to expose roughly one week in September 2026. That is development evidence only and cannot satisfy or prove the production contract by itself.
+The temporary development feed does **not** satisfy the full product horizon. A live 2026-09-21 inspection across all 12 mapped development channels found complete 06:00 television-day coverage only for **D0 through D+5**. D-2/D-1 were absent from the current feed payload and D+6/D+7 were incomplete. Canonical storage can retain already-ingested historical D-2/D-1 data because partial refreshes are non-destructive, but no backend windowing change can manufacture missing future D+6/D+7 provider data. Production provider selection must therefore prove the full D-2..D+7 guarantee independently.
 
 ## Persistent cache/offline
 Persistent mobile schedule caching was **not selected at Phase 4 closeout**. The measured cold Guide bottleneck was render/mount work, not network/cache, and it was addressed with bounded rendering rather than a persistence layer.
