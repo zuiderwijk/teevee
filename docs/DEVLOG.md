@@ -11,6 +11,22 @@ Doel: chronologisch, begrijpelijk overzicht van substantiële milestones, verifi
 
 ---
 
+## 21 september 2026 — Totaal mount-time Reanimated worklet contract fix
+
+Focused physical iPhone revalidation still failed on exact head `3a50e2a39fefce80e7981f853735c85174593aff`: switching from another Guide presentation to Totaal continued to terminate the app immediately. The previously added horizontal single-source ownership state machine remains technically valid and is intentionally unchanged, but device evidence showed that reciprocal scroll ownership was not the direct mount-time termination cause.
+
+Lead then identified a concrete Reanimated UI-thread contract violation on the unconditional Totaal mount path. `GuideView` creates `currentMarkerBodyStyle` with `useAnimatedStyle`, which synchronously calls `totaalCurrentTimeMarkerBodyX()`. That pure helper lacked an explicit `'worklet';` directive even though it executes on the UI thread. Development added only that directive; marker geometry and return values are unchanged. The existing deterministic marker-geometry test now also guards that the helper remains explicitly workletized.
+
+The complete Totaal UI-thread call-chain audit covered `useAnimatedStyle`, `useAnimatedReaction` and `useAnimatedScrollHandler` paths in `GuideView`, `EdgeReadabilityOverlay`, `TimeAxisLeftMask` and shared `GuideChrome`. All other synchronous helper chains were already worklet-safe: `totaalStableScrollVisuals` → `guideChromeExpandedHeight` → `guidePresentationNavigationMetrics` → `guideUsesAccessibilityChrome`; `totaalCollapseProgressForScrollOffset`; `totaalChromeCondensedForProgress`; every horizontal-ownership helper including their nested idle-owner calls; `clippedTimeAxisLabelWidth` → `centredTimeAxisLabelLeft`; and `edgeBoundaryBucket`. Reanimated `scrollTo` and `scheduleOnRN` remain the intended UI/native and UI→RN bridges. No second non-worklet synchronous helper call was found.
+
+Runtime/test head `cea16ddc551a80d30aa4b63d51e15106d34c2726` passed CI #814: npm ci, strict TypeScript, lint, **67 test files / 487 tests**, and iOS/Android/web Expo export. The runtime-ui classifier correctly skipped the native/config Android job. No visual metric, current-marker geometry, horizontal ownership behaviour, collapse/Reduce Motion, programme-windowing parameter, ChannelIdentity, Per-zender/Nu & Straks contract or canonical design/spec changed.
+
+Green CI does not prove this native worklet failure class. Physical iPhone acceptance therefore remains **FAILED/CLOSED** until Lead reviews the exact final PR head and switching to Totaal is revalidated on-device. If termination persists after this targeted fix, the next diagnostic step is native crash-log capture rather than another speculative runtime change.
+
+**Next step:** Lead exact-head review followed by focused physical iPhone revalidation; do not merge and do not request Independent QA before physical PASS.
+
+---
+
 ## 21 september 2026 — Totaal physical iPhone crash: horizontal ownership fix candidate
 
 Physical iPhone validation of PR #114 exact head `397fc54e3695a45d72442c0b7c15c38b5e29a1b7` failed immediately when switching to Totaal: the app terminated before visual validation could begin. Lead traced the highest-confidence runtime cause to reciprocal native horizontal mirroring between the independently draggable programme schedule and sticky time axis: each surface treated every `onScroll`, including the peer's programmatic mirror event, as authoritative and immediately scrolled the other surface back.
