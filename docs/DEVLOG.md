@@ -11,6 +11,34 @@ Doel: chronologisch, begrijpelijk overzicht van substantiële milestones, verifi
 
 ---
 
+## 21 september 2026 — PR #96 Independent QA correctness fixes
+
+Independent QA on exact head `ea2c45d65837903724684a7cd99c77314ef9a2d3` found two implementation correctness blockers without reopening any accepted Nu & Straks visual/layout contract.
+
+Live mode now keeps the rail spatially coherent as the Guide clock advances. The exact semantic live reference continues to follow the actual minute, while a dedicated last-live-centred slot ref recentres the rail once when the nearest quarter-hour target changes. Repeated clock ticks inside the same target do not scroll again. Native drag switches live ownership off synchronously before state reconciliation, so clock advancement cannot fight a user drag or native momentum; direct slot/Nu/Primetime behaviour and the no-secondary-scrollTo settle contract remain unchanged. Nu tests freeze `Date.now()` to the injected Guide clock and now cover both same-television-day restore and a cross-06:00 restore deterministically.
+
+When a previously established channel catalogue is retained during schedule unavailability, each retained channel identity now exposes its full `displayName` to VoiceOver/TalkBack because no programme actions are present to carry that identity. Normal schedule-present rows keep their existing non-redundant treatment: channel identity remains excluded as a separate accessibility focus stop while programme actions include the full channel name. The single calm unavailable-state message and no-fabricated-programme contract remain unchanged.
+
+Regression coverage now includes live 20:17 -> 20:23 nearest-quarter recentering exactly once, no repeat recenter inside the same target, exact programme advancement while the target stays unchanged, live->browse cancellation before momentum settles, deterministic Nu restore, retained-channel accessibility in the unavailable state, absence of redundant channel focus stops in normal rows and the real `ChannelIdentity` accessible/non-accessible contract.
+
+**Verification:** exact-head CI is required before re-gating. **Next step:** Lead exact-head review, focused physical iPhone validation of live boundary recentering and VoiceOver retained-channel discovery, then Independent QA re-review of these two blockers. Do not merge before those gates pass.
+
+---
+
+## 21 september 2026 — PR #96 implements final standard-text following density
+
+Existing runtime PR #96 is reconciled with canonical `main` `957125a607dac7d69b46cdfb87618c568ed09044`, preserving the PR #104 design/docs baseline exactly.
+
+Runtime changes are limited to the standard-text following-list content placement requested by the final Lead handoff. At fontScale <=1.35 the existing 44-pt iOS / 48-dp Android following Pressables remain adjacent and non-overlapping, while the one-line visible content uses `visibleSlack = targetHeight - 20` with progressive top offsets of 2/3, 1/3 and 0. This resolves to **16 / 8 / 0 pt on iOS** and **19 / 9 / 0 dp on Android**. The content remains inside its own target. Above fontScale 1.35 no offset is applied: the already physically accepted inline accessibility and extreme stacked fallback compositions remain vertically centred and keep their existing height formulas.
+
+All other accepted Nu & Straks behaviour and geometry remain unchanged, including the 64-pt bottom-aligned reference block, 0-pt reference→following gap, 12-pt channel bottom padding, 216/228 base row totals, 52+52=104 functional stack, rail-bottom `railTick`, 15-minute rail semantics, native momentum ownership, vertical context preservation, Programme Detail round-trip, Per-zender shell reconciliation, unavailable-data behaviour and deferred loading.
+
+Deterministic coverage now locks the 16/8/0 and 19/9/0 standard offsets, content containment through fontScale 1.35, adjacent 44/48-safe target rects, and centred Larger Text behaviour without changing the frozen row/layout formulas.
+
+**Verification:** exact-head CI is required before handoff. **Next step:** Lead exact-head re-review, then one focused physical iPhone recheck of following-list density plus minimal regression smoke. Independent QA remains blocked until physical PASS.
+
+---
+
 ## 21 september 2026 — Nu & Straks final standard-text following density micro-refinement
 
 Physical iPhone review of PR #96 exact head `3cafcc6bee996eb1923549bb3b65fdabb6666262` accepted the final reference-time removal, rail-bottom treatment, dark mode, Larger Text, 15-minute rail/ticks, Nu/Primetime, vertical channel-position preservation and the tightened reference→first-following transition. One visual issue remained: at standard text, following #1→#2 and #2→#3 still read too loose because each one-line content block was centred in its independent 44-pt iOS / 48-dp Android Pressable.

@@ -1,6 +1,6 @@
 import { useRouter } from 'expo-router';
 import { type ReactNode, memo } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 import Animated, { type SharedValue, useAnimatedStyle } from 'react-native-reanimated';
 
 import { useTeeveeTheme } from '@/theme/useTeeveeTheme';
@@ -9,13 +9,9 @@ import {
   COMPACT_GUIDE_MAX_FONT_SIZE_MULTIPLIER,
   GUIDE_TYPOGRAPHY,
   GUIDE_VISUAL_METRICS,
-  PER_CHANNEL_VISUAL_METRICS,
+  guideChromeExpandedHeight,
+  guidePresentationNavigationMetrics,
 } from './guideVisualMetrics';
-
-const EXPANDED_CHROME_HEIGHT =
-  GUIDE_VISUAL_METRICS.brandTopInset +
-  GUIDE_VISUAL_METRICS.brandMarkBoxHeight +
-  GUIDE_VISUAL_METRICS.presentationNavHeight;
 
 type GuideChromeProps = {
   condensed: boolean;
@@ -39,14 +35,17 @@ export const GuideChrome = memo(function GuideChrome({
 }: GuideChromeProps) {
   const router = useRouter();
   const theme = useTeeveeTheme();
+  const { fontScale = 1 } = useWindowDimensions();
+  const expandedChromeHeight = guideChromeExpandedHeight(fontScale);
+  const presentationNavigationMetrics = guidePresentationNavigationMetrics(fontScale);
 
   const expandedStyle = useAnimatedStyle(() => {
     const progress = Math.min(1, Math.max(0, collapseProgress.value));
     return {
-      height: EXPANDED_CHROME_HEIGHT * (1 - progress),
+      height: expandedChromeHeight * (1 - progress),
       opacity: 1 - progress,
       transform: [
-        { translateY: -PER_CHANNEL_VISUAL_METRICS.collapseTranslateY * progress },
+        { translateY: -GUIDE_VISUAL_METRICS.chromeCollapseTranslateY * progress },
       ],
     };
   });
@@ -101,7 +100,14 @@ export const GuideChrome = memo(function GuideChrome({
             </Pressable>
           </View>
         </View>
-        <View style={styles.presentationNavigation}>{presentationNavigation}</View>
+        <View
+          style={[
+            styles.presentationNavigation,
+            { height: presentationNavigationMetrics.height },
+          ]}
+        >
+          {presentationNavigation}
+        </View>
       </Animated.View>
     </View>
   );

@@ -57,7 +57,7 @@ import {
   perChannelSafeAreaLayout,
   perChannelScheduleOffsetForNativeOffset,
   perChannelSelectedScheduleHeight,
-  PER_CHANNEL_STABLE_SCROLL_GEOMETRY,
+  perChannelStableScrollGeometry,
   perChannelStableScrollVisuals,
   type PerChannelProgrammeRow,
   programmesForChannelDay,
@@ -390,7 +390,12 @@ export const PerChannelGuideView = memo(function PerChannelGuideView({
     ],
   );
   const scheduleHeight = perChannelSelectedScheduleHeight(selectedRows);
-  const safeAreaLayout = perChannelSafeAreaLayout(safeAreaInsets.top);
+  const perChannelScrollGeometry =
+    perChannelStableScrollGeometry(effectiveFontScale);
+  const safeAreaLayout = perChannelSafeAreaLayout(
+    safeAreaInsets.top,
+    effectiveFontScale,
+  );
   const referenceInset = viewportReferenceInset(effectiveFontScale);
   const selectedRowsRef = useRef(selectedRows);
   const referenceInsetRef = useRef(referenceInset);
@@ -568,6 +573,7 @@ export const PerChannelGuideView = memo(function PerChannelGuideView({
       {
         translateY: perChannelStableScrollVisuals(
           collapseProgress.value,
+          effectiveFontScale,
         ).contentTranslateY,
       },
     ],
@@ -860,7 +866,7 @@ export const PerChannelGuideView = memo(function PerChannelGuideView({
           { top: safeAreaLayout.scheduleViewportTop },
         ]}
         contentContainerStyle={{
-          minHeight: PER_CHANNEL_STABLE_SCROLL_GEOMETRY.contentTopInset + scheduleHeight,
+          minHeight: perChannelScrollGeometry.contentTopInset + scheduleHeight,
         }}
       >
         <Animated.View
@@ -868,11 +874,17 @@ export const PerChannelGuideView = memo(function PerChannelGuideView({
             styles.scheduleContent,
             scheduleContentStyle,
             {
-              minHeight: PER_CHANNEL_STABLE_SCROLL_GEOMETRY.contentTopInset + scheduleHeight,
+              minHeight: perChannelScrollGeometry.contentTopInset + scheduleHeight,
             },
           ]}
         >
-          <View pointerEvents="none" style={styles.scheduleTopInset} />
+          <View
+            pointerEvents="none"
+            style={[
+              styles.scheduleTopInset,
+              { height: perChannelScrollGeometry.contentTopInset },
+            ]}
+          />
         {programmeStatus ? (
           <View
             testID={`per-channel-programme-state-${programmeStatus}`}
@@ -942,9 +954,7 @@ const styles = StyleSheet.create({
   scheduleContent: {
     width: '100%',
   },
-  scheduleTopInset: {
-    height: PER_CHANNEL_STABLE_SCROLL_GEOMETRY.contentTopInset,
-  },
+  scheduleTopInset: {},
   channelStripFrame: {
     flexGrow: 0,
     overflow: 'hidden',

@@ -8,6 +8,7 @@ export type TeeveeTheme = {
     textSecondary: string;
     textMuted: string;
     border: string;
+    railTick: string;
     accent: string;
     currentTime: string;
     programme: string;
@@ -25,6 +26,7 @@ export const lightTheme: TeeveeTheme = {
     textSecondary: '#565656',
     textMuted: '#7A7A78',
     border: '#E4E4E0',
+    railTick: '#80807A',
     accent: '#202020',
     currentTime: '#D64B42',
     programme: '#EFEFEB',
@@ -42,6 +44,7 @@ export const darkTheme: TeeveeTheme = {
     textSecondary: '#C2C2BD',
     textMuted: '#8E8E88',
     border: '#30302D',
+    railTick: '#72726B',
     accent: '#F4F4F1',
     currentTime: '#F06B61',
     programme: '#242422',

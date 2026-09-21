@@ -4,6 +4,7 @@ import {
   currentProgrammeRowHeight,
   GUIDE_VISUAL_METRICS,
   PER_CHANNEL_VISUAL_METRICS,
+  guideChromeExpandedHeight,
   standardProgrammeRowHeight,
 } from './guideVisualMetrics';
 
@@ -192,49 +193,50 @@ export function perChannelFunctionalGapsForCollapseProgress(progress: number) {
   } as const;
 }
 
-const GUIDE_CHROME_EXPANDED_HEIGHT =
-  GUIDE_VISUAL_METRICS.brandTopInset +
-  GUIDE_VISUAL_METRICS.brandMarkBoxHeight +
-  GUIDE_VISUAL_METRICS.presentationNavHeight;
-
 /**
  * Keep the native vertical ScrollView viewport fixed while Per-zender chrome
  * visually converges from its rest stack to the condensed stack.
  *
- * The rest -> condensed visual stack contracts by 140 pt:
- * - Guide chrome: 100 -> 0
- * - channel rail: 72 -> 60
- * - rail -> context gap: 4 -> 0
- * - context -> schedule gap: 24 -> 0
- *
- * Native scroll advances only 56 pt over that same collapse. The remaining
- * 84 pt therefore has to be a visual content transform, never a normal-flow
- * layout mutation above the active ScrollView.
+ * The native collapse is always 56 pt. Shared Guide presentation tabs add
+ * 16 pt only to the expanded visual stack above fontScale 1.35, so the visual
+ * compensation becomes 84 pt standard and 100 pt in accessibility mode.
  */
-export const PER_CHANNEL_STABLE_SCROLL_GEOMETRY = {
-  viewportTop:
-    PER_CHANNEL_VISUAL_METRICS.channelStripCondensedHeight +
-    PER_CHANNEL_VISUAL_METRICS.stickyContextHeight,
-  contentTopInset:
-    GUIDE_CHROME_EXPANDED_HEIGHT +
+export function perChannelStableScrollGeometry(fontScale = 1) {
+  const expandedGuideChromeHeight = guideChromeExpandedHeight(fontScale);
+  const chromeDelta =
+    expandedGuideChromeHeight +
     (PER_CHANNEL_VISUAL_METRICS.channelStripHeight -
       PER_CHANNEL_VISUAL_METRICS.channelStripCondensedHeight) +
     PER_CHANNEL_VISUAL_METRICS.stripToUtilitiesGap +
-    PER_CHANNEL_VISUAL_METRICS.utilityToScheduleGap,
-  scrollCompensation:
-    GUIDE_CHROME_EXPANDED_HEIGHT +
-    (PER_CHANNEL_VISUAL_METRICS.channelStripHeight -
-      PER_CHANNEL_VISUAL_METRICS.channelStripCondensedHeight) +
-    PER_CHANNEL_VISUAL_METRICS.stripToUtilitiesGap +
-    PER_CHANNEL_VISUAL_METRICS.utilityToScheduleGap -
-    PER_CHANNEL_VISUAL_METRICS.collapseDistance,
-} as const;
+    PER_CHANNEL_VISUAL_METRICS.utilityToScheduleGap;
 
-export function perChannelVisibleStackGeometry(progress: number) {
+  return {
+    viewportTop:
+      PER_CHANNEL_VISUAL_METRICS.channelStripCondensedHeight +
+      PER_CHANNEL_VISUAL_METRICS.stickyContextHeight,
+    contentTopInset: chromeDelta,
+    scrollCompensation:
+      chromeDelta - PER_CHANNEL_VISUAL_METRICS.collapseDistance,
+  } as const;
+}
+
+export const PER_CHANNEL_STABLE_SCROLL_GEOMETRY =
+  perChannelStableScrollGeometry(1);
+
+export function perChannelVisibleStackGeometry(
+  progress: number,
+  fontScale = 1,
+) {
   'worklet';
   const clamped = Math.min(1, Math.max(0, progress));
   const gaps = perChannelFunctionalGapsForCollapseProgress(clamped);
-  const guideChromeHeight = GUIDE_CHROME_EXPANDED_HEIGHT * (1 - clamped);
+  const expandedGuideChromeHeight =
+    GUIDE_VISUAL_METRICS.brandTopInset +
+    GUIDE_VISUAL_METRICS.brandMarkBoxHeight +
+    (Number.isFinite(fontScale) && Math.max(1, fontScale) > 1.35
+      ? GUIDE_VISUAL_METRICS.presentationNavAccessibilityHeight
+      : GUIDE_VISUAL_METRICS.presentationNavHeight);
+  const guideChromeHeight = expandedGuideChromeHeight * (1 - clamped);
   const channelStripHeight =
     PER_CHANNEL_VISUAL_METRICS.channelStripHeight -
     (PER_CHANNEL_VISUAL_METRICS.channelStripHeight -
@@ -259,14 +261,28 @@ export function perChannelVisibleStackGeometry(progress: number) {
   } as const;
 }
 
-export function perChannelStableScrollVisuals(progress: number) {
+export function perChannelStableScrollVisuals(
+  progress: number,
+  fontScale = 1,
+) {
   'worklet';
   const clamped = Math.min(1, Math.max(0, progress));
-  const geometry = perChannelVisibleStackGeometry(clamped);
+  const geometry = perChannelVisibleStackGeometry(clamped, fontScale);
+  const expandedGuideChromeHeight =
+    GUIDE_VISUAL_METRICS.brandTopInset +
+    GUIDE_VISUAL_METRICS.brandMarkBoxHeight +
+    (Number.isFinite(fontScale) && Math.max(1, fontScale) > 1.35
+      ? GUIDE_VISUAL_METRICS.presentationNavAccessibilityHeight
+      : GUIDE_VISUAL_METRICS.presentationNavHeight);
+  const scrollCompensation =
+    expandedGuideChromeHeight +
+    (PER_CHANNEL_VISUAL_METRICS.channelStripHeight -
+      PER_CHANNEL_VISUAL_METRICS.channelStripCondensedHeight) +
+    PER_CHANNEL_VISUAL_METRICS.stripToUtilitiesGap +
+    PER_CHANNEL_VISUAL_METRICS.utilityToScheduleGap -
+    PER_CHANNEL_VISUAL_METRICS.collapseDistance;
   const contentTranslateY =
-    clamped === 0
-      ? 0
-      : -PER_CHANNEL_STABLE_SCROLL_GEOMETRY.scrollCompensation * clamped;
+    clamped === 0 ? 0 : -scrollCompensation * clamped;
 
   return {
     guideChromeHeight: geometry.guideChromeHeight,
@@ -304,11 +320,12 @@ export function perChannelScheduleOffsetForNativeOffset(
   );
 }
 
-export function perChannelSafeAreaLayout(topInset: number) {
+export function perChannelSafeAreaLayout(topInset: number, fontScale = 1) {
   const safeTop = Number.isFinite(topInset) ? Math.max(0, topInset) : 0;
   return {
     overlayTop: safeTop,
-    scheduleViewportTop: safeTop + PER_CHANNEL_STABLE_SCROLL_GEOMETRY.viewportTop,
+    scheduleViewportTop:
+      safeTop + perChannelStableScrollGeometry(fontScale).viewportTop,
   } as const;
 }
 

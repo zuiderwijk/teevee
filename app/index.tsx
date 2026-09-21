@@ -22,7 +22,8 @@ import {
 const settingsAction = <SettingsButton />;
 
 type NowNextGuideComponent = ComponentType<{
-  headerAction?: ReactNode;
+  guideDataVersion: number;
+  presentationNavigation: ReactNode;
   onSelectProgramme: (selection: ProgrammeSelection) => void;
 }>;
 
@@ -108,8 +109,7 @@ export default function GuideScreen() {
     [loadAndShowNowNext, persistPresentationPreference],
   );
 
-  const guideKey = `guide-data-${guideDataVersion}`;
-  const perChannelPresentationNavigation = useMemo(
+  const sharedPresentationNavigation = useMemo(
     () => (
       <GuidePresentationSelector
         selected={presentation}
@@ -125,15 +125,15 @@ export default function GuideScreen() {
     <>
       {showNowNext && NowNextComponent ? (
         <NowNextComponent
-          key={guideKey}
+          guideDataVersion={guideDataVersion}
+          presentationNavigation={sharedPresentationNavigation}
           onSelectProgramme={openDetail}
-          headerAction={settingsAction}
         />
       ) : showPerChannel ? (
         <PerChannelGuideView
           guideDataVersion={guideDataVersion}
           onSelectProgramme={openDetail}
-          presentationNavigation={perChannelPresentationNavigation}
+          presentationNavigation={sharedPresentationNavigation}
         />
       ) : (
         <GuideView
@@ -147,7 +147,7 @@ export default function GuideScreen() {
         <NowNextLoadErrorNotice onRetry={() => void loadAndShowNowNext()} />
       ) : null}
 
-      {!showPerChannel ? (
+      {!showPerChannel && !showNowNext ? (
         <View pointerEvents="box-none" style={styles.presentationSelectorDock}>
           <GuidePresentationSelector
             selected={presentation}

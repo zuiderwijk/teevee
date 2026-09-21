@@ -15,7 +15,8 @@ type ChannelIdentityProps = {
   channel: Channel;
   textColor: string;
   mutedTextColor: string;
-  variant?: 'default' | 'per-channel-strip' | 'detail';
+  variant?: 'default' | 'per-channel-strip' | 'now-next' | 'detail';
+  accessible?: boolean;
 };
 
 export const ChannelIdentity = memo(function ChannelIdentity({
@@ -23,22 +24,28 @@ export const ChannelIdentity = memo(function ChannelIdentity({
   textColor,
   mutedTextColor,
   variant = 'default',
+  accessible = true,
 }: ChannelIdentityProps) {
   const resolvedLogo = resolveChannelLogo(channel);
   const [failedLogoKey, setFailedLogoKey] = useState<string | null>(null);
   const showLogo = Boolean(resolvedLogo) && failedLogoKey !== resolvedLogo?.key;
   const perChannelStrip = variant === 'per-channel-strip';
+  const nowNext = variant === 'now-next';
   const detail = variant === 'detail';
-  const showVisibleName = perChannelStrip ? !showLogo : true;
-  const visibleName = perChannelStrip ? channel.shortName ?? channel.displayName : channel.displayName;
+  const compactLogoIdentity = perChannelStrip || nowNext;
+  const showVisibleName = compactLogoIdentity ? !showLogo : true;
+  const visibleName = compactLogoIdentity
+    ? channel.shortName ?? channel.displayName
+    : channel.displayName;
 
   return (
     <View
-      accessible
-      accessibilityLabel={channel.displayName}
+      accessible={accessible}
+      accessibilityLabel={accessible ? channel.displayName : undefined}
       style={[
         styles.container,
         perChannelStrip ? styles.perChannelContainer : null,
+        nowNext ? styles.nowNextContainer : null,
         detail ? styles.detailContainer : null,
       ]}
     >
@@ -51,6 +58,7 @@ export const ChannelIdentity = memo(function ChannelIdentity({
           style={[
             styles.logo,
             perChannelStrip ? styles.perChannelLogo : null,
+            nowNext ? styles.nowNextLogo : null,
             detail ? styles.detailLogo : null,
           ]}
         />
@@ -58,19 +66,20 @@ export const ChannelIdentity = memo(function ChannelIdentity({
       {showVisibleName ? (
         <Text
           numberOfLines={1}
-          ellipsizeMode={perChannelStrip || detail || showLogo ? 'tail' : 'middle'}
+          ellipsizeMode={compactLogoIdentity || detail || showLogo ? 'tail' : 'middle'}
           maxFontSizeMultiplier={
             perChannelStrip ? COMPACT_GUIDE_MAX_FONT_SIZE_MULTIPLIER : undefined
           }
           style={[
-            styles.name,
+            nowNext ? styles.nowNextName : styles.name,
             showLogo ? styles.nameWithLogo : null,
             perChannelStrip ? styles.perChannelFallback : null,
+            nowNext ? styles.nowNextFallback : null,
             detail ? styles.detailName : null,
             {
               color: detail
                 ? textColor
-                : perChannelStrip
+                : compactLogoIdentity
                   ? textColor
                   : showLogo
                     ? mutedTextColor
@@ -107,6 +116,12 @@ const styles = StyleSheet.create({
     flex: 0,
     paddingHorizontal: 0,
   },
+  nowNextContainer: {
+    width: 40,
+    height: 32,
+    flex: 0,
+    paddingHorizontal: 0,
+  },
   logo: {
     width: '78%',
     height: 24,
@@ -123,6 +138,11 @@ const styles = StyleSheet.create({
     height: PER_CHANNEL_VISUAL_METRICS.logoMaxHeight,
     marginBottom: 0,
   },
+  nowNextLogo: {
+    width: 40,
+    height: 32,
+    marginBottom: 0,
+  },
   name: {
     width: '100%',
     textAlign: 'center',
@@ -132,6 +152,10 @@ const styles = StyleSheet.create({
   nameWithLogo: {
     fontSize: 10,
     fontWeight: '600',
+  },
+  nowNextName: {
+    width: '100%',
+    textAlign: 'center',
   },
   detailName: {
     width: 'auto',
@@ -145,6 +169,12 @@ const styles = StyleSheet.create({
   perChannelFallback: {
     ...GUIDE_TYPOGRAPHY.channelFallback,
     width: PER_CHANNEL_VISUAL_METRICS.logoMaxWidth,
+    textAlign: 'center',
+    letterSpacing: 0,
+  },
+  nowNextFallback: {
+    ...GUIDE_TYPOGRAPHY.channelFallback,
+    width: 40,
     textAlign: 'center',
     letterSpacing: 0,
   },

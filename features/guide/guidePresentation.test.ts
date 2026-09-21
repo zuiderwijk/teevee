@@ -15,6 +15,14 @@ describe('Guide presentation contract', () => {
     ]);
   });
 
+  it('keeps the full owner-approved presentation labels', () => {
+    expect(GUIDE_PRESENTATIONS.map((presentation) => presentation.label)).toEqual([
+      'Totaal',
+      'Per zender',
+      'Nu & Straks',
+    ]);
+  });
+
   it('defaults to Totaal', () => {
     expect(DEFAULT_GUIDE_PRESENTATION).toBe('total');
   });

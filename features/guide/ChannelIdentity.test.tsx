@@ -142,6 +142,47 @@ describe('ChannelIdentity', () => {
     expect(container.querySelector('[aria-label="NPO 1"]')).not.toBeNull();
   });
 
+  it('exposes the full Nu & Straks channel name when retained identity is the only accessible channel semantics', async () => {
+    await act(async () => {
+      root.render(
+        <ChannelIdentity
+          channel={{
+            ...baseChannel,
+            id: 'nl-npo-1',
+            displayName: 'Nederland 1 volledig',
+            shortName: 'NPO 1',
+          }}
+          textColor="#111"
+          mutedTextColor="#777"
+          variant="now-next"
+          accessible
+        />,
+      );
+    });
+
+    expect(
+      container.querySelector('[aria-label="Nederland 1 volledig"]'),
+    ).not.toBeNull();
+  });
+
+  it('uses the fixed Nu & Straks identity without adding an extra accessibility focus stop', async () => {
+    await act(async () => {
+      root.render(
+        <ChannelIdentity
+          channel={{ ...baseChannel, id: 'nl-npo-1', displayName: 'NPO 1', shortName: 'NPO 1' }}
+          textColor="#111"
+          mutedTextColor="#777"
+          variant="now-next"
+          accessible={false}
+        />,
+      );
+    });
+
+    expect(container.querySelector('img')).not.toBeNull();
+    expect(container.querySelector('span')).toBeNull();
+    expect(container.querySelector('[aria-label]')).toBeNull();
+  });
+
   it('falls back inside the same Per-zender identity after a logo load failure', async () => {
     await act(async () => {
       root.render(
