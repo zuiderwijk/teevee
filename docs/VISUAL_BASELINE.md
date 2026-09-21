@@ -184,7 +184,7 @@ Accepted visual characteristics:
 - all standalone visible reference-time copy and reference-programme `tot HH:MM` metadata are removed; the reference title is bottom-aligned within its existing block and the dedicated reference→following gap is **0 pt** while touch geometry remains production-safe;
 - active/current `Nu` and return-to-live `Nu` use distinct visual and semantic states;
 - at font scale above 1.35, substantive following content uses the accepted inline time+title composition with maximum two visible lines; stacked time-above-title is reserved for the extreme >2.0 / <180-pt width fallback;
-- the three following touch targets remain independent 44/48 minimums; visible content is centred in all three targets, with compact continuation created by reference-title bottom alignment and the 0-pt transition;
+- the three following touch targets remain independent 44/48 minimums; at standard text, visible content uses the canonical progressive target-slack offsets (#1 = 2/3, #2 = 1/3, #3 = 0), while Larger Text remains centred; compact continuation also keeps reference-title bottom alignment and the 0-pt transition;
 - three following slot geometries remain reserved even when programme data is incomplete, preserving vertical channel position across reference-time changes;
 - shared Guide presentation tabs are 48 pt / one line through 1.35 and 64 pt / max two lines above 1.35; compact label scaling remains capped at 1.20;
 - production Nu & Straks uses the shared Guide shell; the persistent functional stack is **104 pt at all font scales**: 52-pt Primetime/Nu utility context + 52-pt rail. Larger Text shared Guide tabs remain 64 pt/max two lines;
@@ -193,7 +193,7 @@ Accepted visual characteristics:
 
 ADR 0008 changes the meaning of the active day around midnight: 00:00–05:59 remains part of the preceding television day. Nu & Straks still has no independent date selector.
 
-The exact 13 September visual remains canonical for composition and hierarchy. The written 18 September production specification plus the owner-approved 21 September refinements supersede it only for the explicit accessibility/density, shared-shell, Dynamic Type, touch-target, safe-area, pressed-state, time-rail and reference-programme presentation rules documented there. The final physical refinement specifically supersedes standalone visible reference-time copy, the 88-pt/two-lane Nu & Straks context, generic-border rail-bottom treatment, the 4-pt reference→following spacer and the prior #1/#2/#3 following-content bias. Current runtime prototype values are not automatically canonical.
+The exact 13 September visual remains canonical for composition and hierarchy. The written 18 September production specification plus the owner-approved 21 September refinements supersede it only for the explicit accessibility/density, shared-shell, Dynamic Type, touch-target, safe-area, pressed-state, time-rail and reference-programme presentation rules documented there. The final physical refinements specifically supersede standalone visible reference-time copy, the 88-pt/two-lane Nu & Straks context, generic-border rail-bottom treatment, the 4-pt reference→following spacer, the prior fixed #1/#2/#3 bias and the later all-centred standard-text following rhythm. Current runtime prototype values are not automatically canonical.
 
 ## Programme Detail
 Status: **ACCEPTED DIRECTION**
