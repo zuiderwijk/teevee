@@ -50,7 +50,7 @@ Totaal and Per zender share one compact day-navigation model. Nu & Straks has no
 - show one primarily typographic date selector rather than ten permanent date buttons;
 - tapping the selector opens a bounded bottom sheet containing exactly the available D-2..D+7 television days in chronological order;
 - do not expose an unrestricted calendar, disabled out-of-range dates or technical D-offset notation;
-- use human-readable date labels; Per zender applies a compact override: from 06:00–23:59 the current/next television days are simply `Vandaag` / `Morgen`, other days use explicit weekday + date, and from 00:00–05:59 **all** Per-zender day labels use explicit weekday + date with no `Vandaag`/`Morgen`;
+- use the same compact date wording in Totaal and Per zender: from 06:00–23:59 the current/next television days are simply `Vandaag` / `Morgen` with no extra date suffix, other days use abbreviated weekday + date, and from 00:00–05:59 **all** day labels use explicit weekday + date with no `Vandaag`/`Morgen`;
 - `Nu` remains a separate, persistent action rather than being folded into the date selector;
 - changing day preserves the currently viewed wall-clock time where practical (for example 20:35 -> another day around 20:35);
 - `Nu` is the explicit reset that restores both the actual current instant and its television-day context;
@@ -82,10 +82,11 @@ Purpose: compare multiple channels across time.
 - time axis remains available/sticky where needed for orientation;
 - channel identity rail remains available while moving through time;
 - tap programme: open Programme Detail directly;
-- current time uses a restrained indicator; do not add a redundant full-height red line when the time marker itself gives sufficient orientation;
-- current programme information prioritises the useful end time; avoid duplicating a start time that is already spatially evident;
-- future programmes prioritise start time; end time is normally unnecessary in the grid;
-- avoid genres and other low-value metadata inside compact schedule cells;
+- current time uses one compact marker anchored to the time axis; do not add a full-height red line through channel rows;
+- current programme information prioritises the useful end time (`tot HH:MM`) without an in-cell progress bar or heavy permanent current card;
+- future/non-current programmes prioritise start time; end time is normally unnecessary in the grid;
+- programme cells use the accepted open-grid language: no permanent rounded/fill card treatment merely to define every cell;
+- title is the primary programme signal; avoid genres and other low-value metadata inside compact schedule cells;
 - use the accepted shared Guide day selector for D-2..D+7 navigation;
 - `Nu` returns to the actual current instant and corresponding television day;
 - browsing through midnight is continuous and does not require selecting the next calendar day;
@@ -95,6 +96,16 @@ Purpose: compare multiple channels across time.
 Programme geometry continues to represent real schedule time. Text may adapt within the visible part of a programme cell, but the programme block itself must not move away from its real start/duration geometry.
 
 At larger system text sizes, adapt row height, geometry and secondary metadata density rather than clipping essential information or globally disabling text scaling.
+
+Accepted Totaal visual composition (owner-approved 2026-09-21):
+- expanded/rest uses the shared Guide shell with `tv.` branding, shared Guide presentation tabs and shared Search/secondary action chrome;
+- condensed/scrolled removes non-functional brand/actions and Guide presentation tabs entirely; do not retain a compact `tv.` mark in the functional stack;
+- persistent functional context is date selector + separate `Nu` + time axis;
+- time axis labels whole and half hours; quarter hours are unlabeled minor ticks;
+- channel rail is logo-first, has no visible `ZENDER` heading and does not duplicate a readable logo with a visible channel-name caption;
+- channel rail and schedule share one calm canvas with restrained separators rather than card/sidebar surfaces;
+- bottom navigation uses the same shared app-shell structure as Per zender;
+- exact production metrics remain to be frozen in the dedicated Totaal production visual-convergence specification.
 
 ## Per zender — accepted interaction baseline
 Purpose: inspect the schedule of one channel while making adjacent-channel comparison effortless.
