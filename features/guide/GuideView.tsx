@@ -446,6 +446,8 @@ export const GuideView = memo(function GuideView({
           totaalStableScrollVisuals(
             collapseProgress.value,
             effectiveFontScale,
+            scrollY.value,
+            reduceMotion,
           ).contentTranslateY,
       },
     ],
@@ -460,6 +462,8 @@ export const GuideView = memo(function GuideView({
           totaalStableScrollVisuals(
             collapseProgress.value,
             effectiveFontScale,
+            scrollY.value,
+            reduceMotion,
           ).contentTranslateY +
           20,
       },
