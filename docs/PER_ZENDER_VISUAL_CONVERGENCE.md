@@ -5,7 +5,7 @@ Date: 2026-09-18
 Kijktip refinement: 2026-09-22  
 Kijktip production calibration: 2026-09-22  
 Kijktip label direction: owner accepted 2026-09-22 — final label-surface metrics pending  
-Revision: **post-PR #86 production convergence — compact temporal context + PR #81 collapse-isolation architecture + owner-approved Per-zender Kijktip editorial disclosure with implementation-ready typography/baseline/Dynamic-Type calibration**
+Revision: **post-PR #86 production convergence — compact temporal context + PR #81 collapse-isolation architecture + owner-approved Per-zender Kijktip editorial label direction; final label-surface metrics pending**
 
 This document is the production implementation specification for the accepted **Per zender** Guide presentation. It converts the owner-approved visual/UX baseline into concrete metrics and state rules. It is accepted-design convergence, not exploration or Development implementation.
 
@@ -39,9 +39,9 @@ Exact canonical pixels remain:
 - Per zender light + dark: `/Teevee/TV-gids app in licht en donker thema.png`, Library file id `file_000000008b2481f4ad34bb1547fc813e`;
 - Guide day-selector states: `/Teevee/Teevee Guide day selector - states and bottom sheet.png`, Library file id `file_00000000390c8210b76256621721592b`;
 - sticky/condensed behaviour: `/Teevee/Teevee Guide day selector - sticky scroll behavior.png`, Library file id `file_00000000314481f69f6a34d18ece1c21`;
-- Per-zender Kijktip refinement: `/Teevee/Per Zender Kijktip refinement - 12pt Medium textSecondary.png`, Library file id `file_00000000dd7c8210a35769aada30424b`.
+- Per-zender Kijktip text-only refinement reference: `/Teevee/Per Zender Kijktip refinement - 12pt Medium textSecondary.png`, Library file id `file_00000000dd7c8210a35769aada30424b`; **superseded for final Kijktip styling** by the 22 September owner-approved shared time+Kijktip label direction. The new label direction is recorded textually here; exact surface/padding/radius metrics are pending final calibration.
 
-The 2026-09-17 written refinement supersedes those historical pixels only for the explicitly changed details in this document: temporal utility states, programme-title calibration, settled condensed channel-strip height, channel-rail positioning behaviour and programme-row pressed feedback. The 2026-09-18 owner refinements additionally supersede selected-channel text outside the rail, the former compressed current-programme treatment, the old 24-pt rail→utilities calibration, the physically rejected 16/12 expanded spacing distribution, long Per-zender relative date labels and Dynamic-Type-driven wrapped temporal chrome. The 2026-09-22 Kijktip refinement changes only editorial disclosure inside the existing time column. All other accepted composition remains intact.
+The 2026-09-17 written refinement supersedes those historical pixels only for the explicitly changed details in this document: temporal utility states, programme-title calibration, settled condensed channel-strip height, channel-rail positioning behaviour and programme-row pressed feedback. The 2026-09-18 owner refinements additionally supersede selected-channel text outside the rail, the former compressed current-programme treatment, the old 24-pt rail→utilities calibration, the physically rejected 16/12 expanded spacing distribution, long Per-zender relative date labels and Dynamic-Type-driven wrapped temporal chrome. The 2026-09-22 Kijktip label refinement changes only editorial disclosure inside the existing time-column zone: the prior bare-text stack is superseded by one compact time+Kijktip label. All other accepted composition remains intact.
 
 ### Source precedence
 
@@ -1133,14 +1133,14 @@ Per-zender visual convergence is ready only when all are true on the exact imple
 - no schedule-wide now line, current card fill, red left rail, now-dot or hourly-grid dominance;
 - light/dark/system use semantic tokens;
 - Per-zender date/Primetime/Nu compact chrome is hard-capped at 1.20 and remains one line; no 88-pt/wrapped-context state or selected-channel injection exists; programme content retains substantive Dynamic Type; VoiceOver, TalkBack and Reduce Motion follow this specification;
-- Kijktip rows use **12/16 Medium `textSecondary`**, letterSpacing0, in the time column with a **fixed non-scaling 2-pt** gap below time, exact left alignment to time, and unchanged title X/width;
-- at scale1 a standard Kijktip row has stack top7: time Y7…27 and Kijktip Y29…45; the time baseline exactly equals the title first-line baseline;
-- at 1.35 / 1.50 / 2.00 the §14.1 formula yields Kijktip stack tops **9.7 / 11 / 15** with no Kijktip-specific row-height change;
+- Kijktip uses the owner-approved compact **time + Kijktip editorial label** in the existing time-column zone; programme title X/width remains unchanged;
+- conceptual editorial foreground is `editorialAccent`: **#315A63 light / #A9C9CF dark**;
+- time remains 16/20 Regular and Kijktip remains 12/16 Medium as the label text inputs; exact label surface/padding/radius/outer box is pending final physical calibration;
 - normal rows without Kijktip remain visually unchanged;
-- current Kijktip row preserves the existing current-row formula: at scale1 time/title remain top14, Kijktip Y36…52, and title/description/progress do not move;
-- three Kijktips distributed across one evening preserve identical row tops/heights to the same schedule without Kijktip flags; no cumulative spacing or scroll-anchor shift occurs;
-- Larger Text scales Kijktip as substantive metadata, keeps it one line, and does not add a Kijktip-specific row height, wrap state, font cap or title-column reduction;
-- Kijktip behaves identically in light/dark/system through `textSecondary` and adds no accent token;
-- programme accessibility announces Kijktip once without a second focus target;
+- standard/current row heights and their Dynamic Type formulas remain unchanged; current title/description/progress geometry does not move;
+- three Kijktips distributed across one evening preserve identical row tops/heights, scroll anchors and programme interaction geometry;
+- Larger Text must fit the label within the existing scaled row formulas without a Kijktip-specific height branch;
+- programme accessibility announces Kijktip once through the single row action; label/container text creates no second focus target;
+- Kijktip label runtime styling is **not implementation-ready** until the final surface/padding/radius calibration is owner-approved and merged;
 - one-time swipe nudge and `•••` overflow remain absent;
 - final physical comparison uses the exact canonical references plus the written 2026-09-17, 2026-09-18 and 2026-09-22 refinements, never a superseded runtime screenshot.
