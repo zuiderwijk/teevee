@@ -23,7 +23,7 @@ Hosted evidence after applying migrations and deploying `editorial-refresh` + `g
 
 This live evidence proves both directions of the optionality contract: persisted enrichment reaches the typed read, while a schedule window with no editorial signals remains a normal valid Guide response.
 
-The live TVgids source remains a public editorial input, not evidence of final paid-app redistribution/republication rights. Production/republication rights remain a release requirement.
+Rights status is now closed for this source: the product owner confirms the intended Teevee Kijktip use of `https://www.tvgids.nl/tips.rss` is rights-cleared, so this editorial source is **not a Kijktip release blocker**. The separate production EPG-provider redistribution-rights gate and the independent rights/provenance requirements for channel logos and programme artwork remain unchanged.
 
 **Next gate:** exact-head Lead review of PR #126. Do not merge before Lead. Visible Per-zender/Nu & Straks Kijktip wiring remains a separate later increment using the already frozen PR #122/#123 visual contracts.
 
