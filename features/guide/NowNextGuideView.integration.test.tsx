@@ -11,6 +11,7 @@ import {
 import { createRoot, type Root } from 'react-dom/client';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
+import type { ProgrammeEditorialSignal } from '@/data/domain/editorial';
 import type { GuideSchedule, Programme } from '@/data/domain/epg';
 
 import { NowNextGuideView } from './NowNextGuideView';
@@ -28,6 +29,8 @@ type ScrollProps = {
 const runtime = vi.hoisted(() => ({
   schedule: null as GuideSchedule | null,
   fixture: null as GuideSchedule | null,
+  signals: [] as ProgrammeEditorialSignal[],
+  editorialListeners: new Set<() => void>(),
 }));
 const clock = vi.hoisted(() => ({
   nowMs: Date.parse('2026-09-18T18:17:00.000Z'),
@@ -45,6 +48,11 @@ const native = vi.hoisted(() => ({
 
 vi.mock('@/data/runtime/guideScheduleRuntime', () => ({
   runtimeGuideScheduleFor: () => runtime.schedule,
+  runtimeProgrammeEditorialSignalsFor: () => runtime.signals,
+  subscribeRuntimeProgrammeEditorialSignals: (listener: () => void) => {
+    runtime.editorialListeners.add(listener);
+    return () => runtime.editorialListeners.delete(listener);
+  },
 }));
 vi.mock('@/data/fixtures/runtimeGuideFixture', () => ({
   buildRuntimeGuideFixture: () => runtime.fixture,
@@ -89,6 +97,9 @@ vi.mock('react-native', async () => {
     style?: unknown | ((state: { pressed: boolean }) => unknown);
     pointerEvents?: string;
     numberOfLines?: number;
+    accessible?: boolean;
+    importantForAccessibility?: string;
+    onLayout?: (event: { nativeEvent: { layout: { width: number } } }) => void;
   };
 
   const View = ({
@@ -107,15 +118,28 @@ vi.mock('react-native', async () => {
       typeof children === 'function' ? children({ pressed: false }) : children,
     );
 
-  const Text = ({ children, testID, numberOfLines }: HostProps) =>
-    createElement(
+  const Text = ({
+    children,
+    testID,
+    numberOfLines,
+    accessible,
+    style,
+    onLayout,
+  }: HostProps) => {
+    if (onLayout && testID?.includes('kijktip')) {
+      onLayout({ nativeEvent: { layout: { width: 44 } } });
+    }
+    return createElement(
       'span',
       {
         'data-testid': testID,
         'data-number-of-lines': numberOfLines,
+        'data-accessible': accessible === undefined ? undefined : String(accessible),
+        'data-style': JSON.stringify(style),
       },
       typeof children === 'function' ? children({ pressed: false }) : children,
     );
+  };
 
   const Pressable = ({
     children,
@@ -303,6 +327,24 @@ const genericFixture: GuideSchedule = {
   programmes: [],
 };
 
+function kijktipSignal(programmeId: string): ProgrammeEditorialSignal {
+  return {
+    programmeId,
+    type: 'kijktip',
+    source: 'tvgids',
+    sourceItemId: 'tip-' + programmeId,
+    matchedBy: 'channel-title-start',
+  };
+}
+
+async function publishEditorialSignals(signals: ProgrammeEditorialSignal[]) {
+  await act(async () => {
+    runtime.signals = signals;
+    runtime.editorialListeners.forEach((listener) => listener());
+    await Promise.resolve();
+  });
+}
+
 function scrollEvent(x: number, velocityX = 0) {
   return {
     nativeEvent: {
@@ -356,6 +398,8 @@ beforeEach(() => {
   vi.stubGlobal('cancelAnimationFrame', vi.fn());
   runtime.schedule = schedule;
   runtime.fixture = schedule;
+  runtime.signals = [];
+  runtime.editorialListeners.clear();
   clock.nowMs = Date.parse('2026-09-18T18:17:00.000Z');
   viewport.width = 390;
   viewport.fontScale = 1;
@@ -406,6 +450,115 @@ describe('Nu & Straks production interaction boundary', () => {
     expect(
       container.querySelectorAll('[data-testid^="now-next-following-empty-two-"]'),
     ).toHaveLength(2);
+  });
+
+  it('renders reference and following Kijktips from runtime signals with one programme focus target', async () => {
+    runtime.signals = [
+      kijktipSignal('one-ref'),
+      kijktipSignal('one-follow-1'),
+      kijktipSignal('one-follow-2'),
+      kijktipSignal('one-follow-3'),
+    ];
+
+    await act(async () =>
+      root.render(
+        <NowNextGuideView
+          guideDataVersion={1}
+          presentationNavigation={<span />}
+          onSelectProgramme={vi.fn()}
+        />,
+      ),
+    );
+
+    const reference = getByTestId(container, 'now-next-reference-one-one-ref');
+    expect(
+      getByTestId(container, 'now-next-reference-kijktip-one-ref').textContent,
+    ).toBe('Kijktip');
+    expect(
+      getByTestId(container, 'now-next-reference-kijktip-one-ref').getAttribute(
+        'data-accessible',
+      ),
+    ).toBe('false');
+    expect(reference.getAttribute('aria-label')).toBe(
+      'NPO 1, Referentieprogramma, Kijktip, 20:00 tot 20:30, nu bezig',
+    );
+    expect(reference.getAttribute('aria-label')?.match(/Kijktip/g)).toHaveLength(1);
+
+    for (const id of ['one-follow-1', 'one-follow-2', 'one-follow-3']) {
+      const label = getByTestId(container, `now-next-following-kijktip-${id}`);
+      expect(label.textContent).toBe('Kijktip');
+      expect(label.getAttribute('data-accessible')).toBe('false');
+    }
+
+    expect(
+      getByTestId(
+        container,
+        'now-next-following-one-0-one-follow-1',
+      ).getAttribute('aria-label'),
+    ).toBe('NPO 1, Volgend één, Kijktip, 20:30 tot 21:00');
+    expect(
+      getByTestId(
+        container,
+        'now-next-following-one-0-one-follow-1',
+      ).getAttribute('aria-label')?.match(/Kijktip/g),
+    ).toHaveLength(1);
+
+    expect(
+      getByTestId(
+        container,
+        'now-next-following-one-0-one-follow-1',
+      ).getAttribute('data-style'),
+    ).toContain('"height":44');
+  });
+
+  it('reacts to editorial-only runtime changes without replacing schedule ownership', async () => {
+    const originalSchedule = runtime.schedule;
+
+    await act(async () =>
+      root.render(
+        <NowNextGuideView
+          guideDataVersion={1}
+          presentationNavigation={<span />}
+          onSelectProgramme={vi.fn()}
+        />,
+      ),
+    );
+    expect(
+      container.querySelector('[data-testid="now-next-reference-kijktip-one-ref"]'),
+    ).toBeNull();
+
+    await publishEditorialSignals([kijktipSignal('one-ref')]);
+
+    expect(runtime.schedule).toBe(originalSchedule);
+    expect(
+      getByTestId(container, 'now-next-reference-kijktip-one-ref').textContent,
+    ).toBe('Kijktip');
+  });
+
+  it('keeps non-Kijktip programmes visually and semantically unchanged', async () => {
+    runtime.signals = [kijktipSignal('unrelated-programme')];
+
+    await act(async () =>
+      root.render(
+        <NowNextGuideView
+          guideDataVersion={1}
+          presentationNavigation={<span />}
+          onSelectProgramme={vi.fn()}
+        />,
+      ),
+    );
+
+    expect(
+      container.querySelector('[data-testid^="now-next-reference-kijktip-"]'),
+    ).toBeNull();
+    expect(
+      container.querySelector('[data-testid^="now-next-following-kijktip-"]'),
+    ).toBeNull();
+    expect(
+      getByTestId(container, 'now-next-reference-one-one-ref').getAttribute(
+        'aria-label',
+      ),
+    ).toBe('NPO 1, Referentieprogramma, 20:00 tot 20:30, nu bezig');
   });
 
   it('renders the refined rail labels/ticks and keeps exact live/reference accessibility semantics', async () => {
