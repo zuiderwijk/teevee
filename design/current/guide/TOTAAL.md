@@ -43,7 +43,7 @@ Top to content:
 1. shared Teevee Guide shell with `tv.` brand mark;
 2. shared Search + secondary/settings action area;
 3. shared Guide presentation tabs: `Totaal · Per zender · Nu & Straks`, with Totaal selected;
-4. compact date selector + separate `Nu`;
+4. compact date selector + separate `Nu`, both intrinsically readable on one line within the 1.20 compact cap and frozen 52-pt context; `Nu` never ellipsizes;
 5. compact time axis;
 6. open 2D schedule grid with logo-first channel rail;
 7. existing shared bottom navigation, visually identical in structure to Per zender.
@@ -91,12 +91,11 @@ The bounded D-2..D+7 bottom-sheet contract remains defined by `design/current/gu
 - future/non-current programme: secondary copy uses the start time when useful;
 - secondary time copy is visually quieter than the title;
 - for normal narrow/partially clipped cells, title survives before secondary time metadata;
-- a genuine microcell whose full real frame width is `< 48 × S pt` (`S = max(1, effectiveFontScale)`) suppresses meaningless title fragments and secondary time;
-- individual micro presentation uses the typography-derived floor `27 × S`: below it the frame shows no visible glyph; at/above it (while still below `48 × S`) it shows one centred `…`;
-- a visually empty ultra-microcell still keeps its full programme boundary, Pressable, accessibility label and Programme Detail action;
-- when an individual `…` is shown, actual-current uses Semibold and non-current uses Medium;
+- a genuine microcell whose full real frame width is `< 48 × S pt` (`S = max(1, effectiveFontScale)`) suppresses all visible title/time/ellipsis glyphs individually;
+- every visually empty microcell still keeps its full programme boundary, Pressable, pressed semantics, accessibility label/current state and Programme Detail action;
 - two or more directly adjacent microcells on the same channel with the same title after trim/whitespace normalisation form a repeated-title run;
-- when the visible repeated-run intersection is at least `48 × S pt`, suppress per-cell `…` and show one shared one-line Medium title over the visible run, left-aligned with the existing 6-pt compact inset and clipped/sticky strictly inside the run bounds;
+- when the visible repeated-run intersection is at least `48 × S pt`, show one shared one-line Medium title over the visible run, left-aligned with the existing 6-pt compact inset and clipped/sticky strictly inside the run bounds;
+- below that shared-title threshold the run and its individual cells remain text-free;
 - repeated-title sharing never merges geometry: every underlying broadcast retains its own boundary, hit target, accessibility action and Programme Detail action;
 - shared repeated-run title remains Medium even when one underlying broadcast is current; exact current semantics remain on that broadcast and the time-axis marker;
 - exact font sizes/weights/row metrics remain defined by the production spec and validated physically.
@@ -111,6 +110,7 @@ The bounded D-2..D+7 bottom-sheet contract remains defined by `design/current/gu
 - one compact red current-time marker anchored to the time axis;
 - body height is 18 pt; the **38-pt minimum is readable label space**, with existing 5-pt X padding outside it, so actual outer body width is **48 pt at base compact scale / 56 pt at the 1.20 cap**;
 - visible current clock copy is always the full `HH:MM` in existing 10/12 Semibold and must not ellipsize/shrink;
+- the Guide clock is phase-aligned to wall-clock `:00`/`:30` refresh boundaries at its 30-second cadence, with immediate refresh + realignment on AppState→active;
 - the 6×4 pointer/notch remains tied to the exact current-minute X; viewport-edge clamping may move only the body, never the pointer;
 - **no full-height red line through all channel rows**;
 - current state is never colour-only semantically.
@@ -179,7 +179,7 @@ That handoff calibrates the remaining implementation details, including:
 
 The production specification is owner-approved. Its values become Development authority when the documentation/design PR is merged to `main`; physical-device validation remains a later runtime gate.
 
-The 2026-09-21 micro-programme amendment and subsequent owner physical refinement are targeted production refinements only. They do **not** reopen 84/76/3.00 programme geometry, programme boundaries, open-grid styling, channel rail, Guide chrome, day navigation, horizontal gesture/inertia ownership or programme-windowing. The explicit refinements are limited to the `27 × S` ultra-micro no-glyph floor, Totaal-only disabled vertical endpoint overscroll, and clarified current-marker readable/outer-body sizing while preserving exact-minute pointer semantics.
+The micro-programme and subsequent owner physical refinements are targeted production refinements only. They do **not** reopen 84/76/3.00 programme geometry, programme boundaries, open-grid styling, channel rail, Guide chrome, day navigation, horizontal gesture/inertia ownership or programme-windowing. The definitive micro presentation is text-free for every individual frame below `48 × S`; repeated-title sharing introduces one Medium title only when the visible run reaches `48 × S`. Totaal-only disabled vertical endpoint overscroll and clarified current-marker body/pointer sizing remain frozen.
 
 ## Superseded Totaal visual treatments
 
