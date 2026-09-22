@@ -1,5 +1,21 @@
 # Teevee Development Logboek
 
+## 22 september 2026 — PR #127 owner physical Per-zender Kijktip time-grid refinement
+
+Physical iPhone review of exact head `b385e9a8467361b521e613de567711c682728383` rejected only the Per-zender Kijktip label alignment/breathing. The editorial colour/radius/typography direction remains accepted and Nu & Straks is explicitly frozen.
+
+The correction makes the time grid authoritative. `perChannel.timeTextX = 24` now means the visible start-time text origin for normal, standard-Kijktip and current-Kijktip rows. With the existing 8-pt horizontal label inset, the decorative/editorial surface therefore starts at X16. The outer surface no longer centres the time inside its minimum width; an intrinsic inner stack begins at X24, with Kijktip centred beneath the rendered time.
+
+Vertical calibration now spends the existing standard-row slack inside the surface instead of outside it. At S1 the standard surface is exactly the frozen 52-pt row: 7 top + 20 time + fixed 2 gap + 16 Kijktip + 7 bottom. For Dynamic Type, `verticalBreathing = (round(52S) - (36S + 2)) / 2`; the surface height remains the existing `round(52S)` row authority. Current uses the same internal breathing and scaled surface height, anchored at the existing 14-pt current-content origin, while current title/description/progress remain unchanged.
+
+This supersedes only PR #129's Per-zender `surface-left X24 / vertical padding0 / 36S+2 surface-height` box metrics. Editorial tokens, radius6, 8-pt horizontal padding, 2-pt internal gap, 52/176 base rows, X100/right24 title geometry, separators, programme Pressable/accessibility, editorial-signal ownership and all Nu & Straks runtime remain unchanged.
+
+Deterministic coverage locks X24 text-origin parity, X16 surface-left, S1 7/20/2/16/7 composition, scaled S1.35/S1.5/S2 containment, width/min-width ownership, unchanged current content and multiple-Kijktip anchor/accessibility behaviour.
+
+**Next step:** exact-head CI, then Lead exact-head review and a focused owner physical iPhone recheck. Do not merge and do not send to Independent QA before physical PASS.
+
+---
+
 ## 22 september 2026 — PR #127 reconciled to final PR #129 Kijktip label calibration
 
 PR #127 keeps its already-reviewed editorial-signal architecture and runtime ownership, but is reconciled against canonical main after PR #128/#129 superseded the earlier bare-text final styling. Current main wins unchanged for all six canonical design/spec authorities from PR #129.

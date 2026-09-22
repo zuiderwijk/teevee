@@ -279,28 +279,36 @@ describe('Per-zender Kijktip production presentation', () => {
       'per-channel-kijktip-time-stack-tip',
     );
     const titleCell = getByTestId(container, 'per-channel-title-cell-tip');
+    const content = getByTestId(container, 'per-channel-kijktip-content-tip');
+    const time = getByTestId(container, 'per-channel-kijktip-time-tip');
     const label = getByTestId(container, 'per-channel-kijktip-tip');
 
     expect(programmeRow.getAttribute('data-style')).toContain('"height":52');
     expect(flattenedStyle(timeStack)).toMatchObject({
-      left: 24,
-      top: 7,
-      height: 38,
+      left: 16,
+      top: 0,
+      height: 52,
       minWidth: 56,
       paddingHorizontal: 8,
-      paddingVertical: 0,
+      paddingTop: 7,
+      paddingBottom: 7,
       borderRadius: 6,
-      alignItems: 'center',
+      alignItems: 'flex-start',
       backgroundColor: '#E4ECEE',
     });
     expect(flattenedStyle(timeStack).width).toBeUndefined();
+    expect(16 + flattenedStyle(timeStack).paddingHorizontal).toBe(24);
+    expect(flattenedStyle(content)).toMatchObject({
+      alignItems: 'center',
+    });
+    expect(flattenedStyle(time)).toMatchObject({
+      alignSelf: 'flex-start',
+      color: '#315A63',
+    });
     expect(flattenedStyle(label)).toMatchObject({
       marginTop: 2,
       color: '#315A63',
     });
-    expect(
-      flattenedStyle(getByTestId(container, 'per-channel-kijktip-time-tip')).color,
-    ).toBe('#315A63');
     expect(flattenedStyle(titleCell)).toMatchObject({
       left: 100,
       right: 24,
@@ -323,8 +331,10 @@ describe('Per-zender Kijktip production presentation', () => {
     await renderPage(rows, new Set());
 
     const programmeRow = getByTestId(container, 'per-channel-programme-plain');
+    const timeCell = getByTestId(container, 'per-channel-time-cell-plain');
     const titleCell = getByTestId(container, 'per-channel-title-cell-plain');
     expect(programmeRow.getAttribute('data-style')).toContain('"height":52');
+    expect(flattenedStyle(timeCell).left).toBe(24);
     expect(flattenedStyle(titleCell)).toMatchObject({
       left: 100,
       right: 24,
@@ -353,30 +363,45 @@ describe('Per-zender Kijktip production presentation', () => {
       container,
       'per-channel-kijktip-time-stack-current',
     );
+    const content = getByTestId(container, 'per-channel-kijktip-content-current');
+    const time = getByTestId(container, 'per-channel-kijktip-time-current');
     const label = getByTestId(container, 'per-channel-kijktip-current');
+    const currentContent = getByTestId(
+      container,
+      'per-channel-current-content-current',
+    );
 
     expect(programmeRow.getAttribute('data-style')).toContain('"height":176');
     expect(flattenedStyle(timeStack)).toMatchObject({
-      left: 24,
+      left: 16,
       top: 14,
-      height: 38,
+      height: 52,
       minWidth: 56,
       paddingHorizontal: 8,
-      paddingVertical: 0,
+      paddingTop: 7,
+      paddingBottom: 7,
       borderRadius: 6,
-      alignItems: 'center',
+      alignItems: 'flex-start',
       backgroundColor: '#E4ECEE',
     });
     expect(flattenedStyle(timeStack).width).toBeUndefined();
+    expect(16 + flattenedStyle(timeStack).paddingHorizontal).toBe(24);
+    expect(flattenedStyle(content)).toMatchObject({
+      alignItems: 'center',
+    });
+    expect(flattenedStyle(time)).toMatchObject({
+      alignSelf: 'flex-start',
+      color: '#315A63',
+    });
     expect(flattenedStyle(label)).toMatchObject({
       marginTop: 2,
       color: '#315A63',
     });
-    expect(
-      flattenedStyle(
-        getByTestId(container, 'per-channel-kijktip-time-current'),
-      ).color,
-    ).toBe('#315A63');
+    expect(flattenedStyle(currentContent)).toMatchObject({
+      left: 100,
+      right: 24,
+      top: 14,
+    });
     expect(
       getByTestId(container, 'per-channel-progress-current'),
     ).toBeDefined();

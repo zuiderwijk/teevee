@@ -5,7 +5,8 @@ Date: 2026-09-18
 Kijktip refinement: 2026-09-22  
 Kijktip production calibration: 2026-09-22  
 Kijktip label direction + final production calibration: owner accepted 2026-09-22  
-Revision: **post-PR #86 production convergence — compact temporal context + PR #81 collapse-isolation architecture + owner-approved, implementation-ready Per-zender Kijktip editorial label calibration**
+Owner physical time-grid + vertical-breathing correction: 2026-09-22  
+Revision: **post-PR #86 production convergence — compact temporal context + PR #81 collapse-isolation architecture + owner-approved Per-zender Kijktip label with physical X24 time-grid / breathing correction**
 
 This document is the production implementation specification for the accepted **Per zender** Guide presentation. It converts the owner-approved visual/UX baseline into concrete metrics and state rules. It is accepted-design convergence, not exploration or Development implementation.
 
@@ -165,7 +166,7 @@ The short underline is a geometric current-state cue. Accessibility state remain
 | `perChannel.standardRowHeight` | **52** | ACCEPTED | All non-current programmes at fontScale 1.0. |
 | `perChannel.currentRowHeight` | **176** | ACCEPTED | Actual current programme at fontScale 1.0; deliberately spacious. |
 | `perChannel.timeGutterWidth` | 64 | IMPLEMENTATION CALIBRATION | Stable time column. |
-| `perChannel.timeTextX` | **24** | ACCEPTED CALIBRATION | Start-time X. |
+| `perChannel.timeTextX` | **24** | ACCEPTED CALIBRATION | Structural start-time **text origin** for every programme row, including Kijktip. |
 | `perChannel.programmeColumnX` | **100** | ACCEPTED CALIBRATION | Title/description/progress X. |
 | `perChannel.programmeRightInset` | **24** | ACCEPTED CALIBRATION | Content right inset. |
 | `perChannel.currentContentTopInset` | **14** | ACCEPTED CALIBRATION | Current time/title top. |
@@ -525,9 +526,9 @@ Text:
 - no wrap for Kijktip.
 
 Box:
-- outer X = **24**;
+- `perChannel.timeTextX = 24` is always the **start-time text origin**, not the editorial surface edge;
+- with fixed horizontal inset 8, surface-left = **16** = `24 - 8`;
 - horizontal padding = **8 pt** left + **8 pt** right;
-- vertical padding = **0 pt**;
 - radius = **6 pt**;
 - minimum outer width = **56 pt**;
 - outer width = `max(56, max(intrinsicTimeWidth, intrinsicKijktipWidth) + 16)`;
@@ -535,40 +536,57 @@ Box:
 - no shadow/elevation;
 - no independent pressed/selected treatment.
 
+The surface is decorative/editorial and subordinate to the structural time grid. The time text must start at X24 in normal, standard-Kijktip and current-Kijktip rows. Inside the surface the intrinsic time/Kijktip stack begins at X24; Kijktip remains optically centred under the rendered time. The earlier final-calibration rule “outer X24 / vertical padding0” is superseded by this owner physical correction.
+
 The full programme row owns pressed feedback. During row press the label retains `editorialAccentSurface` + `editorialAccent`.
 
 #### Standard 52-pt row
 
 At `contentScale = 1.0`:
 - row Y = **0…52**;
-- label Y = **7…45**;
+- surface Y = **0…52**;
+- top breathing = **7 pt**;
 - time line box = **7…27**;
+- fixed gap = **2 pt**;
 - Kijktip line box = **29…45**;
-- label outer height = **38 pt**;
-- top/bottom breathing room = **7 pt / 7 pt**;
+- bottom breathing = **7 pt**;
 - programme title remains X100/right24.
 
 At arbitrary `S = max(1, effectiveFontScale)`:
 
-`labelOuterHeight = (20 × S) + 2 + (16 × S) = 36S + 2`
+`rowHeight = round(52 × S)`
 
-`labelTop = (round(52 × S) - labelOuterHeight) / 2`
+`contentHeight = (20 × S) + 2 + (16 × S) = 36S + 2`
 
-Horizontal padding stays 8 pt and radius stays 6 pt.
+`verticalBreathing = (rowHeight - contentHeight) / 2`
 
-The label footprint replaces the previously proven time/Kijktip text stack, so it introduces **no new vertical height**. Normal non-Kijktip rows keep their existing independent vertical centring. Above 1.35 the title may still use max two lines under the existing Per-zender rule; title X/width is never changed for Kijktip.
+`surfaceOuterHeight = rowHeight`
+
+Horizontal padding stays 8 pt and radius stays 6 pt. This uses only the existing standard-row authority; there is no Kijktip row-height branch. Normal non-Kijktip rows keep their independent vertical centring. Above 1.35 the title may still use max two lines under the existing Per-zender rule; title X/width is never changed for Kijktip.
+
+Representative breathing:
+- S1 → **7 pt**;
+- S1.35 → **9.7 pt** within rounded 70-pt row;
+- S1.5 → **11 pt** within 78-pt row;
+- S2 → **15 pt** within 104-pt row.
 
 #### Current row
 
+The current row keeps its existing content origin and Dynamic Type row formula.
+
 At `S=1`:
 - current row remains **176 pt**;
-- label Y = **14…52**;
-- time line box = **14…34**;
-- Kijktip line box = **36…52**;
+- surface top = **14 pt** = `currentContentTopInset`;
+- surface Y = **14…66**;
+- top breathing = **7 pt**;
+- time line box = **21…41**;
+- fixed gap = **2 pt**;
+- Kijktip line box = **43…59**;
+- bottom breathing = **7 pt**;
 - current title remains X100/top14;
 - title/description/progress geometry is unchanged.
 
-At Larger Text the time/Kijktip text scales substantively while the 2-pt internal gap, 8-pt horizontal padding and 6-pt radius remain fixed. The existing current-row formula remains the only row-height authority.
+At Larger Text the surface reuses the same `verticalBreathing` and `surfaceOuterHeight = round(52 × S)` as the standard Kijktip label, anchored at the existing 14-pt current-content origin. The existing current-row formula remains the only row-height authority and must contain the label without clipping. Programme typography is never reduced to make the label fit.
 
 #### Accessibility and multiples
 

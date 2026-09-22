@@ -160,7 +160,7 @@ Accepted visual characteristics:
 - programme rows prioritise time and title and use a temporary semantic `surface` fill only while pressed;
 - for `isKijktip = true`, Per zender uses one compact, more-square **editorial label in the existing time-column zone containing both start time and `Kijktip`**; title X/width, row height and programme interaction remain unchanged;
 - semantic colours are production-frozen: `editorialAccent` **#315A63 light / #A9C9CF dark** and `editorialAccentSurface` **#E4ECEE light / #1C2527 dark**;
-- Per-zender label box: X24, horizontal padding8, vertical padding0, radius6, min width56, width=max(56,max(intrinsic time,intrinsic Kijktip)+16), height=`36S+2`; at S1 standard Y7…45 and current Y14…52;
+- Per-zender time grid is authoritative: **X24 is the start-time text origin for every row**. With horizontal padding8 the editorial surface begins at **X16**; radius6/min-width56/width=max(56,max(intrinsic time,intrinsic Kijktip)+16) remain unchanged. Standard S1 surface fills Y0…52 with internal 7/20/2/16/7 breathing/content; current surface is anchored at Y14 and uses the same internal breathing without moving current title/description/progress. The earlier surface-left X24 / vertical-padding0 calibration is superseded;
 - time remains 16/20 Regular and Kijktip 12/16 Medium, both using `editorialAccent`; normal non-Kijktip rows and the current title/description/progress hierarchy remain unchanged;
 - Kijktip label has no independent interaction/focus target and never introduces a Kijktip-specific row-height branch;
 - light/dark/system follow the shared Guide shell;

@@ -65,7 +65,6 @@ export const PER_CHANNEL_VISUAL_METRICS = {
   viewportReferenceRows: 2,
   kijktipTimeGap: 2,
   kijktipPaddingX: 8,
-  kijktipPaddingY: 0,
   kijktipRadius: 6,
   kijktipMinOuterWidth: 56,
 } as const;
@@ -199,53 +198,60 @@ export function perChannelKijktipStackGeometry(fontScale = 1) {
   const timeLineHeight = GUIDE_TYPOGRAPHY.programmeTime.lineHeight * contentScale;
   const labelLineHeight =
     GUIDE_EDITORIAL_TYPOGRAPHY.kijktip.lineHeight * contentScale;
-  const stackHeight =
+  const contentHeight =
     timeLineHeight +
     PER_CHANNEL_VISUAL_METRICS.kijktipTimeGap +
     labelLineHeight;
-  const stackTop = (rowHeight - stackHeight) / 2;
+  const verticalBreathing = Math.max(0, (rowHeight - contentHeight) / 2);
+  const surfaceLeft =
+    PER_CHANNEL_VISUAL_METRICS.timeTextX -
+    PER_CHANNEL_VISUAL_METRICS.kijktipPaddingX;
 
   return {
     rowHeight,
-    stackTop,
-    timeTop: stackTop,
+    surfaceLeft,
+    contentOriginX: PER_CHANNEL_VISUAL_METRICS.timeTextX,
+    surfaceTop: 0,
+    verticalBreathing,
+    stackTop: verticalBreathing,
+    timeTop: verticalBreathing,
     timeLineHeight,
     labelTop:
-      stackTop +
+      verticalBreathing +
       timeLineHeight +
       PER_CHANNEL_VISUAL_METRICS.kijktipTimeGap,
     labelLineHeight,
-    stackHeight,
-    outerHeight: stackHeight,
+    contentHeight,
+    stackHeight: contentHeight,
+    outerHeight: rowHeight,
     minOuterWidth: PER_CHANNEL_VISUAL_METRICS.kijktipMinOuterWidth,
     paddingX: PER_CHANNEL_VISUAL_METRICS.kijktipPaddingX,
-    paddingY: PER_CHANNEL_VISUAL_METRICS.kijktipPaddingY,
     radius: PER_CHANNEL_VISUAL_METRICS.kijktipRadius,
   } as const;
 }
 
 export function perChannelCurrentKijktipGeometry(fontScale = 1) {
-  const contentScale =
-    Number.isFinite(fontScale) && fontScale > 0 ? Math.max(1, fontScale) : 1;
-  const timeLineHeight = GUIDE_TYPOGRAPHY.programmeTime.lineHeight * contentScale;
-  const labelLineHeight =
-    GUIDE_EDITORIAL_TYPOGRAPHY.kijktip.lineHeight * contentScale;
+  const standardGeometry = perChannelKijktipStackGeometry(fontScale);
+  const surfaceTop = PER_CHANNEL_VISUAL_METRICS.currentContentTopInset;
+  const timeTop = surfaceTop + standardGeometry.verticalBreathing;
 
   return {
-    timeTop: PER_CHANNEL_VISUAL_METRICS.currentContentTopInset,
-    timeLineHeight,
+    surfaceLeft: standardGeometry.surfaceLeft,
+    contentOriginX: standardGeometry.contentOriginX,
+    surfaceTop,
+    verticalBreathing: standardGeometry.verticalBreathing,
+    timeTop,
+    timeLineHeight: standardGeometry.timeLineHeight,
     labelTop:
-      PER_CHANNEL_VISUAL_METRICS.currentContentTopInset +
-      timeLineHeight +
+      timeTop +
+      standardGeometry.timeLineHeight +
       PER_CHANNEL_VISUAL_METRICS.kijktipTimeGap,
-    labelLineHeight,
-    outerHeight:
-      timeLineHeight +
-      PER_CHANNEL_VISUAL_METRICS.kijktipTimeGap +
-      labelLineHeight,
+    labelLineHeight: standardGeometry.labelLineHeight,
+    contentHeight: standardGeometry.contentHeight,
+    outerHeight: standardGeometry.rowHeight,
+    surfaceBottom: surfaceTop + standardGeometry.rowHeight,
     minOuterWidth: PER_CHANNEL_VISUAL_METRICS.kijktipMinOuterWidth,
     paddingX: PER_CHANNEL_VISUAL_METRICS.kijktipPaddingX,
-    paddingY: PER_CHANNEL_VISUAL_METRICS.kijktipPaddingY,
     radius: PER_CHANNEL_VISUAL_METRICS.kijktipRadius,
   } as const;
 }

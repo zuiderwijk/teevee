@@ -1,7 +1,7 @@
 # Per zender — current accepted visual
 
 Status: **ACCEPTED**
-Accepted: 2026-09-13; day-selector and Primetime behaviour amended 2026-09-15; accepted visual refinement amended 2026-09-17; selected-channel-heading removal, current-programme spacing and compact temporal-context refinement accepted 2026-09-18; Kijktip editorial-disclosure refinement + production calibration accepted 2026-09-22; Kijktip label direction + final production calibration accepted 2026-09-22
+Accepted: 2026-09-13; day-selector and Primetime behaviour amended 2026-09-15; accepted visual refinement amended 2026-09-17; selected-channel-heading removal, current-programme spacing and compact temporal-context refinement accepted 2026-09-18; Kijktip editorial-disclosure refinement + production calibration accepted 2026-09-22; Kijktip label direction + final production calibration accepted 2026-09-22; owner physical time-grid + vertical-breathing correction accepted 2026-09-22
 
 ## Canonical asset
 - Light + dark reference: `/Teevee/TV-gids app in licht en donker thema.png`
@@ -188,14 +188,16 @@ Typography:
 - internal time→Kijktip gap: **2 pt fixed**, non-scaling.
 
 Box:
-- left edge: **X24**;
+- **X24 is the start-time text origin**, identical to every non-Kijktip row;
+- with fixed 8-pt horizontal inset, the editorial surface begins at **X16**;
 - horizontal padding: **8 pt** each side;
-- vertical padding: **0 pt**;
 - radius: **6 pt**;
 - minimum outer width: **56 pt**;
 - outer width:
   `max(56, max(intrinsicTimeWidth, intrinsicKijktipWidth) + 16)`;
 - no border/shadow.
+
+The editorial surface is subordinate to the structural time grid: it may extend left of X24, but it must never move the time text away from X24. Inside the surface, the time/Kijktip stack starts at X24 and remains intrinsic; `Kijktip` is optically centred under the rendered time. The earlier “surface-left X24 / vertical padding 0” rule is superseded.
 
 The label is an editorial information container, not a button or promotional badge.
 
@@ -204,34 +206,41 @@ The label is an editorial information container, not a button or promotional bad
 The frozen standard row remains **52 pt at S=1**.
 
 At `S = 1`:
-- label outer Y: **7…45**;
+- surface outer Y: **0…52**;
+- vertical breathing inside the surface: **7 pt top / 7 pt bottom**;
 - time line box: **7…27**;
+- fixed internal gap: **2 pt**;
 - Kijktip line box: **29…45**;
-- label outer height: **38 pt**;
-- top/bottom row breathing room: **7 pt / 7 pt**.
+- horizontal padding remains **8 pt**.
 
 At arbitrary substantive content scale `S = max(1, effectiveFontScale)`:
 
-`labelOuterHeight = 20S + 2 + 16S = 36S + 2`
+`rowHeight = round(52S)`
 
-`labelTop = (round(52S) - labelOuterHeight) / 2`
+`contentHeight = (20S) + 2 + (16S) = 36S + 2`
 
-Horizontal padding stays 8 pt and radius stays 6 pt; they do not scale. The programme-title column remains X100 with unchanged width. Above 1.35 the existing max-two-line title rule remains authoritative.
+`verticalBreathing = (rowHeight - contentHeight) / 2`
+
+`surfaceOuterHeight = rowHeight`
+
+The surface therefore consumes exactly the existing scaled standard-row authority; it introduces no Kijktip-specific height branch. Time and Kijktip scale substantively, while the 2-pt internal gap, 8-pt horizontal padding and 6-pt radius remain fixed. The programme-title column remains X100 with unchanged width. Above 1.35 the existing max-two-line title rule remains authoritative.
 
 ### Current programme
 
 The frozen current row remains **176 pt at S=1** and uses the existing Dynamic Type row formula.
 
-At `S=1`:
-- label outer Y: **14…52**;
-- time line box: **14…34**;
-- Kijktip line box: **36…52**;
-- label outer height: **38 pt**;
+The surface keeps the existing current-content top ownership:
+- `surfaceTop = currentContentTopInset = 14`;
+- it uses the same scaled internal breathing formula as the standard row;
+- at S1 the surface is **14…66**;
+- time line box is **21…41**;
+- fixed gap is **2 pt**;
+- Kijktip line box is **43…59**;
 - current title remains X100/top14.
 
-The label does not move or resize the current title/description/progress composition. Current state remains visually dominant through title hierarchy and the existing progress treatment.
+The surface may share the same vertical band as current content because it occupies only the time-column zone. It does not move or resize the current title/description/progress composition. Current state remains visually dominant through title hierarchy and the existing progress treatment.
 
-At Larger Text, scale the time/Kijktip text substantively and preserve the same fixed 2-pt internal gap, 8-pt horizontal padding and 6-pt radius. The existing current-row formula remains the only row-height authority.
+At Larger Text, reuse the standard-row `verticalBreathing` and `surfaceOuterHeight = round(52S)` inside the current row; the existing current-row formula remains the only row-height authority and must contain the surface without clipping.
 
 ### Accessibility and multiple Kijktips
 

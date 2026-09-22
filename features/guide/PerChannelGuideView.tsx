@@ -181,12 +181,19 @@ export function ProgrammeRow({
               style={[
                 styles.kijktipTimeLabel,
                 {
-                  top: currentKijktipGeometry.timeTop,
+                  left: currentKijktipGeometry.surfaceLeft,
+                  top: currentKijktipGeometry.surfaceTop,
                   height: currentKijktipGeometry.outerHeight,
+                  paddingTop: currentKijktipGeometry.verticalBreathing,
+                  paddingBottom: currentKijktipGeometry.verticalBreathing,
                   backgroundColor: theme.colors.editorialAccentSurface,
                 },
               ]}
             >
+              <View
+                testID={`per-channel-kijktip-content-${programme.id}`}
+                style={styles.kijktipTimeContent}
+              >
               <Text
                 testID={`per-channel-kijktip-time-${programme.id}`}
                 accessible={false}
@@ -195,6 +202,7 @@ export function ProgrammeRow({
                 numberOfLines={1}
                 style={[
                   styles.currentKijktipTime,
+                  styles.kijktipTimeTextOrigin,
                   { color: theme.colors.editorialAccent },
                 ]}
               >
@@ -213,16 +221,21 @@ export function ProgrammeRow({
               >
                 {KIJKTIP_LABEL}
               </Text>
+              </View>
             </View>
           ) : (
             <Text
+              testID={`per-channel-time-${programme.id}`}
               numberOfLines={1}
               style={[styles.currentTime, { color: theme.colors.textSecondary }]}
             >
               {formatTime(startMs)}
             </Text>
           )}
-          <View style={styles.currentContent}>
+          <View
+            testID={`per-channel-current-content-${programme.id}`}
+            style={styles.currentContent}
+          >
             <Text
               numberOfLines={titleLines}
               ellipsizeMode="tail"
@@ -267,12 +280,19 @@ export function ProgrammeRow({
               style={[
                 styles.kijktipTimeLabel,
                 {
-                  top: standardKijktipGeometry.stackTop,
+                  left: standardKijktipGeometry.surfaceLeft,
+                  top: standardKijktipGeometry.surfaceTop,
                   height: standardKijktipGeometry.outerHeight,
+                  paddingTop: standardKijktipGeometry.verticalBreathing,
+                  paddingBottom: standardKijktipGeometry.verticalBreathing,
                   backgroundColor: theme.colors.editorialAccentSurface,
                 },
               ]}
             >
+              <View
+                testID={`per-channel-kijktip-content-${programme.id}`}
+                style={styles.kijktipTimeContent}
+              >
               <Text
                 testID={`per-channel-kijktip-time-${programme.id}`}
                 accessible={false}
@@ -281,6 +301,7 @@ export function ProgrammeRow({
                 numberOfLines={1}
                 style={[
                   styles.programmeTime,
+                  styles.kijktipTimeTextOrigin,
                   { color: theme.colors.editorialAccent },
                 ]}
               >
@@ -299,9 +320,13 @@ export function ProgrammeRow({
               >
                 {KIJKTIP_LABEL}
               </Text>
+              </View>
             </View>
           ) : (
-            <View style={styles.standardTimeCell}>
+            <View
+              testID={`per-channel-time-cell-${programme.id}`}
+              style={styles.standardTimeCell}
+            >
               <Text
                 numberOfLines={1}
                 style={[
@@ -1221,12 +1246,16 @@ const styles = StyleSheet.create({
   },
   kijktipTimeLabel: {
     position: 'absolute',
-    left: PER_CHANNEL_VISUAL_METRICS.timeTextX,
     minWidth: PER_CHANNEL_VISUAL_METRICS.kijktipMinOuterWidth,
     paddingHorizontal: PER_CHANNEL_VISUAL_METRICS.kijktipPaddingX,
-    paddingVertical: PER_CHANNEL_VISUAL_METRICS.kijktipPaddingY,
     borderRadius: PER_CHANNEL_VISUAL_METRICS.kijktipRadius,
+    alignItems: 'flex-start',
+  },
+  kijktipTimeContent: {
     alignItems: 'center',
+  },
+  kijktipTimeTextOrigin: {
+    alignSelf: 'flex-start',
   },
   kijktipTimeStackLabel: {
     ...GUIDE_EDITORIAL_TYPOGRAPHY.kijktip,
