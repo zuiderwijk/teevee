@@ -2,7 +2,12 @@ import { describe, expect, it, vi } from 'vitest';
 
 import type { GuideSchedule } from '@/data/domain/epg';
 
-import { loadTwoTelevisionDayGuideSchedule, mergeGuideSchedules } from './guideScheduleLoader';
+import {
+  loadTwoTelevisionDayGuideSchedule,
+  loadTwoTelevisionDayGuideScheduleBundle,
+  mergeGuideScheduleBundles,
+  mergeGuideSchedules,
+} from './guideScheduleLoader';
 
 const HOUR_MS = 3_600_000;
 
@@ -72,6 +77,52 @@ describe('mergeGuideSchedules', () => {
         ]),
       ]),
     ).toThrow('Conflicting canonical programme data');
+  });
+});
+
+
+
+describe('Guide schedule editorial bundle composition', () => {
+  const signal = {
+    programmeId: 'crossing',
+    type: 'kijktip' as const,
+    source: 'tvgids' as const,
+    sourceItemId: 'tip-crossing',
+    matchedBy: 'channel-title-start' as const,
+  };
+
+  it('deduplicates the same signal across two bounded television-day loads', () => {
+    const merged = mergeGuideScheduleBundles([
+      {
+        schedule: schedule('2026-09-14T08:00:00Z', [crossingMidnight]),
+        editorialSignals: [signal],
+      },
+      {
+        schedule: schedule('2026-09-14T09:00:00Z', [crossingMidnight]),
+        editorialSignals: [{ ...signal }],
+      },
+    ]);
+
+    expect(merged.schedule.programmes).toHaveLength(1);
+    expect(merged.editorialSignals).toEqual([signal]);
+  });
+
+  it('treats no editorial signals as a complete valid bundle state', async () => {
+    const getSchedule = vi.fn().mockResolvedValue({
+      status: 'ok',
+      schedule: schedule('2026-09-15T06:00:00Z', []),
+      editorialSignals: [],
+    });
+
+    await expect(
+      loadTwoTelevisionDayGuideScheduleBundle(
+        { getSchedule },
+        Date.parse('2026-09-15T17:00:00Z'),
+      ),
+    ).resolves.toMatchObject({
+      schedule: { timezone: 'Europe/Amsterdam' },
+      editorialSignals: [],
+    });
   });
 });
 
