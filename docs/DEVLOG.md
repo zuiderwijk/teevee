@@ -1,5 +1,18 @@
 # Teevee Development Logboek
 
+## 22 september 2026 — PR #114 focused physical-runtime refinement after owner iPhone review
+
+Owner iPhone review of exact head `90ae6df241babe172a91ab608708abf0e21ba5d2` confirmed the Totaal vertical endpoint no-overscroll policy and widened current-marker body, then exposed four narrow physical-runtime issues without reopening the production design.
+
+- **Larger Text context allocation:** the 52-pt Totaal day/Nu row remains frozen. Totaal now opts the shared day selector into intrinsic non-shrinking one-line allocation, and its local `Nu` target/visible label cannot shrink. The existing 1.20 compact cap, touch targets and typography remain unchanged; Per zender and Nu & Straks are not retuned.
+- **Wall-clock Guide clock:** `useGuideClock` no longer uses a mount-relative `setInterval`. One recursively scheduled timeout derives its next delay from `Date.now() % tickMs`; at the 30-second cadence refreshes align to real `:00`/`:30` boundaries. Background clears the pending timer, AppState→active refreshes immediately and schedules one newly aligned timeout, and unmount clears both timer and subscription.
+- **Partial-left readability:** `EdgeReadabilityOverlay` separates masking from sticky-text visibility. The mask remains active for any positive partial-left remainder so an offscreen-positioned underlying title cannot leak a one-letter/bare-ellipsis fragment; sticky title text appears only once the remainder reaches the existing `48 × S` readable-presentation threshold. The real programme frame/boundary and per-frame Reanimated ownership remain unchanged.
+- **Definitive microcell simplification:** the strict full-frame `frameWidth < 48 × S` classification remains canonical, but every individual microcell below it is now visually text-free. The previously introduced 27×S individual-glyph floor and individual ellipsis helpers/rendering have been removed. Repeated-title formation, full-schedule stable identity, exact adjacency/title rules, bounded programme-window presentation and per-programme actions/boundaries/accessibility remain unchanged. One shared Medium title is still allowed only when visible repeated-run width is at least `48 × S`; below that threshold the run remains text-free.
+
+Deterministic coverage now includes intrinsic Larger Text day-selector allocation, phase-aligned `:30`/`:00` fake-timer progression, AppState resume realignment/no duplicate timers/cleanup, EdgeReadability mask-vs-text threshold and hard reversal, visually empty 5/10/15-minute microcells, exact 48-pt normal rendering, 3×5-minute text-free repeated runs, 4×5-minute shared-title runs, current-micro accessibility semantics and bounded repeated-run eligibility.
+
+This refinement does not change 84/76/3.00 geometry, the 120-pt viewed-time anchor, 1.5× programme overscan, horizontal ownership/bounce, Totaal vertical endpoint policy, day/television-day semantics, D-2..D+7, provider/EPG/backend/migrations, Programme Detail, Per zender, Nu & Straks or bottom navigation.
+
 Doel: chronologisch, begrijpelijk overzicht van substantiële milestones, verificatie en blokkades. `docs/PROJECT_STATE.md` is altijd de canonieke actuele toestand. Granulaire CI/device-details blijven terugvindbaar in GitHub PR/commit-history en timestamped evidence-docs.
 
 ## Logboekregels
