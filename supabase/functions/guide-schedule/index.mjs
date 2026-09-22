@@ -1,3 +1,4 @@
+import { SupabaseEditorialSignalRepository } from '../../../server/editorial/supabaseEditorialRepository.ts';
 import { DEVELOPMENT_CHANNELS } from '../../../server/epg/developmentChannelCatalog.ts';
 import {
   HOSTED_REQUEST_MAX_BODY_BYTES,
@@ -40,7 +41,10 @@ function scheduleApi() {
     baseUrl: Deno.env.get('SUPABASE_URL') ?? '',
     apiKey: defaultSecretKey(),
   });
-  return new RepositoryGuideScheduleApi(new SupabaseScheduleRepository(client));
+  return new RepositoryGuideScheduleApi(
+    new SupabaseScheduleRepository(client),
+    new SupabaseEditorialSignalRepository(client),
+  );
 }
 
 async function parseJsonBody(req) {
