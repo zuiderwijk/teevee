@@ -5,8 +5,8 @@ import {
   GUIDE_TIME_AXIS_HEIGHT,
 } from './geometry';
 
-export const GUIDE_LARGE_TEXT_THRESHOLD = 1.15;
-export const GUIDE_STACKED_CONTROLS_THRESHOLD = GUIDE_LARGE_TEXT_THRESHOLD;
+export const GUIDE_LARGE_TEXT_THRESHOLD = 1.35;
+export const GUIDE_STACKED_CONTROLS_THRESHOLD = Number.POSITIVE_INFINITY;
 
 export type GuideLayoutMetrics = {
   fontScale: number;
@@ -28,15 +28,17 @@ export function guideLayoutForFontScale(fontScale: number): GuideLayoutMetrics {
   const scale = normaliseFontScale(fontScale);
   const growth = scale - 1;
   const minuteWidth = Math.round((GUIDE_MINUTE_WIDTH + 1.2 * growth) * 100) / 100;
+  const baselineRowHeight = Math.round(GUIDE_ROW_HEIGHT + 40 * growth);
+  const contentSafeHeight = Math.ceil(56 * scale + 13);
 
   return {
     fontScale: scale,
-    largeText: scale >= GUIDE_LARGE_TEXT_THRESHOLD,
-    stackedControls: scale >= GUIDE_STACKED_CONTROLS_THRESHOLD,
-    rowHeight: Math.round(GUIDE_ROW_HEIGHT + 40 * growth),
+    largeText: scale > GUIDE_LARGE_TEXT_THRESHOLD,
+    stackedControls: false,
+    rowHeight: Math.max(baselineRowHeight, contentSafeHeight),
     channelWidth: Math.round(GUIDE_CHANNEL_WIDTH + 28 * growth),
-    timeAxisHeight: Math.round(GUIDE_TIME_AXIS_HEIGHT + 18 * growth),
+    timeAxisHeight: GUIDE_TIME_AXIS_HEIGHT,
     minuteWidth,
-    tickLabelWidth: Math.round(72 + (minuteWidth - GUIDE_MINUTE_WIDTH) * 30),
+    tickLabelWidth: 48,
   };
 }

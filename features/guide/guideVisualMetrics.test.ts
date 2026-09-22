@@ -38,5 +38,7 @@ describe('shared Guide responsive chrome', () => {
     expect(darkTheme.colors.railTick).toBe('#72726B');
     expect(lightTheme.colors.border).toBe('#E4E4E0');
     expect(darkTheme.colors.border).toBe('#30302D');
+    expect(lightTheme.colors.onCurrentTime).toBe('#0D0D0D');
+    expect(darkTheme.colors.onCurrentTime).toBe('#0D0D0D');
   });
 });

@@ -1,5 +1,4 @@
 import {
-  guideDayStart,
   guideTelevisionDayHorizon,
   guideTelevisionDayMatchingWallClock,
   guideTelevisionDayStart,
@@ -37,20 +36,12 @@ export function guideDayIsSelectable(dayStartMs: number, nowMs: number): boolean
 }
 
 /**
- * Human-facing television-day label. Relative wording follows the real Amsterdam
- * calendar date, not merely D=0, so 00:00-05:59 never falsely labels the preceding
- * television day as Vandaag.
+ * Shared Totaal/Per-zender compact television-day wording. Relative labels are
+ * available only from 06:00 through 23:59 Amsterdam time; before 06:00 every
+ * option is explicit so the preceding television day is never called Vandaag.
  */
 export function guideDayLabel(dayStartMs: number, nowMs: number): string {
-  const nominalCalendarDay = guideDayStart(dayStartMs);
-  const todayCalendarDay = guideDayStart(nowMs);
-  const formatted = formatNominalDay(dayStartMs);
-
-  if (nominalCalendarDay === todayCalendarDay) return `Vandaag · ${formatted.toLowerCase()}`;
-  if (nominalCalendarDay === guideDayStart(nowMs, 1)) {
-    return `Morgen · ${formatted.toLowerCase()}`;
-  }
-  return formatted;
+  return perChannelGuideDayLabel(dayStartMs, nowMs);
 }
 
 function amsterdamHour(nowMs: number): number {

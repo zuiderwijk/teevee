@@ -3,8 +3,8 @@ import type { Programme } from '@/data/domain/epg';
 export const GUIDE_MINUTE_WIDTH = 3;
 export const GUIDE_CHANNEL_WIDTH = 84;
 export const GUIDE_ROW_HEIGHT = 76;
-export const GUIDE_TIME_AXIS_HEIGHT = 38;
-export const GUIDE_PROGRAMME_GAP = 2;
+export const GUIDE_TIME_AXIS_HEIGHT = 44;
+export const GUIDE_PROGRAMME_GAP = 0;
 export const GUIDE_PROGRAMME_TIME_MIN_VISIBLE_WIDTH = 52;
 
 export type ProgrammeFrame = {
@@ -38,7 +38,7 @@ export function programmeFrame(
 
   return {
     left: timeToX(start, windowStartMs, minuteWidth),
-    width: Math.max(1, minutesBetween(start, end) * minuteWidth - GUIDE_PROGRAMME_GAP),
+    width: Math.max(0, minutesBetween(start, end) * minuteWidth),
   };
 }
 
@@ -50,12 +50,6 @@ export function programmeVisibleContent(
   const safeViewportX = Number.isFinite(viewportX) ? Math.max(0, viewportX) : 0;
   const frameEnd = frame.left + frame.width;
 
-  // Settled readability may intentionally move content right only while the
-  // settled viewport cuts through this programme. If that remembered viewport
-  // is already beyond the programme, keep the cell's normal content geometry.
-  // This matters during reverse scrolling: the native ScrollView can move left
-  // before the settled React state updates, and a stale later viewport must not
-  // collapse newly visible programme text to zero width.
   if (safeViewportX <= frame.left || safeViewportX >= frameEnd) {
     return {
       contentTranslateX: 0,
@@ -84,7 +78,7 @@ export function timelineWidth(windowStartMs: number, windowEndMs: number, minute
   return Math.max(0, minutesBetween(windowStartMs, windowEndMs) * minuteWidth);
 }
 
-export function buildTimeTicks(windowStartMs: number, windowEndMs: number, intervalMinutes = 30): number[] {
+export function buildTimeTicks(windowStartMs: number, windowEndMs: number, intervalMinutes = 15): number[] {
   const intervalMs = intervalMinutes * 60_000;
   const firstTick = Math.ceil(windowStartMs / intervalMs) * intervalMs;
   const ticks: number[] = [];

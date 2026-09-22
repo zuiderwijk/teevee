@@ -1,0 +1,405 @@
+// @vitest-environment jsdom
+import { act, createElement, type ReactNode } from 'react';
+import { createRoot, type Root } from 'react-dom/client';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+
+import type { Channel, Programme } from '@/data/domain/epg';
+
+import { TotaalProgrammeCell } from './TotaalProgrammeCell';
+
+type MockStyle =
+  | Record<string, unknown>
+  | MockStyle[]
+  | null
+  | undefined;
+
+type MockProps = {
+  children?: ReactNode;
+  testID?: string;
+  accessibilityLabel?: string;
+  numberOfLines?: number;
+  onPress?: () => void;
+  style?: MockStyle | ((state: { pressed: boolean }) => MockStyle);
+};
+
+function flattenStyle(style: MockStyle): Record<string, unknown> {
+  if (!style) return {};
+  if (Array.isArray(style)) {
+    return style.reduce<Record<string, unknown>>(
+      (result, item) => ({ ...result, ...flattenStyle(item) }),
+      {},
+    );
+  }
+  return style;
+}
+
+vi.mock('react-native', () => {
+  const View = ({ children, testID, style }: MockProps) => {
+    const resolved =
+      typeof style === 'function'
+        ? flattenStyle(style({ pressed: false }))
+        : flattenStyle(style);
+    return createElement(
+      'div',
+      {
+        'data-testid': testID,
+        'data-align-items': resolved.alignItems,
+        'data-justify-content': resolved.justifyContent,
+      },
+      children,
+    );
+  };
+  const Text = ({ children, testID, numberOfLines, style }: MockProps) => {
+    const resolved =
+      typeof style === 'function'
+        ? flattenStyle(style({ pressed: false }))
+        : flattenStyle(style);
+    return createElement(
+      'span',
+      {
+        'data-testid': testID,
+        'data-number-of-lines': numberOfLines,
+        'data-font-family': resolved.fontFamily,
+        'data-color': resolved.color,
+      },
+      children,
+    );
+  };
+  const Pressable = ({
+    children,
+    testID,
+    accessibilityLabel,
+    onPress,
+    style,
+  }: MockProps) => {
+    const resolved =
+      typeof style === 'function' ? flattenStyle(style({ pressed: false })) : flattenStyle(style);
+    return createElement(
+      'button',
+      {
+        'data-testid': testID,
+        'aria-label': accessibilityLabel,
+        'data-left': resolved.left,
+        'data-width': resolved.width,
+        'data-radius': resolved.borderRadius,
+        'data-background': resolved.backgroundColor,
+        onClick: onPress,
+      },
+      children,
+    );
+  };
+
+  return {
+    Pressable,
+    Text,
+    View,
+    StyleSheet: {
+      create: <T,>(value: T) => value,
+    },
+  };
+});
+
+vi.mock('@/theme/useTeeveeTheme', () => ({
+  useTeeveeTheme: () => ({
+    colors: {
+      background: '#F7F7F5',
+      surfaceElevated: '#fff',
+      text: '#111',
+      textSecondary: '#555',
+      border: '#ddd',
+    },
+  }),
+}));
+
+const channel: Channel = {
+  id: 'npo-1',
+  name: 'NPO 1',
+  displayName: 'NPO 1 volledig',
+  sortOrder: 0,
+  isActive: true,
+};
+
+function programme(
+  id: string,
+  startAt: string,
+  endAt: string,
+  title = 'Een volledig programmanaam',
+): Programme {
+  return { id, channelId: channel.id, startAt, endAt, title };
+}
+
+let container: HTMLDivElement;
+let root: Root;
+
+beforeEach(() => {
+  vi.stubGlobal('IS_REACT_ACT_ENVIRONMENT', true);
+  container = document.createElement('div');
+  document.body.appendChild(container);
+  root = createRoot(container);
+});
+
+afterEach(async () => {
+  await act(async () => root.unmount());
+  container.remove();
+  vi.unstubAllGlobals();
+});
+
+describe('TotaalProgrammeCell', () => {
+  it('renders exact real-duration geometry with no permanent card fill/radius or progress element', async () => {
+    const item = programme(
+      'current',
+      '2026-09-21T18:00:00.000Z',
+      '2026-09-21T18:30:00.000Z',
+    );
+
+    await act(async () => {
+      root.render(
+        <TotaalProgrammeCell
+          channel={channel}
+          programme={item}
+          nowMs={Date.parse('2026-09-21T18:15:00.000Z')}
+          windowStartMs={Date.parse('2026-09-21T18:00:00.000Z')}
+          minuteWidth={3}
+          fontScale={1}
+          onSelectProgramme={() => undefined}
+        />,
+      );
+    });
+
+    const button = container.querySelector<HTMLElement>('[data-testid="programme-current"]');
+    expect(button?.dataset.left).toBe('0');
+    expect(button?.dataset.width).toBe('90');
+    expect(button?.dataset.radius).toBe('0');
+    expect(button?.dataset.background).toBe('transparent');
+    expect(container.querySelector('[data-testid*="progress"]')).toBeNull();
+    expect(container.querySelector('[data-testid="totaal-programme-boundary-current"]')).not.toBeNull();
+  });
+
+  it('uses tot-end copy and complete current accessibility semantics', async () => {
+    const item = programme(
+      'current-copy',
+      '2026-09-21T18:00:00.000Z',
+      '2026-09-21T18:30:00.000Z',
+      'Nieuwsuur',
+    );
+
+    await act(async () => {
+      root.render(
+        <TotaalProgrammeCell
+          channel={channel}
+          programme={item}
+          nowMs={Date.parse('2026-09-21T18:15:00.000Z')}
+          windowStartMs={Date.parse('2026-09-21T18:00:00.000Z')}
+          minuteWidth={3}
+          fontScale={1}
+          onSelectProgramme={() => undefined}
+        />,
+      );
+    });
+
+    expect(
+      container.querySelector('[data-testid="totaal-programme-secondary-current-copy"]')
+        ?.textContent,
+    ).toBe('tot 20:30');
+    expect(
+      container.querySelector('[data-testid="programme-current-copy"]')
+        ?.getAttribute('aria-label'),
+    ).toBe('NPO 1 volledig, Nieuwsuur, 20:00 tot 20:30, nu bezig');
+  });
+
+  it.each([
+    [5, 'micro-5'],
+    [10, 'micro-10'],
+    [15, 'micro-15'],
+  ])(
+    'keeps a %i-minute microcell visually empty with full action/boundary semantics',
+    async (durationMinutes, id) => {
+      const startMs = Date.parse('2026-09-21T18:30:00.000Z');
+      const short = programme(
+        id,
+        new Date(startMs).toISOString(),
+        new Date(startMs + durationMinutes * 60_000).toISOString(),
+        'Volledige microtitel',
+      );
+
+      await act(async () => {
+        root.render(
+          <TotaalProgrammeCell
+            channel={channel}
+            programme={short}
+            nowMs={Date.parse('2026-09-21T18:00:00.000Z')}
+            windowStartMs={Date.parse('2026-09-21T18:00:00.000Z')}
+            minuteWidth={3}
+            fontScale={1}
+            onSelectProgramme={() => undefined}
+          />,
+        );
+      });
+
+      const button = container.querySelector<HTMLElement>(
+        `[data-testid="programme-${id}"]`,
+      );
+      expect(button?.dataset.width).toBe(String(durationMinutes * 3));
+      expect(
+        container.querySelector(`[data-testid="totaal-programme-title-${id}"]`),
+      ).toBeNull();
+      expect(
+        container.querySelector(`[data-testid="totaal-programme-secondary-${id}"]`),
+      ).toBeNull();
+      expect(
+        container.querySelector(`[data-testid="totaal-programme-micro-${id}"]`),
+      ).toBeNull();
+      expect(button?.getAttribute('aria-label')).toContain('Volledige microtitel');
+      expect(
+        container.querySelector(`[data-testid="totaal-programme-boundary-${id}"]`),
+      ).not.toBeNull();
+    },
+  );
+
+  it('renders exact 48-pt frame width as a normal programme', async () => {
+    const exactThreshold = programme(
+      'exact-threshold',
+      '2026-09-21T18:30:00.000Z',
+      '2026-09-21T18:46:00.000Z',
+      'Exact threshold',
+    );
+
+    await act(async () => {
+      root.render(
+        <TotaalProgrammeCell
+          channel={channel}
+          programme={exactThreshold}
+          nowMs={Date.parse('2026-09-21T18:00:00.000Z')}
+          windowStartMs={Date.parse('2026-09-21T18:00:00.000Z')}
+          minuteWidth={3}
+          fontScale={1}
+          onSelectProgramme={() => undefined}
+        />,
+      );
+    });
+
+    expect(
+      container.querySelector<HTMLElement>('[data-testid="programme-exact-threshold"]')
+        ?.dataset.width,
+    ).toBe('48');
+    expect(
+      container.querySelector('[data-testid="totaal-programme-title-exact-threshold"]')
+        ?.textContent,
+    ).toBe('Exact threshold');
+  });
+
+  it('keeps an ultra-current microcell visually empty while retaining exact current accessibility semantics', async () => {
+    const selected: string[] = [];
+    const currentMicro = programme(
+      'current-micro',
+      '2026-09-21T18:30:00.000Z',
+      '2026-09-21T18:35:00.000Z',
+      'Ultra kort nieuws',
+    );
+
+    await act(async () => {
+      root.render(
+        <TotaalProgrammeCell
+          channel={channel}
+          programme={currentMicro}
+          nowMs={Date.parse('2026-09-21T18:32:00.000Z')}
+          windowStartMs={Date.parse('2026-09-21T18:00:00.000Z')}
+          minuteWidth={3}
+          fontScale={1}
+          onSelectProgramme={({ programme: selectedProgramme }) =>
+            selected.push(selectedProgramme.id)
+          }
+        />,
+      );
+    });
+
+    const button = container.querySelector<HTMLElement>(
+      '[data-testid="programme-current-micro"]',
+    );
+    expect(button?.dataset.width).toBe('15');
+    expect(
+      container.querySelector('[data-testid="totaal-programme-micro-current-micro"]'),
+    ).toBeNull();
+    expect(button?.getAttribute('aria-label')).toBe(
+      'NPO 1 volledig, Ultra kort nieuws, 20:30 tot 20:35, nu bezig',
+    );
+    expect(
+      container.querySelector('[data-testid="totaal-programme-boundary-current-micro"]'),
+    ).not.toBeNull();
+
+    await act(async () => button?.click());
+    expect(selected).toEqual(['current-micro']);
+  });
+
+  it('keeps repeated-run members as individual programme actions while the visual overlay owns their label', async () => {
+    const selected: string[] = [];
+    const member = programme(
+      'run-member',
+      '2026-09-21T18:30:00.000Z',
+      '2026-09-21T18:35:00.000Z',
+      'Herhaalde editie',
+    );
+
+    await act(async () => {
+      root.render(
+        <TotaalProgrammeCell
+          channel={channel}
+          programme={member}
+          nowMs={Date.parse('2026-09-21T18:00:00.000Z')}
+          windowStartMs={Date.parse('2026-09-21T18:00:00.000Z')}
+          minuteWidth={3}
+          fontScale={1}
+          onSelectProgramme={({ programme: selectedProgramme }) =>
+            selected.push(selectedProgramme.id)
+          }
+        />,
+      );
+    });
+
+    expect(
+      container.querySelector('[data-testid="totaal-programme-micro-run-member"]'),
+    ).toBeNull();
+    expect(
+      container.querySelector('[data-testid="totaal-programme-title-run-member"]'),
+    ).toBeNull();
+    expect(
+      container.querySelector('[data-testid="totaal-programme-boundary-run-member"]'),
+    ).not.toBeNull();
+
+    await act(async () => {
+      container.querySelector<HTMLElement>('[data-testid="programme-run-member"]')?.click();
+    });
+    expect(selected).toEqual(['run-member']);
+  });
+
+  it('allows two title lines and visible start time only at comfortable width', async () => {
+    const comfortable = programme(
+      'comfortable',
+      '2026-09-21T19:00:00.000Z',
+      '2026-09-21T20:00:00.000Z',
+    );
+
+    await act(async () => {
+      root.render(
+        <TotaalProgrammeCell
+          channel={channel}
+          programme={comfortable}
+          nowMs={Date.parse('2026-09-21T18:00:00.000Z')}
+          windowStartMs={Date.parse('2026-09-21T18:00:00.000Z')}
+          minuteWidth={3}
+          fontScale={1}
+          onSelectProgramme={() => undefined}
+        />,
+      );
+    });
+
+    expect(
+      container.querySelector('[data-testid="totaal-programme-title-comfortable"]')
+        ?.getAttribute('data-number-of-lines'),
+    ).toBe('2');
+    expect(
+      container.querySelector('[data-testid="totaal-programme-secondary-comfortable"]')
+        ?.textContent,
+    ).toBe('21:00');
+  });
+});

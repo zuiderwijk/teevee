@@ -1,5 +1,11 @@
-export const GUIDE_TIME_TICK_LABEL_OFFSET = 6;
-export const GUIDE_TIME_TICK_INTERVAL_MINUTES = 30;
+export const GUIDE_TIME_TICK_INTERVAL_MINUTES = 15;
+export const GUIDE_TIME_LABEL_INTERVAL_MINUTES = 30;
+
+export function centredTimeAxisLabelLeft(labelWidth: number): number {
+  'worklet';
+  const safeLabelWidth = Number.isFinite(labelWidth) ? Math.max(0, labelWidth) : 0;
+  return -safeLabelWidth / 2;
+}
 
 export function clippedTimeAxisLabelWidth(
   viewportX: number,
@@ -11,11 +17,11 @@ export function clippedTimeAxisLabelWidth(
   if (tickSpacing <= 0 || labelWidth <= 0) return 0;
 
   const safeViewportX = Math.max(0, viewportX);
-  const firstLabelStartX = firstTickX + GUIDE_TIME_TICK_LABEL_OFFSET;
-  const distancePastFirstLabel = safeViewportX - firstLabelStartX;
-  if (distancePastFirstLabel <= 0) return 0;
+  const firstLabelStartX = firstTickX + centredTimeAxisLabelLeft(labelWidth);
+  const distancePastFirstLabelStart = safeViewportX - firstLabelStartX;
+  if (distancePastFirstLabelStart < 0) return 0;
 
-  const phase = distancePastFirstLabel % tickSpacing;
+  const phase = distancePastFirstLabelStart % tickSpacing;
   if (phase <= 0 || phase >= labelWidth) return 0;
 
   return Math.min(labelWidth, labelWidth - phase);

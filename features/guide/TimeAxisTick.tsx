@@ -1,14 +1,19 @@
 import { memo } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 
-import { GUIDE_TIME_TICK_LABEL_OFFSET } from './timeAxis';
+import { COMPACT_GUIDE_MAX_FONT_SIZE_MULTIPLIER } from './guideVisualMetrics';
+import { centredTimeAxisLabelLeft } from './timeAxis';
+import { TOTAAL_TYPOGRAPHY } from './totaal';
 
 type TimeAxisTickProps = {
   left: number;
   label: string;
   labelWidth: number;
   labelColor: string;
-  borderColor: string;
+  tickColor: string;
+  major: boolean;
+  tickHeight: number;
+  tickOpacity: number;
 };
 
 export const TimeAxisTick = memo(function TimeAxisTick({
@@ -16,26 +21,64 @@ export const TimeAxisTick = memo(function TimeAxisTick({
   label,
   labelWidth,
   labelColor,
-  borderColor,
+  tickColor,
+  major,
+  tickHeight,
+  tickOpacity,
 }: TimeAxisTickProps) {
   return (
-    <View style={[styles.tick, { left, borderLeftColor: borderColor }]}>
-      <Text numberOfLines={1} style={[styles.tickLabel, { width: labelWidth, color: labelColor }]}>
-        {label}
-      </Text>
+    <View
+      accessible={false}
+      pointerEvents="none"
+      style={[styles.tickAnchor, { left }]}
+    >
+      {major ? (
+        <Text
+          numberOfLines={1}
+          maxFontSizeMultiplier={COMPACT_GUIDE_MAX_FONT_SIZE_MULTIPLIER}
+          style={[
+            styles.tickLabel,
+            {
+              left: centredTimeAxisLabelLeft(labelWidth),
+              width: labelWidth,
+              color: labelColor,
+            },
+          ]}
+        >
+          {label}
+        </Text>
+      ) : null}
+      <View
+        style={[
+          styles.tickMark,
+          {
+            height: tickHeight,
+            backgroundColor: tickColor,
+            opacity: tickOpacity,
+          },
+        ]}
+      />
     </View>
   );
 });
 
 const styles = StyleSheet.create({
-  tick: {
+  tickAnchor: {
     position: 'absolute',
     top: 0,
     bottom: 0,
     width: 1,
-    borderLeftWidth: StyleSheet.hairlineWidth,
-    paddingLeft: GUIDE_TIME_TICK_LABEL_OFFSET,
-    paddingTop: 11,
   },
-  tickLabel: { fontSize: 10, fontWeight: '600' },
+  tickLabel: {
+    position: 'absolute',
+    top: 6,
+    textAlign: 'center',
+    ...TOTAAL_TYPOGRAPHY.axisLabel,
+  },
+  tickMark: {
+    position: 'absolute',
+    left: 0,
+    bottom: 0,
+    width: 1,
+  },
 });

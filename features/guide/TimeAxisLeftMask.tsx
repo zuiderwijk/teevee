@@ -4,24 +4,20 @@ import Animated, { type SharedValue, useAnimatedStyle } from 'react-native-reani
 import { clippedTimeAxisLabelWidth } from './timeAxis';
 
 type TimeAxisLeftMaskProps = {
-  left: number;
   height: number;
   firstTickX: number;
   tickSpacing: number;
   labelWidth: number;
   backgroundColor: string;
-  borderBottomColor: string;
   scrollX: SharedValue<number>;
 };
 
 export function TimeAxisLeftMask({
-  left,
   height,
   firstTickX,
   tickSpacing,
   labelWidth,
   backgroundColor,
-  borderBottomColor,
   scrollX,
 }: TimeAxisLeftMaskProps) {
   const animatedStyle = useAnimatedStyle(() => ({
@@ -34,10 +30,8 @@ export function TimeAxisLeftMask({
       style={[
         styles.mask,
         {
-          left,
-          height,
+          height: Math.max(0, height - 1),
           backgroundColor,
-          borderBottomColor,
         },
         animatedStyle,
       ]}
@@ -48,8 +42,8 @@ export function TimeAxisLeftMask({
 const styles = StyleSheet.create({
   mask: {
     position: 'absolute',
+    left: 0,
     top: 0,
     zIndex: 4,
-    borderBottomWidth: StyleSheet.hairlineWidth,
   },
 });

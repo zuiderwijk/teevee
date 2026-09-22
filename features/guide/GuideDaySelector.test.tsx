@@ -5,7 +5,10 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { guideTelevisionDayHorizon } from '@/data/domain/guideTime';
 
+import { COMPACT_GUIDE_MAX_FONT_SIZE_MULTIPLIER } from './guideVisualMetrics';
 import { GuideDaySelector } from './GuideDaySelector';
+
+type StyleValue = Record<string, unknown> | StyleValue[] | null | undefined;
 
 type MockProps = {
   children?: ReactNode;
@@ -16,22 +19,42 @@ type MockProps = {
   visible?: boolean;
   onPress?: () => void;
   onRequestClose?: () => void;
-  style?: unknown;
+  style?: StyleValue | ((state: { pressed: boolean }) => StyleValue);
+  maxFontSizeMultiplier?: number;
 };
 
+function flattenStyle(style: StyleValue): Record<string, unknown> {
+  if (!style) return {};
+  if (Array.isArray(style)) {
+    return style.reduce<Record<string, unknown>>(
+      (result, item) => ({ ...result, ...flattenStyle(item) }),
+      {},
+    );
+  }
+  return style;
+}
+
 vi.mock('react-native', () => {
-  const element = (tag: string, props: MockProps) =>
-    createElement(
+  const element = (tag: string, props: MockProps) => {
+    const resolvedStyle =
+      typeof props.style === 'function'
+        ? flattenStyle(props.style({ pressed: false }))
+        : flattenStyle(props.style);
+    return createElement(
       tag,
       {
         'data-testid': props.testID,
         'aria-label': props.accessibilityLabel,
         'aria-selected': props.accessibilityState?.selected,
         'aria-busy': props.accessibilityState?.busy,
+        'data-flex-grow': resolvedStyle.flexGrow,
+        'data-flex-shrink': resolvedStyle.flexShrink,
+        'data-max-font': props.maxFontSizeMultiplier,
         onClick: props.onPress,
       },
       props.children,
     );
+  };
 
   return {
     Modal: ({ children, visible }: MockProps) => (visible ? createElement('div', { 'data-modal': 'true' }, children) : null),
@@ -182,5 +205,41 @@ describe('GuideDaySelector', () => {
 
     expect(onSelectDay).toHaveBeenCalledWith(horizon.at(-1)!.fromMs);
     expect(container.querySelector('[data-modal="true"]')).toBeNull();
+  });
+
+  it('keeps Totaal one-line date + chevron intrinsically allocated at the compact Larger Text cap', async () => {
+    const nowMs = Date.parse('2026-09-22T00:00:00.000Z');
+    const selectedDayStartMs = Date.parse('2026-09-21T04:00:00.000Z');
+
+    await act(async () => {
+      root.render(
+        <GuideDaySelector
+          selectedDayStartMs={selectedDayStartMs}
+          nowMs={nowMs}
+          labelVariant="per-channel"
+          preserveInlineIntrinsicWidth
+          onSelectDay={() => undefined}
+        />,
+      );
+    });
+
+    const control = container.querySelector<HTMLElement>('[data-testid="guide-day-selector"]');
+    const group = container.querySelector<HTMLElement>(
+      '[data-testid="guide-day-selector-text-group"]',
+    );
+    const label = container.querySelector<HTMLElement>(
+      '[data-testid="guide-day-selector-label"]',
+    );
+    const chevron = container.querySelector<HTMLElement>(
+      '[data-testid="guide-day-selector-chevron"]',
+    );
+
+    expect(COMPACT_GUIDE_MAX_FONT_SIZE_MULTIPLIER).toBe(1.2);
+    expect(control?.dataset.flexShrink).toBe('0');
+    expect(group?.dataset.flexShrink).toBe('0');
+    expect(label?.dataset.flexShrink).toBe('0');
+    expect(label?.dataset.maxFont).toBe('1.2');
+    expect(label?.textContent).toBe('Ma 21 sep');
+    expect(chevron?.textContent).toBe('⌄');
   });
 });

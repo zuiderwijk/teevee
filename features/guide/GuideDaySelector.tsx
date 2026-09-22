@@ -29,6 +29,7 @@ type GuideDaySelectorProps = {
   loading?: boolean;
   unavailable?: boolean;
   labelVariant?: 'default' | 'per-channel';
+  preserveInlineIntrinsicWidth?: boolean;
   onSelectDay: (dayStartMs: number) => void;
 };
 
@@ -38,6 +39,7 @@ export const GuideDaySelector = memo(function GuideDaySelector({
   loading = false,
   unavailable = false,
   labelVariant = 'default',
+  preserveInlineIntrinsicWidth = false,
   onSelectDay,
 }: GuideDaySelectorProps) {
   const theme = useTeeveeTheme();
@@ -68,20 +70,33 @@ export const GuideDaySelector = memo(function GuideDaySelector({
         onPress={() => setOpen(true)}
         style={({ pressed }) => [
           styles.inlineControl,
+          preserveInlineIntrinsicWidth ? styles.inlineControlIntrinsic : null,
           { opacity: pressed ? GUIDE_VISUAL_METRICS.controlPressOpacity : 1 },
         ]}
       >
-        <View style={styles.inlineTextGroup}>
+        <View
+          testID="guide-day-selector-text-group"
+          style={[
+            styles.inlineTextGroup,
+            preserveInlineIntrinsicWidth ? styles.inlineTextGroupIntrinsic : null,
+          ]}
+        >
           <Text
+            testID="guide-day-selector-label"
             numberOfLines={1}
             maxFontSizeMultiplier={COMPACT_GUIDE_MAX_FONT_SIZE_MULTIPLIER}
-            style={[styles.inlineLabel, { color: theme.colors.text }]}
+            style={[
+              styles.inlineLabel,
+              preserveInlineIntrinsicWidth ? styles.inlineLabelIntrinsic : null,
+              { color: theme.colors.text },
+            ]}
           >
             {selectedLabel}
           </Text>
         </View>
         <View accessible={false} style={styles.chevronBox}>
           <Text
+            testID="guide-day-selector-chevron"
             maxFontSizeMultiplier={1}
             style={[styles.disclosure, { color: theme.colors.textSecondary }]}
           >
@@ -172,15 +187,27 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 6,
   },
+  inlineControlIntrinsic: {
+    flexGrow: 0,
+    flexShrink: 0,
+  },
   inlineTextGroup: {
     minWidth: 0,
     flexShrink: 1,
     flexDirection: 'row',
     alignItems: 'center',
   },
+  inlineTextGroupIntrinsic: {
+    flexGrow: 0,
+    flexShrink: 0,
+  },
   inlineLabel: {
     flexShrink: 1,
     ...GUIDE_TYPOGRAPHY.selectedDate,
+  },
+  inlineLabelIntrinsic: {
+    flexGrow: 0,
+    flexShrink: 0,
   },
   chevronBox: {
     width: 14,

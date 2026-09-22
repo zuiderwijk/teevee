@@ -11,6 +11,7 @@ export type TeeveeTheme = {
     railTick: string;
     accent: string;
     currentTime: string;
+    onCurrentTime: string;
     programme: string;
     programmeCurrent: string;
   };
@@ -29,6 +30,7 @@ export const lightTheme: TeeveeTheme = {
     railTick: '#80807A',
     accent: '#202020',
     currentTime: '#D64B42',
+    onCurrentTime: '#0D0D0D',
     programme: '#EFEFEB',
     programmeCurrent: '#E5E5DF'
   }
@@ -47,6 +49,7 @@ export const darkTheme: TeeveeTheme = {
     railTick: '#72726B',
     accent: '#F4F4F1',
     currentTime: '#F06B61',
+    onCurrentTime: '#0D0D0D',
     programme: '#242422',
     programmeCurrent: '#30302D'
   }

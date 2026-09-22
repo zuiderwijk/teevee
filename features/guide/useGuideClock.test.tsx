@@ -1,46 +1,44 @@
 // @vitest-environment jsdom
-import { act } from 'react';
+import { act, createElement } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { useGuideClock } from './useGuideClock';
+import { guideClockDelayToNextBoundary, useGuideClock } from './useGuideClock';
 
-type AppStateValue = 'active' | 'background' | 'inactive';
-
-const clockStore = vi.hoisted(() => ({
-  nowMs: Date.parse('2026-09-13T21:59:50+02:00'),
-  listener: null as ((state: AppStateValue) => void) | null,
+const appState = vi.hoisted(() => ({
+  handler: null as ((state: string) => void) | null,
   remove: vi.fn(),
 }));
 
 vi.mock('react-native', () => ({
   AppState: {
-    addEventListener: (_event: string, listener: (state: AppStateValue) => void) => {
-      clockStore.listener = listener;
-      return {
-        remove: () => {
-          clockStore.remove();
-          clockStore.listener = null;
-        },
-      };
+    addEventListener: (_event: string, handler: (state: string) => void) => {
+      appState.handler = handler;
+      return { remove: appState.remove };
     },
   },
 }));
 
-function ClockProbe() {
-  const nowMs = useGuideClock(60_000);
-  return <div data-testid="clock-probe" data-now={String(nowMs)} />;
+function ClockHarness() {
+  return createElement('span', { 'data-testid': 'clock' }, String(useGuideClock()));
 }
 
 let container: HTMLDivElement;
 let root: Root;
 
+function renderedNow(): number {
+  return Number(
+    container.querySelector<HTMLElement>('[data-testid="clock"]')?.textContent ??
+      'NaN',
+  );
+}
+
 beforeEach(() => {
+  vi.useFakeTimers();
+  vi.setSystemTime(new Date('2026-09-22T00:57:14.000Z'));
   vi.stubGlobal('IS_REACT_ACT_ENVIRONMENT', true);
-  clockStore.nowMs = Date.parse('2026-09-13T21:59:50+02:00');
-  clockStore.listener = null;
-  clockStore.remove.mockClear();
-  vi.spyOn(Date, 'now').mockImplementation(() => clockStore.nowMs);
+  appState.handler = null;
+  appState.remove.mockReset();
   container = document.createElement('div');
   document.body.appendChild(container);
   root = createRoot(container);
@@ -49,47 +47,77 @@ beforeEach(() => {
 afterEach(async () => {
   await act(async () => root.unmount());
   container.remove();
-  vi.restoreAllMocks();
   vi.unstubAllGlobals();
+  vi.useRealTimers();
 });
 
-function probeNow() {
-  const probe = container.querySelector<HTMLElement>('[data-testid="clock-probe"]');
-  if (!probe) throw new Error('Clock probe is not rendered');
-  return Number(probe.dataset.now);
-}
+describe('useGuideClock wall-clock alignment', () => {
+  it('aligns xx:xx:14 mount to the next :30 and then the next :00', async () => {
+    expect(guideClockDelayToNextBoundary(Date.now(), 30_000)).toBe(16_000);
 
-async function sendAppState(state: AppStateValue) {
-  await act(async () => {
-    clockStore.listener?.(state);
-  });
-}
+    await act(async () => root.render(<ClockHarness />));
+    expect(new Date(renderedNow()).toISOString()).toBe(
+      '2026-09-22T00:57:14.000Z',
+    );
 
-describe('useGuideClock lifecycle refresh', () => {
-  it('refreshes immediately when the app becomes active again', async () => {
-    await act(async () => root.render(<ClockProbe />));
-    expect(probeNow()).toBe(clockStore.nowMs);
+    await act(async () => vi.advanceTimersByTime(15_999));
+    expect(new Date(renderedNow()).toISOString()).toBe(
+      '2026-09-22T00:57:14.000Z',
+    );
 
-    const resumedAt = Date.parse('2026-09-14T08:15:00+02:00');
-    clockStore.nowMs = resumedAt;
-    await sendAppState('active');
+    await act(async () => vi.advanceTimersByTime(1));
+    expect(new Date(renderedNow()).toISOString()).toBe(
+      '2026-09-22T00:57:30.000Z',
+    );
 
-    expect(probeNow()).toBe(resumedAt);
-  });
-
-  it('does not advance merely because the app enters background', async () => {
-    await act(async () => root.render(<ClockProbe />));
-    const renderedAt = probeNow();
-
-    clockStore.nowMs = Date.parse('2026-09-14T08:15:00+02:00');
-    await sendAppState('background');
-
-    expect(probeNow()).toBe(renderedAt);
+    await act(async () => vi.advanceTimersByTime(30_000));
+    expect(new Date(renderedNow()).toISOString()).toBe(
+      '2026-09-22T00:58:00.000Z',
+    );
+    expect(new Date(renderedNow()).toISOString().slice(11, 16)).toBe('00:58');
+    expect(vi.getTimerCount()).toBe(1);
   });
 
-  it('removes the AppState listener on unmount', async () => {
-    await act(async () => root.render(<ClockProbe />));
+  it('refreshes immediately on active and realigns without duplicate timers', async () => {
+    await act(async () => root.render(<ClockHarness />));
+    expect(vi.getTimerCount()).toBe(1);
+
+    await act(async () => appState.handler?.('background'));
+    expect(vi.getTimerCount()).toBe(0);
+
+    await act(async () => vi.advanceTimersByTime(40_000));
+    expect(new Date(renderedNow()).toISOString()).toBe(
+      '2026-09-22T00:57:14.000Z',
+    );
+
+    await act(async () => appState.handler?.('active'));
+    expect(new Date(renderedNow()).toISOString()).toBe(
+      '2026-09-22T00:57:54.000Z',
+    );
+    expect(vi.getTimerCount()).toBe(1);
+
+    await act(async () => appState.handler?.('active'));
+    expect(vi.getTimerCount()).toBe(1);
+
+    await act(async () => vi.advanceTimersByTime(5_999));
+    expect(new Date(renderedNow()).toISOString()).toBe(
+      '2026-09-22T00:57:54.000Z',
+    );
+
+    await act(async () => vi.advanceTimersByTime(1));
+    expect(new Date(renderedNow()).toISOString()).toBe(
+      '2026-09-22T00:58:00.000Z',
+    );
+  });
+
+  it('cleans up the aligned timeout and AppState subscription', async () => {
+    await act(async () => root.render(<ClockHarness />));
+    expect(vi.getTimerCount()).toBe(1);
+
     await act(async () => root.unmount());
-    expect(clockStore.remove).toHaveBeenCalledTimes(1);
+    expect(vi.getTimerCount()).toBe(0);
+    expect(appState.remove).toHaveBeenCalledTimes(1);
+
+    root = createRoot(container);
   });
 });

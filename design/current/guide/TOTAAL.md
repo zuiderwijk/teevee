@@ -25,7 +25,7 @@ The programme titles, exact broadcaster mix and generated icon artwork in the bo
 The visual design does not reopen:
 - horizontal = time, vertical = channels;
 - real programme start/duration determines horizontal geometry;
-- native inertia, bounce and directional lock;
+- native horizontal inertia/bounce and directional lock; normal vertical scrolling/fling/deceleration stay native, while Totaal alone intentionally disables vertical endpoint overscroll/rubber-band because physical iPhone validation rejected schedule-only displacement beneath the fixed functional stack;
 - proven partial-left-title/time-axis readability behaviour;
 - D-2 through D+7 Guide horizon;
 - 06:00 Europe/Amsterdam television-day boundary;
@@ -43,7 +43,7 @@ Top to content:
 1. shared Teevee Guide shell with `tv.` brand mark;
 2. shared Search + secondary/settings action area;
 3. shared Guide presentation tabs: `Totaal · Per zender · Nu & Straks`, with Totaal selected;
-4. compact date selector + separate `Nu`;
+4. compact date selector + separate `Nu`, both intrinsically readable on one line within the 1.20 compact cap and frozen 52-pt context; `Nu` never ellipsizes;
 5. compact time axis;
 6. open 2D schedule grid with logo-first channel rail;
 7. existing shared bottom navigation, visually identical in structure to Per zender.
@@ -91,10 +91,11 @@ The bounded D-2..D+7 bottom-sheet contract remains defined by `design/current/gu
 - future/non-current programme: secondary copy uses the start time when useful;
 - secondary time copy is visually quieter than the title;
 - for normal narrow/partially clipped cells, title survives before secondary time metadata;
-- a genuine microcell whose full real frame width is `< 48 × S pt` (`S = max(1, effectiveFontScale)`) suppresses meaningless title fragments and shows one centred `…` with no secondary time;
-- the actual-current individual microcell uses Semibold `…`; non-current uses Medium;
+- a genuine microcell whose full real frame width is `< 48 × S pt` (`S = max(1, effectiveFontScale)`) suppresses all visible title/time/ellipsis glyphs individually;
+- every visually empty microcell still keeps its full programme boundary, Pressable, pressed semantics, accessibility label/current state and Programme Detail action;
 - two or more directly adjacent microcells on the same channel with the same title after trim/whitespace normalisation form a repeated-title run;
-- when the visible repeated-run intersection is at least `48 × S pt`, suppress per-cell `…` and show one shared one-line Medium title over the visible run, left-aligned with the existing 6-pt compact inset and clipped/sticky strictly inside the run bounds;
+- when the visible repeated-run intersection is at least `48 × S pt`, show one shared one-line Medium title over the visible run, left-aligned with the existing 6-pt compact inset and clipped/sticky strictly inside the run bounds;
+- below that shared-title threshold the run and its individual cells remain text-free;
 - repeated-title sharing never merges geometry: every underlying broadcast retains its own boundary, hit target, accessibility action and Programme Detail action;
 - shared repeated-run title remains Medium even when one underlying broadcast is current; exact current semantics remain on that broadcast and the time-axis marker;
 - exact font sizes/weights/row metrics remain defined by the production spec and validated physically.
@@ -107,8 +108,10 @@ The bounded D-2..D+7 bottom-sheet contract remains defined by `design/current/gu
 
 ### Current-time indicator
 - one compact red current-time marker anchored to the time axis;
-- visible current clock copy may sit inside the compact marker;
-- small pointer/notch may connect the marker to the axis;
+- body height is 18 pt; the **38-pt minimum is readable label space**, with existing 5-pt X padding outside it, so actual outer body width is **48 pt at base compact scale / 56 pt at the 1.20 cap**;
+- visible current clock copy is always the full `HH:MM` in existing 10/12 Semibold and must not ellipsize/shrink;
+- the Guide clock is phase-aligned to wall-clock `:00`/`:30` refresh boundaries at its 30-second cadence, with immediate refresh + realignment on AppState→active;
+- the 6×4 pointer/notch remains tied to the exact current-minute X; viewport-edge clamping may move only the body, never the pointer;
 - **no full-height red line through all channel rows**;
 - current state is never colour-only semantically.
 
@@ -176,7 +179,7 @@ That handoff calibrates the remaining implementation details, including:
 
 The production specification is owner-approved. Its values become Development authority when the documentation/design PR is merged to `main`; physical-device validation remains a later runtime gate.
 
-The 2026-09-21 micro-programme amendment is a targeted production refinement only. It does **not** reopen 84/76/3.00 geometry, programme boundaries, open-grid styling, current-time marker, channel rail, Guide chrome, day navigation or any gesture/performance contract.
+The micro-programme and subsequent owner physical refinements are targeted production refinements only. They do **not** reopen 84/76/3.00 programme geometry, programme boundaries, open-grid styling, channel rail, Guide chrome, day navigation, horizontal gesture/inertia ownership or programme-windowing. The definitive micro presentation is text-free for every individual frame below `48 × S`; repeated-title sharing introduces one Medium title only when the visible run reaches `48 × S`. Totaal-only disabled vertical endpoint overscroll and clarified current-marker body/pointer sizing remain frozen.
 
 ## Superseded Totaal visual treatments
 

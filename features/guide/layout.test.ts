@@ -9,7 +9,7 @@ import {
 import { guideLayoutForFontScale } from './layout';
 
 describe('guideLayoutForFontScale', () => {
-  it('keeps the accepted baseline geometry at the default font scale', () => {
+  it('keeps the accepted Totaal baseline geometry at the default font scale', () => {
     expect(guideLayoutForFontScale(1)).toEqual({
       fontScale: 1,
       largeText: false,
@@ -18,36 +18,39 @@ describe('guideLayoutForFontScale', () => {
       channelWidth: GUIDE_CHANNEL_WIDTH,
       timeAxisHeight: GUIDE_TIME_AXIS_HEIGHT,
       minuteWidth: GUIDE_MINUTE_WIDTH,
-      tickLabelWidth: 72,
+      tickLabelWidth: 48,
     });
+    expect(GUIDE_CHANNEL_WIDTH).toBe(84);
+    expect(GUIDE_ROW_HEIGHT).toBe(76);
+    expect(GUIDE_MINUTE_WIDTH).toBe(3);
+    expect(GUIDE_TIME_AXIS_HEIGHT).toBe(44);
   });
 
-  it('grows the guide and gives larger-text controls their own width', () => {
-    expect(guideLayoutForFontScale(1.5)).toEqual({
-      fontScale: 1.5,
-      largeText: true,
-      stackedControls: true,
-      rowHeight: GUIDE_ROW_HEIGHT + 20,
-      channelWidth: GUIDE_CHANNEL_WIDTH + 14,
-      timeAxisHeight: GUIDE_TIME_AXIS_HEIGHT + 9,
-      minuteWidth: 3.6,
-      tickLabelWidth: 90,
-    });
+  it.each([
+    [1.35, 90, 94, 3.42],
+    [1.5, 97, 98, 3.6],
+    [2, 125, 112, 4.2],
+  ])(
+    'uses the canonical Dynamic Type formula at scale %s',
+    (fontScale, rowHeight, channelWidth, minuteWidth) => {
+      const layout = guideLayoutForFontScale(fontScale);
+      expect(layout.rowHeight).toBe(rowHeight);
+      expect(layout.channelWidth).toBe(channelWidth);
+      expect(layout.minuteWidth).toBe(minuteWidth);
+      expect(layout.timeAxisHeight).toBe(44);
+      expect(layout.stackedControls).toBe(false);
+    },
+  );
+
+  it('switches only the shared accessibility chrome flag above 1.35', () => {
+    expect(guideLayoutForFontScale(1.35).largeText).toBe(false);
+    expect(guideLayoutForFontScale(1.351).largeText).toBe(true);
   });
 
-  it('continues adding horizontal room at accessibility-sized scales', () => {
-    const regular = guideLayoutForFontScale(1.5);
-    const accessibility = guideLayoutForFontScale(2.5);
-
-    expect(accessibility.stackedControls).toBe(true);
-    expect(accessibility.rowHeight).toBeGreaterThan(regular.rowHeight);
-    expect(accessibility.channelWidth).toBeGreaterThan(regular.channelWidth);
-    expect(accessibility.timeAxisHeight).toBeGreaterThan(regular.timeAxisHeight);
-    expect(accessibility.minuteWidth).toBeGreaterThan(regular.minuteWidth);
-    expect(accessibility.tickLabelWidth).toBeGreaterThan(regular.tickLabelWidth);
-  });
-
-  it.each([0, -1, Number.NaN, Number.POSITIVE_INFINITY])('falls back safely for invalid scale %s', (fontScale) => {
-    expect(guideLayoutForFontScale(fontScale)).toEqual(guideLayoutForFontScale(1));
-  });
+  it.each([0, -1, Number.NaN, Number.POSITIVE_INFINITY])(
+    'falls back safely for invalid scale %s',
+    (fontScale) => {
+      expect(guideLayoutForFontScale(fontScale)).toEqual(guideLayoutForFontScale(1));
+    },
+  );
 });

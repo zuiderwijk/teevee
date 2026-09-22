@@ -25,6 +25,59 @@ export function guideProgrammeWindowBucket(viewportX: number, viewportWidth: num
   return Math.max(0, Math.floor(Math.max(0, viewportX) / viewportWidth));
 }
 
+export type GuideInitialProgrammeViewport = {
+  viewportX: number;
+  bucket: number;
+};
+
+export function guideInitialProgrammeViewport(
+  targetViewportX: number,
+  viewportWidth: number,
+): GuideInitialProgrammeViewport {
+  const viewportX = Number.isFinite(targetViewportX) ? Math.max(0, targetViewportX) : 0;
+  return {
+    viewportX,
+    bucket: guideProgrammeWindowBucket(viewportX, viewportWidth),
+  };
+}
+
+export type GuideProgrammaticNavigationPolicy = {
+  animated: boolean;
+  targetViewportX: number;
+  targetBucket: number;
+  prealignmentX: number | null;
+};
+
+/**
+ * Native animation remains useful only while the complete trip stays inside the render
+ * overscan already owned by the source bucket. Longer trips prealign the target bucket
+ * and jump directly so programme windowing never has to chase a multi-bucket animation.
+ */
+export function guideProgrammaticNavigationPolicy(
+  sourceViewportX: number,
+  targetViewportX: number,
+  viewportWidth: number,
+  requestedAnimated: boolean,
+): GuideProgrammaticNavigationPolicy {
+  const sourceX = Number.isFinite(sourceViewportX) ? Math.max(0, sourceViewportX) : 0;
+  const targetX = Number.isFinite(targetViewportX) ? Math.max(0, targetViewportX) : 0;
+  const usableViewport = Number.isFinite(viewportWidth) && viewportWidth > 0;
+  const maxAnimatedDistance = usableViewport
+    ? viewportWidth * GUIDE_PROGRAMME_WINDOW_OVERSCAN_VIEWPORTS
+    : 0;
+  const animated =
+    requestedAnimated &&
+    usableViewport &&
+    Math.abs(targetX - sourceX) <= maxAnimatedDistance;
+
+  return {
+    animated,
+    targetViewportX: targetX,
+    targetBucket: guideProgrammeWindowBucket(targetX, viewportWidth),
+    prealignmentX: guideProgrammaticScrollPrealignmentX(targetX, animated),
+  };
+}
+
 /**
  * Non-animated programmatic jumps need the target programme window mounted before the native
  * viewport moves there. Animated jumps must not prealign ownership: native onScroll remains the

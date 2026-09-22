@@ -1,5 +1,18 @@
 # Teevee Development Logboek
 
+## 22 september 2026 — PR #114 focused physical-runtime refinement after owner iPhone review
+
+Owner iPhone review of exact head `90ae6df241babe172a91ab608708abf0e21ba5d2` confirmed the Totaal vertical endpoint no-overscroll policy and widened current-marker body, then exposed four narrow physical-runtime issues without reopening the production design.
+
+- **Larger Text context allocation:** the 52-pt Totaal day/Nu row remains frozen. Totaal now opts the shared day selector into intrinsic non-shrinking one-line allocation, and its local `Nu` target/visible label cannot shrink. The existing 1.20 compact cap, touch targets and typography remain unchanged; Per zender and Nu & Straks are not retuned.
+- **Wall-clock Guide clock:** `useGuideClock` no longer uses a mount-relative `setInterval`. One recursively scheduled timeout derives its next delay from `Date.now() % tickMs`; at the 30-second cadence refreshes align to real `:00`/`:30` boundaries. Background clears the pending timer, AppState→active refreshes immediately and schedules one newly aligned timeout, and unmount clears both timer and subscription.
+- **Partial-left readability:** `EdgeReadabilityOverlay` separates masking from sticky-text visibility. The mask remains active for any positive partial-left remainder so an offscreen-positioned underlying title cannot leak a one-letter/bare-ellipsis fragment. Lead review of `2cc2153e5acc22007476a636c52a6ab7fd304bf9` found that the first text floor incorrectly reused the raw `48 × S` frame threshold; the final floor instead guarantees the scaled 48-pt base **inner** title budget after active 6/8/10-pt programme padding (60 pt outer at S=1; 80.8 pt at S=1.35). The real programme frame/boundary and per-frame Reanimated ownership remain unchanged.
+- **Definitive microcell simplification:** the strict full-frame `frameWidth < 48 × S` classification remains canonical, but every individual microcell below it is now visually text-free. The previously introduced 27×S individual-glyph floor and individual ellipsis helpers/rendering have been removed. Repeated-title formation, full-schedule stable identity, exact adjacency/title rules, bounded programme-window presentation and per-programme actions/boundaries/accessibility remain unchanged. One shared Medium title is still allowed only when visible repeated-run width is at least `48 × S`; below that threshold the run remains text-free.
+
+Deterministic coverage now includes intrinsic Larger Text day-selector allocation, phase-aligned `:30`/`:00` fake-timer progression, AppState resume realignment/no duplicate timers/cleanup, EdgeReadability mask-vs-text threshold and hard reversal, visually empty 5/10/15-minute microcells, exact 48-pt normal rendering, 3×5-minute text-free repeated runs, 4×5-minute shared-title runs, current-micro accessibility semantics and bounded repeated-run eligibility.
+
+This refinement does not change 84/76/3.00 geometry, the 120-pt viewed-time anchor, 1.5× programme overscan, horizontal ownership/bounce, Totaal vertical endpoint policy, day/television-day semantics, D-2..D+7, provider/EPG/backend/migrations, Programme Detail, Per zender, Nu & Straks or bottom navigation.
+
 Doel: chronologisch, begrijpelijk overzicht van substantiële milestones, verificatie en blokkades. `docs/PROJECT_STATE.md` is altijd de canonieke actuele toestand. Granulaire CI/device-details blijven terugvindbaar in GitHub PR/commit-history en timestamped evidence-docs.
 
 ## Logboekregels
@@ -8,6 +21,38 @@ Doel: chronologisch, begrijpelijk overzicht van substantiële milestones, verifi
 - Claim alleen checks die aantoonbaar geslaagd zijn.
 - Benoem regressies/gates expliciet.
 - Iedere substantieve entry eindigt met de volgende stap.
+
+---
+
+## 21 september 2026 — Totaal physical refinement: ultra-micro density, vertical endpoint overscroll and current-time label
+
+Owner physical iPhone validation of reconciled PR #114 head `36e1e3c27f475a5188bbc2950eb887f362344834` left three focused presentation defects while the broader Totaal convergence remained accepted: repeated very short broadcasts could create a barcode-like boundary/ellipsis pattern, top vertical rubber-banding moved only the schedule/channel canvas beneath the fixed functional stack, and the compact current-time marker could truncate a midnight label to `00:…`.
+
+The microcell refinement keeps the existing full-frame micro classification (`frameWidth < 48 × S`) and every programme's real geometry, boundary, Pressable, accessibility label and Programme Detail destination. A second **presentation-only** floor now determines whether an individual microcell has enough room for the ellipsis glyph. The floor is derived from existing typography/geometry rather than a standalone magic constant: one 15-pt programme-title em plus the existing 6-pt micro inset on each side, scaled by `S`, giving **27 × S pt**. Below `27 × S` the microcell is visually empty; at and above `27 × S` the existing centred `…` remains. Repeated-title membership/identity and the existing `48 × S` visible-run shared-title threshold remain unchanged. The bounded repeated-run overlay applies the same individual-glyph floor only when it falls back from a shared title, so long-run windowing/1.5× overscan remains intact.
+
+For vertical Totaal scrolling, the native schedule ScrollView now disables endpoint overscroll rather than making fixed Guide chrome imitate bounce. On iOS this sets `bounces={false}` and `alwaysBounceVertical={false}`, so the vertical schedule no longer rubber-bands at either top or bottom endpoint; normal native scrolling, fling/deceleration and the existing 56-pt collapse path remain unchanged. On Android `overScrollMode="never"` removes the platform edge-overscroll effect. Horizontal schedule/time-axis bounce and ownership are untouched, and Per-zender/Nu & Straks are not changed.
+
+The current-time marker root cause was the body sizing contract: the body was fixed to the **38-pt minimum width** while also carrying 5-pt horizontal padding on both sides, leaving too little effective label space for five-character `HH:MM` text around midnight. The marker now reserves the frozen 38-pt minimum as the readable label box and adds the existing 5+5 pt padding outside it, giving a 48-pt base body. The body scales only with the existing compact 1.20 text cap (56 pt at the cap). The text is explicitly non-shrinking/centred. Edge clamping receives the actual body width, while the pointer continues to use the exact unchanged minute-X independently, so left/right body clamping never moves the semantic pointer.
+
+Deterministic coverage now proves the exact `27 × S` ultra-micro boundary, a visually empty current 5-minute programme with full `nu bezig` accessibility and separate action/boundary, normal 15-minute ellipsis presentation, repeated-run shared-title/bounded-window behaviour, quiet ultra-micro run fallback, all four representative current-time strings (`00:00`, `00:04`, `09:09`, `23:59`), left/right marker-body clamping, the unchanged worklet helper and the Totaal-only native vertical endpoint policy. Code head `df3f30ea101a72c1a79019132a56735375b2efbe` passed CI #853 / run `35663036477`: strict TypeScript, lint, **71 test files / 522 tests**, and iOS/Android/web Expo export; the classifier correctly skipped the native/config Android job.
+
+No Guide day-selector wording, 06:00 Europe/Amsterdam semantics, D-2..D+7 product horizon, selected-day/two-day hosted contract, EPG/provider/backend code, 84/76/3.00 geometry, 120-pt anchor, 1.5× overscan, horizontal ownership, first-open positioning, Nu policy, normal programme typography, Dynamic Type formulas or other frozen Totaal product metric was changed.
+
+**Remaining physical gate:** validate exact final head on iPhone for (1) dense ultra-short rows staying calm while each cell remains tappable, (2) natural vertical scrolling/collapse with no partial-guide top pull-down state, including top and bottom endpoints, and (3) full current-time `HH:MM` readability near midnight and both horizontal viewport edges with the pointer still exactly on the current minute. Lead exact-head review precedes that physical gate. Do not merge or request Independent QA yet.
+
+---
+
+## 21 september 2026 — PR #114 reconciled with canonical main after EPG horizon closeout
+
+PR #114 Totaal production visual convergence was reconciled with canonical `main` `c990ee5dcf757c88d7721ccccc82e6585402d185` after PR #116, PR #117 and PR #118 closed the Guide EPG horizon incident. The reconciliation uses a true merge commit with the prior PR #114 head and current main as parents. Main-only EPG/data/runtime files are inherited byte-identically from canonical main; the only overlapping path since the common base was `docs/DEVLOG.md`, which was merged additively so both the canonical EPG incident history and the existing Totaal convergence history remain intact.
+
+No Totaal runtime conflict required product or metric reinterpretation. All owner-approved/frozen Totaal work remains unchanged: 120-pt viewed-time anchor, 1.5× programme overscan, horizontal single-source gesture ownership, worklet-safe current-time marker, first-open positioning, distance-aware `Nu`, micro-programme `…` treatment, repeated-title run identity and bounded repeated-run presentation, exact programme duration geometry and the accepted production shell/collapse metrics.
+
+The reconciled client still uses `useSelectedGuideDaySchedule` with selected television-day loading; Totaal requests the selected day plus following day only when that following day is selectable, and `loadTwoTelevisionDayGuideSchedule` retains the all-or-nothing contract by returning `null` when either independent hosted canonical television-day read is unavailable. `HostedGuideScheduleClient` remains the client data source; no XMLTV/provider fallback or client-side horizon workaround was introduced.
+
+Canonical PR #116/#117/#118 EPG files, including the server-side `guide-horizon` refresh, hosted transport policy, XMLTV provider fix, deployed Edge Function source and television-day horizon migration, are inherited unchanged from main. The live-proven 06:00 Europe/Amsterdam television-day semantics and D-2..D+7 product horizon therefore remain canonical.
+
+**Next step:** exact-head CI, then Lead exact-head review followed by renewed owner physical iPhone acceptance. Do not merge and do not request Independent QA before those gates pass.
 
 ---
 
@@ -34,6 +79,106 @@ The hotfix branch `hotfix/epg-refresh-edge-boot` removes the new horizon module'
 The migration-history timestamp mismatch created by the Management API deployment remains operational cleanup only; do not run a normal `db push` until remote history is reconciled with canonical repo migration `20260921213000_refresh_guide_television_day_horizon.sql`.
 
 **Verification:** hotfix exact-head CI, Independent QA and live redeployment/retry are still required. **Next step:** finish the hotfix PR gates, redeploy `epg-refresh`, re-trigger the protected guide-horizon refresh, prove 06:00 canonical coverage, then reconcile migration history and perform the focused physical iPhone smoke.
+
+---
+
+## 21 september 2026 — Totaal repeated-run overlay bounded to canonical programme window
+
+Lead review of the first owner-approved micro-programme implementation found one performance-architecture blocker: repeated-title run **identity and geometry** were correctly full-schedule and bucket-stable, but the overlay still rendered `run.programmes.map(...)`. A sufficiently long repeated-title run could therefore mount ellipsis presentation nodes far outside the frozen coarse programme render window and partially bypass the accepted 1.5× overscan architecture.
+
+The correction keeps the two responsibilities separate. Canonical run derivation remains based on the complete chronological channel schedule before viewport windowing, so run ID, membership, start/end geometry, shared-title threshold and partial-left/right behaviour remain unchanged across bucket transitions. A new bounded presentation layer is then derived from the already-windowed programmes for the current coarse render window. `TotaalMicroProgrammeOverlay` receives the full run plus only the intersecting member subset and renders per-cell `…` nodes from that bounded subset. Shared-title geometry still uses the complete run start/end, so the title remains sticky/clipped against the true run bounds rather than the current bucket.
+
+Deterministic coverage now proves that a long 24-member repeated run keeps the same full run ID/membership while two distant programme windows expose only their six intersecting overlay members. Component coverage additionally verifies that a 20-member run can render a four-member bounded subset while the overlay width/visible layout still follows the full run geometry. Existing 4×5-minute / 3×5-minute behaviour, per-programme Pressables, boundaries, accessibility/Programme Detail ownership and normal EdgeReadabilityOverlay semantics are unchanged.
+
+Code head `53c2f5da50a24934b383abef94a33ae59b828062` passed CI #834 / run `35649144128`: npm ci, strict TypeScript, lint, **69 test files / 515 tests**, and iOS/Android/web Expo export. The runtime-ui classifier correctly skipped the native/config Android job. No visual metric, micro threshold, scroll ownership, programme-window size/overscan, Guide geometry, EPG/data contract, Per-zender or Nu & Straks behaviour changed.
+
+Physical iPhone acceptance remains open because the repeated-title overlay is native-scroll-coupled presentation. The device gate should additionally hard-fling across bucket transitions and confirm no duplicate/flashing shared title while the bounded member subset swaps underneath the same canonical run identity.
+
+**Next step:** Lead exact-head review of the final PR #114 head, then owner physical iPhone validation. Do not merge and do not request Independent QA yet.
+
+---
+
+## 21 september 2026 — Totaal micro-programme refinement reconciled and implemented
+
+PR #114 was first reconciled with canonical `main` `a6d57197b78d62ea3757f4be170f0a1181f11413`, which contains the owner-approved micro-programme design/spec merge from PR #115. The existing Totaal production runtime, horizontal ownership fix, mount-time Reanimated worklet fix, first-open positioning refinement and distance-aware long-range `Nu` navigation were preserved unchanged.
+
+The runtime now classifies a programme as a microcell from its **full real frame width** using the canonical strict `frameWidth < 48 × S` rule, with `S = max(1, effectiveFontScale)`. Individual microcells keep their exact programme action/frame/boundary but suppress title fragments and secondary time in favour of one centred semantic-primary `…`; current microcells use the existing Semibold title weight while non-current microcells use Medium. No minimum width, gap, fill, radius, shadow or duration retuning was introduced.
+
+Repeated-title runs are derived once from the complete chronological programmes-per-channel before viewport windowing. Membership requires at least two adjacent microcells, exact temporal abutment and exact/case-sensitive title equality after trim plus whitespace collapse. Run IDs and membership therefore remain stable across programme-window buckets. The underlying programme cells continue to own every hit target, press state, accessibility label and Programme Detail destination.
+
+A dedicated non-interactive presentation overlay renders repeated-title runs without creating a second accessibility tree or gesture surface. It uses the existing Reanimated `scrollX` shared value to compute the visible run intersection on the UI thread, so the shared title can re-anchor inside true run bounds during partial-left scrolling without React state updates per frame. At a visible intersection of at least `48 × S`, per-cell ellipses are suppressed and one Medium, one-line shared title is drawn with the frozen 6-pt inset. Below that threshold, the overlay returns to individually centred ellipses. The overlay is pointer-transparent/accessibility-hidden and has no background, so canonical underlying programme boundaries remain visible except where glyphs naturally cross them. Normal/non-micro partial-left readability continues through the existing `EdgeReadabilityOverlay`; microcells are explicitly excluded from that normal-title duplication path.
+
+Deterministic coverage was added for strict threshold/equality behaviour, Dynamic Type scaling, full-frame classification, individual/current microcells, run formation and all break conditions, whitespace normalization/case sensitivity, bucket-independent membership, exact shared-title threshold, four×5-minute and three×5-minute examples, partial-left/right run geometry, fallback to ellipses, action/boundary ownership, pointer/accessibility transparency, Medium shared-current typography, centred micro affordance and semantic primary text usage across appearance tokens. Existing Guide/windowing/detail/accessibility tests remain green.
+
+Implementation code head `2a8401efa90c87e7a0cbc9eb61bbe83e3aa26061` passed CI #829 / run `35645887273`: npm ci, strict TypeScript, lint, **69 test files / 513 tests**, and iOS/Android/web Expo export; the runtime-ui classifier correctly skipped the native/config Android job.
+
+This implementation does not claim physical acceptance. The remaining gate is owner iPhone validation of individual microcells, repeated-title runs, per-programme tap ownership, partial-left/right transitions, Larger Text, light/dark, programme-window transitions and regression checks for first-open positioning plus short/long `Nu` navigation.
+
+**Next step:** Lead exact-head review, then owner physical iPhone validation on the final PR #114 head. Do not merge and do not request Independent QA yet.
+
+---
+
+## 21 september 2026 — Totaal initial-positioning and long-distance Nu polish
+
+Further physical iPhone validation of PR #114 confirmed that the mount-time crash was gone, then exposed two non-crashing presentation/runtime defects: Totaal could visibly paint around the television-day start before jumping to the intended viewed-time position, and a long animated `Nu` return could temporarily outrun the coarse programme window and expose an empty schedule while the channel rail remained visible.
+
+Development kept the accepted 120-pt viewed-time anchor, native horizontal ownership state machine, 1.5-viewport programme overscan, visual metrics, collapse/Reduce Motion and Guide data contracts unchanged. The first Totaal render now derives its authoritative horizontal offset and programme bucket synchronously from the initial viewed time. The mount/day positioning path was moved from a one-frame-delayed `requestAnimationFrame` effect to pre-paint `useLayoutEffect`, so the schedule and time axis are positioned together against an already-correct render bucket rather than first presenting the 06:00-side window.
+
+Programmatic navigation now derives its animation policy from the existing programme-window overscan rather than adding another arbitrary timing/distance constant. Requested native animation is retained while the full travel is at most **1.5 programme viewports**, which is exactly the distance already covered safely by the source bucket's frozen overscan. Longer travel is converted to a direct two-phase jump: the target programme bucket commits first, then a layout effect positions the authoritative `scrollX`, schedule and time axis together. This prevents a long `Nu` animation from crossing more buckets than React windowing can guarantee while preserving native animation for nearby jumps. Reduce Motion continues to request direct positioning as before.
+
+Deterministic windowing coverage now verifies target-bucket ownership on the first visible viewport, the exact 1.5-viewport animated boundary, long-distance target prealignment/direct navigation, and explicitly non-animated positioning. The existing horizontal ownership regression suite remains unchanged. Runtime head `89ff4294324feefbe40ee4c123d4cd47a39f39ba` passed CI #817 / run `35642921488`: npm ci, strict TypeScript, lint, **67 test files / 491 tests**, and iOS/Android/web Expo export. The runtime-ui classifier correctly skipped the native/config Android job.
+
+No micro-programme rendering was implemented here; that remains intentionally deferred until the separate owner-approved Design/UX refinement is canonical. No Per-zender or Nu & Straks contract changed.
+
+**Next step:** focused physical iPhone revalidation of initial Totaal presentation and both short/long `Nu` navigation on the final exact PR head, then continue the broader Totaal acceptance flow. Do not merge or request Independent QA yet.
+
+---
+
+## 21 september 2026 — Totaal mount-time Reanimated worklet contract fix
+
+Focused physical iPhone revalidation still failed on exact head `3a50e2a39fefce80e7981f853735c85174593aff`: switching from another Guide presentation to Totaal continued to terminate the app immediately. The previously added horizontal single-source ownership state machine remains technically valid and is intentionally unchanged, but device evidence showed that reciprocal scroll ownership was not the direct mount-time termination cause.
+
+Lead then identified a concrete Reanimated UI-thread contract violation on the unconditional Totaal mount path. `GuideView` creates `currentMarkerBodyStyle` with `useAnimatedStyle`, which synchronously calls `totaalCurrentTimeMarkerBodyX()`. That pure helper lacked an explicit `'worklet';` directive even though it executes on the UI thread. Development added only that directive; marker geometry and return values are unchanged. The existing deterministic marker-geometry test now also guards that the helper remains explicitly workletized.
+
+The complete Totaal UI-thread call-chain audit covered `useAnimatedStyle`, `useAnimatedReaction` and `useAnimatedScrollHandler` paths in `GuideView`, `EdgeReadabilityOverlay`, `TimeAxisLeftMask` and shared `GuideChrome`. All other synchronous helper chains were already worklet-safe: `totaalStableScrollVisuals` → `guideChromeExpandedHeight` → `guidePresentationNavigationMetrics` → `guideUsesAccessibilityChrome`; `totaalCollapseProgressForScrollOffset`; `totaalChromeCondensedForProgress`; every horizontal-ownership helper including their nested idle-owner calls; `clippedTimeAxisLabelWidth` → `centredTimeAxisLabelLeft`; and `edgeBoundaryBucket`. Reanimated `scrollTo` and `scheduleOnRN` remain the intended UI/native and UI→RN bridges. No second non-worklet synchronous helper call was found.
+
+Runtime/test head `cea16ddc551a80d30aa4b63d51e15106d34c2726` passed CI #814: npm ci, strict TypeScript, lint, **67 test files / 487 tests**, and iOS/Android/web Expo export. The runtime-ui classifier correctly skipped the native/config Android job. No visual metric, current-marker geometry, horizontal ownership behaviour, collapse/Reduce Motion, programme-windowing parameter, ChannelIdentity, Per-zender/Nu & Straks contract or canonical design/spec changed.
+
+Green CI does not prove this native worklet failure class. Physical iPhone acceptance therefore remains **FAILED/CLOSED** until Lead reviews the exact final PR head and switching to Totaal is revalidated on-device. If termination persists after this targeted fix, the next diagnostic step is native crash-log capture rather than another speculative runtime change.
+
+**Next step:** Lead exact-head review followed by focused physical iPhone revalidation; do not merge and do not request Independent QA before physical PASS.
+
+---
+
+## 21 september 2026 — Totaal physical iPhone crash: horizontal ownership fix candidate
+
+Physical iPhone validation of PR #114 exact head `397fc54e3695a45d72442c0b7c15c38b5e29a1b7` failed immediately when switching to Totaal: the app terminated before visual validation could begin. Lead traced the highest-confidence runtime cause to reciprocal native horizontal mirroring between the independently draggable programme schedule and sticky time axis: each surface treated every `onScroll`, including the peer's programmatic mirror event, as authoritative and immediately scrolled the other surface back.
+
+Development replaced that reciprocal path with a small worklet-safe single-source ownership state machine while preserving both native draggable surfaces. A schedule drag owns authoritative `scrollX` and mirrors only to the passive axis; an axis drag does the inverse. Passive mirror events are ignored, ownership survives the initiating surface's native momentum and is released only after settle, and only an idle surface may become the next gesture owner. Animated Nu movement uses the schedule as the temporary native programmatic owner so programme-window buckets continue to follow real native viewport movement. Initial positioning, day selection and other non-animated programmatic jumps set the authoritative offset and both native peers directly while ownership is idle, so their resulting native events cannot mirror back.
+
+Deterministic regression coverage now exercises schedule→axis/no-back-mirror, axis→schedule/no-back-mirror, momentum retention, post-settle ownership transfer, loop-free direct positioning, animated Nu ownership, day-selection/120-pt-anchor alignment, authoritative programme-window bucket changes and non-momentum release. No visual metric, Reduce Motion geometry, programme-window parameter, ChannelIdentity, Per-zender or Nu & Straks contract changed. Final crash-fix candidate `eb1aaa24de68f0e69d53761901ab6dde9a94af9c` passed exact-head CI #812 / run `35636872975` with strict TypeScript, lint, **67 test files / 487 tests**, and iOS/Android/web Expo export; the runtime-ui classifier correctly skipped the native/config Android job.
+
+Physical acceptance remains explicitly **FAILED/CLOSED** until Lead reviews the final exact head and switching to Totaal is revalidated on physical iPhone.
+
+**Next step:** exact-head Lead review, then repeat physical iPhone validation; do not merge and do not request Independent QA before physical PASS.
+
+---
+
+## 21 september 2026 — Totaal production visual convergence implemented in PR #114
+
+Development converged Totaal to the owner-approved production visual specification without replacing the proven 2D Guide architecture. The runtime now uses the shared GuideChrome/tabs, the fixed native schedule viewport with 56-pt collapse isolation, a persistent 52-pt day/Nu context plus 44-pt time axis, the 84-pt base logo-first channel rail and deterministic Dynamic Type geometry. Programme cells keep exact start/duration geometry at 3.00 pt/min base scale with zero permanent gap, no card fill/radius/progress treatment, Instrument Sans title hierarchy, current `tot HH:MM` copy, restrained temporal boundaries and semantic pressed-only elevation.
+
+The time axis now uses real 15-minute positions with labels at :00/:30, production railTick hierarchy, a compact exact-minute current-time marker and no full-height now line. Totaal has an explicit ChannelIdentity presentation so successful logos do not duplicate visible names while retained channels remain accessible when programme actions are absent. Partial-left readability, viewport-bucketed programme windowing with 1.5-viewport overscan, D-2..D+7/06:00 television-day semantics, wall-clock-preserving day changes, Nu, native inertia/bounce/directional lock, fixture-first→hosted continuity and Programme Detail round-trip remain on the existing architecture.
+
+A small runtime support refactor isolates Totaal programme rendering into `TotaalProgrammeCell` and adds deterministic helpers for collapse geometry, vertical channel-context preservation, unavailable-state presentation, axis/marker calibration and width-aware content degradation. No new dependency, provider/cache/Search/Tonight scope or parallel Guide implementation was introduced.
+
+Deterministic coverage was expanded for geometry, no-gap programme widths, 15-minute axis hierarchy, typography/current copy, width degradation, current marker, logo/accessibility behaviour, 100/116 shared chrome with 196/212→96 collapse endpoints, compact date wording, 120-pt viewed-time anchor, television-day/day-switch/Nu semantics, Dynamic Type formulas, partial-left readability, programme windowing, Detail/runtime continuity, themes and shared Guide tabs. Lead review of exact head `ef8adb72f213917bb404c9fde30ee1742824b61b` then identified four deterministic production-spec mismatches before the physical gate: Reduce Motion did not compose to the same settled endpoint at the 28-pt discrete switch, :00/:30 axis labels were not geometrically centred on their ticks, the Totaal no-logo fallback used full `displayName` instead of `shortName ?? displayName`, and the required 16-pt clearance after the final row was missing. Those four issues were corrected on the existing PR without retuning any accepted metric or shared Per-zender/Nu & Straks contract.
+
+Final implementation head `6985ed57625a2a9ea2520fb03b470c929e058752` passed PR CI #809: npm ci, strict TypeScript, lint, **66 test files / 478 tests**, and iOS/Android/web Expo export. The runtime-ui classifier correctly skipped the native/config Android compile job because no native/config files changed. Added deterministic coverage verifies composed Reduce Motion geometry at 27.99/28 pt for standard and Larger Text, semantic channel-offset continuity across that switch, centred axis-label/mask geometry, shortName/displayName fallback semantics and exact 16-pt trailing schedule clearance.
+
+Physical acceptance is intentionally not claimed here. The next gate is renewed Lead exact-head review, then physical iPhone validation of expanded/condensed composition, Reduce Motion, horizontal/vertical gesture ownership, current-time marker/time-axis alignment, logo rail/fallback, final-row clearance, Dynamic Type, light/dark appearance, day/Nu transitions and Programme Detail round-trip before Independent QA.
+
+**Next step:** renewed Lead exact-head review of PR #114; do not merge before the prescribed physical iPhone and Independent QA gates pass.
 
 ---
 

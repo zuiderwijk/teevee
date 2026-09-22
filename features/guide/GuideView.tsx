@@ -1,7 +1,16 @@
-import { type ReactNode, memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
+  type ReactNode,
+  memo,
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
+import {
+  Platform,
   Pressable,
-  SafeAreaView,
   ScrollView,
   StyleSheet,
   Text,
@@ -9,20 +18,26 @@ import {
   View,
 } from 'react-native';
 import Animated, {
+  scrollTo,
   useAnimatedReaction,
+  useAnimatedRef,
   useAnimatedScrollHandler,
+  useAnimatedStyle,
+  useReducedMotion,
   useSharedValue,
 } from 'react-native-reanimated';
 import { scheduleOnRN } from 'react-native-worklets';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { isProgrammeCurrent, programmeProgress } from '@/data/domain/epg';
 import { guideTelevisionDayStart } from '@/data/domain/guideTime';
 import { buildRuntimeGuideFixture } from '@/data/fixtures/runtimeGuideFixture';
+import { runtimeGuideScheduleFor } from '@/data/runtime/guideScheduleRuntime';
 import { useTeeveeTheme } from '@/theme/useTeeveeTheme';
 
 import { ChannelIdentity } from './ChannelIdentity';
 import type { ProgrammeSelection } from './detailState';
 import { EdgeReadabilityOverlay } from './EdgeReadabilityOverlay';
+import { GuideChrome } from './GuideChrome';
 import { GuideDaySelector } from './GuideDaySelector';
 import {
   guideDayIsSelectable,
@@ -32,36 +47,67 @@ import {
   guideTotaalDayForViewedAnchor,
 } from './guideDaySelection';
 import {
+  guideInitialProgrammeViewport,
   guideProgrammeTimeWindow,
   guideProgrammeWindowBucket,
-  guideProgrammaticScrollPrealignmentX,
+  guideProgrammaticNavigationPolicy,
   windowGuideProgrammesByChannel,
 } from './guideProgrammeWindow';
+import { formatGuideTime, indexGuideProgrammesByChannel } from './guideRenderData';
+import { buildTimeTicks, timeToX, timelineWidth } from './geometry';
 import {
-  formatGuideTime,
-  indexGuideProgrammesByChannel,
-} from './guideRenderData';
+  TOTAAL_HORIZONTAL_SURFACE,
+  totaalHorizontalBeginDrag,
+  totaalHorizontalEndDrag,
+  totaalHorizontalIdleOwnership,
+  totaalHorizontalMomentumBegin,
+  totaalHorizontalMomentumEnd,
+  totaalHorizontalProgrammaticPlan,
+  totaalHorizontalProgrammaticTargetReached,
+  totaalHorizontalScrollDecision,
+} from './horizontalScrollOwnership';
 import {
-  buildTimeTicks,
-  programmeContentMode,
-  programmeFrame,
-  timeToX,
-  timelineWidth,
-} from './geometry';
+  COMPACT_GUIDE_MAX_FONT_SIZE_MULTIPLIER,
+  GUIDE_TYPOGRAPHY,
+  minimumTouchTargetForPlatform,
+} from './guideVisualMetrics';
 import { guideLayoutForFontScale } from './layout';
-import { GUIDE_TIME_TICK_INTERVAL_MINUTES } from './timeAxis';
+import { GUIDE_TIME_LABEL_INTERVAL_MINUTES } from './timeAxis';
 import { TimeAxisLeftMask } from './TimeAxisLeftMask';
 import { TimeAxisTick } from './TimeAxisTick';
+import {
+  resolveTotaalSchedulePresentation,
+  TOTAAL_TYPOGRAPHY,
+  TOTAAL_VERTICAL_SCROLL_ENDPOINT_POLICY,
+  TOTAAL_VISUAL_METRICS,
+  totaalChannelIdForScheduleOffset,
+  totaalChannelIdentityAccessible,
+  totaalChromeCondensedForProgress,
+  totaalCollapseProgressForScrollOffset,
+  totaalCurrentTimeMarkerBodyWidth,
+  totaalCurrentTimeMarkerBodyX,
+  totaalNativeOffsetForScheduleOffset,
+  totaalPreservedChannelScheduleOffset,
+  totaalScheduleOffsetForNativeOffset,
+  totaalSafeAreaLayout,
+  totaalStableScrollGeometry,
+  totaalStableScrollVisuals,
+  totaalTimeAxisTickPresentation,
+  totaalVerticalContentExtent,
+} from './totaal';
+import { TotaalMicroProgrammeOverlay } from './TotaalMicroProgrammeOverlay';
+import { TotaalProgrammeCell } from './TotaalProgrammeCell';
+import {
+  deriveTotaalMicroProgrammeMetadata,
+  totaalRepeatedTitleRunPresentationsForWindow,
+} from './totaalMicroProgrammes';
 import { useGuideClock } from './useGuideClock';
 import { useSelectedGuideDaySchedule } from './useSelectedGuideDaySchedule';
 
-const GUIDE_CONTROL_MAX_FONT_SIZE_MULTIPLIER = 1.2;
-const TIME_ANCHOR_INSET = 120;
-const HEADER_CONDENSE_THRESHOLD = 24;
 
 type GuideViewProps = {
   guideDataVersion: number;
-  headerAction?: ReactNode;
+  presentationNavigation: ReactNode;
   onSelectProgramme: (selection: ProgrammeSelection) => void;
 };
 
@@ -69,26 +115,56 @@ function clampTime(timeMs: number, fromMs: number, toMs: number) {
   return Math.min(toMs - 1, Math.max(fromMs, timeMs));
 }
 
-// Modal visibility lives outside this memo boundary. Keep the same mounted
-// ScrollViews and stable selection callback when opening or closing a detail.
 export const GuideView = memo(function GuideView({
   guideDataVersion,
+  presentationNavigation,
   onSelectProgramme,
-  headerAction,
 }: GuideViewProps) {
   const theme = useTeeveeTheme();
+  const safeAreaInsets = useSafeAreaInsets();
   const { fontScale, width: windowWidth } = useWindowDimensions();
-  const layout = useMemo(() => guideLayoutForFontScale(fontScale), [fontScale]);
-  const horizontalRef = useRef<ScrollView>(null);
-  const channelRef = useRef<ScrollView>(null);
-  const scrollX = useSharedValue(0);
-  const scrollY = useSharedValue(0);
+  const effectiveFontScale =
+    Number.isFinite(fontScale) && fontScale > 0 ? Math.max(1, fontScale) : 1;
+  const currentMarkerBodyWidth = totaalCurrentTimeMarkerBodyWidth(effectiveFontScale);
+  const currentMarkerLabelWidth =
+    currentMarkerBodyWidth - TOTAAL_VISUAL_METRICS.currentMarkerPaddingX * 2;
+  const minimumTouchTarget = minimumTouchTargetForPlatform(Platform.OS);
+  const reduceMotion = useReducedMotion();
+  const layout = useMemo(
+    () => guideLayoutForFontScale(effectiveFontScale),
+    [effectiveFontScale],
+  );
+
+  const programmeViewportWidth = Math.max(0, windowWidth - layout.channelWidth);
   const nowMs = useGuideClock();
-  const viewedTimeRef = useRef(nowMs);
   const [visibleDayStartMs, setVisibleDayStartMs] = useState(() =>
     guideTotaalDayForViewedAnchor(nowMs),
   );
   const [windowStartDayMs, setWindowStartDayMs] = useState(visibleDayStartMs);
+  const [initialHorizontalViewport] = useState(() =>
+    guideInitialProgrammeViewport(
+      Math.max(
+        0,
+        timeToX(nowMs, windowStartDayMs, layout.minuteWidth) -
+          TOTAAL_VISUAL_METRICS.viewedTimeAnchor,
+      ),
+      programmeViewportWidth,
+    ),
+  );
+
+  const horizontalRef = useAnimatedRef<Animated.ScrollView>();
+  const axisRef = useAnimatedRef<Animated.ScrollView>();
+  const verticalRef = useRef<ScrollView>(null);
+  const viewedChannelIdRef = useRef<string | null>(null);
+  const previousChannelIdsRef = useRef<readonly string[]>([]);
+  const previousRowHeightRef = useRef(layout.rowHeight);
+  const viewedTimeRef = useRef(nowMs);
+  const scrollX = useSharedValue(initialHorizontalViewport.viewportX);
+  const horizontalOwnership = useSharedValue(totaalHorizontalIdleOwnership());
+  const horizontalProgrammaticTargetX = useSharedValue(-1);
+  const scrollY = useSharedValue(0);
+  const collapseProgress = useSharedValue(0);
+
   const followingDayStartMs = guideTelevisionDayStart(windowStartDayMs, 1);
   const includeFollowingDay = guideDayIsSelectable(followingDayStartMs, nowMs);
   const selectedWindow = useSelectedGuideDaySchedule(
@@ -96,18 +172,90 @@ export const GuideView = memo(function GuideView({
     guideDataVersion,
     undefined,
     includeFollowingDay,
+    guideTelevisionDayStart(nowMs),
+  );
+
+  const currentRuntimeSchedule = useMemo(
+    () => runtimeGuideScheduleFor(nowMs),
+    [guideDataVersion, nowMs],
+  );
+  const establishedChannelsRef = useRef(
+    currentRuntimeSchedule?.channels.length ? currentRuntimeSchedule.channels : null,
+  );
+  const establishedChannels =
+    selectedWindow.schedule?.channels.length
+      ? selectedWindow.schedule.channels
+      : currentRuntimeSchedule?.channels.length
+        ? currentRuntimeSchedule.channels
+        : establishedChannelsRef.current;
+
+  useEffect(() => {
+    const nextChannels =
+      selectedWindow.schedule?.channels.length
+        ? selectedWindow.schedule.channels
+        : currentRuntimeSchedule?.channels.length
+          ? currentRuntimeSchedule.channels
+          : null;
+    if (nextChannels) establishedChannelsRef.current = nextChannels;
+  }, [currentRuntimeSchedule, selectedWindow.schedule]);
+
+  const fixtureFallback = useMemo(
+    () =>
+      establishedChannels?.length
+        ? null
+        : buildRuntimeGuideFixture(windowStartDayMs),
+    [establishedChannels, windowStartDayMs],
+  );
+  const schedulePresentation = useMemo(
+    () =>
+      resolveTotaalSchedulePresentation(
+        selectedWindow.schedule,
+        establishedChannels,
+        fixtureFallback,
+      ),
+    [establishedChannels, fixtureFallback, selectedWindow.schedule],
   );
   const runtimeFixture = useMemo(
-    () => selectedWindow.schedule ?? buildRuntimeGuideFixture(windowStartDayMs),
-    [guideDataVersion, selectedWindow.schedule, windowStartDayMs],
+    () =>
+      schedulePresentation.schedule ?? {
+        generatedAt: 'retained-channel-catalogue',
+        timezone: 'Europe/Amsterdam' as const,
+        channels: schedulePresentation.channels,
+        programmes: [],
+      },
+    [schedulePresentation.channels, schedulePresentation.schedule],
   );
   const programmesByChannel = useMemo(
     () => indexGuideProgrammesByChannel(runtimeFixture),
     [runtimeFixture],
   );
+  const microProgrammeMetadata = useMemo(
+    () =>
+      deriveTotaalMicroProgrammeMetadata(
+        programmesByChannel,
+        layout.minuteWidth,
+        effectiveFontScale,
+      ),
+    [effectiveFontScale, layout.minuteWidth, programmesByChannel],
+  );
+  const channelRowIndex = useMemo(
+    () =>
+      new Map(
+        runtimeFixture.channels.map((channel, rowIndex) => [channel.id, rowIndex]),
+      ),
+    [runtimeFixture.channels],
+  );
+
   const pendingTargetTimeRef = useRef<number | null>(null);
+  const pendingDirectHorizontalPositionRef = useRef<{
+    viewportX: number;
+    targetBucket: number;
+  } | null>(null);
   const [condensed, setCondensed] = useState(false);
-  const [programmeWindowBucket, setProgrammeWindowBucket] = useState(0);
+  const programmeWindowBucketRef = useRef(initialHorizontalViewport.bucket);
+  const [programmeWindowBucket, setProgrammeWindowBucket] = useState(
+    initialHorizontalViewport.bucket,
+  );
 
   const windowStart = windowStartDayMs;
   const windowEnd = useMemo(
@@ -115,13 +263,19 @@ export const GuideView = memo(function GuideView({
     [includeFollowingDay, windowStartDayMs],
   );
   const width = timelineWidth(windowStart, windowEnd, layout.minuteWidth);
-  const ticks = useMemo(() => buildTimeTicks(windowStart, windowEnd), [windowStart, windowEnd]);
-  const firstTickX = ticks.length > 0 ? timeToX(ticks[0]!, windowStart, layout.minuteWidth) : 0;
-  const tickSpacing = GUIDE_TIME_TICK_INTERVAL_MINUTES * layout.minuteWidth;
+  const ticks = useMemo(
+    () => buildTimeTicks(windowStart, windowEnd),
+    [windowStart, windowEnd],
+  );
+  const firstLabelTick = ticks.find((tick) => totaalTimeAxisTickPresentation(tick).major);
+  const firstTickX =
+    firstLabelTick !== undefined
+      ? timeToX(firstLabelTick, windowStart, layout.minuteWidth)
+      : 0;
+  const labelSpacing = GUIDE_TIME_LABEL_INTERVAL_MINUTES * layout.minuteWidth;
   const nowX = timeToX(nowMs, windowStart, layout.minuteWidth);
   const nowInWindow = nowMs >= windowStart && nowMs < windowEnd;
   const guideHeight = runtimeFixture.channels.length * layout.rowHeight;
-  const programmeViewportWidth = Math.max(0, windowWidth - layout.channelWidth);
   const programmeTimeWindow = useMemo(
     () =>
       guideProgrammeTimeWindow({
@@ -150,21 +304,51 @@ export const GuideView = memo(function GuideView({
       ),
     [programmesByChannel, programmeTimeWindow.fromMs, programmeTimeWindow.toMs],
   );
+  const windowedRepeatedTitleRunPresentations = useMemo(
+    () =>
+      totaalRepeatedTitleRunPresentationsForWindow(
+        microProgrammeMetadata.repeatedTitleRuns,
+        microProgrammeMetadata.repeatedRunByProgrammeId,
+        windowedProgrammesByChannel,
+        programmeTimeWindow.fromMs,
+        programmeTimeWindow.toMs,
+      ),
+    [
+      microProgrammeMetadata.repeatedRunByProgrammeId,
+      microProgrammeMetadata.repeatedTitleRuns,
+      programmeTimeWindow.fromMs,
+      programmeTimeWindow.toMs,
+      windowedProgrammesByChannel,
+    ],
+  );
   const followingDayBoundaryX = timeToX(
     followingDayStartMs,
     windowStart,
     layout.minuteWidth,
   );
-
-  const syncVerticalScroll = useCallback((y: number) => {
-    channelRef.current?.scrollTo({ y, animated: false });
-  }, []);
+  const stableScrollGeometry = totaalStableScrollGeometry(effectiveFontScale);
+  const verticalContentExtent = totaalVerticalContentExtent(
+    stableScrollGeometry.contentTopInset,
+    guideHeight,
+  );
+  const safeAreaLayout = totaalSafeAreaLayout(safeAreaInsets.top, effectiveFontScale);
+  const scheduleStatus =
+    schedulePresentation.schedule === null
+      ? selectedWindow.unavailable
+        ? 'unavailable'
+        : 'loading'
+      : null;
+  const scheduleStatusLabel =
+    scheduleStatus === 'unavailable'
+      ? 'Geen gidsgegevens beschikbaar voor deze dag.'
+      : 'Gids laden…';
 
   const syncCondensed = useCallback((nextCondensed: boolean) => {
     setCondensed((current) => (current === nextCondensed ? current : nextCondensed));
   }, []);
 
   const syncProgrammeWindowBucket = useCallback((nextBucket: number) => {
+    programmeWindowBucketRef.current = nextBucket;
     setProgrammeWindowBucket((current) => (current === nextBucket ? current : nextBucket));
   }, []);
 
@@ -181,7 +365,7 @@ export const GuideView = memo(function GuideView({
     (timeMs: number, targetWindowStartMs: number) => {
       const viewportX = Math.max(
         0,
-        timeToX(timeMs, targetWindowStartMs, layout.minuteWidth) - TIME_ANCHOR_INSET,
+        timeToX(timeMs, targetWindowStartMs, layout.minuteWidth) - TOTAAL_VISUAL_METRICS.viewedTimeAnchor,
       );
       syncProgrammeWindowForViewportX(viewportX);
     },
@@ -197,12 +381,12 @@ export const GuideView = memo(function GuideView({
   }, []);
 
   useAnimatedReaction(
-    () => scrollY.value > HEADER_CONDENSE_THRESHOLD,
+    () => totaalChromeCondensedForProgress(collapseProgress.value),
     (nextCondensed, previousCondensed) => {
       if (nextCondensed === previousCondensed) return;
       scheduleOnRN(syncCondensed, nextCondensed);
     },
-    [scrollY, syncCondensed],
+    [collapseProgress, syncCondensed],
   );
 
   useAnimatedReaction(
@@ -212,8 +396,6 @@ export const GuideView = memo(function GuideView({
         : 0,
     (nextBucket, previousBucket) => {
       if (nextBucket === previousBucket) return;
-      // Keep horizontal scroll frames on the UI thread. React only receives a coarse
-      // update after crossing a full viewport-width bucket; overscan covers the gap.
       scheduleOnRN(syncProgrammeWindowBucket, nextBucket);
     },
     [programmeViewportWidth, scrollX, syncProgrammeWindowBucket],
@@ -222,7 +404,8 @@ export const GuideView = memo(function GuideView({
   const viewedTimeForX = useCallback(
     (viewportX: number) =>
       clampTime(
-        windowStart + ((Math.max(0, viewportX) + TIME_ANCHOR_INSET) / layout.minuteWidth) * 60_000,
+        windowStart +
+          ((Math.max(0, viewportX) + TOTAAL_VISUAL_METRICS.viewedTimeAnchor) / layout.minuteWidth) * 60_000,
         windowStart,
         windowEnd,
       ),
@@ -237,11 +420,14 @@ export const GuideView = memo(function GuideView({
   );
 
   useAnimatedReaction(
-    () => includeFollowingDay && scrollX.value + TIME_ANCHOR_INSET >= followingDayBoundaryX,
+    () => includeFollowingDay && scrollX.value + TOTAAL_VISUAL_METRICS.viewedTimeAnchor >= followingDayBoundaryX,
     (inFollowingDay, previouslyInFollowingDay) => {
-      if (previouslyInFollowingDay === null || inFollowingDay === previouslyInFollowingDay) return;
-      // The date context and exact viewed-time ref are updated through the same anchor path.
-      // This bridge only runs when the stable anchor crosses the 06:00 day boundary.
+      if (
+        previouslyInFollowingDay === null ||
+        inFollowingDay === previouslyInFollowingDay
+      ) {
+        return;
+      }
       scheduleOnRN(syncHorizontalAnchor, scrollX.value);
     },
     [followingDayBoundaryX, includeFollowingDay, scrollX, syncHorizontalAnchor],
@@ -249,58 +435,340 @@ export const GuideView = memo(function GuideView({
 
   const horizontalScrollHandler = useAnimatedScrollHandler(
     {
+      onBeginDrag: () => {
+        horizontalProgrammaticTargetX.value = -1;
+        horizontalOwnership.value = totaalHorizontalBeginDrag(
+          horizontalOwnership.value,
+          TOTAAL_HORIZONTAL_SURFACE.schedule,
+        );
+      },
       onScroll: (event) => {
-        // Keep every scroll frame on the UI thread. Date context crosses the 06:00
-        // threshold via the boundary reaction above, so JS is still not bridged per frame.
-        scrollX.value = Math.max(0, event.contentOffset.x);
+        const decision = totaalHorizontalScrollDecision(
+          horizontalOwnership.value,
+          TOTAAL_HORIZONTAL_SURFACE.schedule,
+        );
+        if (!decision.authoritative) return;
+
+        const viewportX = Math.max(0, event.contentOffset.x);
+        scrollX.value = viewportX;
+        scrollTo(axisRef, viewportX, 0, false);
+
+        if (
+          totaalHorizontalProgrammaticTargetReached(
+            horizontalOwnership.value,
+            TOTAAL_HORIZONTAL_SURFACE.schedule,
+            viewportX,
+            horizontalProgrammaticTargetX.value,
+          )
+        ) {
+          horizontalOwnership.value = totaalHorizontalIdleOwnership();
+          horizontalProgrammaticTargetX.value = -1;
+          scheduleOnRN(syncHorizontalAnchor, viewportX);
+        }
       },
       onEndDrag: (event) => {
+        const before = horizontalOwnership.value;
+        if (before.owner !== TOTAAL_HORIZONTAL_SURFACE.schedule) return;
+
         const viewportX = Math.max(0, event.contentOffset.x);
-        scheduleOnRN(syncHorizontalAnchor, viewportX);
+        const next = totaalHorizontalEndDrag(
+          before,
+          TOTAAL_HORIZONTAL_SURFACE.schedule,
+          event.velocity?.x,
+        );
+        horizontalOwnership.value = next;
+        if (next.owner === TOTAAL_HORIZONTAL_SURFACE.none) {
+          scheduleOnRN(syncHorizontalAnchor, viewportX);
+        }
+      },
+      onMomentumBegin: () => {
+        horizontalOwnership.value = totaalHorizontalMomentumBegin(
+          horizontalOwnership.value,
+          TOTAAL_HORIZONTAL_SURFACE.schedule,
+        );
       },
       onMomentumEnd: (event) => {
+        const before = horizontalOwnership.value;
+        if (before.owner !== TOTAAL_HORIZONTAL_SURFACE.schedule) return;
+
         const viewportX = Math.max(0, event.contentOffset.x);
+        scrollX.value = viewportX;
+        scrollTo(axisRef, viewportX, 0, false);
         scheduleOnRN(syncHorizontalAnchor, viewportX);
+        horizontalOwnership.value = totaalHorizontalMomentumEnd(
+          before,
+          TOTAAL_HORIZONTAL_SURFACE.schedule,
+        );
+        horizontalProgrammaticTargetX.value = -1;
       },
     },
-    [scrollX, syncHorizontalAnchor],
+    [
+      axisRef,
+      horizontalOwnership,
+      horizontalProgrammaticTargetX,
+      scrollX,
+      syncHorizontalAnchor,
+    ],
+  );
+
+  const axisScrollHandler = useAnimatedScrollHandler(
+    {
+      onBeginDrag: () => {
+        horizontalProgrammaticTargetX.value = -1;
+        horizontalOwnership.value = totaalHorizontalBeginDrag(
+          horizontalOwnership.value,
+          TOTAAL_HORIZONTAL_SURFACE.axis,
+        );
+      },
+      onScroll: (event) => {
+        const decision = totaalHorizontalScrollDecision(
+          horizontalOwnership.value,
+          TOTAAL_HORIZONTAL_SURFACE.axis,
+        );
+        if (!decision.authoritative) return;
+
+        const viewportX = Math.max(0, event.contentOffset.x);
+        scrollX.value = viewportX;
+        scrollTo(horizontalRef, viewportX, 0, false);
+      },
+      onEndDrag: (event) => {
+        const before = horizontalOwnership.value;
+        if (before.owner !== TOTAAL_HORIZONTAL_SURFACE.axis) return;
+
+        const viewportX = Math.max(0, event.contentOffset.x);
+        const next = totaalHorizontalEndDrag(
+          before,
+          TOTAAL_HORIZONTAL_SURFACE.axis,
+          event.velocity?.x,
+        );
+        horizontalOwnership.value = next;
+        if (next.owner === TOTAAL_HORIZONTAL_SURFACE.none) {
+          scheduleOnRN(syncHorizontalAnchor, viewportX);
+        }
+      },
+      onMomentumBegin: () => {
+        horizontalOwnership.value = totaalHorizontalMomentumBegin(
+          horizontalOwnership.value,
+          TOTAAL_HORIZONTAL_SURFACE.axis,
+        );
+      },
+      onMomentumEnd: (event) => {
+        const before = horizontalOwnership.value;
+        if (before.owner !== TOTAAL_HORIZONTAL_SURFACE.axis) return;
+
+        const viewportX = Math.max(0, event.contentOffset.x);
+        scrollX.value = viewportX;
+        scrollTo(horizontalRef, viewportX, 0, false);
+        scheduleOnRN(syncHorizontalAnchor, viewportX);
+        horizontalOwnership.value = totaalHorizontalMomentumEnd(
+          before,
+          TOTAAL_HORIZONTAL_SURFACE.axis,
+        );
+      },
+    },
+    [
+      horizontalOwnership,
+      horizontalProgrammaticTargetX,
+      horizontalRef,
+      scrollX,
+      syncHorizontalAnchor,
+    ],
+  );
+
+  const syncViewedChannel = useCallback(
+    (nativeY: number, progress: number) => {
+      if (runtimeFixture.channels.length === 0) return;
+      const scheduleOffset = totaalScheduleOffsetForNativeOffset(nativeY, progress, reduceMotion);
+      viewedChannelIdRef.current = totaalChannelIdForScheduleOffset(
+        runtimeFixture.channels.map(({ id }) => id),
+        layout.rowHeight,
+        scheduleOffset,
+      );
+    },
+    [layout.rowHeight, reduceMotion, runtimeFixture.channels],
   );
 
   const verticalScrollHandler = useAnimatedScrollHandler(
     {
       onScroll: (event) => {
-        const y = event.contentOffset.y;
+        const y = Math.max(0, event.contentOffset.y);
         scrollY.value = y;
-        scheduleOnRN(syncVerticalScroll, y);
+        collapseProgress.value = totaalCollapseProgressForScrollOffset(y, reduceMotion);
+      },
+      onEndDrag: (event) => {
+        scheduleOnRN(
+          syncViewedChannel,
+          Math.max(0, event.contentOffset.y),
+          collapseProgress.value,
+        );
+      },
+      onMomentumEnd: (event) => {
+        scheduleOnRN(
+          syncViewedChannel,
+          Math.max(0, event.contentOffset.y),
+          collapseProgress.value,
+        );
       },
     },
-    [scrollY, syncVerticalScroll],
+    [reduceMotion, scrollY, syncViewedChannel],
+  );
+
+  const scheduleContentStyle = useAnimatedStyle(() => ({
+    transform: [
+      {
+        translateY: totaalStableScrollVisuals(
+          collapseProgress.value,
+          effectiveFontScale,
+          scrollY.value,
+          reduceMotion,
+        ).contentTranslateY,
+      },
+    ],
+  }));
+
+  const channelContentStyle = useAnimatedStyle(() => ({
+    transform: [
+      {
+        translateY:
+          stableScrollGeometry.contentTopInset -
+          scrollY.value +
+          totaalStableScrollVisuals(
+            collapseProgress.value,
+            effectiveFontScale,
+            scrollY.value,
+            reduceMotion,
+          ).contentTranslateY,
+      },
+    ],
+  }));
+
+  const statusStyle = useAnimatedStyle(() => ({
+    transform: [
+      {
+        translateY:
+          stableScrollGeometry.contentTopInset -
+          scrollY.value +
+          totaalStableScrollVisuals(
+            collapseProgress.value,
+            effectiveFontScale,
+            scrollY.value,
+            reduceMotion,
+          ).contentTranslateY +
+          20,
+      },
+    ],
+  }));
+
+  const currentMarkerBodyStyle = useAnimatedStyle(() => {
+    const pointerX = nowX - scrollX.value;
+    const visible =
+      nowInWindow && pointerX >= 0 && pointerX <= programmeViewportWidth;
+    const left = totaalCurrentTimeMarkerBodyX(
+      pointerX,
+      programmeViewportWidth,
+      currentMarkerBodyWidth,
+    );
+    return {
+      opacity: visible ? 1 : 0,
+      transform: [{ translateX: left }],
+    };
+  }, [currentMarkerBodyWidth, nowInWindow, nowX, programmeViewportWidth]);
+
+  const currentMarkerPointerStyle = useAnimatedStyle(() => {
+    const pointerX = nowX - scrollX.value;
+    const visible =
+      nowInWindow && pointerX >= 0 && pointerX <= programmeViewportWidth;
+    return {
+      opacity: visible ? 1 : 0,
+      transform: [
+        {
+          translateX:
+            pointerX - TOTAAL_VISUAL_METRICS.currentMarkerPointerWidth / 2,
+        },
+      ],
+    };
+  }, [nowInWindow, nowX, programmeViewportWidth]);
+
+  const applyHorizontalViewport = useCallback(
+    (viewportX: number, animated: boolean) => {
+      const plan = totaalHorizontalProgrammaticPlan(viewportX, animated);
+      horizontalOwnership.value = plan.ownership;
+      horizontalProgrammaticTargetX.value = animated ? viewportX : -1;
+
+      if (plan.authoritativeX !== null) {
+        scrollX.value = plan.authoritativeX;
+      }
+
+      horizontalRef.current?.scrollTo?.({
+        x: plan.scheduleTargetX,
+        animated,
+      });
+      if (plan.axisTargetX !== null) {
+        axisRef.current?.scrollTo?.({
+          x: plan.axisTargetX,
+          animated: false,
+        });
+      }
+    },
+    [
+      axisRef,
+      horizontalOwnership,
+      horizontalProgrammaticTargetX,
+      horizontalRef,
+      scrollX,
+    ],
   );
 
   const scrollToTime = useCallback(
-    (timeMs: number, animated: boolean) => {
+    (timeMs: number, requestedAnimated: boolean) => {
       const target = clampTime(timeMs, windowStart, windowEnd);
       commitViewedTime(target);
-      const x = Math.max(
+      const targetViewportX = Math.max(
         0,
-        timeToX(target, windowStart, layout.minuteWidth) - TIME_ANCHOR_INSET,
+        timeToX(target, windowStart, layout.minuteWidth) -
+          TOTAAL_VISUAL_METRICS.viewedTimeAnchor,
       );
-      const prealignmentX = guideProgrammaticScrollPrealignmentX(x, animated);
-      if (prealignmentX !== null) {
-        syncProgrammeWindowForViewportX(prealignmentX);
-        scrollX.value = prealignmentX;
+      const navigation = guideProgrammaticNavigationPolicy(
+        scrollX.value,
+        targetViewportX,
+        programmeViewportWidth,
+        requestedAnimated,
+      );
+
+      if (
+        navigation.prealignmentX !== null &&
+        programmeWindowBucketRef.current !== navigation.targetBucket
+      ) {
+        pendingDirectHorizontalPositionRef.current = {
+          viewportX: navigation.targetViewportX,
+          targetBucket: navigation.targetBucket,
+        };
+        syncProgrammeWindowBucket(navigation.targetBucket);
+        return;
       }
-      horizontalRef.current?.scrollTo({ x, animated });
+
+      pendingDirectHorizontalPositionRef.current = null;
+      applyHorizontalViewport(navigation.targetViewportX, navigation.animated);
     },
     [
+      applyHorizontalViewport,
       commitViewedTime,
       layout.minuteWidth,
+      programmeViewportWidth,
       scrollX,
-      syncProgrammeWindowForViewportX,
+      syncProgrammeWindowBucket,
       windowEnd,
       windowStart,
     ],
   );
+
+  useLayoutEffect(() => {
+    const pending = pendingDirectHorizontalPositionRef.current;
+    if (!pending || pending.targetBucket !== programmeWindowBucket) return;
+
+    pendingDirectHorizontalPositionRef.current = null;
+    applyHorizontalViewport(pending.viewportX, false);
+  }, [applyHorizontalViewport, programmeWindowBucket]);
 
   useEffect(() => {
     if (guideDayIsSelectable(windowStartDayMs, nowMs)) return;
@@ -308,12 +776,16 @@ export const GuideView = memo(function GuideView({
     const options = guideDayOptions(nowMs);
     const firstDayStartMs = options[0]!.fromMs;
     const lastDayStartMs = options.at(-1)!.fromMs;
-    const replacementDayStartMs = windowStartDayMs < firstDayStartMs
-      ? firstDayStartMs
-      : windowStartDayMs > lastDayStartMs
-        ? lastDayStartMs
-        : guideTelevisionDayStart(nowMs);
-    const target = guideTargetForDaySelection(viewedTimeRef.current, replacementDayStartMs);
+    const replacementDayStartMs =
+      windowStartDayMs < firstDayStartMs
+        ? firstDayStartMs
+        : windowStartDayMs > lastDayStartMs
+          ? lastDayStartMs
+          : guideTelevisionDayStart(nowMs);
+    const target = guideTargetForDaySelection(
+      viewedTimeRef.current,
+      replacementDayStartMs,
+    );
     pendingTargetTimeRef.current = target.timeMs;
     syncProgrammeWindowForTarget(target.timeMs, replacementDayStartMs);
     commitViewedTime(target.timeMs);
@@ -325,18 +797,26 @@ export const GuideView = memo(function GuideView({
     windowStartDayMs,
   ]);
 
-  useEffect(() => {
-    const target = pendingTargetTimeRef.current ??
+  useLayoutEffect(() => {
+    const target =
+      pendingTargetTimeRef.current ??
       guideTargetForDaySelection(viewedTimeRef.current, windowStartDayMs).timeMs;
     pendingTargetTimeRef.current = null;
-    const frame = requestAnimationFrame(() => scrollToTime(target, false));
-    return () => cancelAnimationFrame(frame);
+    scrollToTime(target, false);
   }, [scrollToTime, windowStartDayMs]);
 
   const changeDay = useCallback(
     (nextDayStartMs: number) => {
-      if (nextDayStartMs === visibleDayStartMs && nextDayStartMs === windowStartDayMs) return;
-      const target = guideTargetForDaySelection(viewedTimeRef.current, nextDayStartMs);
+      if (
+        nextDayStartMs === visibleDayStartMs &&
+        nextDayStartMs === windowStartDayMs
+      ) {
+        return;
+      }
+      const target = guideTargetForDaySelection(
+        viewedTimeRef.current,
+        nextDayStartMs,
+      );
       pendingTargetTimeRef.current = target.timeMs;
       syncProgrammeWindowForTarget(target.timeMs, target.dayStartMs);
       commitViewedTime(target.timeMs);
@@ -350,10 +830,70 @@ export const GuideView = memo(function GuideView({
     ],
   );
 
+  useEffect(() => {
+    const nextChannelIds = runtimeFixture.channels.map(({ id }) => id);
+    if (nextChannelIds.length === 0) {
+      previousChannelIdsRef.current = nextChannelIds;
+      previousRowHeightRef.current = layout.rowHeight;
+      return;
+    }
+
+    const currentScheduleOffset = totaalScheduleOffsetForNativeOffset(
+      scrollY.value,
+      collapseProgress.value,
+      reduceMotion,
+    );
+    const previousChannelIds =
+      previousChannelIdsRef.current.length > 0
+        ? previousChannelIdsRef.current
+        : nextChannelIds;
+    const previousRowHeight = previousRowHeightRef.current;
+    const rememberedId =
+      totaalChannelIdForScheduleOffset(
+        previousChannelIds,
+        previousRowHeight,
+        currentScheduleOffset,
+      ) ??
+      viewedChannelIdRef.current ??
+      nextChannelIds[0] ??
+      null;
+    viewedChannelIdRef.current = rememberedId;
+
+    const nextScheduleOffset = totaalPreservedChannelScheduleOffset({
+      previousChannelIds,
+      nextChannelIds,
+      channelId: rememberedId,
+      previousRowHeight,
+      nextRowHeight: layout.rowHeight,
+      currentScheduleOffset,
+    });
+    previousChannelIdsRef.current = nextChannelIds;
+    previousRowHeightRef.current = layout.rowHeight;
+
+    if (Math.abs(nextScheduleOffset - currentScheduleOffset) < 0.5) return;
+
+    const nativeY = totaalNativeOffsetForScheduleOffset(
+      nextScheduleOffset,
+      collapseProgress.value,
+      reduceMotion,
+    );
+    scrollY.value = nativeY;
+    const frame = requestAnimationFrame(() => {
+      verticalRef.current?.scrollTo({ y: nativeY, animated: false });
+    });
+    return () => cancelAnimationFrame(frame);
+  }, [
+    collapseProgress,
+    layout.rowHeight,
+    reduceMotion,
+    runtimeFixture.channels,
+    scrollY,
+  ]);
+
   const jumpToNow = useCallback(() => {
     const target = guideTargetForNow(Date.now());
     if (target.timeMs >= windowStart && target.timeMs < windowEnd) {
-      scrollToTime(target.timeMs, true);
+      scrollToTime(target.timeMs, !reduceMotion);
       return;
     }
     pendingTargetTimeRef.current = target.timeMs;
@@ -362,6 +902,7 @@ export const GuideView = memo(function GuideView({
     setWindowStartDayMs(target.dayStartMs);
   }, [
     commitViewedTime,
+    reduceMotion,
     scrollToTime,
     syncProgrammeWindowForTarget,
     windowEnd,
@@ -369,84 +910,251 @@ export const GuideView = memo(function GuideView({
   ]);
 
   return (
-    <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.colors.background }]}>
-      {!condensed ? (
-        <View style={styles.header}>
-          <View style={styles.headerTitleGroup}>
-            <Text accessible={false} style={[styles.eyebrow, { color: theme.colors.textMuted }]}>TEEVEE</Text>
-            <Text accessibilityRole="header" style={[styles.title, { color: theme.colors.text }]}>Gids</Text>
-          </View>
-          {headerAction}
-        </View>
-      ) : null}
-
+    <View style={[styles.root, { backgroundColor: theme.colors.background }]}>
       <View
+        pointerEvents="box-none"
         style={[
-          styles.guideControls,
-          condensed ? { borderBottomColor: theme.colors.border, borderBottomWidth: StyleSheet.hairlineWidth } : null,
+          styles.guideOverlay,
+          {
+            top: safeAreaLayout.overlayTop,
+            backgroundColor: theme.colors.background,
+          },
         ]}
       >
-        <GuideDaySelector
-          selectedDayStartMs={visibleDayStartMs}
-          nowMs={nowMs}
-          loading={selectedWindow.loading}
-          unavailable={selectedWindow.unavailable}
-          onSelectDay={changeDay}
+        <GuideChrome
+          condensed={condensed}
+          presentationNavigation={presentationNavigation}
+          collapseProgress={collapseProgress}
         />
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel="Ga naar nu"
-          onPress={jumpToNow}
-          style={[styles.nowBadge, { borderColor: theme.colors.border }]}
-        >
-          <Text
-            maxFontSizeMultiplier={GUIDE_CONTROL_MAX_FONT_SIZE_MULTIPLIER}
-            style={[styles.nowText, { color: theme.colors.text }]}
-          >
-            Nu
-          </Text>
-        </Pressable>
-      </View>
 
-      <View style={[styles.guideFrame, { borderColor: theme.colors.border }]}>
         <View
+          testID="totaal-day-context"
+          style={[styles.dayContext, { backgroundColor: theme.colors.background }]}
+        >
+          <GuideDaySelector
+            selectedDayStartMs={visibleDayStartMs}
+            nowMs={nowMs}
+            loading={selectedWindow.loading}
+            unavailable={selectedWindow.unavailable}
+            labelVariant="per-channel"
+            preserveInlineIntrinsicWidth
+            onSelectDay={changeDay}
+          />
+
+          <Pressable
+            testID="totaal-now"
+            accessibilityRole="button"
+            accessibilityLabel="Ga naar nu"
+            onPress={jumpToNow}
+            style={[
+              styles.nowTouchTarget,
+              {
+                minWidth: minimumTouchTarget,
+                minHeight: minimumTouchTarget,
+              },
+            ]}
+          >
+            {({ pressed }) => (
+              <View
+                style={[
+                  styles.nowVisible,
+                  {
+                    backgroundColor: pressed
+                      ? theme.colors.surfaceElevated
+                      : 'transparent',
+                    borderColor: theme.colors.border,
+                  },
+                ]}
+              >
+                <Text
+                  numberOfLines={1}
+                  maxFontSizeMultiplier={COMPACT_GUIDE_MAX_FONT_SIZE_MULTIPLIER}
+                  style={[styles.nowText, { color: theme.colors.text }]}
+                >
+                  Nu
+                </Text>
+              </View>
+            )}
+          </Pressable>
+        </View>
+
+        <View
+          testID="totaal-time-axis-shell"
           accessible={false}
           accessibilityElementsHidden
           importantForAccessibility="no-hide-descendants"
+          style={[styles.axisRow, { backgroundColor: theme.colors.background }]}
+        >
+          <View
+            testID="totaal-axis-corner"
+            style={[
+              styles.axisCorner,
+              {
+                width: layout.channelWidth,
+                borderRightColor: theme.colors.border,
+              },
+            ]}
+          >
+            <View
+              style={[
+                styles.axisBaseline,
+                {
+                  backgroundColor: theme.colors.railTick,
+                  opacity: TOTAAL_VISUAL_METRICS.axisBaselineOpacity,
+                },
+              ]}
+            />
+          </View>
+
+          <View style={[styles.axisViewport, { width: programmeViewportWidth }]}>
+            <Animated.ScrollView
+              ref={axisRef}
+              testID="totaal-time-axis-scroll"
+              horizontal
+              bounces
+              directionalLockEnabled
+              decelerationRate="normal"
+              showsHorizontalScrollIndicator={false}
+              scrollEventThrottle={16}
+              onScroll={axisScrollHandler}
+            >
+              <View style={[styles.axisTrack, { width }]}>
+              <View
+                style={[
+                  styles.axisBaseline,
+                  {
+                    backgroundColor: theme.colors.railTick,
+                    opacity: TOTAAL_VISUAL_METRICS.axisBaselineOpacity,
+                  },
+                ]}
+              />
+              {ticks.map((tick) => {
+                const left = timeToX(tick, windowStart, layout.minuteWidth);
+                const tickPresentation = totaalTimeAxisTickPresentation(tick);
+                return (
+                  <TimeAxisTick
+                    key={tick}
+                    left={left}
+                    label={formatGuideTime(tick)}
+                    labelWidth={layout.tickLabelWidth}
+                    labelColor={theme.colors.textMuted}
+                    tickColor={theme.colors.railTick}
+                    major={tickPresentation.major}
+                    tickHeight={tickPresentation.tickHeight}
+                    tickOpacity={tickPresentation.tickOpacity}
+                  />
+                );
+              })}
+              </View>
+            </Animated.ScrollView>
+
+            {ticks.length > 0 ? (
+              <TimeAxisLeftMask
+                height={layout.timeAxisHeight}
+                firstTickX={firstTickX}
+                tickSpacing={labelSpacing}
+                labelWidth={layout.tickLabelWidth}
+                backgroundColor={theme.colors.background}
+                scrollX={scrollX}
+              />
+            ) : null}
+
+            {nowInWindow ? (
+              <>
+                <Animated.View
+                  testID="totaal-current-time-marker"
+                  pointerEvents="none"
+                  style={[
+                    styles.currentMarkerBody,
+                    {
+                      width: currentMarkerBodyWidth,
+                      backgroundColor: theme.colors.currentTime,
+                    },
+                    currentMarkerBodyStyle,
+                  ]}
+                >
+                  <Text
+                    testID="totaal-current-time-marker-label"
+                    numberOfLines={1}
+                    maxFontSizeMultiplier={COMPACT_GUIDE_MAX_FONT_SIZE_MULTIPLIER}
+                    style={[
+                      styles.currentMarkerText,
+                      {
+                        width: currentMarkerLabelWidth,
+                        color: theme.colors.onCurrentTime,
+                      },
+                    ]}
+                  >
+                    {formatGuideTime(nowMs)}
+                  </Text>
+                </Animated.View>
+                <Animated.View
+                  pointerEvents="none"
+                  style={[
+                    styles.currentMarkerPointer,
+                    { borderTopColor: theme.colors.currentTime },
+                    currentMarkerPointerStyle,
+                  ]}
+                />
+              </>
+            ) : null}
+          </View>
+        </View>
+      </View>
+
+      <View
+        testID="totaal-schedule-viewport"
+        style={[
+          styles.scheduleViewport,
+          {
+            top: safeAreaLayout.scheduleViewportTop,
+            backgroundColor: theme.colors.background,
+          },
+        ]}
+      >
+        <View
           style={[
             styles.channelColumn,
             {
               width: layout.channelWidth,
-              backgroundColor: theme.colors.surface,
               borderRightColor: theme.colors.border,
+              backgroundColor: theme.colors.background,
             },
           ]}
         >
-          <View
+          <Animated.View
             style={[
-              styles.channelAxisCorner,
-              { height: layout.timeAxisHeight, borderBottomColor: theme.colors.border },
+              styles.channelContent,
+              { height: verticalContentExtent },
+              channelContentStyle,
             ]}
           >
-            <Text numberOfLines={1} style={[styles.axisCornerText, { color: theme.colors.textMuted }]}>ZENDER</Text>
-          </View>
-          <ScrollView ref={channelRef} showsVerticalScrollIndicator={false} scrollEnabled={false}>
-            {runtimeFixture.channels.map((channel) => (
-              <View
-                key={channel.id}
-                style={[
-                  styles.channelCell,
-                  { height: layout.rowHeight, borderBottomColor: theme.colors.border },
-                ]}
-              >
-                <ChannelIdentity
-                  channel={channel}
-                  textColor={theme.colors.text}
-                  mutedTextColor={theme.colors.textMuted}
-                />
-              </View>
-            ))}
-          </ScrollView>
+            {runtimeFixture.channels.map((channel, rowIndex) => {
+              const programmeActionCount =
+                programmesByChannel.get(channel.id)?.length ?? 0;
+              return (
+                <View
+                  key={channel.id}
+                  style={[
+                    styles.channelCell,
+                    {
+                      top: rowIndex * layout.rowHeight,
+                      height: layout.rowHeight,
+                      borderBottomColor: theme.colors.border,
+                    },
+                  ]}
+                >
+                  <ChannelIdentity
+                    channel={channel}
+                    textColor={theme.colors.text}
+                    mutedTextColor={theme.colors.textSecondary}
+                    variant="totaal"
+                    accessible={totaalChannelIdentityAccessible(programmeActionCount)}
+                  />
+                </View>
+              );
+            })}
+          </Animated.View>
         </View>
 
         <Animated.ScrollView
@@ -459,45 +1167,38 @@ export const GuideView = memo(function GuideView({
           showsHorizontalScrollIndicator={false}
           scrollEventThrottle={16}
           onScroll={horizontalScrollHandler}
+          style={[
+            styles.programmeHorizontalViewport,
+            { left: layout.channelWidth },
+          ]}
         >
-          <View style={{ width }}>
-            <View
-              accessible={false}
-              accessibilityElementsHidden
-              importantForAccessibility="no-hide-descendants"
+          <Animated.ScrollView
+            ref={verticalRef}
+            testID="guide-channel-scroll"
+            bounces={TOTAAL_VERTICAL_SCROLL_ENDPOINT_POLICY.bounces}
+            alwaysBounceVertical={TOTAAL_VERTICAL_SCROLL_ENDPOINT_POLICY.alwaysBounceVertical}
+            overScrollMode={TOTAAL_VERTICAL_SCROLL_ENDPOINT_POLICY.overScrollMode}
+            directionalLockEnabled
+            nestedScrollEnabled
+            decelerationRate="normal"
+            showsVerticalScrollIndicator
+            scrollEventThrottle={16}
+            onScroll={verticalScrollHandler}
+            style={{ width }}
+            contentContainerStyle={{
+              minHeight: verticalContentExtent,
+            }}
+          >
+            <Animated.View
               style={[
-                styles.timeAxis,
+                styles.scheduleContent,
                 {
-                  height: layout.timeAxisHeight,
-                  backgroundColor: theme.colors.surface,
-                  borderBottomColor: theme.colors.border,
+                  width,
+                  minHeight: verticalContentExtent,
+                  paddingTop: stableScrollGeometry.contentTopInset,
                 },
+                scheduleContentStyle,
               ]}
-            >
-              {ticks.map((tick) => {
-                const left = timeToX(tick, windowStart, layout.minuteWidth);
-                return (
-                  <TimeAxisTick
-                    key={tick}
-                    left={left}
-                    label={formatGuideTime(tick)}
-                    labelWidth={layout.tickLabelWidth}
-                    labelColor={theme.colors.textMuted}
-                    borderColor={theme.colors.border}
-                  />
-                );
-              })}
-            </View>
-
-            <Animated.ScrollView
-              testID="guide-channel-scroll"
-              bounces
-              alwaysBounceVertical
-              directionalLockEnabled
-              decelerationRate="normal"
-              showsVerticalScrollIndicator
-              scrollEventThrottle={16}
-              onScroll={verticalScrollHandler}
             >
               <View style={{ width, height: guideHeight }}>
                 {runtimeFixture.channels.map((channel, rowIndex) => (
@@ -513,203 +1214,253 @@ export const GuideView = memo(function GuideView({
                       },
                     ]}
                   >
-                    {(windowedProgrammesByChannel.get(channel.id) ?? []).map((programme) => {
-                      const frame = programmeFrame(programme, windowStart, layout.minuteWidth);
-                      const startMs = Date.parse(programme.startAt);
-                      const endMs = Date.parse(programme.endAt);
-                      const isCurrent = isProgrammeCurrent(programme, nowMs);
-                      const progress = isCurrent ? programmeProgress(programme, nowMs) : 0;
-                      const contentMode = programmeContentMode(frame.width);
-                      const horizontalPadding = contentMode === 'compact' ? 5 : 8;
-                      const programmeTextWidth = Math.max(0, frame.width - horizontalPadding * 2);
-                      const titleLines = layout.largeText ? 1 : contentMode === 'comfortable' ? 2 : 1;
-                      const showProgrammeTime = !layout.largeText && contentMode !== 'compact';
-                      const accessibilityStatus = isCurrent ? ', nu bezig' : '';
-
-                      return (
-                        <Pressable
+                    {(windowedProgrammesByChannel.get(channel.id) ?? []).map(
+                      (programme) => (
+                        <TotaalProgrammeCell
                           key={programme.id}
-                          testID={`programme-${programme.id}`}
-                          accessibilityRole="button"
-                          accessibilityLabel={`${channel.displayName}, ${programme.title}, ${formatGuideTime(startMs)} tot ${formatGuideTime(endMs)}${accessibilityStatus}`}
-                          accessibilityHint="Opent programmadetails"
-                          onPress={() => onSelectProgramme({ programme, channel })}
-                          style={({ pressed }) => [
-                            styles.programme,
-                            contentMode === 'compact' ? styles.programmeCompact : null,
-                            layout.largeText ? styles.programmeLargeText : null,
-                            {
-                              left: frame.left,
-                              width: frame.width,
-                              backgroundColor: isCurrent ? theme.colors.programmeCurrent : theme.colors.programme,
-                              opacity: pressed ? 0.65 : 1,
-                            },
-                          ]}
-                        >
-                          {isCurrent && contentMode !== 'compact' ? (
-                            <View style={[styles.progressTrack, { backgroundColor: theme.colors.border }]}>
-                              <View
-                                style={[
-                                  styles.progressFill,
-                                  {
-                                    width: `${progress * 100}%`,
-                                    backgroundColor: theme.colors.currentTime,
-                                  },
-                                ]}
-                              />
-                            </View>
-                          ) : null}
-                          <View
-                            style={[
-                              styles.programmeTextContent,
-                              { width: programmeTextWidth },
-                            ]}
-                          >
-                            <Text
-                              numberOfLines={titleLines}
-                              ellipsizeMode="tail"
-                              style={[
-                                styles.programmeTitle,
-                                contentMode === 'compact' ? styles.programmeTitleCompact : null,
-                                { color: theme.colors.text },
-                              ]}
-                            >
-                              {programme.title}
-                            </Text>
-                            {showProgrammeTime ? (
-                              <Text numberOfLines={1} style={[styles.programmeTime, { color: theme.colors.textMuted }]}
-                              >
-                                {formatGuideTime(startMs)}
-                              </Text>
-                            ) : null}
-                          </View>
-                        </Pressable>
-                      );
-                    })}
+                          channel={channel}
+                          programme={programme}
+                          nowMs={nowMs}
+                          windowStartMs={windowStart}
+                          minuteWidth={layout.minuteWidth}
+                          fontScale={effectiveFontScale}
+                          onSelectProgramme={onSelectProgramme}
+                        />
+                      ),
+                    )}
                   </View>
                 ))}
-                {nowInWindow ? (
-                  <View
-                    pointerEvents="none"
-                    style={[
-                      styles.currentTimeLine,
-                      { left: nowX, backgroundColor: theme.colors.currentTime, height: guideHeight },
-                    ]}
-                  />
-                ) : null}
               </View>
-            </Animated.ScrollView>
-          </View>
+            </Animated.View>
+          </Animated.ScrollView>
         </Animated.ScrollView>
-
-        {ticks.length > 0 ? (
-          <TimeAxisLeftMask
-            left={layout.channelWidth}
-            height={layout.timeAxisHeight}
-            firstTickX={firstTickX}
-            tickSpacing={tickSpacing}
-            labelWidth={layout.tickLabelWidth}
-            backgroundColor={theme.colors.surface}
-            borderBottomColor={theme.colors.border}
-            scrollX={scrollX}
-          />
-        ) : null}
 
         <View
           pointerEvents="none"
           style={[
             styles.edgeOverlayFrame,
-            {
-              left: layout.channelWidth,
-              top: layout.timeAxisHeight,
-            },
+            { left: layout.channelWidth },
           ]}
         >
+          <TotaalMicroProgrammeOverlay
+            runPresentations={windowedRepeatedTitleRunPresentations}
+            channelRowIndex={channelRowIndex}
+            windowStartMs={windowStart}
+            minuteWidth={layout.minuteWidth}
+            rowHeight={layout.rowHeight}
+            viewportWidth={programmeViewportWidth}
+            scrollX={scrollX}
+            scrollY={scrollY}
+            contentTopInset={stableScrollGeometry.contentTopInset}
+            collapseProgress={collapseProgress}
+            fontScale={effectiveFontScale}
+            reduceMotion={reduceMotion}
+          />
           <EdgeReadabilityOverlay
             fixture={runtimeFixture}
             layout={layout}
             windowStart={windowStart}
             viewportWidth={programmeViewportWidth}
             nowMs={nowMs}
-            nowX={nowX}
-            nowInWindow={nowInWindow}
             scrollX={scrollX}
             scrollY={scrollY}
+            contentTopInset={stableScrollGeometry.contentTopInset}
+            collapseProgress={collapseProgress}
+            fontScale={effectiveFontScale}
+            reduceMotion={reduceMotion}
           />
         </View>
+
+        {scheduleStatus ? (
+          <Animated.View
+            testID={`totaal-programme-state-${scheduleStatus}`}
+            accessible
+            accessibilityRole="text"
+            accessibilityLabel={scheduleStatusLabel}
+            accessibilityLiveRegion="polite"
+            style={[
+              styles.scheduleStatus,
+              {
+                left: layout.channelWidth,
+                backgroundColor: theme.colors.background,
+              },
+              statusStyle,
+            ]}
+          >
+            <Text
+              style={[
+                styles.scheduleStatusText,
+                { color: theme.colors.textSecondary },
+              ]}
+            >
+              {scheduleStatusLabel}
+            </Text>
+          </Animated.View>
+        ) : null}
       </View>
-    </SafeAreaView>
+    </View>
   );
 });
 
 const styles = StyleSheet.create({
-  safeArea: { flex: 1 },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    flexWrap: 'wrap',
-    columnGap: 12,
-    rowGap: 8,
-    paddingHorizontal: 18,
-    paddingTop: 12,
-    paddingBottom: 8,
+  root: {
+    flex: 1,
+    position: 'relative',
+    overflow: 'hidden',
   },
-  headerTitleGroup: { flexShrink: 1 },
-  eyebrow: { fontSize: 10, fontWeight: '700', letterSpacing: 1.1 },
-  title: { fontSize: 32, fontWeight: '700', letterSpacing: -1.2 },
-  guideControls: {
-    minHeight: 56,
+  guideOverlay: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    zIndex: 5,
+  },
+  dayContext: {
+    height: TOTAAL_VISUAL_METRICS.dayContextHeight,
+    paddingHorizontal: TOTAAL_VISUAL_METRICS.dateInsetX,
     flexDirection: 'row',
     flexWrap: 'nowrap',
     alignItems: 'center',
-    gap: 12,
-    paddingHorizontal: 18,
-    paddingBottom: 8,
+    justifyContent: 'space-between',
+    gap: 8,
   },
-  nowBadge: {
-    minWidth: 52,
-    minHeight: 48,
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-    borderRadius: 12,
-    borderWidth: StyleSheet.hairlineWidth,
+  nowTouchTarget: {
+    marginLeft: 'auto',
+    flexGrow: 0,
+    flexShrink: 0,
     alignItems: 'center',
     justifyContent: 'center',
-    marginLeft: 'auto',
   },
-  nowText: { fontSize: 14, fontWeight: '700' },
-  guideFrame: { flex: 1, flexDirection: 'row', borderTopWidth: StyleSheet.hairlineWidth },
-  channelColumn: { zIndex: 2, borderRightWidth: StyleSheet.hairlineWidth },
-  channelAxisCorner: { justifyContent: 'center', paddingHorizontal: 8, borderBottomWidth: StyleSheet.hairlineWidth },
-  axisCornerText: { fontSize: 9, fontWeight: '700', letterSpacing: 0.8 },
-  channelCell: { justifyContent: 'center', borderBottomWidth: StyleSheet.hairlineWidth },
-  timeAxis: { position: 'relative', borderBottomWidth: StyleSheet.hairlineWidth },
-  programmeRow: { position: 'absolute', left: 0, borderBottomWidth: StyleSheet.hairlineWidth },
-  programme: {
-    position: 'absolute',
-    top: 4,
-    bottom: 4,
-    borderRadius: 8,
-    paddingHorizontal: 8,
-    paddingVertical: 7,
-    justifyContent: 'space-between',
+  nowVisible: {
+    height: TOTAAL_VISUAL_METRICS.nowVisibleHeight,
+    minWidth: TOTAAL_VISUAL_METRICS.nowMinWidth,
+    paddingHorizontal: TOTAAL_VISUAL_METRICS.nowPaddingX,
+    flexGrow: 0,
+    flexShrink: 0,
+    borderRadius: TOTAAL_VISUAL_METRICS.nowRadius,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  nowText: {
+    ...GUIDE_TYPOGRAPHY.utility,
+    flexGrow: 0,
+    flexShrink: 0,
+    letterSpacing: 0,
+  },
+  axisRow: {
+    height: TOTAAL_VISUAL_METRICS.timeAxisHeight,
+    flexDirection: 'row',
     overflow: 'hidden',
   },
-  programmeCompact: { paddingHorizontal: 5, paddingVertical: 6, justifyContent: 'center' },
-  programmeLargeText: { justifyContent: 'center' },
-  programmeTextContent: { flexShrink: 1 },
-  programmeTitle: { fontSize: 12, fontWeight: '600' },
-  programmeTitleCompact: { fontSize: 10 },
-  programmeTime: { fontSize: 10, marginTop: 4 },
-  progressTrack: { height: 2, borderRadius: 1, overflow: 'hidden', marginBottom: 4 },
-  progressFill: { height: '100%' },
-  currentTimeLine: { position: 'absolute', top: 0, width: 2, zIndex: 4 },
-  edgeOverlayFrame: {
+  axisCorner: {
+    height: TOTAAL_VISUAL_METRICS.timeAxisHeight,
+    borderRightWidth: 1,
+    position: 'relative',
+  },
+  axisViewport: {
+    height: TOTAAL_VISUAL_METRICS.timeAxisHeight,
+    position: 'relative',
+    overflow: 'hidden',
+  },
+  axisTrack: {
+    height: TOTAAL_VISUAL_METRICS.timeAxisHeight,
+    position: 'relative',
+  },
+  axisBaseline: {
     position: 'absolute',
+    left: 0,
     right: 0,
+    bottom: 0,
+    height: TOTAAL_VISUAL_METRICS.axisBaselineHeight,
+  },
+  currentMarkerBody: {
+    position: 'absolute',
+    bottom: TOTAAL_VISUAL_METRICS.currentMarkerPointerHeight,
+    height: TOTAAL_VISUAL_METRICS.currentMarkerBodyHeight,
+    paddingHorizontal: TOTAAL_VISUAL_METRICS.currentMarkerPaddingX,
+    borderRadius: TOTAAL_VISUAL_METRICS.currentMarkerRadius,
+    alignItems: 'center',
+    justifyContent: 'center',
+    zIndex: 6,
+  },
+  currentMarkerText: {
+    ...TOTAAL_TYPOGRAPHY.currentMarker,
+    flexShrink: 0,
+    textAlign: 'center',
+    letterSpacing: 0,
+  },
+  currentMarkerPointer: {
+    position: 'absolute',
+    bottom: 0,
+    width: 0,
+    height: 0,
+    borderLeftWidth: TOTAAL_VISUAL_METRICS.currentMarkerPointerWidth / 2,
+    borderRightWidth: TOTAAL_VISUAL_METRICS.currentMarkerPointerWidth / 2,
+    borderTopWidth: TOTAAL_VISUAL_METRICS.currentMarkerPointerHeight,
+    borderLeftColor: 'transparent',
+    borderRightColor: 'transparent',
+    zIndex: 6,
+  },
+  scheduleViewport: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: 0,
+    overflow: 'hidden',
+    zIndex: 1,
+  },
+  channelColumn: {
+    position: 'absolute',
+    left: 0,
+    top: 0,
     bottom: 0,
     zIndex: 3,
     overflow: 'hidden',
+    borderRightWidth: 1,
+  },
+  channelContent: {
+    position: 'relative',
+    width: '100%',
+  },
+  channelCell: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    justifyContent: 'center',
+    borderBottomWidth: 1,
+  },
+  programmeHorizontalViewport: {
+    position: 'absolute',
+    top: 0,
+    right: 0,
+    bottom: 0,
+  },
+  scheduleContent: {
+    position: 'relative',
+  },
+  programmeRow: {
+    position: 'absolute',
+    left: 0,
+    borderBottomWidth: 1,
+  },
+  edgeOverlayFrame: {
+    position: 'absolute',
+    top: 0,
+    right: 0,
+    bottom: 0,
+    zIndex: 4,
+    overflow: 'hidden',
+  },
+  scheduleStatus: {
+    position: 'absolute',
+    right: 0,
+    top: 0,
+    zIndex: 5,
+    minHeight: 76,
+    paddingHorizontal: 20,
+    paddingVertical: 18,
+  },
+  scheduleStatusText: {
+    ...TOTAAL_TYPOGRAPHY.programmeSecondary,
   },
 });

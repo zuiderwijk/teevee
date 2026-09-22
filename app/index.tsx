@@ -1,7 +1,5 @@
 import { type ComponentType, type ReactNode, useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react';
-import { StyleSheet, View } from 'react-native';
 
-import { SettingsButton } from '@/components/SettingsButton';
 import { detailReducer, initialDetailState, type ProgrammeSelection } from '@/features/guide/detailState';
 import { GuidePresentationSelector } from '@/features/guide/GuidePresentationSelector';
 import {
@@ -19,7 +17,6 @@ import {
   writeAppPreferences,
 } from '@/services/storage/appPreferencesStorage';
 
-const settingsAction = <SettingsButton />;
 
 type NowNextGuideComponent = ComponentType<{
   guideDataVersion: number;
@@ -138,8 +135,8 @@ export default function GuideScreen() {
       ) : (
         <GuideView
           guideDataVersion={guideDataVersion}
+          presentationNavigation={sharedPresentationNavigation}
           onSelectProgramme={openDetail}
-          headerAction={settingsAction}
         />
       )}
 
@@ -147,28 +144,9 @@ export default function GuideScreen() {
         <NowNextLoadErrorNotice onRetry={() => void loadAndShowNowNext()} />
       ) : null}
 
-      {!showPerChannel && !showNowNext ? (
-        <View pointerEvents="box-none" style={styles.presentationSelectorDock}>
-          <GuidePresentationSelector
-            selected={presentation}
-            loadingPresentation={nowNextLoading ? 'now-next' : null}
-            onSelect={selectPresentation}
-          />
-        </View>
-      ) : null}
 
       <ProgrammeDetail state={detail} onClose={closeDetail} />
     </>
   );
 }
 
-const styles = StyleSheet.create({
-  presentationSelectorDock: {
-    position: 'absolute',
-    left: 12,
-    right: 12,
-    bottom: 16,
-    zIndex: 20,
-    alignItems: 'center',
-  },
-});

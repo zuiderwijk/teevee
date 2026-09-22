@@ -10,15 +10,42 @@ import { ChannelIdentity } from './ChannelIdentity';
 vi.mock('react-native', () => {
   type Props = {
     children?: ReactNode;
+    accessible?: boolean;
+    accessibilityElementsHidden?: boolean;
+    importantForAccessibility?: string;
     accessibilityLabel?: string;
     ellipsizeMode?: string;
+    numberOfLines?: number;
     onError?: () => void;
   };
 
-  const View = ({ children, accessibilityLabel }: Props) =>
-    createElement('div', { 'aria-label': accessibilityLabel }, children);
-  const Text = ({ children, ellipsizeMode }: Props) =>
-    createElement('span', { 'data-ellipsize-mode': ellipsizeMode }, children);
+  const View = ({
+    children,
+    accessible,
+    accessibilityElementsHidden,
+    importantForAccessibility,
+    accessibilityLabel,
+  }: Props) =>
+    createElement(
+      'div',
+      {
+        'aria-label': accessibilityLabel,
+        'data-accessible': String(Boolean(accessible)),
+        'data-elements-hidden': String(Boolean(accessibilityElementsHidden)),
+        'data-important-for-accessibility': importantForAccessibility,
+      },
+      children,
+    );
+  const Text = ({ children, accessible, ellipsizeMode, numberOfLines }: Props) =>
+    createElement(
+      'span',
+      {
+        'data-accessible': String(Boolean(accessible)),
+        'data-ellipsize-mode': ellipsizeMode,
+        'data-number-of-lines': numberOfLines,
+      },
+      children,
+    );
   const Image = ({ onError }: Props) => createElement('img', { onError });
 
   return {
@@ -181,6 +208,203 @@ describe('ChannelIdentity', () => {
     expect(container.querySelector('img')).not.toBeNull();
     expect(container.querySelector('span')).toBeNull();
     expect(container.querySelector('[aria-label]')).toBeNull();
+  });
+
+
+  it('hides the complete Totaal no-logo fallback subtree when programme actions own accessibility', async () => {
+    await act(async () => {
+      root.render(
+        <ChannelIdentity
+          channel={{
+            ...baseChannel,
+            displayName: 'Publieke Omroep Volledig',
+            shortName: 'PO',
+          }}
+          textColor="#111"
+          mutedTextColor="#777"
+          variant="totaal"
+          accessible={false}
+        />,
+      );
+    });
+
+    const identity = container.querySelector('div');
+    const fallback = container.querySelector('span');
+
+    expect(container.textContent).toBe('PO');
+    expect(identity?.getAttribute('aria-label')).toBeNull();
+    expect(identity?.dataset.accessible).toBe('false');
+    expect(identity?.dataset.elementsHidden).toBe('true');
+    expect(identity?.dataset.importantForAccessibility).toBe('no-hide-descendants');
+    expect(fallback?.dataset.accessible).toBe('false');
+  });
+
+  it('keeps a logo-error fallback visible while the disabled Totaal subtree remains hidden', async () => {
+    await act(async () => {
+      root.render(
+        <ChannelIdentity
+          channel={{
+            ...baseChannel,
+            displayName: 'Publieke Omroep Volledig',
+            shortName: 'PO',
+            logoUrl: 'https://example.com/publiek-1.png',
+          }}
+          textColor="#111"
+          mutedTextColor="#777"
+          variant="totaal"
+          accessible={false}
+        />,
+      );
+    });
+
+    const image = container.querySelector('img');
+    expect(image).not.toBeNull();
+
+    await act(async () => {
+      image?.dispatchEvent(new Event('error', { bubbles: true }));
+    });
+
+    const identity = container.querySelector('div');
+    expect(container.querySelector('img')).toBeNull();
+    expect(container.textContent).toBe('PO');
+    expect(identity?.dataset.elementsHidden).toBe('true');
+    expect(identity?.dataset.importantForAccessibility).toBe('no-hide-descendants');
+    expect(container.querySelector('span')?.dataset.accessible).toBe('false');
+  });
+
+  it('exposes one full displayName in retained unavailable Totaal state without programme actions', async () => {
+    await act(async () => {
+      root.render(
+        <ChannelIdentity
+          channel={{
+            ...baseChannel,
+            displayName: 'Publieke Omroep Volledig',
+            shortName: 'PO',
+          }}
+          textColor="#111"
+          mutedTextColor="#777"
+          variant="totaal"
+          accessible
+        />,
+      );
+    });
+
+    const identity = container.querySelector('div');
+    expect(container.textContent).toBe('PO');
+    expect(identity?.getAttribute('aria-label')).toBe('Publieke Omroep Volledig');
+    expect(identity?.dataset.accessible).toBe('true');
+    expect(identity?.dataset.elementsHidden).toBe('false');
+    expect(identity?.dataset.importantForAccessibility).toBe('auto');
+    expect(container.querySelectorAll('[aria-label="Publieke Omroep Volledig"]')).toHaveLength(1);
+    expect(container.querySelector('span')?.dataset.accessible).toBe('false');
+  });
+
+  it('removes the retained channel focus stop when programme actions recover', async () => {
+    const channel = {
+      ...baseChannel,
+      displayName: 'Publieke Omroep Volledig',
+      shortName: 'PO',
+    };
+
+    await act(async () => {
+      root.render(
+        <ChannelIdentity
+          channel={channel}
+          textColor="#111"
+          mutedTextColor="#777"
+          variant="totaal"
+          accessible
+        />,
+      );
+    });
+
+    expect(
+      container.querySelectorAll('[aria-label="Publieke Omroep Volledig"]'),
+    ).toHaveLength(1);
+
+    await act(async () => {
+      root.render(
+        <ChannelIdentity
+          channel={channel}
+          textColor="#111"
+          mutedTextColor="#777"
+          variant="totaal"
+          accessible={false}
+        />,
+      );
+    });
+
+    const identity = container.querySelector('div');
+    expect(container.textContent).toBe('PO');
+    expect(container.querySelectorAll('[aria-label="Publieke Omroep Volledig"]')).toHaveLength(0);
+    expect(identity?.dataset.elementsHidden).toBe('true');
+    expect(identity?.dataset.importantForAccessibility).toBe('no-hide-descendants');
+  });
+
+  it('uses a 48x36 logo-first Totaal identity without a duplicate visible caption', async () => {
+    await act(async () => {
+      root.render(
+        <ChannelIdentity
+          channel={{
+            ...baseChannel,
+            id: 'nl-npo-1',
+            displayName: 'Nederland 1 volledig',
+            shortName: 'NPO 1',
+          }}
+          textColor="#111"
+          mutedTextColor="#777"
+          variant="totaal"
+          accessible={false}
+        />,
+      );
+    });
+
+    expect(container.querySelector('img')).not.toBeNull();
+    expect(container.querySelector('span')).toBeNull();
+    expect(container.querySelector('[aria-label]')).toBeNull();
+  });
+
+  it('uses shortName as the visible Totaal fallback while accessibility keeps the full displayName', async () => {
+    await act(async () => {
+      root.render(
+        <ChannelIdentity
+          channel={{
+            ...baseChannel,
+            displayName: 'Publieke Omroep Volledig',
+            shortName: 'PO',
+          }}
+          textColor="#111"
+          mutedTextColor="#777"
+          variant="totaal"
+          accessible
+        />,
+      );
+    });
+
+    expect(container.textContent).toBe('PO');
+    expect(container.querySelector('span')?.getAttribute('data-number-of-lines')).toBe('2');
+    expect(container.querySelector('[aria-label="Publieke Omroep Volledig"]')).not.toBeNull();
+  });
+
+  it('uses displayName as the visible Totaal fallback when shortName is absent', async () => {
+    await act(async () => {
+      root.render(
+        <ChannelIdentity
+          channel={{
+            ...baseChannel,
+            displayName: 'Publieke Omroep Volledig',
+          }}
+          textColor="#111"
+          mutedTextColor="#777"
+          variant="totaal"
+          accessible
+        />,
+      );
+    });
+
+    expect(container.textContent).toBe('Publieke Omroep Volledig');
+    expect(container.querySelector('span')?.getAttribute('data-number-of-lines')).toBe('2');
+    expect(container.querySelector('[aria-label="Publieke Omroep Volledig"]')).not.toBeNull();
   });
 
   it('falls back inside the same Per-zender identity after a logo load failure', async () => {
