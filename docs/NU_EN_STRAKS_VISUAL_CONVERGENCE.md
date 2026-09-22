@@ -752,7 +752,7 @@ Development must add coverage for at least:
 16. standard following layout at fontScale <=1.35;
 17. inline two-line following accessibility layout above 1.35;
 18. stacked following fallback only when fontScale >2.0 and programme width <180 pt;
-19. all three following content blocks are vertically centred without changing target geometry;
+19. standard-text following content keeps the canonical progressive target-slack offsets (#1 = 2/3, #2 = 1/3, #3 = 0); above fontScale1.35 content remains vertically centred;
 20. vertical channel position remains stable after reference changes;
 21. rail-originated momentum settle updates state without secondary scrollTo;
 22. no-momentum drag commit;
@@ -843,7 +843,7 @@ Renewed physical validation after Development reconciliation should therefore fo
 9. Reference title sits visibly toward the bottom of the reference block.
 10. There is **0 pt** dedicated reference→following spacer.
 11. First following programme reads as a direct compact continuation under the reference programme.
-12. Following #1/#2/#3 visible content is centred inside three separate targets.
+12. Standard-text following #1/#2/#3 preserve the canonical progressive target-slack offsets inside three separate targets; Larger Text remains centred.
 13. All three following programmes remain individually tappable with **44 pt iOS / 48 dp Android** minimum targets and no overlap.
 14. Base channel row remains **216 pt iOS / 228 dp Android**; moving the former 4-pt transition to bottom padding causes no vertical channel-position regression.
 15. Larger Text following composition remains the already accepted inline time+title treatment and does not regress to the rejected automatic stacked mode.
@@ -893,7 +893,7 @@ Values frozen by this owner-approved production refinement:
 8. Channel geometry: left20; identity64; gap16; programme X100; right24.
 9. Reference block min64; reference title18/22 Semibold max2, **bottom-aligned with 0 bottom inset**; no visible end-time metadata.
 10. Reference→following dedicated gap = **0 pt**; channel bottom padding = **12 pt**, preserving base row totals.
-11. Following standard targets: min44 iOS /48 Android; 0 interaction gap; time width52; gap8; time13/18 Regular; title15/20 Medium; visible content **centred in all three targets**.
+11. Following standard targets: min44 iOS /48 Android; 0 interaction gap; time width52; gap8; time13/18 Regular; title15/20 Medium; visible content uses progressive slack offsets **#1 2/3 / #2 1/3 / #3 0**; above 1.35 content remains centred.
 12. Above fontScale1.35, following content retains the accepted inline time+title max-two-line composition, height `max(minTarget, ceil(40×fontScale+8))`.
 13. Stacked following fallback remains only for fontScale>2.0 **and** available programme width<180, using §11.3.
 14. Base channel row remains **216 iOS /228 Android** at normal font scale.
