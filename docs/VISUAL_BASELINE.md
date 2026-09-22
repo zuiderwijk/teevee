@@ -129,7 +129,7 @@ Superseded as Totaal production references:
 
 ### Per zender
 Status: **ACCEPTED**
-Owner-approved direction: 2026-09-13; day-navigation and Primetime amendments 2026-09-15; visual refinement 2026-09-17; identity/current-programme/compact temporal-context refinements 2026-09-18; Kijktip editorial-disclosure refinement + production calibration + owner physical alignment correction 2026-09-22
+Owner-approved direction: 2026-09-13; day-navigation and Primetime amendments 2026-09-15; visual refinement 2026-09-17; identity/current-programme/compact temporal-context refinements 2026-09-18; Kijktip editorial-disclosure production calibration 2026-09-22; Kijktip shared-label direction + final production calibration accepted 2026-09-22
 Detailed manifest: `design/current/guide/PER_ZENDER.md`
 Production specification: `docs/PER_ZENDER_VISUAL_CONVERGENCE.md`
 
@@ -140,9 +140,10 @@ Canonical visual assets in the user's Teevee Library:
   - Library file id: `file_00000000390c8210b76256621721592b`
 - sticky day-navigation behaviour: `/Teevee/Teevee Guide day selector - sticky scroll behavior.png`
   - Library file id: `file_00000000314481f69f6a34d18ece1c21`
-- Per-zender Kijktip refinement: `/Teevee/Per Zender Kijktip refinement - 12pt Medium textSecondary.png`
+- historical Per-zender Kijktip text-only refinement: `/Teevee/Per Zender Kijktip refinement - 12pt Medium textSecondary.png`
   - Library file id: `file_00000000dd7c8210a35769aada30424b`
   - stable Library record: `libfile_d161c6bed2a481919a917acdeaeeec41`
+  - superseded for final Kijktip styling by the owner-approved shared time+Kijktip editorial label calibration; written production metrics are canonical and no replacement image asset is required.
 
 Accepted visual characteristics:
 - open chronological fixed-row typographic schedule; programme duration does not determine vertical row geometry;
@@ -157,9 +158,11 @@ Accepted visual characteristics:
 - expanded/rest rail → temporal-context spacing is **4 pt** and temporal context → schedule is **24 pt**; in settled condensed state both gaps are **0 pt** while the temporal context remains **52 pt**;
 - current programme uses a deliberately spacious **176-pt base row** with 19/23 title, 10-pt title→description gap, 15/22 description up to 4 lines, at least 20 pt clear space before the local progressbar, and no current card, red left rail, global current-time line or now-dot;
 - programme rows prioritise time and title and use a temporary semantic `surface` fill only while pressed;
-- for `isKijktip = true`, editorial disclosure appears only as `Kijktip` in the existing time column: **12/16 Instrument Sans Medium**, semantic `textSecondary`, letterSpacing0; time + Kijktip form an intrinsic-width stack at the existing X24 origin, Kijktip is horizontally centred under the rendered time, and the vertical gap remains a **fixed non-scaling 2 pt**; title X/width, row height and interaction stay unchanged;
-- normal rows without Kijktip remain unchanged; at base scale a standard Kijktip row uses time Y7…27 / Kijktip Y29…45 while its title uses exactly the same vertically centred title-cell alignment/rhythm as a non-Kijktip row; the former standard-row time/title first-baseline equality is superseded; current Kijktip rows keep current title/description/progress geometry unchanged, use the same centred time/Kijktip relationship, keep time/title top14 and Kijktip Y36…52, and add no extra `Nu` label;
-- Kijktip uses no pill, icon, accent colour or independent interaction, remains one line, scales as uncapped substantive programme metadata, and never introduces a Kijktip-specific row-height or wrap state;
+- for `isKijktip = true`, Per zender uses one compact, more-square **editorial label in the existing time-column zone containing both start time and `Kijktip`**; title X/width, row height and programme interaction remain unchanged;
+- semantic colours are production-frozen: `editorialAccent` **#315A63 light / #A9C9CF dark** and `editorialAccentSurface` **#E4ECEE light / #1C2527 dark**;
+- Per-zender label box: X24, horizontal padding8, vertical padding0, radius6, min width56, width=max(56,max(intrinsic time,intrinsic Kijktip)+16), height=`36S+2`; at S1 standard Y7…45 and current Y14…52;
+- time remains 16/20 Regular and Kijktip 12/16 Medium, both using `editorialAccent`; normal non-Kijktip rows and the current title/description/progress hierarchy remain unchanged;
+- Kijktip label has no independent interaction/focus target and never introduces a Kijktip-specific row-height branch;
 - light/dark/system follow the shared Guide shell;
 - date remains primarily typographic; in Per zender from 06:00–23:59 the current/next television days display only `Vandaag` / `Morgen`, other days use explicit weekday + date, and from 00:00–05:59 all day labels are explicit weekday + date with no `Vandaag`/`Morgen`;
 - `Primetime` and `Nu` use action versus active/current visual/semantic states rather than static permanent button treatments;
@@ -171,7 +174,7 @@ Accepted visual characteristics:
 - accepted day selector follows `GUIDE_DAY_SELECTOR.md`;
 - shared typography follows `design/current/TYPOGRAPHY.md`: Instrument Sans replaces any historical Söhne reference for family choice only.
 
-The exact date choices in the original 13 September Per-zender image are **SUPERSEDED**. Any selected-channel text outside the persistent logo rail, the old 24-pt rail→utilities gap, the physically rejected 16/12 expanded spacing distribution, the long `Vandaag/Morgen · weekday date` labels, relative labels between 00:00–05:59, Dynamic-Type-driven wrapped temporal chrome and the earlier compact 120-pt current-programme treatment are likewise superseded by the written 18 September refinements. The 22 September Kijktip board supersedes any alternative badge/pill/icon/accent treatment for Per zender. Preserve the rest of the accepted channel-strip/list composition.
+The exact date choices in the original 13 September Per-zender image are **SUPERSEDED**. Any selected-channel text outside the persistent logo rail, the old 24-pt rail→utilities gap, the physically rejected 16/12 expanded spacing distribution, the long `Vandaag/Morgen · weekday date` labels, relative labels between 00:00–05:59, Dynamic-Type-driven wrapped temporal chrome and the earlier compact 120-pt current-programme treatment are likewise superseded by the written 18 September refinements. The earlier 22 September text-only Kijktip board is superseded for final Kijktip styling by the owner-approved shared time+Kijktip editorial label calibration. The written production metrics are authoritative; later physical runtime validation is an implementation-fidelity gate, not an open design decision. Preserve the rest of the accepted channel-strip/list composition.
 
 The `Primetime` shortcut visible in the original Per-zender visual is canonical in concept and placement priority. Do not infer from that board that the full `Vanmiddag` / `Vooravond` / `Kies tijd…` sheet is required; that expanded time picker is superseded. The later sticky/condensed board remains useful for structural condensation only: for Per zender it is stale where it omits `Primetime`, shows the old static utility treatment, adds channel text in condensed context, implies wrapped temporal chrome or a 72-pt settled condensed strip.
 
@@ -179,7 +182,7 @@ Superseded examples include earlier Per-zender variants with programme imagery, 
 
 ### Nu & Straks
 Status: **ACCEPTED**
-Owner-approved direction: 2026-09-13; production accessibility/density and shell refinement 2026-09-18; temporal/density refinement 2026-09-21; final physical-composition refinement 2026-09-21; Kijktip refinement + production calibration 2026-09-22
+Owner-approved direction: 2026-09-13; production accessibility/density and shell refinement 2026-09-18; temporal/density refinement 2026-09-21; final physical-composition refinement 2026-09-21; Kijktip refinement + production calibration 2026-09-22; Kijktip compact-label direction + final production calibration accepted 2026-09-22
 Detailed manifest: `design/current/guide/NU_EN_STRAKS.md`
 Production specification: `docs/NU_EN_STRAKS_VISUAL_CONVERGENCE.md`
 
@@ -204,10 +207,11 @@ Accepted visual characteristics:
 - each following programme has a real non-overlapping minimum target of 44 pt on iOS / 48 dp on Android;
 - all standalone visible reference-time copy and reference-programme `tot HH:MM` metadata are removed; the reference title is bottom-aligned within its existing block and the dedicated reference→following gap is **0 pt** while touch geometry remains production-safe;
 - active/current `Nu` and return-to-live `Nu` use distinct visual and semantic states;
-- Kijktip uses one shared quiet editorial style: **12/16 Instrument Sans Medium**, semantic `textSecondary`, no badge/icon/accent/interactivity;
-- reference Kijktip sits above the dominant title with a fixed **3-pt** gap and never causes Kijktip-specific reference-height growth;
-- following Kijktip sits inline directly after the visible title with a fixed **8-pt** gap; its intrinsic label width is protected before title truncation, so long titles ellipsize earlier instead of hiding Kijktip;
-- following Kijktip creates no second line/column or target-height change; one/two/three tips repeat independently and the same programme intentionally moves from inline disclosure to above-title disclosure when it becomes reference;
+- Nu & Straks Kijktip uses a compact **Kijktip-only editorial label** with `editorialAccent` **#315A63 light / #A9C9CF dark** on `editorialAccentSurface` **#E4ECEE light / #1C2527 dark**;
+- label box uses horizontal padding6, vertical padding0, radius4, outer height=`16S`, outer width=`intrinsic Kijktip width + 12`;
+- reference label remains above the dominant title with a fixed **3-pt** relationship and content-safe formula `clamp(1,2,floor((H-16S-3)/(22S)))`, with no Kijktip-specific reference-height growth;
+- following label remains inline directly after the visible title with fixed **8-pt** separation; protected reserve=`label outer width + 8`, with the frozen 48-pt minimum final-line title budget;
+- following Kijktip creates no extra line/column or target-height change; one/two/three tips repeat independently and the same programme intentionally moves from inline label to above-title label when it becomes reference;
 - at font scale above 1.35, substantive following content uses the accepted inline time+title composition with maximum two visible lines; stacked time-above-title is reserved for the extreme >2.0 / <180-pt width fallback;
 - the three following touch targets remain independent 44/48 minimums; at standard text, visible content uses the canonical progressive target-slack offsets (#1 = 2/3, #2 = 1/3, #3 = 0), while Larger Text remains centred; compact continuation also keeps reference-title bottom alignment and the 0-pt transition;
 - three following slot geometries remain reserved even when programme data is incomplete, preserving vertical channel position across reference-time changes;
@@ -218,7 +222,7 @@ Accepted visual characteristics:
 
 ADR 0008 changes the meaning of the active day around midnight: 00:00–05:59 remains part of the preceding television day. Nu & Straks still has no independent date selector.
 
-The exact 13 September visual remains canonical for composition and hierarchy. The written 18 September production specification plus the owner-approved 21 September and 22 September refinements supersede it only for the explicit accessibility/density, shared-shell, Dynamic Type, touch-target, safe-area, pressed-state, time-rail, reference-programme and Kijktip presentation rules documented there. The final physical refinements specifically supersede standalone visible reference-time copy, the 88-pt/two-lane Nu & Straks context, generic-border rail-bottom treatment, the 4-pt reference→following spacer, the prior fixed #1/#2/#3 bias and the later all-centred standard-text following rhythm. Current runtime prototype values are not automatically canonical.
+The exact 13 September visual remains canonical for composition and hierarchy. The written 18 September production specification plus the owner-approved 21 September and 22 September refinements supersede it only for the explicit accessibility/density, shared-shell, Dynamic Type, touch-target, safe-area, pressed-state, time-rail, reference-programme and Kijktip presentation rules documented there. The latest 22 September Kijktip label calibration supersedes the earlier bare-text Kijktip styling and closes the label-box metrics. The final physical refinements specifically supersede standalone visible reference-time copy, the 88-pt/two-lane Nu & Straks context, generic-border rail-bottom treatment, the 4-pt reference→following spacer, the prior fixed #1/#2/#3 bias and the later all-centred standard-text following rhythm. Current runtime prototype values are not automatically canonical.
 
 ## Programme Detail
 Status: **ACCEPTED DIRECTION**
