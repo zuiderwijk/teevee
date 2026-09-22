@@ -8,8 +8,10 @@ import {
   useState,
 } from 'react';
 import {
+  type LayoutChangeEvent,
   type NativeScrollEvent,
   type NativeSyntheticEvent,
+  type TextLayoutEventData,
   Platform,
   Pressable,
   ScrollView,
@@ -39,6 +41,7 @@ import type { ProgrammeSelection } from './detailState';
 import { GuideChrome } from './GuideChrome';
 import {
   COMPACT_GUIDE_MAX_FONT_SIZE_MULTIPLIER,
+  GUIDE_EDITORIAL_TYPOGRAPHY,
   GUIDE_VISUAL_METRICS,
 } from './guideVisualMetrics';
 import {
@@ -62,13 +65,21 @@ import {
   nowNextChromeCondensedForProgress,
   nowNextCollapseProgressForScrollOffset,
   nowNextFollowingContentPlacement,
+  nowNextFollowingKijktipTitleBudget,
   nowNextProgrammePressBackgroundColor,
   nowNextRailSlotPresentation,
+  nowNextReferenceKijktipTitleLineCount,
   nowNextSafeAreaLayout,
   nowNextStableScrollGeometry,
   nowNextStableScrollVisuals,
 } from './nowNextLayout';
+import {
+  guideProgrammeAccessibilityLabel,
+  kijktipProgrammeIds,
+  KIJKTIP_LABEL,
+} from './kijktipPresentation';
 import { useGuideClock } from './useGuideClock';
+import { useRuntimeProgrammeEditorialSignals } from './useRuntimeProgrammeEditorialSignals';
 
 type NowNextGuideViewProps = {
   guideDataVersion: number;
@@ -85,6 +96,7 @@ type ChannelRowProps = {
   fontScale: number;
   platform: string;
   programmeWidth: number;
+  kijktipProgrammeIds: ReadonlySet<string>;
   onSelectProgramme: (selection: ProgrammeSelection) => void;
 };
 
@@ -100,10 +112,161 @@ function programmeAccessibilityLabel(
   channel: Channel,
   programme: Programme,
   current: boolean,
+  isKijktip: boolean,
 ) {
   const startMs = Date.parse(programme.startAt);
   const endMs = Date.parse(programme.endAt);
-  return `${channel.displayName}, ${programme.title}, ${formatTime(startMs)} tot ${formatTime(endMs)}${current ? ', nu bezig' : ''}`;
+  return guideProgrammeAccessibilityLabel({
+    channelName: channel.displayName,
+    title: programme.title,
+    startLabel: formatTime(startMs),
+    endLabel: formatTime(endMs),
+    current,
+    isKijktip,
+  });
+}
+
+function titleRemainderAfterMeasuredFirstLine(
+  title: string,
+  firstLine: string,
+): string | null {
+  const measured = firstLine.trimEnd();
+  if (!measured || !title.startsWith(measured)) return null;
+  const remainder = title.slice(measured.length).trimStart();
+  return remainder || null;
+}
+
+function FollowingKijktipTitle({
+  programmeId,
+  title,
+  maxTitleLines,
+  titleLaneWidth,
+  titleColor,
+  labelColor,
+}: {
+  programmeId: string;
+  title: string;
+  maxTitleLines: 1 | 2;
+  titleLaneWidth: number;
+  titleColor: string;
+  labelColor: string;
+}) {
+  const [labelWidth, setLabelWidth] = useState(0);
+  const [firstLineText, setFirstLineText] = useState<string | null>(null);
+  const [measuredLineCount, setMeasuredLineCount] = useState(1);
+  const budget = nowNextFollowingKijktipTitleBudget(
+    titleLaneWidth,
+    labelWidth,
+  );
+  const secondLineTitle =
+    maxTitleLines === 2 && measuredLineCount > 1 && firstLineText
+      ? titleRemainderAfterMeasuredFirstLine(title, firstLineText)
+      : null;
+  const visibleTitle = budget.showEllipsisOnly
+    ? '…'
+    : secondLineTitle ?? title;
+
+  const rememberLabelWidth = useCallback((event: LayoutChangeEvent) => {
+    const width = event.nativeEvent.layout.width;
+    setLabelWidth((current) => (Math.abs(current - width) < 0.5 ? current : width));
+  }, []);
+
+  const rememberTitleLayout = useCallback(
+    (event: NativeSyntheticEvent<TextLayoutEventData>) => {
+      if (maxTitleLines !== 2) return;
+      const lines = event.nativeEvent.lines;
+      const firstLine = lines[0]?.text ?? null;
+      setMeasuredLineCount((current) =>
+        current === lines.length ? current : lines.length,
+      );
+      if (firstLine) {
+        setFirstLineText((current) =>
+          current === firstLine ? current : firstLine,
+        );
+      }
+    },
+    [maxTitleLines],
+  );
+
+  const inlineFinalLine = (
+    <View style={styles.followingKijktipFinalLine}>
+      <Text
+        testID={`now-next-following-title-${programmeId}`}
+        accessible={false}
+        numberOfLines={1}
+        ellipsizeMode="tail"
+        style={[
+          styles.followingTitle,
+          styles.followingKijktipTitleFragment,
+          {
+            color: titleColor,
+            maxWidth: budget.showEllipsisOnly
+              ? NOW_NEXT_VISUAL_METRICS.followingKijktipMinimumTitleBudget
+              : budget.titleBudget || undefined,
+          },
+        ]}
+      >
+        {visibleTitle}
+      </Text>
+      <Text
+        testID={`now-next-following-kijktip-${programmeId}`}
+        accessible={false}
+        numberOfLines={1}
+        onLayout={rememberLabelWidth}
+        style={[styles.followingKijktipLabel, { color: labelColor }]}
+      >
+        {KIJKTIP_LABEL}
+      </Text>
+    </View>
+  );
+
+  if (maxTitleLines === 1 || !secondLineTitle) {
+    return (
+      <View style={[styles.followingKijktipTitleLane, { width: titleLaneWidth }]}>
+        {maxTitleLines === 2 ? (
+          <Text
+            accessible={false}
+            numberOfLines={2}
+            onTextLayout={rememberTitleLayout}
+            style={[
+              styles.followingTitle,
+              styles.followingKijktipMeasure,
+              { width: titleLaneWidth },
+            ]}
+          >
+            {title}
+          </Text>
+        ) : null}
+        {inlineFinalLine}
+      </View>
+    );
+  }
+
+  return (
+    <View style={[styles.followingKijktipTitleLane, { width: titleLaneWidth }]}>
+      <Text
+        accessible={false}
+        numberOfLines={2}
+        onTextLayout={rememberTitleLayout}
+        style={[
+          styles.followingTitle,
+          styles.followingKijktipMeasure,
+          { width: titleLaneWidth },
+        ]}
+      >
+        {title}
+      </Text>
+      <Text
+        testID={`now-next-following-title-first-line-${programmeId}`}
+        accessible={false}
+        numberOfLines={1}
+        style={[styles.followingTitle, { color: titleColor }]}
+      >
+        {firstLineText}
+      </Text>
+      {inlineFinalLine}
+    </View>
+  );
 }
 
 const FOLLOWING_SLOT_INDEXES = [0, 1, 2] as const;
@@ -117,6 +280,7 @@ const ChannelRow = memo(function ChannelRow({
   fontScale,
   platform,
   programmeWidth,
+  kijktipProgrammeIds,
   onSelectProgramme,
 }: ChannelRowProps) {
   const theme = useTeeveeTheme();
@@ -125,6 +289,13 @@ const ChannelRow = memo(function ChannelRow({
     () => programmesAroundReferenceFromProgrammes(programmes, referenceMs),
     [programmes, referenceMs],
   );
+
+  const referenceIsKijktip =
+    referenceProgramme !== null &&
+    kijktipProgrammeIds.has(referenceProgramme.id);
+  const referenceKijktipTitleLines = referenceIsKijktip
+    ? nowNextReferenceKijktipTitleLineCount(fontScale)
+    : 2;
 
   const openProgramme = useCallback(
     (programme: Programme) => onSelectProgramme({ programme, channel }),
@@ -171,6 +342,7 @@ const ChannelRow = memo(function ChannelRow({
               channel,
               referenceProgramme,
               isActuallyLive,
+              referenceIsKijktip,
             )}
             accessibilityHint="Opent programmadetails"
             onPress={() => openProgramme(referenceProgramme)}
@@ -185,13 +357,40 @@ const ChannelRow = memo(function ChannelRow({
               },
             ]}
           >
-            <Text
-              numberOfLines={2}
-              ellipsizeMode="tail"
-              style={[styles.referenceTitle, { color: theme.colors.text }]}
-            >
-              {referenceProgramme.title}
-            </Text>
+            {referenceIsKijktip ? (
+              <View
+                testID={`now-next-reference-kijktip-stack-${referenceProgramme.id}`}
+                pointerEvents="none"
+                style={styles.referenceKijktipStack}
+              >
+                <Text
+                  testID={`now-next-reference-kijktip-${referenceProgramme.id}`}
+                  accessible={false}
+                  numberOfLines={1}
+                  style={[
+                    styles.referenceKijktipLabel,
+                    { color: theme.colors.textSecondary },
+                  ]}
+                >
+                  {KIJKTIP_LABEL}
+                </Text>
+                <Text
+                  numberOfLines={referenceKijktipTitleLines}
+                  ellipsizeMode="tail"
+                  style={[styles.referenceTitle, { color: theme.colors.text }]}
+                >
+                  {referenceProgramme.title}
+                </Text>
+              </View>
+            ) : (
+              <Text
+                numberOfLines={2}
+                ellipsizeMode="tail"
+                style={[styles.referenceTitle, { color: theme.colors.text }]}
+              >
+                {referenceProgramme.title}
+              </Text>
+            )}
           </Pressable>
         ) : (
           <View
@@ -222,6 +421,15 @@ const ChannelRow = memo(function ChannelRow({
             }
 
             const stackedFallback = rowLayout.mode === 'stacked-fallback';
+            const followingIsKijktip = kijktipProgrammeIds.has(programme.id);
+            const followingTitleLaneWidth = stackedFallback
+              ? programmeWidth
+              : Math.max(
+                  0,
+                  programmeWidth -
+                    NOW_NEXT_VISUAL_METRICS.followingTimeWidth -
+                    NOW_NEXT_VISUAL_METRICS.followingTimeTitleGap,
+                );
             const contentPlacement = nowNextFollowingContentPlacement(
               platform,
               fontScale,
@@ -236,6 +444,7 @@ const ChannelRow = memo(function ChannelRow({
                   channel,
                   programme,
                   false,
+                  followingIsKijktip,
                 )}
                 accessibilityHint="Opent programmadetails"
                 onPress={() => openProgramme(programme)}
@@ -278,17 +487,28 @@ const ChannelRow = memo(function ChannelRow({
                     >
                       {formatTime(Date.parse(programme.startAt))}
                     </Text>
-                    <Text
-                      numberOfLines={rowLayout.mode === 'standard' ? 1 : 2}
-                      ellipsizeMode="tail"
-                      style={[
-                        styles.followingTitle,
-                        stackedFallback ? styles.followingTitleStacked : null,
-                        { color: theme.colors.textSecondary },
-                      ]}
-                    >
-                      {programme.title}
-                    </Text>
+                    {followingIsKijktip ? (
+                      <FollowingKijktipTitle
+                        programmeId={programme.id}
+                        title={programme.title}
+                        maxTitleLines={rowLayout.mode === 'standard' ? 1 : 2}
+                        titleLaneWidth={followingTitleLaneWidth}
+                        titleColor={theme.colors.textSecondary}
+                        labelColor={theme.colors.textSecondary}
+                      />
+                    ) : (
+                      <Text
+                        numberOfLines={rowLayout.mode === 'standard' ? 1 : 2}
+                        ellipsizeMode="tail"
+                        style={[
+                          styles.followingTitle,
+                          stackedFallback ? styles.followingTitleStacked : null,
+                          { color: theme.colors.textSecondary },
+                        ]}
+                      >
+                        {programme.title}
+                      </Text>
+                    )}
                   </View>
                 </View>
               </Pressable>
@@ -346,6 +566,14 @@ export const NowNextGuideView = memo(function NowNextGuideView({
   const runtimeSchedule = useMemo(
     () => runtimeGuideScheduleFor(dayAnchorMs),
     [dayAnchorMs, guideDataVersion],
+  );
+  const editorialSignals = useRuntimeProgrammeEditorialSignals(
+    dayAnchorMs,
+    guideDataVersion,
+  );
+  const runtimeKijktipProgrammeIds = useMemo(
+    () => kijktipProgrammeIds(editorialSignals),
+    [editorialSignals],
   );
   const establishedChannelsRef = useRef<Channel[] | null>(
     runtimeSchedule?.channels.length ? runtimeSchedule.channels : null,
@@ -797,6 +1025,7 @@ export const NowNextGuideView = memo(function NowNextGuideView({
                 fontScale={effectiveFontScale}
                 platform={platform}
                 programmeWidth={programmeWidth}
+                kijktipProgrammeIds={runtimeKijktipProgrammeIds}
                 onSelectProgramme={onSelectProgramme}
               />
             ))
@@ -1024,6 +1253,13 @@ const styles = StyleSheet.create({
     ...NOW_NEXT_TYPOGRAPHY.referenceTitle,
     letterSpacing: 0,
   },
+  referenceKijktipStack: {
+    width: '100%',
+  },
+  referenceKijktipLabel: {
+    ...GUIDE_EDITORIAL_TYPOGRAPHY.kijktip,
+    marginBottom: NOW_NEXT_VISUAL_METRICS.referenceKijktipGap,
+  },
   gapTitle: {
     ...NOW_NEXT_TYPOGRAPHY.followingTitle,
     letterSpacing: 0,
@@ -1075,6 +1311,30 @@ const styles = StyleSheet.create({
   followingTitleStacked: {
     width: '100%',
     flex: 0,
+  },
+  followingKijktipTitleLane: {
+    position: 'relative',
+    minWidth: 0,
+  },
+  followingKijktipMeasure: {
+    position: 'absolute',
+    left: 0,
+    top: 0,
+    opacity: 0,
+  },
+  followingKijktipFinalLine: {
+    flexDirection: 'row',
+    alignItems: 'baseline',
+    minWidth: 0,
+  },
+  followingKijktipTitleFragment: {
+    flexShrink: 1,
+    minWidth: 0,
+  },
+  followingKijktipLabel: {
+    ...GUIDE_EDITORIAL_TYPOGRAPHY.kijktip,
+    marginLeft: NOW_NEXT_VISUAL_METRICS.followingKijktipGap,
+    flexShrink: 0,
   },
   scheduleUnavailable: {
     paddingHorizontal: GUIDE_VISUAL_METRICS.screenInsetX,
