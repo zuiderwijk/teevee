@@ -3,13 +3,18 @@ import { act } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
+import type { ProgrammeEditorialSignal } from '@/data/domain/editorial';
 import type { GuideSchedule } from '@/data/domain/epg';
 import { guideTelevisionDayStart } from '@/data/domain/guideTime';
 import {
   clearRuntimeGuideSchedule,
   installRuntimeGuideSchedule,
+  installRuntimeProgrammeEditorialSignals,
 } from '@/data/runtime/guideScheduleRuntime';
-import type { GuideScheduleApi } from '@/services/api/guideScheduleContract';
+import {
+  parseGuideScheduleApiResponse,
+  type GuideScheduleApi,
+} from '@/services/api/guideScheduleContract';
 
 import { useSelectedGuideDaySchedule } from './useSelectedGuideDaySchedule';
 
@@ -61,6 +66,19 @@ function coveredEmptySchedule(generatedAt = '2026-09-15T08:00:00Z'): GuideSchedu
   };
 }
 
+function signal(
+  programmeId: string,
+  sourceItemId = 'tip-' + programmeId,
+): ProgrammeEditorialSignal {
+  return {
+    programmeId,
+    type: 'kijktip',
+    source: 'tvgids',
+    sourceItemId,
+    matchedBy: 'channel-title-start',
+  };
+}
+
 function deferred<T>() {
   let resolve!: (value: T) => void;
   let reject!: (reason?: unknown) => void;
@@ -88,6 +106,8 @@ function Probe({ dayStartMs, version = 0, api, includeFollowingDay = false }: Pr
       data-channel-count={String(state.schedule?.channels.length ?? 0)}
       data-has-schedule={String(state.schedule !== null)}
       data-generated-at={state.schedule?.generatedAt ?? ''}
+      data-signal-count={String(state.editorialSignals.length)}
+      data-signal-ids={state.editorialSignals.map(({ sourceItemId }) => sourceItemId).join(',')}
       data-loading={String(state.loading)}
       data-unavailable={String(state.unavailable)}
     />
@@ -147,20 +167,32 @@ async function backgroundAndResume() {
 }
 
 describe('useSelectedGuideDaySchedule', () => {
-  it('leaves current-day network ownership with the fixture-first shared runtime', async () => {
+  it('uses shared-runtime current-day signals without starting a second request', async () => {
     const api = { getSchedule: vi.fn() } satisfies GuideScheduleApi;
     const currentDay = guideTelevisionDayStart(lifecycle.nowMs);
+    installRuntimeGuideSchedule(
+      schedule('current'),
+      lifecycle.nowMs,
+      [signal('current', 'tip-current')],
+    );
 
     await renderProbe({ dayStartMs: currentDay, api });
 
     expect(api.getSchedule).not.toHaveBeenCalled();
+    expect(probe().id).toBe('current');
+    expect(probe().signalCount).toBe('1');
+    expect(probe().signalIds).toBe('tip-current');
     expect(probe().loading).toBe('false');
   });
 
   it('loads only the selected non-current day for Per zender', async () => {
     const selectedDay = guideTelevisionDayStart(lifecycle.nowMs, 2);
     const api = {
-      getSchedule: vi.fn().mockResolvedValue({ status: 'ok', schedule: schedule('selected') }),
+      getSchedule: vi.fn().mockResolvedValue({
+        status: 'ok',
+        schedule: schedule('selected'),
+        editorialSignals: [signal('selected', 'tip-selected')],
+      }),
     } satisfies GuideScheduleApi;
 
     await renderProbe({ dayStartMs: selectedDay, api });
@@ -172,6 +204,8 @@ describe('useSelectedGuideDaySchedule', () => {
       to: new Date(guideTelevisionDayStart(selectedDay, 1)).toISOString(),
     });
     expect(probe().id).toBe('selected');
+    expect(probe().signalCount).toBe('1');
+    expect(probe().signalIds).toBe('tip-selected');
   });
 
   it('keeps a covered-empty canonical selected day authoritative', async () => {
@@ -187,6 +221,7 @@ describe('useSelectedGuideDaySchedule', () => {
     expect(probe().hasSchedule).toBe('true');
     expect(probe().channelCount).toBe('1');
     expect(probe().count).toBe('0');
+    expect(probe().signalCount).toBe('0');
     expect(probe().unavailable).toBe('false');
   });
 
@@ -229,6 +264,38 @@ describe('useSelectedGuideDaySchedule', () => {
       to: new Date(guideTelevisionDayStart(nextDay, 1)).toISOString(),
     });
     expect(probe().count).toBe('2');
+  });
+
+  it('preserves and deduplicates editorial signals across a non-current two-day window', async () => {
+    const selectedDay = guideTelevisionDayStart(lifecycle.nowMs, 2);
+    const shared = schedule('crossing');
+    const api = {
+      getSchedule: vi
+        .fn()
+        .mockResolvedValueOnce({
+          status: 'ok',
+          schedule: shared,
+          editorialSignals: [signal('crossing', 'tip-crossing')],
+        })
+        .mockResolvedValueOnce({
+          status: 'ok',
+          schedule: shared,
+          editorialSignals: [signal('crossing', 'tip-crossing')],
+        }),
+    } satisfies GuideScheduleApi;
+
+    await renderProbe({
+      dayStartMs: selectedDay,
+      api,
+      includeFollowingDay: true,
+    });
+    await act(async () => Promise.resolve());
+
+    expect(api.getSchedule).toHaveBeenCalledTimes(2);
+    expect(probe().count).toBe('1');
+    expect(probe().signalCount).toBe('1');
+    expect(probe().signalIds).toBe('tip-crossing');
+    expect(probe().unavailable).toBe('false');
   });
 
   it('reports initial unavailable/network failure without inventing canonical data', async () => {
@@ -329,26 +396,90 @@ describe('useSelectedGuideDaySchedule', () => {
     expect(probe().id).toBe('newer');
   });
 
-  it('revalidates a non-current selected day on resume and preserves freshness-only content identity', async () => {
+  it('updates non-current enrichment on resume while preserving equal schedule content identity', async () => {
     const selectedDay = guideTelevisionDayStart(lifecycle.nowMs, 2);
     const first = schedule('same', '2026-09-15T08:00:00Z');
     const refreshed = schedule('same', '2026-09-15T09:00:00Z');
     const api = {
       getSchedule: vi
         .fn()
-        .mockResolvedValueOnce({ status: 'ok', schedule: first })
-        .mockResolvedValueOnce({ status: 'ok', schedule: refreshed }),
+        .mockResolvedValueOnce({
+          status: 'ok',
+          schedule: first,
+          editorialSignals: [signal('same', 'tip-first')],
+        })
+        .mockResolvedValueOnce({
+          status: 'ok',
+          schedule: refreshed,
+          editorialSignals: [signal('same', 'tip-refreshed')],
+        }),
     } satisfies GuideScheduleApi;
 
     await renderProbe({ dayStartMs: selectedDay, api });
     await act(async () => Promise.resolve());
     expect(probe().generatedAt).toBe('2026-09-15T08:00:00Z');
+    expect(probe().signalIds).toBe('tip-first');
 
     await resume();
 
     expect(api.getSchedule).toHaveBeenCalledTimes(2);
     expect(probe().id).toBe('same');
+    // Schedule freshness-only replacement stays suppressed, while enrichment changes.
     expect(probe().generatedAt).toBe('2026-09-15T08:00:00Z');
+    expect(probe().signalIds).toBe('tip-refreshed');
+    expect(probe().unavailable).toBe('false');
+  });
+
+  it('reacts to current-day editorial-only runtime refresh without another hosted request', async () => {
+    const currentDay = guideTelevisionDayStart(lifecycle.nowMs);
+    const api = { getSchedule: vi.fn() } satisfies GuideScheduleApi;
+    installRuntimeGuideSchedule(
+      schedule('current-refresh'),
+      lifecycle.nowMs,
+      [signal('current-refresh', 'tip-before')],
+    );
+
+    await renderProbe({ dayStartMs: currentDay, api });
+    expect(probe().signalIds).toBe('tip-before');
+
+    await act(async () => {
+      installRuntimeProgrammeEditorialSignals(
+        [signal('current-refresh', 'tip-after')],
+        lifecycle.nowMs,
+      );
+      await Promise.resolve();
+    });
+
+    expect(api.getSchedule).not.toHaveBeenCalled();
+    expect(probe().id).toBe('current-refresh');
+    expect(probe().signalIds).toBe('tip-after');
+  });
+
+  it('keeps a selected schedule valid when malformed enrichment is rejected at the trust boundary', async () => {
+    const selectedDay = guideTelevisionDayStart(lifecycle.nowMs, 2);
+    const selectedSchedule = schedule('malformed-enrichment');
+    const parsed = parseGuideScheduleApiResponse({
+      status: 'ok',
+      schedule: selectedSchedule,
+      editorialSignals: [
+        {
+          programmeId: 'malformed-enrichment',
+          type: 'unexpected',
+          source: 'tvgids',
+          sourceItemId: 'bad-tip',
+          matchedBy: 'channel-title-start',
+        },
+      ],
+    });
+    const api = {
+      getSchedule: vi.fn().mockResolvedValue(parsed),
+    } satisfies GuideScheduleApi;
+
+    await renderProbe({ dayStartMs: selectedDay, api });
+    await act(async () => Promise.resolve());
+
+    expect(probe().id).toBe('malformed-enrichment');
+    expect(probe().signalCount).toBe('0');
     expect(probe().unavailable).toBe('false');
   });
 
