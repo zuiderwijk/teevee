@@ -178,6 +178,8 @@ Because television-day/date/horizon code is high risk under `ENGINEERING_QUALITY
 - historical data must not be evicted while it remains inside the D-2..D+7 guarantee once that horizon is implemented.
 
 ## Production provider / rights boundary
+The Kijktip editorial source is already rights-cleared for its intended product use: the product owner confirms Teevee may use TVgids `https://www.tvgids.nl/tips.rss` for the Kijktip implementation, so that source is **not a Kijktip release blocker**. This clearance is deliberately scoped to the editorial Kijktip source and does not clear the eventual production EPG provider, channel logos or programme artwork.
+
 The free XMLTV source is a temporary engineering input, not production-approved data.
 
 Before public paid release Teevee still needs explicit rights for:
