@@ -98,6 +98,7 @@ vi.mock('react-native', async () => {
     pointerEvents?: string;
     numberOfLines?: number;
     accessible?: boolean;
+    accessibilityElementsHidden?: boolean;
     importantForAccessibility?: string;
     onLayout?: (event: { nativeEvent: { layout: { width: number } } }) => void;
     onTextLayout?: (event: {
@@ -126,6 +127,8 @@ vi.mock('react-native', async () => {
     testID,
     numberOfLines,
     accessible,
+    accessibilityElementsHidden,
+    importantForAccessibility,
     style,
     onLayout,
     onTextLayout,
@@ -161,6 +164,11 @@ vi.mock('react-native', async () => {
         'data-testid': testID,
         'data-number-of-lines': numberOfLines,
         'data-accessible': accessible === undefined ? undefined : String(accessible),
+        'data-accessibility-elements-hidden':
+          accessibilityElementsHidden === undefined
+            ? undefined
+            : String(accessibilityElementsHidden),
+        'data-important-for-accessibility': importantForAccessibility,
         'data-style': JSON.stringify(style),
       },
       typeof children === 'function' ? children({ pressed: false }) : children,
@@ -505,6 +513,11 @@ describe('Nu & Straks production interaction boundary', () => {
         'data-accessible',
       ),
     ).toBe('false');
+    expect(
+      getByTestId(container, 'now-next-reference-kijktip-one-ref').getAttribute(
+        'data-accessibility-elements-hidden',
+      ),
+    ).toBe('true');
     expect(reference.getAttribute('aria-label')).toBe(
       'NPO 1, Referentieprogramma, Kijktip, 20:00 tot 20:30, nu bezig',
     );
@@ -514,6 +527,8 @@ describe('Nu & Straks production interaction boundary', () => {
       const label = getByTestId(container, `now-next-following-kijktip-${id}`);
       expect(label.textContent).toBe('Kijktip');
       expect(label.getAttribute('data-accessible')).toBe('false');
+      expect(label.getAttribute('data-accessibility-elements-hidden')).toBe('true');
+      expect(label.getAttribute('data-important-for-accessibility')).toBe('no');
     }
 
     expect(
