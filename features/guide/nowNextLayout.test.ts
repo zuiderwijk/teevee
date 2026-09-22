@@ -17,6 +17,9 @@ import {
   nowNextProgrammePressBackgroundColor,
   nowNextRailSlotPresentation,
   nowNextReferenceBlockHeight,
+  nowNextReferenceKijktipStackGeometry,
+  nowNextReferenceKijktipTitleLineCount,
+  nowNextFollowingKijktipTitleBudget,
   nowNextSafeAreaLayout,
   nowNextStableScrollGeometry,
   nowNextStableScrollVisuals,
@@ -206,6 +209,87 @@ describe('Nu & Straks deterministic channel geometry', () => {
       }
     },
   );
+});
+
+
+describe('Nu & Straks Kijktip production layout', () => {
+  it.each([
+    [1, 2],
+    [1.35, 1],
+    [1.5, 1],
+    [2, 1],
+  ] as const)(
+    'derives the frozen reference Kijktip title-line allowance at S=%s',
+    (scale, expectedLines) => {
+      expect(nowNextReferenceKijktipTitleLineCount(scale)).toBe(expectedLines);
+    },
+  );
+
+  it('bottom-aligns the S1 reference Kijktip stack for one and two title lines', () => {
+    expect(nowNextReferenceKijktipStackGeometry(1, 2)).toMatchObject({
+      referenceHeight: 64,
+      titleLineCount: 2,
+      stackTop: 1,
+      labelLineHeight: 16,
+      titleTop: 20,
+      titleLineHeight: 22,
+    });
+    expect(nowNextReferenceKijktipStackGeometry(1, 1)).toMatchObject({
+      referenceHeight: 64,
+      titleLineCount: 1,
+      stackTop: 23,
+      labelLineHeight: 16,
+      titleTop: 42,
+      titleLineHeight: 22,
+    });
+  });
+
+  it.each([
+    [1.35, 64, 9.7],
+    [1.5, 66, 6],
+    [2, 88, 9],
+  ] as const)(
+    'keeps reference Kijktip inside the frozen height at S=%s',
+    (scale, expectedHeight, expectedTop) => {
+      const geometry = nowNextReferenceKijktipStackGeometry(scale, 2);
+      expect(geometry.referenceHeight).toBe(expectedHeight);
+      expect(geometry.titleLineCount).toBe(1);
+      expect(geometry.stackTop).toBeCloseTo(expectedTop, 6);
+    },
+  );
+
+  it('protects the following Kijktip label before title truncation', () => {
+    expect(nowNextFollowingKijktipTitleBudget(200, 44)).toEqual({
+      titleBudget: 148,
+      showEllipsisOnly: false,
+      labelReserve: 52,
+    });
+    expect(nowNextFollowingKijktipTitleBudget(99, 44)).toEqual({
+      titleBudget: 47,
+      showEllipsisOnly: true,
+      labelReserve: 52,
+    });
+    expect(nowNextFollowingKijktipTitleBudget(100, 44)).toEqual({
+      titleBudget: 48,
+      showEllipsisOnly: false,
+      labelReserve: 52,
+    });
+  });
+
+  it('adds no Kijktip height term to reference/following/channel geometry', () => {
+    expect(nowNextChannelRowLayout('ios', 1, 266)).toEqual({
+      mode: 'standard',
+      referenceHeight: 64,
+      followingHeight: 44,
+      rowHeight: 216,
+    });
+    expect(nowNextChannelRowLayout('android', 1, 266)).toEqual({
+      mode: 'standard',
+      referenceHeight: 64,
+      followingHeight: 48,
+      rowHeight: 228,
+    });
+  });
 });
 
 describe('Nu & Straks final shared-shell geometry', () => {
