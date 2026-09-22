@@ -1,6 +1,6 @@
 # Teevee Architecture
 
-Status: **Phase 4 Core Guide MVP hardening**. Phase 1A, 1B, 2 and 3 are closed on the available iPhone. The provider-independent path from external development EPG through canonical hosted storage/public read into the mobile Guide is implemented and physically proven. Phase 4 now owns the 06:00 television-day model, D-2..D+7 Guide horizon and MVP hardening. `docs/PROJECT_STATE.md` remains the canonical delivery status.
+Status: **Kijktip enrichment vertical slice before Phase 5 Search**. Phase 4 is closed. The provider-independent EPG path remains the core Guide authority; PR #126 adds optional editorial enrichment beside that path without making Guide availability depend on it. `docs/PROJECT_STATE.md` remains the canonical delivery status.
 
 ## Architecture goals
 - one maintainable mobile codebase for iOS and Android;
@@ -26,6 +26,12 @@ Status: **Phase 4 Core Guide MVP hardening**. Phase 1A, 1B, 2 and 3 are closed o
 `External EPG -> EpgProvider -> explicit channel mapping -> normalisation/diagnostics -> ScheduleRepository -> GuideScheduleApi -> hosted transport -> mobile runtime source -> Guide`
 
 The boundaries are intentionally replaceable. The development XMLTV source and Supabase persistence are implementations behind contracts, not product-domain dependencies.
+
+Optional editorial enrichment is a parallel, non-authoritative lane:
+
+`TVgids tips.rss -> editorial-refresh -> deterministic canonical programme match -> private editorial snapshot -> guide-schedule editorialSignals sibling -> mobile runtime editorial state`
+
+The two lanes meet only on canonical `Programme.id`. Editorial source identity never becomes EPG identity, `Programme` is not mutated, and enrichment failure cannot make a canonical schedule unavailable.
 
 Phase 3 proved this complete boundary on a physical iPhone: the Guide renders deterministic fixture data immediately, then replaces it with canonical hosted data when a complete hosted schedule is available. Unavailable/network-failed hosted reads keep the Guide usable rather than clearing the current state.
 
@@ -78,7 +84,7 @@ Teevee has a dedicated Supabase project:
 - Free plan;
 - region `eu-west-2`.
 
-Private schema `teevee` contains canonical channels, programmes and authoritative schedule coverage segments. Transactional replacement enforces ADR 0007 and stale-write protection.
+Private schema `teevee` contains canonical channels, programmes, authoritative schedule coverage segments, and the separate optional `programme_editorial_signals` / `editorial_source_state` enrichment store. Transactional schedule replacement continues to enforce ADR 0007 and stale-write protection. Editorial signals intentionally do not FK/cascade to programme rows because normal schedule-window replacement deletes/reinserts programmes; editorial snapshot writes validate current programme IDs, reads join current programmes and later successful source snapshots remove stale/orphaned signals.
 
 ### Security boundary
 - private Teevee tables are unavailable to `anon` and `authenticated`;
@@ -98,7 +104,8 @@ Public/mobile read transport:
 - runtime-validates serialized `from`, `to` and optional channel IDs;
 - enforces bounded request windows suitable for the no-login Guide;
 - uses privileged storage access only inside the Edge runtime;
-- exposes no database/RPC/provider identifiers or write capability.
+- exposes no database/RPC/provider identifiers or write capability;
+- after a valid canonical schedule read, optionally composes persisted `ProgrammeEditorialSignal[]` as a sibling field; editorial read/validation failure yields an empty signal list and never downgrades the schedule.
 
 The bounded window is intentionally compatible with requesting individual television days. Phase 4 composes the product horizon from bounded day windows rather than inventing one unbounded ten-day public payload.
 
@@ -108,6 +115,15 @@ Protected server-side refresh:
 - direct anonymous/authenticated refresh is rejected;
 - trusted calls may use the existing server secret-key path or the dedicated scheduled-refresh token;
 - partial provider coverage cannot destructively replace canonical stored coverage.
+
+### `editorial-refresh`
+Independent protected Kijktip refresh:
+- fetches/decodes TVgids `tips.rss` server-side only;
+- applies the deterministic PR #120 channel/title/start matcher against canonical schedule reads;
+- replaces one authoritative TVgids editorial snapshot only after a successful complete run;
+- uses a dedicated Vault-backed cron token and a simple hourly `:41` schedule;
+- records non-user diagnostics for feed count, Tier A/B/C matches, ambiguity, title mismatch, unsupported channel, coverage miss, invalid/undecodable records, duplicates and unmatched items;
+- is not called by `epg-refresh`, `guide-schedule` or the mobile client.
 
 ### Automatic development freshness
 `pg_cron` + `pg_net` enqueue the temporary development refresh every six hours. A rolling three-calendar-day Amsterdam buffer covers current day, tomorrow and one rollover day. That buffer is sufficient for the current development runtime's bounded D + D+1 television-day reads around midnight/06:00, but it is not the final multi-day product strategy.
@@ -162,6 +178,8 @@ Because television-day/date/horizon code is high risk under `ENGINEERING_QUALITY
 - historical data must not be evicted while it remains inside the D-2..D+7 guarantee once that horizon is implemented.
 
 ## Production provider / rights boundary
+The Kijktip editorial source is already rights-cleared for its intended product use: the product owner confirms Teevee may use TVgids `https://www.tvgids.nl/tips.rss` for the Kijktip implementation, so that source is **not a Kijktip release blocker**. This clearance is deliberately scoped to the editorial Kijktip source and does not clear the eventual production EPG provider, channel logos or programme artwork.
+
 The free XMLTV source is a temporary engineering input, not production-approved data.
 
 Before public paid release Teevee still needs explicit rights for:

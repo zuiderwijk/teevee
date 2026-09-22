@@ -35,7 +35,9 @@ Merged foundations:
 - **PR #122 — Per-zender Kijktip production calibration**, merged as `404c46f465a63006db5681ca439e3199a72f937a`. Its accepted Per-zender Kijktip presentation is implementation authority; do not redesign it during enrichment work.
 - **PR #123 — Nu & Straks Kijktip production calibration**, merged as `608cfe395b7ef2e727c1c436de164328b15e5b7e`. Its accepted reference/following Kijktip presentation and accessibility semantics are implementation authority.
 
-Search is paused until the Kijktip data/enrichment path, approved Guide presentation wiring, deterministic verification and required acceptance gates are complete. After full Kijktip acceptance, resume Phase 5 with Search. Tonight remains deferred/provisional.
+Search is paused until the Kijktip data/enrichment path, approved Guide presentation wiring, deterministic verification and required acceptance gates are complete. **PR #126 is the first production implementation increment:** server-side `tips.rss` ingestion, deterministic Tier B/C matching, private persisted `ProgrammeEditorialSignal` snapshots, independent protected editorial refresh, fail-open typed hosted transport and separate mobile runtime enrichment state. It deliberately adds **no visible Kijktip UI** and does not mutate canonical `Programme`. After PR #126 passes Lead review and merges, the remaining Kijktip work is the already-calibrated Per-zender/Nu & Straks presentation wiring plus its review/physical-acceptance gates. After full Kijktip acceptance, resume Phase 5 with Search. Tonight remains deferred/provisional.
+
+Rights status for this vertical slice is closed: the product owner confirms the intended Teevee Kijktip use of TVgids `tips.rss` is rights-cleared. That source is **not a Kijktip release blocker**. This does not change the separate Phase 8 production EPG-provider redistribution-rights gate or the independent licensing/provenance requirements for channel logos and programme artwork.
 
 ## Frozen television-day and Guide-horizon semantics
 ADR 0008 is canonical:
@@ -175,7 +177,7 @@ Physical Android interaction acceptance remains OPEN/DEFERRED because no Android
 - physical Android validation.
 
 ## Current next step
-**Implement the Kijktip data/enrichment vertical slice end-to-end before Search.** Start from the merged PR #120 matching contract: ingest TVgids.nl `tips.rss` server-side, resolve only deterministic fail-closed matches against canonical Teevee programmes, and keep the canonical `Programme` model/provider boundary unchanged. Then wire the resolved Kijktip enrichment into the already owner-approved Per-zender (PR #122) and Nu & Straks (PR #123) presentations with deterministic coverage and the applicable review/physical-acceptance gates. Do not start Search until this Kijktip vertical slice is fully accepted. After that, resume Phase 5 with Search; Tonight remains deferred/provisional.
+**Finish the PR #126 backend/transport gate, then continue the Kijktip vertical slice with visible Guide wiring in a separate increment.** PR #126 must pass Lead review before merge; it already keeps RSS ingestion/matching/storage/refresh server-side, transports optional `ProgrammeEditorialSignal[]` separately from `GuideSchedule`, and installs that enrichment separately in mobile runtime without rendering it. After this increment merges, wire the signals into the owner-approved Per-zender (PR #122) and Nu & Straks (PR #123) presentations with deterministic coverage and the applicable physical/accessibility acceptance gates. Do not start Search until the complete Kijktip vertical slice is accepted. Tonight remains deferred/provisional.
 
 Owner checkout: `~/projects/teevee`.
 

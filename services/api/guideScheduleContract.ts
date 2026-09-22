@@ -1,4 +1,7 @@
+import type { ProgrammeEditorialSignal } from '@/data/domain/editorial';
 import type { Channel, GuideSchedule, GuideScheduleQuery, Programme } from '@/data/domain/epg';
+
+import { parseProgrammeEditorialSignals } from './editorialSignalContract.ts';
 
 export type GuideScheduleApiRequest = GuideScheduleQuery;
 
@@ -7,7 +10,16 @@ export type GuideScheduleApiRequest = GuideScheduleQuery;
  * is still `ok`; `unavailable` means the Teevee service has no canonical schedule yet.
  */
 export type GuideScheduleApiResponse =
-  | { status: 'ok'; schedule: GuideSchedule }
+  | {
+      status: 'ok';
+      schedule: GuideSchedule;
+      /**
+       * Optional only for transport rollout compatibility. Runtime parsing normalises a
+       * missing or rejected editorial payload to an empty array so Guide availability
+       * never depends on enrichment.
+       */
+      editorialSignals?: ProgrammeEditorialSignal[];
+    }
   | { status: 'unavailable' };
 
 export interface GuideScheduleApi {
@@ -144,7 +156,25 @@ export function parseGuideScheduleApiResponse(value: unknown): GuideScheduleApiR
   if (!input) throw new Error('Schedule response must be an object');
   if (input.status === 'unavailable') return { status: 'unavailable' };
   if (input.status !== 'ok') throw new Error('Schedule response status is invalid');
-  return { status: 'ok', schedule: parseGuideSchedule(input.schedule) };
+
+  const schedule = parseGuideSchedule(input.schedule);
+  let editorialSignals: ProgrammeEditorialSignal[] = [];
+  if (input.editorialSignals !== undefined) {
+    try {
+      const parsed = parseProgrammeEditorialSignals(input.editorialSignals);
+      const programmeIds = new Set(schedule.programmes.map(({ id }) => id));
+      if (parsed.some(({ programmeId }) => !programmeIds.has(programmeId))) {
+        throw new Error('Editorial signal references a programme outside the schedule payload');
+      }
+      editorialSignals = parsed;
+    } catch {
+      // Editorial enrichment is optional. Reject the malformed enrichment at the
+      // transport trust boundary while preserving the independently valid schedule.
+      editorialSignals = [];
+    }
+  }
+
+  return { status: 'ok', schedule, editorialSignals };
 }
 
 /**

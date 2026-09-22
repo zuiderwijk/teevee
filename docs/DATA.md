@@ -1,6 +1,6 @@
 # Teevee Programme Data Strategy
 
-Status: **Kijktip enrichment vertical slice is the current data implementation priority before Phase 5 Search**. Phase 3 proved the provider-independent hosted data path and Phase 4 closed the television-day-aware Guide runtime, D-2..D+7 navigation/horizon behaviour and production Guide convergence. Phase 5 Search and Discovery remains the next broader product phase, but Search is paused until the already-researched Kijktip enrichment path is fully implemented and accepted. The Phase 4 cache decision is unchanged: keep the current fixture-first + in-memory runtime fallback and do not introduce persistent mobile schedule caching without new measured evidence. Production provider selection/rights remain a later release gate and release-like offline cold-start/persistent-cache validation remains Phase 9.
+Status: **Kijktip enrichment vertical slice is the current data implementation priority before Phase 5 Search**. Phase 3 proved the provider-independent hosted data path and Phase 4 closed the television-day-aware Guide runtime, D-2..D+7 navigation/horizon behaviour and production Guide convergence. Phase 5 Search and Discovery remains the next broader product phase, but Search is paused until the already-researched Kijktip enrichment path is fully implemented and accepted. The Phase 4 cache decision is unchanged: keep the current fixture-first + in-memory runtime fallback and do not introduce persistent mobile schedule caching without new measured evidence. Production **EPG** provider selection/rights remain a later release gate and release-like offline cold-start/persistent-cache validation remains Phase 9.
 
 ## Goal
 Teevee must support the complete core Guide without coupling the mobile experience to one EPG supplier. Replacing the temporary development source with an authorized Bindinc/TVgids or commercial provider must not require a Guide rewrite.
@@ -14,7 +14,44 @@ The next data increment is the already-approved Kijktip vertical slice, not Sear
 - **PR #120** completed empirical matching research and is canonical in `docs/TVGIDS_EDITORIAL_FEED_MATCHING_2026-09-22.md`: `tips.rss` is ingested server-side; matching is deterministic/fail-closed against canonical Teevee programmes; unresolved or ambiguous items do not create a Kijktip signal; the core `Programme` provider identity remains unchanged.
 - **PR #122** froze the Per-zender Kijktip production presentation.
 - **PR #123** froze the Nu & Straks Kijktip production presentation.
-- No production Kijktip data/enrichment implementation is claimed by these foundations alone. Complete the enrichment path and accepted presentation wiring before starting Search.
+- **PR #126 implements the first production enrichment increment** without visible UI: server-side RSS parsing/matching, private signal persistence, an independent protected refresh, optional typed hosted transport and separate mobile runtime signal state. The canonical `Programme` model remains unchanged.
+- The remaining vertical-slice work after PR #126 is the already-approved Per-zender/Nu & Straks presentation wiring and acceptance; Search stays paused until that is complete.
+
+### Production Kijktip editorial enrichment
+
+Editorial enrichment is optional and parallel to core EPG state:
+
+`TVgids tips.rss -> editorial-refresh -> deterministic matching against canonical ScheduleRepository -> private programme_editorial_signals snapshot -> guide-schedule sibling editorialSignals -> mobile runtime editorial state`
+
+Hard invariants:
+- the mobile app never fetches or parses TVgids RSS;
+- `guide-schedule` never makes a live RSS request;
+- editorial refresh/storage failure never changes a valid schedule to `unavailable`;
+- `GuideSchedule`, `Programme`, schedule replacement and coverage semantics remain enrichment-independent;
+- missing, malformed or unavailable editorial data normalises to `editorialSignals: []` at the public trust boundary;
+- no `isKijktip` field or source/provider identity is added to canonical `Programme`.
+
+Source/matching:
+- source is `https://www.tvgids.nl/tips.rss`, decoded from response bytes using its declared charset before XML parsing;
+- rights status: the product owner confirms the intended Teevee Kijktip use of `tips.rss` is rights-cleared; this editorial source is therefore **not a Kijktip release blocker**. The separate production EPG-provider redistribution, channel-logo and programme-artwork rights gates remain unchanged;
+- current source items provide GUID/link/title/`channel_name`/start/end/`pubDate`;
+- Tier A exists only for a future authorized stable broadcast identity and is not active for the current RSS;
+- Tier B = explicit channel mapping + deliberately small normalized-title equality + start within ±5 minutes + exactly one candidate;
+- Tier C = mapped channel + exact start + exactly one candidate, only after Tier B title failure;
+- ambiguity, unsupported channels, unavailable coverage, title mismatch plus start drift and all non-deterministic cases fail closed.
+
+Persistence/lifecycle:
+- `teevee.programme_editorial_signals` is private/service-role-only and keyed by source + signal type + canonical programme ID;
+- it deliberately has **no FK/cascade to `teevee.programmes`**, because ADR 0007 schedule-window replacement deletes/reinserts programme rows; instead snapshot writes validate programme IDs before mutation, reads join current programmes, and the next successful authoritative source snapshot removes stale/orphaned signals;
+- `teevee.editorial_source_state` records latest successful source snapshot/freshness and prevents an older concurrent refresh from replacing a newer snapshot;
+- a failed feed fetch/decode/match/persistence run leaves the previous successful editorial snapshot untouched;
+- `editorial-refresh` is an independent protected Edge Function with its own Vault-backed cron token and hourly `:41` cadence; it is not part of `epg-refresh` or Guide read critical path.
+
+Transport/runtime:
+- public `guide-schedule` reads stored signals only after a canonical schedule is available and catches editorial-store failures to `[]`;
+- serialized signals are runtime-validated separately and may reference only programmes inside that bounded schedule response;
+- D/D+1 mobile loading merges/deduplicates signal identity independently from schedule conflict semantics;
+- runtime stores signals beside, not inside, the installed canonical schedule; editorial-only updates do not remount the Guide while no Kijktip UI is present.
 
 External data flows through:
 

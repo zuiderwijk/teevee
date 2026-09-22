@@ -1,12 +1,15 @@
+import type { ProgrammeEditorialSignal } from '../domain/editorial';
 import type { Channel, GuideSchedule, Programme } from '../domain/epg';
 import { guideTelevisionDayStart } from '../domain/guideTime';
 
 type InstalledGuideSchedule = {
   schedule: GuideSchedule;
+  editorialSignals: ProgrammeEditorialSignal[];
   anchorTelevisionDayStartMs: number;
 };
 
 let installed: InstalledGuideSchedule | null = null;
+const editorialSignalListeners = new Set<() => void>();
 
 function channelsEqual(left: Channel, right: Channel): boolean {
   return (
@@ -63,11 +66,67 @@ export function guideScheduleContentEqual(left: GuideSchedule, right: GuideSched
  * knowledge; it only scopes the installed schedule to the 06:00 Europe/Amsterdam runtime
  * boundary used by the Guide.
  */
-export function installRuntimeGuideSchedule(schedule: GuideSchedule, anchorMs: number): void {
+function editorialSignalsEqual(
+  left: readonly ProgrammeEditorialSignal[],
+  right: readonly ProgrammeEditorialSignal[],
+): boolean {
+  return (
+    left.length === right.length &&
+    left.every((signal, index) => {
+      const candidate = right[index];
+      return (
+        candidate !== undefined &&
+        signal.programmeId === candidate.programmeId &&
+        signal.type === candidate.type &&
+        signal.source === candidate.source &&
+        signal.sourceItemId === candidate.sourceItemId &&
+        signal.sourceUrl === candidate.sourceUrl &&
+        signal.publishedAt === candidate.publishedAt &&
+        signal.matchedBy === candidate.matchedBy
+      );
+    })
+  );
+}
+
+function notifyEditorialSignalListeners(): void {
+  editorialSignalListeners.forEach((listener) => listener());
+}
+
+export function installRuntimeGuideSchedule(
+  schedule: GuideSchedule,
+  anchorMs: number,
+  editorialSignals: ProgrammeEditorialSignal[] = [],
+): void {
+  const editorialChanged =
+    !installed || !editorialSignalsEqual(installed.editorialSignals, editorialSignals);
   installed = {
     schedule,
+    editorialSignals,
     anchorTelevisionDayStartMs: guideTelevisionDayStart(anchorMs),
   };
+  if (editorialChanged) notifyEditorialSignalListeners();
+}
+
+export function installRuntimeProgrammeEditorialSignals(
+  editorialSignals: ProgrammeEditorialSignal[],
+  anchorMs: number,
+): void {
+  if (
+    !installed ||
+    installed.anchorTelevisionDayStartMs !== guideTelevisionDayStart(anchorMs) ||
+    editorialSignalsEqual(installed.editorialSignals, editorialSignals)
+  ) {
+    return;
+  }
+  installed = { ...installed, editorialSignals };
+  notifyEditorialSignalListeners();
+}
+
+export function subscribeRuntimeProgrammeEditorialSignals(
+  listener: () => void,
+): () => void {
+  editorialSignalListeners.add(listener);
+  return () => editorialSignalListeners.delete(listener);
 }
 
 export function runtimeGuideScheduleFor(anchorMs: number): GuideSchedule | null {
@@ -77,6 +136,17 @@ export function runtimeGuideScheduleFor(anchorMs: number): GuideSchedule | null 
     : null;
 }
 
+export function runtimeProgrammeEditorialSignalsFor(
+  anchorMs: number,
+): ProgrammeEditorialSignal[] {
+  if (!installed) return [];
+  return installed.anchorTelevisionDayStartMs === guideTelevisionDayStart(anchorMs)
+    ? installed.editorialSignals
+    : [];
+}
+
 export function clearRuntimeGuideSchedule(): void {
+  const hadEditorialSignals = (installed?.editorialSignals.length ?? 0) > 0;
   installed = null;
+  if (hadEditorialSignals) notifyEditorialSignalListeners();
 }

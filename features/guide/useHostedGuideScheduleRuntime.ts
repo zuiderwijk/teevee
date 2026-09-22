@@ -5,11 +5,12 @@ import { guideTelevisionDayStart } from '@/data/domain/guideTime';
 import {
   guideScheduleContentEqual,
   installRuntimeGuideSchedule,
+  installRuntimeProgrammeEditorialSignals,
   runtimeGuideScheduleFor,
 } from '@/data/runtime/guideScheduleRuntime';
 import type { GuideScheduleApi } from '@/services/api/guideScheduleContract';
 import { HostedGuideScheduleClient } from '@/services/api/hostedGuideScheduleClient';
-import { loadTwoTelevisionDayGuideSchedule } from '@/services/api/guideScheduleLoader';
+import { loadTwoTelevisionDayGuideScheduleBundle } from '@/services/api/guideScheduleLoader';
 
 const hostedGuideScheduleApi = new HostedGuideScheduleClient();
 const DAY_CHANGE_CHECK_MS = 30_000;
@@ -40,24 +41,34 @@ export function useHostedGuideScheduleRuntime(
 
       const requestVersion = requestVersionRef.current + 1;
       requestVersionRef.current = requestVersion;
-      void loadTwoTelevisionDayGuideSchedule(api, anchorMs)
-        .then((schedule) => {
+      void loadTwoTelevisionDayGuideScheduleBundle(api, anchorMs)
+        .then((bundle) => {
           if (requestVersionRef.current !== requestVersion) return;
-          if (!schedule || schedule.channels.length === 0) {
+          if (!bundle || bundle.schedule.channels.length === 0) {
             // Covered-empty canonical schedules remain authoritative under ADR 0007.
             // Only a zero-channel result is structurally unusable for the Guide surface.
             return;
           }
 
           const currentSchedule = runtimeGuideScheduleFor(anchorMs);
-          if (currentSchedule && guideScheduleContentEqual(currentSchedule, schedule)) {
-            // `generatedAt` may advance while all user-visible data stays identical.
-            // Keep the same installed object so Guide-local refresh checks also preserve
-            // scroll/channel context instead of picking up a freshness-only replacement.
+          if (
+            currentSchedule &&
+            guideScheduleContentEqual(currentSchedule, bundle.schedule)
+          ) {
+            // Editorial enrichment is stored independently from the visible schedule.
+            // Refreshing it must not remount the accepted Guide while no Kijktip UI exists.
+            installRuntimeProgrammeEditorialSignals(
+              bundle.editorialSignals,
+              anchorMs,
+            );
             return;
           }
 
-          installRuntimeGuideSchedule(schedule, anchorMs);
+          installRuntimeGuideSchedule(
+            bundle.schedule,
+            anchorMs,
+            bundle.editorialSignals,
+          );
           setVersion((current) => current + 1);
         })
         .catch(() => {

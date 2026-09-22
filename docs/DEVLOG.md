@@ -1,5 +1,34 @@
 # Teevee Development Logboek
 
+## 22 september 2026 — PR #126 first production Kijktip backend/transport increment
+
+The first production-grade Kijktip vertical-slice implementation keeps editorial enrichment strictly optional and separate from core EPG identity/availability. No visible Kijktip UI is introduced.
+
+Implemented:
+- provider-independent `ProgrammeEditorialSignal` sibling domain; canonical `Programme` remains unchanged;
+- raw-byte TVgids `tips.rss` decoding using the declared charset before XML parsing, with deterministic fixtures for ISO-8859-1/non-ASCII input;
+- explicit TVgids channel mapping and PR #120 deterministic matching: future-only Tier A, Tier B exact normalized title + ±5-minute start, Tier C exact-start title-mismatch fallback, ambiguity/reject fail-closed;
+- private service-role-only Supabase editorial snapshot store with no programme FK/cascade, source freshness/stale-write protection, deduplication and current-programme filtering;
+- separate protected `editorial-refresh` Edge Function and independent hourly `:41` cron lifecycle;
+- `guide-schedule` composes stored signals only after a valid schedule read and fails editorial reads open to `[]`;
+- typed mobile transport/bounded D+D1 composition/runtime validation and a separate in-memory editorial state; no editorial-only Guide remount.
+
+Hosted evidence after applying migrations and deploying `editorial-refresh` + `guide-schedule`:
+- protected one-shot refresh: **100 feed items → 66 persisted Kijktip signals**;
+- **57 Tier B / 9 Tier C / 0 Tier A / 0 ambiguous / 0 unmatched**;
+- fail-closed residuals: **21 unsupported channels / 12 outside canonical coverage / 1 invalid-or-undecodable**;
+- persisted store: 66 distinct programme IDs and 66 distinct source item IDs;
+- public hosted smoke, editorial-absent covered window: **status ok / 12 channels / 412 programmes / 0 signals**;
+- public hosted smoke, enriched covered window: **status ok / 12 channels / 519 programmes / 10 signals**.
+
+This live evidence proves both directions of the optionality contract: persisted enrichment reaches the typed read, while a schedule window with no editorial signals remains a normal valid Guide response.
+
+Rights status is now closed for this source: the product owner confirms the intended Teevee Kijktip use of `https://www.tvgids.nl/tips.rss` is rights-cleared, so this editorial source is **not a Kijktip release blocker**. The separate production EPG-provider redistribution-rights gate and the independent rights/provenance requirements for channel logos and programme artwork remain unchanged.
+
+**Next gate:** exact-head Lead review of PR #126. Do not merge before Lead. Visible Per-zender/Nu & Straks Kijktip wiring remains a separate later increment using the already frozen PR #122/#123 visual contracts.
+
+---
+
 ## 22 september 2026 — Owner reprioritisation: Kijktip vertical slice before Search
 
 The owner changed the immediate implementation order after the Phase 4 closeout. Phase 4 remains CLOSED and Phase 5 Search and Discovery remains the next broader product phase, but **Search is paused until the already-prepared Kijktip enrichment vertical slice is fully implemented and accepted**. This supersedes the same-day administrative “Search first” next-step wording only; it does not reopen Phase 4 or change the Phase 5 product scope.
