@@ -140,9 +140,10 @@ Canonical visual assets in the user's Teevee Library:
   - Library file id: `file_00000000390c8210b76256621721592b`
 - sticky day-navigation behaviour: `/Teevee/Teevee Guide day selector - sticky scroll behavior.png`
   - Library file id: `file_00000000314481f69f6a34d18ece1c21`
-- Per-zender Kijktip refinement: `/Teevee/Per Zender Kijktip refinement - 12pt Medium textSecondary.png`
+- historical Per-zender Kijktip text-only refinement: `/Teevee/Per Zender Kijktip refinement - 12pt Medium textSecondary.png`
   - Library file id: `file_00000000dd7c8210a35769aada30424b`
   - stable Library record: `libfile_d161c6bed2a481919a917acdeaeeec41`
+  - superseded for final Kijktip styling by the owner-approved shared time+Kijktip editorial label direction; final calibrated label asset still pending.
 
 Accepted visual characteristics:
 - open chronological fixed-row typographic schedule; programme duration does not determine vertical row geometry;
