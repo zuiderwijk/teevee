@@ -213,6 +213,24 @@ function getByTestId(container: HTMLElement, testID: string): HTMLElement {
   return node;
 }
 
+function flattenedStyle(node: HTMLElement): Record<string, unknown> {
+  const serialized = node.getAttribute('data-style');
+  if (!serialized) return {};
+  const value = JSON.parse(serialized) as unknown;
+  const output: Record<string, unknown> = {};
+
+  const merge = (entry: unknown) => {
+    if (Array.isArray(entry)) {
+      entry.forEach(merge);
+      return;
+    }
+    if (entry && typeof entry === 'object') Object.assign(output, entry);
+  };
+
+  merge(value);
+  return output;
+}
+
 let root: Root;
 let container: HTMLDivElement;
 
@@ -256,15 +274,28 @@ describe('Per-zender Kijktip production presentation', () => {
     await renderPage(rows, new Set(['tip']));
 
     const programmeRow = getByTestId(container, 'per-channel-programme-tip');
-    const leading = getByTestId(
+    const timeStack = getByTestId(
       container,
-      'per-channel-kijktip-leading-line-tip',
+      'per-channel-kijktip-time-stack-tip',
     );
+    const titleCell = getByTestId(container, 'per-channel-title-cell-tip');
     const label = getByTestId(container, 'per-channel-kijktip-tip');
 
     expect(programmeRow.getAttribute('data-style')).toContain('"height":52');
-    expect(leading.getAttribute('data-style')).toContain('"top":7');
-    expect(label.getAttribute('data-style')).toContain('"top":29');
+    expect(flattenedStyle(timeStack)).toMatchObject({
+      left: 24,
+      top: 7,
+      alignItems: 'center',
+    });
+    expect(flattenedStyle(label).marginTop).toBe(2);
+    expect(flattenedStyle(label).width).toBeUndefined();
+    expect(flattenedStyle(titleCell)).toMatchObject({
+      left: 100,
+      right: 24,
+      top: 0,
+      bottom: 0,
+      justifyContent: 'center',
+    });
     expect(label.getAttribute('data-accessible')).toBe('false');
     expect(label.getAttribute('data-accessibility-elements-hidden')).toBe('true');
     expect(label.getAttribute('data-important-for-accessibility')).toBe('no');
@@ -280,7 +311,15 @@ describe('Per-zender Kijktip production presentation', () => {
     await renderPage(rows, new Set());
 
     const programmeRow = getByTestId(container, 'per-channel-programme-plain');
+    const titleCell = getByTestId(container, 'per-channel-title-cell-plain');
     expect(programmeRow.getAttribute('data-style')).toContain('"height":52');
+    expect(flattenedStyle(titleCell)).toMatchObject({
+      left: 100,
+      right: 24,
+      top: 0,
+      bottom: 0,
+      justifyContent: 'center',
+    });
     expect(
       container.querySelector('[data-testid="per-channel-kijktip-plain"]'),
     ).toBeNull();
@@ -298,10 +337,20 @@ describe('Per-zender Kijktip production presentation', () => {
       container,
       'per-channel-programme-current',
     );
+    const timeStack = getByTestId(
+      container,
+      'per-channel-kijktip-time-stack-current',
+    );
     const label = getByTestId(container, 'per-channel-kijktip-current');
 
     expect(programmeRow.getAttribute('data-style')).toContain('"height":176');
-    expect(label.getAttribute('data-style')).toContain('"top":36');
+    expect(flattenedStyle(timeStack)).toMatchObject({
+      left: 24,
+      top: 14,
+      alignItems: 'center',
+    });
+    expect(flattenedStyle(label).marginTop).toBe(2);
+    expect(flattenedStyle(label).width).toBeUndefined();
     expect(
       getByTestId(container, 'per-channel-progress-current'),
     ).toBeDefined();
@@ -316,7 +365,9 @@ describe('Per-zender Kijktip production presentation', () => {
     await renderPage(rows, new Set(['one', 'two', 'three']));
 
     expect(
-      container.querySelectorAll('[data-testid^="per-channel-kijktip-"]:not([data-testid^="per-channel-kijktip-leading-line-"])'),
+      container.querySelectorAll(
+        '[data-testid^="per-channel-kijktip-"]:not([data-testid^="per-channel-kijktip-time-stack-"])',
+      ),
     ).toHaveLength(3);
     expect(
       getByTestId(container, 'per-channel-programme-one').getAttribute(
