@@ -5,7 +5,9 @@ import {
   clearRuntimeGuideSchedule,
   guideScheduleContentEqual,
   installRuntimeGuideSchedule,
+  installRuntimeProgrammeEditorialSignals,
   runtimeGuideScheduleFor,
+  runtimeProgrammeEditorialSignalsFor,
 } from './guideScheduleRuntime';
 
 const schedule: GuideSchedule = {
@@ -64,6 +66,47 @@ describe('guideScheduleRuntime', () => {
       expect(runtimeGuideScheduleFor(Date.parse(boundary))).toBeNull();
     },
   );
+
+
+  it('stores optional editorial signals separately from the canonical schedule', () => {
+    const anchor = Date.parse('2026-09-14T10:00:00Z');
+    const signal = {
+      programmeId: 'programme-1',
+      type: 'kijktip' as const,
+      source: 'tvgids' as const,
+      sourceItemId: 'tip-1',
+      matchedBy: 'channel-title-start' as const,
+    };
+
+    installRuntimeGuideSchedule(schedule, anchor, [signal]);
+
+    expect(runtimeGuideScheduleFor(anchor)).toBe(schedule);
+    expect(runtimeProgrammeEditorialSignalsFor(anchor)).toEqual([signal]);
+    expect(
+      runtimeProgrammeEditorialSignalsFor(Date.parse('2026-09-15T04:00:00Z')),
+    ).toEqual([]);
+  });
+
+  it('updates editorial enrichment without replacing the installed schedule', () => {
+    const anchor = Date.parse('2026-09-14T10:00:00Z');
+    installRuntimeGuideSchedule(schedule, anchor);
+
+    installRuntimeProgrammeEditorialSignals(
+      [
+        {
+          programmeId: 'programme-1',
+          type: 'kijktip',
+          source: 'tvgids',
+          sourceItemId: 'tip-2',
+          matchedBy: 'channel-exact-start',
+        },
+      ],
+      anchor,
+    );
+
+    expect(runtimeGuideScheduleFor(anchor)).toBe(schedule);
+    expect(runtimeProgrammeEditorialSignalsFor(anchor)).toHaveLength(1);
+  });
 
   it('clears installed runtime data explicitly', () => {
     installRuntimeGuideSchedule(schedule, Date.parse('2026-09-14T10:00:00Z'));
