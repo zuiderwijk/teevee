@@ -4,6 +4,7 @@ Status: **CANONICAL PRODUCTION IMPLEMENTATION SPEC — accepted design, no redes
 Date: 2026-09-18  
 Kijktip refinement: 2026-09-22  
 Kijktip production calibration: 2026-09-22  
+Kijktip label direction: owner accepted 2026-09-22 — final label-surface metrics pending  
 Revision: **post-PR #86 production convergence — compact temporal context + PR #81 collapse-isolation architecture + owner-approved Per-zender Kijktip editorial disclosure with implementation-ready typography/baseline/Dynamic-Type calibration**
 
 This document is the production implementation specification for the accepted **Per zender** Guide presentation. It converts the owner-approved visual/UX baseline into concrete metrics and state rules. It is accepted-design convergence, not exploration or Development implementation.
@@ -489,59 +490,44 @@ Title:
 
 Prefer actual flex/layout centring over manually rounding 15.5 to a platform-specific integer. Full untruncated title remains available to accessibility APIs.
 
-### 11.3 Kijktip editorial-disclosure row
+### 11.3 Kijktip editorial label — owner-approved direction, final box calibration pending
 
-A programme with canonical `isKijktip = true` adds only one quiet editorial-disclosure line in the existing time column. The matching/data method that produced `isKijktip` is outside this visual contract.
+The earlier text-only Kijktip treatment is superseded.
 
-#### Typography
+For canonical `isKijktip = true`, Per zender now uses **one compact editorial label in the existing time-column zone containing both start time and `Kijktip`**.
 
-Frozen production typography:
-- label text: literal **`Kijktip`**;
-- **12/16 Instrument Sans Medium**;
-- semantic **`textSecondary`**;
-- letterSpacing **0**;
-- no colour accent, pill, icon, badge or underline;
-- no independent interaction.
+Accepted direction:
+- time remains first line;
+- `Kijktip` remains second line;
+- programme title X/width remains completely unchanged;
+- label is one visual unit but **not** a separate action;
+- no icon, underline, advertising-style chip treatment or extra current-state signal;
+- no Kijktip-specific standard/current row-height change.
 
-The **16-pt line-height is canonical**. At base scale it gives a 38-pt time/Kijktip stack (20 + 2 + 16) inside the accepted 52-pt row, leaving exactly 7 pt breathing room above and below.
+Accepted editorial foreground:
+- conceptual semantic `editorialAccent`;
+- light **#315A63**;
+- dark **#A9C9CF**.
 
-#### Standard 52-pt row — exact base geometry
+Accepted text inputs:
+- time: existing **16/20 Instrument Sans Regular**;
+- Kijktip: **12/16 Instrument Sans Medium**, letterSpacing 0;
+- existing 2-pt time→Kijktip relationship remains the baseline for final box calibration.
 
-At `contentScale = 1.0`:
-- row Y = **0…52**;
-- time X = **24**;
-- programme title X = **100**;
-- right inset = **24**;
-- time line box top = **7 pt**;
-- time line-height = **20 pt**, occupying Y **7…27**;
-- structural time→Kijktip gap = **2 pt**;
-- Kijktip line box top = **29 pt**;
-- Kijktip line-height = **16 pt**, occupying Y **29…45**;
-- remaining bottom breathing room = **7 pt**;
-- separator remains at the existing row bottom;
-- Kijktip is left-aligned exactly to the time text.
+The label uses a subtle theme-relative surface that separates slightly from the Guide canvas. Its exact surface values, padding, radius/squareness and outer dimensions are **not yet production-frozen**. The intended semantic role is conceptually `editorialAccentSurface`; do not add it to runtime tokens until final physical calibration.
 
-The time/title **first baselines are identical** in a standard Kijktip row. This is the alignment invariant; do not approximate it by independently centring the title and time cells.
+Frozen geometry around the label:
+- standard row base height **52**;
+- current row base height **176**;
+- time-column origin X **24**;
+- programme title X **100**;
+- right inset **24**;
+- standard/current Dynamic Type row formulas remain authoritative;
+- title first-line and current-content hierarchy must not be displaced merely to make room for the label.
 
-Implementation should therefore baseline-align the title's first line to the time line using native text baseline alignment. Do **not** derive a hardcoded title-top pixel from line-height arithmetic, because Instrument Sans native ascent/descent metrics differ slightly by platform. The exact production relationship is:
+The final label box must be calibrated to fit within those constraints. Development must not infer padding/radius from exploratory screenshots and must not implement the superseded text-only target as the final design.
 
-`baseline(programme title line 1) = baseline(start time)`
-
-Normal non-Kijktip rows keep their existing independent vertical centring from §11.2.
-
-#### Title-column invariants
-
-The programme title receives:
-- no badge;
-- no icon;
-- no horizontal offset;
-- no narrower text column;
-- no changed size/weight/line-count rule;
-- no independent interaction linked to Kijktip.
-
-The Kijktip label remains a **single line**. Do not wrap, abbreviate or intentionally ellipsize the literal label. At the required physical validation sizes it must remain fully readable in the existing time-column composition. If it clips on a supported device/text setting, that is a convergence defect requiring review; it is not permission to widen/move the title column, add a Kijktip-specific row height or cap substantive programme typography.
-
-Multiple Kijktips in one evening repeat the exact same treatment independently. Do not cluster, number, colour-code or otherwise create a second editorial navigation system.
+Multiple Kijktips repeat the same compact label treatment independently without changing row tops, scroll anchors or programme interaction geometry.
 
 ### 11.4 Programme-row pressed feedback
 
@@ -600,11 +586,11 @@ Time:
 - `16/20 400 textSecondary`;
 - top = **14 pt**;
 - tabular numerals;
-- when current programme has `isKijktip = true`, use the same **12/16 Medium textSecondary** label at X24;
-- structural time→Kijktip gap remains **2 pt**;
-- at contentScale 1.0: time occupies Y **14…34**, Kijktip occupies Y **36…52**;
+- when current programme has `isKijktip = true`, render the owner-approved **shared time + Kijktip editorial label** in the existing time-column zone;
+- time remains 16/20 Regular and Kijktip remains 12/16 Medium as the text inputs for final label calibration;
 - current title remains X100/top14 and all current-row title/description/progress geometry stays unchanged;
-- unlike a standard Kijktip row, do **not** introduce a new baseline-alignment rule for the current row: the accepted current time/title top edge at Y14 is frozen, and Kijktip must not move either element.
+- the label must fit the frozen 176-pt current-row composition and must not move the accepted current time/title anchor;
+- exact label padding/surface/radius is pending final physical calibration; do not derive it from screenshots.
 
 Title:
 
@@ -677,37 +663,16 @@ Rules:
 - above 1.35, title may use max two lines;
 - no row height varies because Kijktip, title content or programme duration differs.
 
-For a Kijktip row, the time/Kijktip stack uses:
+For a Kijktip row, **the existing standard-row height formula remains the only row-height authority**. The new editorial label may not add a Kijktip-specific height term.
 
-`timeLineHeight = 20 × contentScale`
+Inside the label:
+- time continues to scale as substantive 16/20 content;
+- Kijktip continues to scale as substantive 12/16 Medium content;
+- the accepted 2-pt time→Kijktip relationship is the baseline input to final label calibration and does not automatically scale;
+- exact label outer padding/radius/surface geometry remains pending;
+- above 1.35, the programme title may still use max two lines under the existing Per-zender rule; the title column is never narrowed for the label.
 
-`kijktipLineHeight = 16 × contentScale`
-
-`kijktipGap = 2`
-
-`kijktipStackHeight = timeLineHeight + kijktipGap + kijktipLineHeight`
-
-`kijktipStackTop = (standardRowHeight - kijktipStackHeight) / 2`
-
-The **2-pt gap is structural and does not scale**. It remains 2 pt at every Dynamic Type size. Text line-heights scale; the editorial relationship between time and Kijktip stays deliberately tight.
-
-Representative geometry:
-
-| Font scale | Row | Time LH | Kijktip LH | Stack top | Kijktip top | Bottom breathing |
-| ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| 1.00 | 52 | 20 | 16 | **7** | **29** | **7** |
-| 1.35 | 70 | 27 | 21.6 | **9.7** | **38.7** | **9.7** |
-| 1.50 | 78 | 30 | 24 | **11** | **43** | **11** |
-| 2.00 | 104 | 40 | 32 | **15** | **57** | **15** |
-
-Fractional values are intentional. Let native layout/subpixel rendering resolve them; do not round the stack independently from the already rounded row height.
-
-Baseline rule at every scale:
-- standard Kijktip row time baseline = programme-title first-line baseline;
-- when title becomes two lines above 1.35, only its **first** baseline aligns to time;
-- do not vertically recenter the title block independently after adding Kijktip.
-
-The existing row growth is sufficient for the two-line title at representative accessibility sizes; Kijktip adds **no row-height term**.
+The final label calibration must prove that representative Larger Text sizes fit within the existing scaled row formulas without clipping, overlap or a Kijktip-specific row-height branch. If they do not, escalate the **label-box calibration**, not the frozen programme/title geometry.
 
 Representative standard-row heights remain:
 
@@ -1047,7 +1012,7 @@ Surface-specific implementation calibrations now frozen for Development handoff:
 10. Current top14, title→description gap **10**, description→progress minimum **20 at every Dynamic Type scale**, progress 4 high/radius2/bottom16; current-row scaling uses the content-safe minimum from §14.2.
 11. Separator left20 at bottom of each row.
 12. Collapse isolation: temporal context **52 only**; hard temporal-label multiplier 1.20; fixed settled viewport top112; native collapse56; standard full contraction/visual compensation **140/84**, accessibility shared-tab mode **156/100**; rest gaps interpolate **4→0** above the context and **24→0** below it; Reduce Motion switches endpoints discretely at28.
-13. Kijktip: literal `Kijktip`; base **12/16 Medium textSecondary**, letterSpacing0; X24; **2-pt fixed/non-scaling** time→label gap; base standard stack top7 with time Y7…27 and Kijktip Y29…45; standard time/title first baselines equal; current time stays top14 and current Kijktip is Y36…52 at scale1 without moving current title; one line/no wrap/no intentional truncation; standard/current row formulas unchanged; title X100/width unchanged; substantive/uncapped Dynamic Type; single parent programme accessibility action announces Kijktip once.
+13. Kijktip label direction: one compact shared **time + Kijktip** editorial label in the existing time-column zone; time 16/20 Regular + Kijktip 12/16 Medium remain text inputs; conceptual `editorialAccent` = light #315A63 / dark #A9C9CF; title X100/width and standard/current row formulas unchanged; one parent programme accessibility action; exact label surface/padding/radius/outer geometry pending final owner-approved calibration.
 
 Development must not choose alternatives locally. A future retune requires new owner-approved evidence and an update to this source of truth.
 
@@ -1091,7 +1056,7 @@ When Lead schedules Per-zender visual convergence, Development must be able to i
 18. preserve the PR #81 fixed-native-viewport/collapse-isolation architecture: strip 72→60, strip→context **4→0**, context→schedule **24→0**, one fixed 52-pt temporal context, 48×48 items unchanged, native collapse56; standard shared chrome uses contraction/compensation **140/84**, accessibility shared-tab mode **156/100**; no per-frame normal-flow mutation above the active schedule ScrollView;
 19. remove the obsolete wrapped-context runtime paths listed in §21 while preserving semantic native↔schedule anchor conversion;
 20. enforce `maximumFontSizeMultiplier = 1.20` for Per-zender date/Primetime/Nu labels, keep them one line in the 52-pt context, and validate light/dark/system, substantive programme Dynamic Type, VoiceOver, TalkBack and Reduce Motion;
-21. when `isKijktip = true`, render literal `Kijktip` only in the existing time column at X24 using **12/16 Medium textSecondary**, with a **fixed 2-pt** gap below time; at scale1 standard rows use time Y7…27 and Kijktip Y29…45 with the title first baseline equal to the time baseline; current rows retain time/title top14 and use Kijktip Y36…52; at larger scales use the §14.1 stack formula, keep Kijktip one line/uncapped, keep title X100/width and all row formulas unchanged, and expose Kijktip once through the existing programme accessibility action rather than as a separate element;
+21. when `isKijktip = true`, render the owner-approved compact **time + Kijktip editorial label** in the existing time-column zone; keep title X100/width and all row formulas unchanged; retain one programme accessibility action; do not implement guessed surface/padding/radius metrics before the final label calibration is merged;
 22. do not add Kijktip badge/pill/icon/accent colour, Kijktip interaction, extra current/`Nu` label, row-height override or title-column reduction;
 23. do not add swipe nudge, overflow button, arrows, fade masks or old exploration chrome;
 24. run the implementation's normal automated/physical gates when Development occurs.
