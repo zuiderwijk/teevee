@@ -4,7 +4,7 @@ const USER_AGENT = 'Teevee technical spike/2026-09-22 (+https://github.com/zuide
 
 function decodeXml(value = '') {
   return value
-    .replace(/^<!\\[CDATA\\[([\\s\\S]*)\\]\\]>$/i, '$1')
+    .replace(/^<!\[CDATA\[([\s\S]*)\]\]>$/i, '$1')
     .replace(/&lt;/g, '<')
     .replace(/&gt;/g, '>')
     .replace(/&quot;/g, '"')
@@ -20,20 +20,20 @@ function textOf(xml, tag) {
 }
 
 function elementNames(xml) {
-  return [...xml.matchAll(/<([A-Za-z_][\\w:.-]*)\\b[^>]*>/g)].map((m) => m[1]);
+  return [...xml.matchAll(/<([A-Za-z_][\w:.-]*)\b[^>]*>/g)].map((m) => m[1]);
 }
 
 function lineairIds(value = '') {
-  return [...value.matchAll(/\\/lineair\\/(\\d+)/gi)].map((m) => m[1]);
+  return [...value.matchAll(/\/lineair\/(\d+)/gi)].map((m) => m[1]);
 }
 
 function stripHtml(html = '') {
   return decodeXml(
     html
-      .replace(/<script\\b[\\s\\S]*?<\\/script>/gi, ' ')
-      .replace(/<style\\b[\\s\\S]*?<\\/style>/gi, ' ')
+      .replace(/<script\b[\s\S]*?<\/script>/gi, ' ')
+      .replace(/<style\b[\s\S]*?<\/style>/gi, ' ')
       .replace(/<[^>]+>/g, ' ')
-      .replace(/\\s+/g, ' '),
+      .replace(/\s+/g, ' '),
   );
 }
 
@@ -70,12 +70,12 @@ async function inspectRss() {
   }));
   if (!response.ok) throw new Error('RSS fetch failed: ' + response.status);
 
-  const rssOpen = (response.text.match(/<rss\\b([^>]*)>/i) || [])[1] || '';
+  const rssOpen = (response.text.match(/<rss\b([^>]*)>/i) || [])[1] || '';
   const namespaces = Object.fromEntries(
-    [...rssOpen.matchAll(/xmlns:([\\w-]+)=["']([^"']+)["']/g)].map((m) => [m[1], m[2]]),
+    [...rssOpen.matchAll(/xmlns:([\w-]+)=["']([^"']+)["']/g)].map((m) => [m[1], m[2]]),
   );
-  const channelBlock = (response.text.match(/<channel\\b[^>]*>([\\s\\S]*?)<\\/channel>/i) || [])[1] || '';
-  const itemBlocks = [...response.text.matchAll(/<item\\b[^>]*>([\\s\\S]*?)<\\/item>/gi)].map((m) => m[1]);
+  const channelBlock = (response.text.match(/<channel\b[^>]*>([\s\S]*?)<\/channel>/i) || [])[1] || '';
+  const itemBlocks = [...response.text.matchAll(/<item\b[^>]*>([\s\S]*?)<\/item>/gi)].map((m) => m[1]);
 
   const items = itemBlocks.slice(0, 50).map((xml, index) => {
     const title = textOf(xml, 'title');
@@ -121,18 +121,18 @@ async function inspectLinkedPages(items) {
   for (const item of candidates) {
     const response = await fetchText(item.link, { headers: { Accept: 'text/html,*/*;q=0.5' } });
     const plain = stripHtml(response.text);
-    const timeMatches = [...plain.matchAll(/\\b([01]\\d|2[0-3]):[0-5]\\d\\s*-\\s*([01]\\d|2[0-3]):[0-5]\\d\\b/g)]
+    const timeMatches = [...plain.matchAll(/\b([01]\d|2[0-3]):[0-5]\d\s*-\s*([01]\d|2[0-3]):[0-5]\d\b/g)]
       .slice(0, 8)
       .map((m) => m[0]);
-    const dateMatches = [...plain.matchAll(/\\b\\d{1,2}\\s+(?:januari|februari|maart|april|mei|juni|juli|augustus|september|oktober|november|december)\\s+2026\\b/gi)]
+    const dateMatches = [...plain.matchAll(/\b\d{1,2}\s+(?:januari|februari|maart|april|mei|juni|juli|augustus|september|oktober|november|december)\s+2026\b/gi)]
       .slice(0, 8)
       .map((m) => m[0]);
     const channelMatches = [...new Set(
-      [...plain.matchAll(/\\b(NPO\\s*[123]|RTL\\s*[4578Z]|SBS\\s*6|NET\\s*5|Veronica(?:\\s*\\/\\s*Disney XD)?|SBS\\s*9)\\b/gi)]
+      [...plain.matchAll(/\b(NPO\s*[123]|RTL\s*[4578Z]|SBS\s*6|NET\s*5|Veronica(?:\s*\/\s*Disney XD)?|SBS\s*9)\b/gi)]
         .map((m) => m[1]),
     )].slice(0, 8);
-    const ogTitle = (response.text.match(/<meta\\s+property=["']og:title["']\\s+content=["']([^"']+)["']/i) || [])[1] || null;
-    const h1Block = (response.text.match(/<h1\\b[^>]*>[\\s\\S]*?<\\/h1>/i) || [])[0] || '';
+    const ogTitle = (response.text.match(/<meta\s+property=["']og:title["']\s+content=["']([^"']+)["']/i) || [])[1] || null;
+    const h1Block = (response.text.match(/<h1\b[^>]*>[\s\S]*?<\/h1>/i) || [])[0] || '';
     results.push({
       sourceIndex: item.index,
       sourceTitle: item.title,
