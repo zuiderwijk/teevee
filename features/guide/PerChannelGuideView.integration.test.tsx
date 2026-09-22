@@ -297,7 +297,7 @@ describe('Per-zender Kijktip production presentation', () => {
       backgroundColor: '#E4ECEE',
     });
     expect(flattenedStyle(timeStack).width).toBeUndefined();
-    expect(16 + flattenedStyle(timeStack).paddingHorizontal).toBe(24);
+    expect(16 + Number(flattenedStyle(timeStack).paddingHorizontal)).toBe(24);
     expect(flattenedStyle(content)).toMatchObject({
       alignItems: 'center',
     });
@@ -393,7 +393,7 @@ describe('Per-zender Kijktip production presentation', () => {
       backgroundColor: '#E4ECEE',
     });
     expect(flattenedStyle(timeStack).width).toBeUndefined();
-    expect(16 + flattenedStyle(timeStack).paddingHorizontal).toBe(24);
+    expect(16 + Number(flattenedStyle(timeStack).paddingHorizontal)).toBe(24);
     expect(flattenedStyle(content)).toMatchObject({
       alignItems: 'center',
     });
