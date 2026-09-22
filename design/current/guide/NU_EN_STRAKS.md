@@ -5,7 +5,7 @@ Accepted: 2026-09-13
 Production refinement accepted: 2026-09-18
 Owner refinement accepted: 2026-09-21
 Kijktip refinement + production calibration accepted: 2026-09-22
-Kijktip label direction accepted: 2026-09-22 — final label-surface calibration pending
+Kijktip label direction + final production calibration accepted: 2026-09-22
 Production specification: `docs/NU_EN_STRAKS_VISUAL_CONVERGENCE.md`
 
 ## Canonical asset
@@ -53,85 +53,118 @@ Physical iPhone evidence on the production-convergence candidates justified reop
 
 Exact production metrics and acceptance criteria are frozen in `docs/NU_EN_STRAKS_VISUAL_CONVERGENCE.md`.
 
-## Owner-accepted Kijktip label refinement — 2026-09-22
+## Owner-accepted Kijktip label refinement + final production calibration — 2026-09-22
 
-This refinement supersedes the earlier **text-only** Kijktip presentation while preserving the already accepted role-responsive placement, geometry and progressive-disclosure semantics.
+This refinement supersedes the earlier **text-only** Kijktip presentation while preserving the accepted role-responsive placement, geometry and progressive-disclosure semantics.
 
-### Shared editorial colour direction
+### Shared final semantic colours
 
-Kijktip now uses the accepted Variant C / Petrol Ink editorial family:
+Production-frozen:
 
-- conceptual semantic foreground: **`editorialAccent`**;
-- light: **`#315A63`**;
-- dark: **`#A9C9CF`**;
-- label surface: subtle theme-relative separation from the Guide canvas;
-- intended surface semantic role: conceptually **`editorialAccentSurface`**;
-- exact surface light/dark values, padding, radius and final token name remain **production-calibration pending**.
+- **`editorialAccent`**
+  - light: **#315A63**
+  - dark: **#A9C9CF**
+- **`editorialAccentSurface`**
+  - light: **#E4ECEE**
+  - dark: **#1C2527**
 
-The label is editorial metadata, not an interaction or advertising badge.
+Kijktip text uses `editorialAccent`; the compact label uses `editorialAccentSurface`.
+
+Contrast:
+- Kijktip text on label surface: **6.32:1 light / 8.89:1 dark**;
+- surface vs Guide canvas: about **1.12:1 light / 1.22:1 dark**.
+
+The label is editorial metadata, not interaction or advertising. No border, shadow, underline, icon or independent pressed state. During programme press the label retains its normal editorial colours while the parent programme uses its existing temporary `surface` fill.
+
+### Shared Kijktip-only label box
+
+Text:
+- literal **`Kijktip`**;
+- **12/16 Instrument Sans Medium**;
+- letterSpacing 0;
+- substantive/uncapped Dynamic Type.
+
+Box:
+- horizontal padding: **6 pt** each side;
+- vertical padding: **0 pt**;
+- radius: **4 pt**;
+- outer height: **16 × S**, where `S = max(1, effectiveFontScale)`;
+- outer width: `intrinsicKijktipTextWidth + 12 pt`;
+- no minimum width beyond intrinsic text + padding;
+- no border/shadow.
+
+Because vertical padding is 0, the label occupies exactly the already accepted 16×S Kijktip line box and adds **0 pt** to reference/following height.
 
 ### Reference programme
 
-- only the literal **`Kijktip`** is inside the compact label;
-- the label remains above the dominant reference title;
-- the accepted **3-pt** label→title relationship remains the structural starting point;
+- Kijktip-only label remains above the dominant title;
+- label→title gap stays **3 pt fixed**, non-scaling;
 - reference/title hierarchy and deterministic reference height remain frozen;
-- no Kijktip-specific reference-height growth;
-- no icon, underline or independent action.
+- no Kijktip-specific reference-height growth.
 
-The previous content-safe formula based on the bare 16-pt Kijktip text line is **superseded for final implementation** because the new label has an outer surface/padding box. Final production calibration must replace that text-only height term with the calibrated label outer height while preserving the existing reference block height.
+Final content-safe title formula therefore remains:
+
+`maxReferenceKijktipTitleLines = clamp(1, 2, floor((H - (16 × S) - 3) / (22 × S)))`
+
+where `H = nowNextReferenceBlockHeight(S)`.
+
+Representative results remain:
+- S1.00 / H64 → max 2 title lines;
+- S1.35 / H64 → max 1;
+- S1.50 / H66 → max 1;
+- S2.00 / H88 → max 1.
+
+At S1:
+- one-line title: label Y23…39, title Y42…64;
+- two-line title: label Y1…17, title Y20…64.
 
 ### Following programme
 
-- only the literal **`Kijktip`** is inside the compact label;
-- the label remains inline directly after the visible programme title;
-- the accepted **8-pt** title→label relationship remains the structural starting point;
-- long titles still ellipsize earlier so the Kijktip label remains visible;
-- no global/right-aligned Kijktip column;
+- Kijktip-only label remains inline after the visible programme title;
+- title→label gap stays **8 pt fixed**, non-scaling;
+- no right-aligned/global label column;
 - no Kijktip-only second line;
 - no following-target height change.
 
-The existing **48-pt minimum final-line title readability floor remains accepted**. The earlier width reservation based on bare Kijktip text width is superseded structurally by:
+Final width reservation:
 
-`protectedReserve = calibratedKijktipLabelOuterWidth + 8 pt`
+`labelOuterWidth = intrinsicKijktipTextWidth + 12`
 
-The exact label outer width is pending final physical calibration.
+`protectedReserve = labelOuterWidth + 8`
 
-### Progressive disclosure
+The **48-pt minimum final-line title readability floor remains frozen**.
 
-The same broadcast intentionally changes only label placement by role:
+Behaviour:
+1. short titles use intrinsic width and label starts 8 pt after the visible title;
+2. long titles tail-ellipsize inside the protected title budget;
+3. if final title budget falls below 48 pt, use a deliberate single `…`;
+4. label itself remains fully visible.
 
-- following: **`Titel  [Kijktip label]`**;
-- reference: **`[Kijktip label]`** above **`Titel`**.
+For the existing >1.35 max-two-line layout, the reserve applies only to the final visible title line. The first line may use the full title lane.
 
-Accessibility continues to announce Kijktip exactly once through the single programme action.
+For the existing >2.0 / <180 extreme fallback, time remains stacked first and the Kijktip label stays inline with the title below it. The label adds no height term.
 
-### Multiple Kijktips and frozen geometry
+### Accessibility, multiples and progressive disclosure
 
-One, two or three following Kijktips — including a simultaneous reference Kijktip — repeat the same calm label treatment independently.
+- one programme focus target only;
+- semantic order remains **channel → full title → Kijktip → start/end → current state when applicable**;
+- visible label is not a separate VoiceOver/TalkBack node;
+- one/two/three following Kijktips repeat independently;
+- reference + following labels may coexist;
+- the same programme intentionally moves from `Titel  [Kijktip]` while following to `[Kijktip]` above `Titel` when reference;
+- no grouping, numbering, colour coding or shared editorial rail.
 
-Remain frozen:
+### Frozen geometry
+
+Remain unchanged:
 - 44-pt iOS / 48-dp Android following targets;
 - zero interaction gap;
 - standard progressive target-slack offsets;
 - Larger Text inline-two-line composition;
 - >2.0/<180 stacked fallback;
 - reference/following Pressable ownership;
-- channel-row height and vertical channel-position preservation.
-
-### Production calibration still required
-
-Before runtime styling, one final Accepted Design Refinement must freeze:
-- exact `editorialAccentSurface` light/dark values;
-- label horizontal/vertical padding;
-- radius/squareness;
-- exact label outer height and width;
-- reference content-safe title-line formula using calibrated label height;
-- following reserve using calibrated label width;
-- pressed-surface behaviour;
-- Larger Text physical fit in reference/following/extreme fallback.
-
-Until that calibration is owner-approved and merged, Development must not infer label metrics from exploratory screenshots or implement the superseded text-only visual treatment as the final design.
+- reference/channel-row heights;
+- vertical channel-position preservation.
 
 ## Accepted production density/accessibility refinement
 The former compact following-row debt is resolved by the owner-approved production specification:
