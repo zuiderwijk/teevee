@@ -392,7 +392,7 @@ describe('Per-zender Kijktip production presentation', () => {
 
     expect(
       container.querySelectorAll(
-        '[data-testid^="per-channel-kijktip-"]:not([data-testid^="per-channel-kijktip-time-stack-"])',
+        'span[data-testid^="per-channel-kijktip-"]:not([data-testid^="per-channel-kijktip-time-"])',
       ),
     ).toHaveLength(3);
     expect(

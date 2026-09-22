@@ -111,17 +111,34 @@ vi.mock('react-native', async () => {
     children,
     testID,
     accessibilityLabel,
+    accessible,
+    accessibilityElementsHidden,
+    importantForAccessibility,
     style,
-  }: HostProps) =>
-    createElement(
+    onLayout,
+  }: HostProps) => {
+    React.useEffect(() => {
+      if (onLayout && testID?.includes('kijktip')) {
+        onLayout({ nativeEvent: { layout: { width: 44 } } });
+      }
+    }, [onLayout, testID]);
+
+    return createElement(
       'div',
       {
         'data-testid': testID,
         'aria-label': accessibilityLabel,
+        'data-accessible': accessible === undefined ? undefined : String(accessible),
+        'data-accessibility-elements-hidden':
+          accessibilityElementsHidden === undefined
+            ? undefined
+            : String(accessibilityElementsHidden),
+        'data-important-for-accessibility': importantForAccessibility,
         'data-style': JSON.stringify(style),
       },
       typeof children === 'function' ? children({ pressed: false }) : children,
     );
+  };
 
   const Text = ({
     children,
