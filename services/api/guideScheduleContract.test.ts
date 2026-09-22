@@ -155,6 +155,27 @@ describe('parseGuideScheduleApiResponse', () => {
     });
   });
 
+  it('drops structurally malformed serialized editorial signals at the trust boundary', () => {
+    const parsed = parseGuideScheduleApiResponse({
+      status: 'ok',
+      schedule,
+      editorialSignals: [
+        {
+          programmeId: 'programme-1',
+          type: 'kijktip',
+          source: 'tvgids',
+          sourceItemId: 'tip-1',
+          matchedBy: 'nearest-programme',
+        },
+      ],
+    });
+
+    expect(parsed).toMatchObject({
+      status: 'ok',
+      editorialSignals: [],
+    });
+  });
+
   it('preserves explicit unavailable responses', () => {
     expect(parseGuideScheduleApiResponse({ status: 'unavailable' })).toEqual({
       status: 'unavailable',
