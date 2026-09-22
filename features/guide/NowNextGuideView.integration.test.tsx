@@ -614,7 +614,7 @@ describe('Nu & Straks production interaction boundary', () => {
     expect(titleStyle.flexGrow).toBe(0);
     expect(titleStyle.flex).toBeUndefined();
     expect(titleStyle.flexShrink).toBe(1);
-    expect(titleStyle.maxWidth).toBe(158);
+    expect(titleStyle.maxWidth).toBe(154);
     expect(labelStyle.marginLeft).toBe(8);
   });
 
@@ -648,7 +648,7 @@ describe('Nu & Straks production interaction boundary', () => {
     expect(flattenedStyle(title)).toMatchObject({
       flexGrow: 0,
       flexShrink: 1,
-      maxWidth: 158,
+      maxWidth: 154,
     });
     expect(title.getAttribute('data-number-of-lines')).toBe('1');
     expect(title.getAttribute('data-ellipsize-mode')).toBe('tail');
@@ -656,7 +656,7 @@ describe('Nu & Straks production interaction boundary', () => {
   });
 
   it('keeps the title visible at the exact 48-pt protected boundary', async () => {
-    viewport.width = 280;
+    viewport.width = 284;
     runtime.schedule = withProgrammeTitle('one-follow-1', 'Grens');
     runtime.fixture = runtime.schedule;
     runtime.signals = [kijktipSignal('one-follow-1')];
@@ -688,7 +688,7 @@ describe('Nu & Straks production interaction boundary', () => {
   });
 
   it('renders one deliberate ellipsis below the 48-pt title budget and keeps the 8-pt Kijktip gap', async () => {
-    viewport.width = 279;
+    viewport.width = 283;
     runtime.schedule = withProgrammeTitle('one-follow-1', 'Te smal');
     runtime.fixture = runtime.schedule;
     runtime.signals = [kijktipSignal('one-follow-1')];
@@ -884,7 +884,7 @@ describe('Nu & Straks production interaction boundary', () => {
     expect(flattenedStyle(finalLine)).toMatchObject({
       flexGrow: 0,
       flexShrink: 1,
-      maxWidth: 158,
+      maxWidth: 154,
     });
     expect(
       getByTestId(
