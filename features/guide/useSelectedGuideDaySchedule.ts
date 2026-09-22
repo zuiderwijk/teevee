@@ -1,17 +1,21 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { AppState } from 'react-native';
 
+import type { ProgrammeEditorialSignal } from '@/data/domain/editorial';
 import type { GuideSchedule } from '@/data/domain/epg';
 import { guideTelevisionDayStart } from '@/data/domain/guideTime';
 import {
   guideScheduleContentEqual,
   runtimeGuideScheduleFor,
+  runtimeProgrammeEditorialSignalsFor,
+  subscribeRuntimeProgrammeEditorialSignals,
 } from '@/data/runtime/guideScheduleRuntime';
 import type { GuideScheduleApi } from '@/services/api/guideScheduleContract';
 import { HostedGuideScheduleClient } from '@/services/api/hostedGuideScheduleClient';
 import {
-  loadTelevisionDayGuideSchedule,
-  loadTwoTelevisionDayGuideSchedule,
+  loadTelevisionDayGuideScheduleBundle,
+  loadTwoTelevisionDayGuideScheduleBundle,
+  type GuideScheduleBundle,
 } from '@/services/api/guideScheduleLoader';
 
 const hostedGuideScheduleApi = new HostedGuideScheduleClient();
@@ -19,6 +23,7 @@ const MAX_VISITED_DAY_WINDOWS = 10;
 
 type SelectedGuideDayScheduleState = {
   schedule: GuideSchedule | null;
+  editorialSignals: ProgrammeEditorialSignal[];
   loading: boolean;
   unavailable: boolean;
 };
@@ -27,20 +32,64 @@ function cacheKey(dayStartMs: number, includeFollowingDay: boolean): string {
   return `${dayStartMs}:${includeFollowingDay ? 2 : 1}`;
 }
 
-function rememberSchedule(
-  cache: Map<string, GuideSchedule>,
+function editorialSignalsEqual(
+  left: readonly ProgrammeEditorialSignal[],
+  right: readonly ProgrammeEditorialSignal[],
+): boolean {
+  return (
+    left.length === right.length &&
+    left.every((signal, index) => {
+      const candidate = right[index];
+      return (
+        candidate !== undefined &&
+        signal.programmeId === candidate.programmeId &&
+        signal.type === candidate.type &&
+        signal.source === candidate.source &&
+        signal.sourceItemId === candidate.sourceItemId &&
+        signal.sourceUrl === candidate.sourceUrl &&
+        signal.publishedAt === candidate.publishedAt &&
+        signal.matchedBy === candidate.matchedBy
+      );
+    })
+  );
+}
+
+function rememberBundle(
+  cache: Map<string, GuideScheduleBundle>,
   key: string,
-  schedule: GuideSchedule,
+  bundle: GuideScheduleBundle,
 ): boolean {
   const existing = cache.get(key);
-  if (existing && guideScheduleContentEqual(existing, schedule)) return false;
+  const scheduleChanged =
+    !existing || !guideScheduleContentEqual(existing.schedule, bundle.schedule);
+  const editorialChanged =
+    !existing ||
+    !editorialSignalsEqual(existing.editorialSignals, bundle.editorialSignals);
+
+  if (!scheduleChanged && !editorialChanged) return false;
 
   if (!existing && cache.size >= MAX_VISITED_DAY_WINDOWS) {
     const oldestKey = cache.keys().next().value as string | undefined;
     if (oldestKey !== undefined) cache.delete(oldestKey);
   }
-  cache.set(key, schedule);
+
+  cache.set(key, {
+    // Preserve the accepted Guide schedule object when only freshness metadata or
+    // editorial enrichment changed. Signals remain independently reactive.
+    schedule: scheduleChanged ? bundle.schedule : existing!.schedule,
+    editorialSignals: bundle.editorialSignals,
+  });
   return true;
+}
+
+function runtimeBundleFor(anchorMs: number): GuideScheduleBundle | null {
+  const schedule = runtimeGuideScheduleFor(anchorMs);
+  return schedule
+    ? {
+        schedule,
+        editorialSignals: runtimeProgrammeEditorialSignalsFor(anchorMs),
+      }
+    : null;
 }
 
 /**
@@ -65,7 +114,7 @@ export function useSelectedGuideDaySchedule(
   includeFollowingDay = false,
   currentTelevisionDayStartMs = guideTelevisionDayStart(Date.now()),
 ): SelectedGuideDayScheduleState {
-  const cacheRef = useRef(new Map<string, GuideSchedule>());
+  const cacheRef = useRef(new Map<string, GuideScheduleBundle>());
   const requestVersionRef = useRef(0);
   const [cacheVersion, setCacheVersion] = useState(0);
   const [loadingKey, setLoadingKey] = useState<string | null>(null);
@@ -79,11 +128,11 @@ export function useSelectedGuideDaySchedule(
       requestVersionRef.current = requestVersion;
       const key = cacheKey(selectedDayStartMs, includeFollowingDay);
 
-      const runtimeSchedule = runtimeGuideScheduleFor(selectedDayStartMs);
-      if (runtimeSchedule && selectedDayIsCurrent) {
-        // The shared current-day runtime already contains D + D+1. It is valid for both
-        // the one-day Per-zender view and the bounded two-day Totaal view.
-        if (rememberSchedule(cacheRef.current, key, runtimeSchedule)) {
+      const runtimeBundle = runtimeBundleFor(selectedDayStartMs);
+      if (runtimeBundle && selectedDayIsCurrent) {
+        // The shared current-day runtime already contains D + D+1, including optional
+        // editorial enrichment. It owns current-day network loading for both Guide views.
+        if (rememberBundle(cacheRef.current, key, runtimeBundle)) {
           setCacheVersion((current) => current + 1);
         }
         setLoadingKey(null);
@@ -108,21 +157,21 @@ export function useSelectedGuideDaySchedule(
       setLoadingKey(key);
       setUnavailableKey(null);
       const request = includeFollowingDay
-        ? loadTwoTelevisionDayGuideSchedule(api, selectedDayStartMs)
-        : loadTelevisionDayGuideSchedule(api, selectedDayStartMs);
+        ? loadTwoTelevisionDayGuideScheduleBundle(api, selectedDayStartMs)
+        : loadTelevisionDayGuideScheduleBundle(api, selectedDayStartMs);
 
       void request
-        .then((schedule) => {
+        .then((bundle) => {
           if (requestVersionRef.current !== requestVersion) return;
           setLoadingKey(null);
-          if (!schedule || schedule.channels.length === 0) {
+          if (!bundle || bundle.schedule.channels.length === 0) {
             // ADR 0007 makes a covered canonical window with zero programmes authoritative.
             // A zero-channel result is handled separately as structurally unusable for Guide UI.
             setUnavailableKey(key);
             return;
           }
 
-          if (rememberSchedule(cacheRef.current, key, schedule)) {
+          if (rememberBundle(cacheRef.current, key, bundle)) {
             setCacheVersion((current) => current + 1);
           }
         })
@@ -145,16 +194,25 @@ export function useSelectedGuideDaySchedule(
     };
   }, [refresh]);
 
-  useEffect(() => {
+  const rememberCurrentRuntimeBundle = useCallback(() => {
     if (!selectedDayIsCurrent) return;
-    const runtimeSchedule = runtimeGuideScheduleFor(selectedDayStartMs);
-    if (!runtimeSchedule) return;
+    const runtimeBundle = runtimeBundleFor(selectedDayStartMs);
+    if (!runtimeBundle) return;
     const key = cacheKey(selectedDayStartMs, includeFollowingDay);
-    if (rememberSchedule(cacheRef.current, key, runtimeSchedule)) {
+    if (rememberBundle(cacheRef.current, key, runtimeBundle)) {
       setCacheVersion((current) => current + 1);
     }
     setUnavailableKey(null);
-  }, [guideDataVersion, includeFollowingDay, selectedDayIsCurrent, selectedDayStartMs]);
+  }, [includeFollowingDay, selectedDayIsCurrent, selectedDayStartMs]);
+
+  useEffect(() => {
+    rememberCurrentRuntimeBundle();
+  }, [guideDataVersion, rememberCurrentRuntimeBundle]);
+
+  useEffect(() => {
+    if (!selectedDayIsCurrent) return;
+    return subscribeRuntimeProgrammeEditorialSignals(rememberCurrentRuntimeBundle);
+  }, [rememberCurrentRuntimeBundle, selectedDayIsCurrent]);
 
   useEffect(() => {
     // Current-day resume is already owned by the shared fixture-first runtime. Once the
@@ -172,13 +230,14 @@ export function useSelectedGuideDaySchedule(
   // cacheVersion intentionally participates in this render even though the Map itself is
   // held in a ref. It keeps successful content changes reactive without remounting Guide UI.
   void cacheVersion;
-  const runtimeSchedule = selectedDayIsCurrent
-    ? runtimeGuideScheduleFor(selectedDayStartMs)
+  const runtimeBundle = selectedDayIsCurrent
+    ? runtimeBundleFor(selectedDayStartMs)
     : null;
-  const schedule = runtimeSchedule ?? cacheRef.current.get(selectedKey) ?? null;
+  const bundle = runtimeBundle ?? cacheRef.current.get(selectedKey) ?? null;
 
   return {
-    schedule,
+    schedule: bundle?.schedule ?? null,
+    editorialSignals: bundle?.editorialSignals ?? [],
     loading: loadingKey === selectedKey,
     unavailable: unavailableKey === selectedKey,
   };
