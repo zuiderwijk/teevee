@@ -301,7 +301,7 @@ export function ProgrammeRow({
   );
 }
 
-const SchedulePage = memo(function SchedulePage({
+export const SchedulePage = memo(function SchedulePage({
   channel,
   rows,
   width,
