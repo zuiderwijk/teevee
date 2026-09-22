@@ -11,7 +11,7 @@ const baseMigrationPath = resolve(
 );
 const lifecycleMigrationPath = resolve(
   repoRoot,
-  'supabase/migrations/20260923003000_preserve_started_editorial_signals.sql',
+  'supabase/migrations/20260922235737_preserve_started_editorial_signals.sql',
 );
 const sql = readFileSync(baseMigrationPath, 'utf8');
 const lifecycleSql = readFileSync(lifecycleMigrationPath, 'utf8');
