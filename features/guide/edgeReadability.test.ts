@@ -6,7 +6,9 @@ import {
   edgeBoundaryBucket,
   edgeBoundaryXs,
   edgeReadableProgramme,
+  edgeReadabilityPresentation,
 } from './edgeReadability';
+import { totaalMicroProgrammeThreshold } from './totaalMicroProgrammes';
 
 const windowStart = Date.parse('2026-09-13T08:00:00Z');
 const programme: Programme = {
@@ -80,5 +82,56 @@ describe('edge boundary switching', () => {
   it('clamps invalid or negative viewport positions to the left edge', () => {
     expect(edgeBoundaryBucket([0, 100], -20)).toBe(-1);
     expect(edgeBoundaryBucket([0, 100], Number.NaN)).toBe(-1);
+  });
+});
+
+
+describe('edge readability presentation', () => {
+  const readabilityFloor = totaalMicroProgrammeThreshold(1);
+
+  it('keeps the mask active while hiding a meaningless tiny title fragment', () => {
+    expect(readabilityFloor).toBe(48);
+    expect(
+      edgeReadabilityPresentation(0, 180, 179, 120, readabilityFloor),
+    ).toEqual({
+      width: 1,
+      active: true,
+      maskVisible: true,
+      titleVisible: false,
+      endVisible: true,
+    });
+  });
+
+  it('reveals the re-anchored title exactly at the canonical 48 × S floor', () => {
+    expect(
+      edgeReadabilityPresentation(0, 180, 132.001, 120, readabilityFloor)
+        .titleVisible,
+    ).toBe(false);
+    expect(
+      edgeReadabilityPresentation(0, 180, 132, 120, readabilityFloor),
+    ).toMatchObject({
+      width: 48,
+      active: true,
+      maskVisible: true,
+      titleVisible: true,
+      endVisible: true,
+    });
+  });
+
+  it('stays stable across hard horizontal reversal around the text floor', () => {
+    const forward = edgeReadabilityPresentation(0, 180, 120, 120, readabilityFloor);
+    const tiny = edgeReadabilityPresentation(0, 180, 179, 120, readabilityFloor);
+    const reversed = edgeReadabilityPresentation(0, 180, 120, 120, readabilityFloor);
+
+    expect([forward.titleVisible, tiny.titleVisible, reversed.titleVisible]).toEqual([
+      true,
+      false,
+      true,
+    ]);
+    expect([forward.maskVisible, tiny.maskVisible, reversed.maskVisible]).toEqual([
+      true,
+      true,
+      true,
+    ]);
   });
 });
