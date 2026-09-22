@@ -75,7 +75,7 @@ describe('deterministic TVgids tip matching', () => {
     });
   });
 
-  it.each([0, 1, 2, 3, 4, 5])(
+  it.each([-5, -4, -3, -2, -1, 0, 1, 2, 3, 4, 5])(
     'Tier B matches exact normalized title at a %i minute start drift',
     (minutes) => {
       const candidate = programme(
