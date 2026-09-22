@@ -16,6 +16,7 @@ import {
   type GuideScheduleApi,
 } from '@/services/api/guideScheduleContract';
 
+import { kijktipProgrammeIds } from './kijktipPresentation';
 import { useSelectedGuideDaySchedule } from './useSelectedGuideDaySchedule';
 
 type AppStateValue = 'active' | 'background' | 'inactive';
@@ -98,6 +99,7 @@ type ProbeProps = {
 
 function Probe({ dayStartMs, version = 0, api, includeFollowingDay = false }: ProbeProps) {
   const state = useSelectedGuideDaySchedule(dayStartMs, version, api, includeFollowingDay);
+  const visibleKijktipIds = [...kijktipProgrammeIds(state.editorialSignals)].join(',');
   return (
     <div
       data-testid="probe"
@@ -108,6 +110,7 @@ function Probe({ dayStartMs, version = 0, api, includeFollowingDay = false }: Pr
       data-generated-at={state.schedule?.generatedAt ?? ''}
       data-signal-count={String(state.editorialSignals.length)}
       data-signal-ids={state.editorialSignals.map(({ sourceItemId }) => sourceItemId).join(',')}
+      data-kijktip-programme-ids={visibleKijktipIds}
       data-loading={String(state.loading)}
       data-unavailable={String(state.unavailable)}
     />
@@ -206,6 +209,7 @@ describe('useSelectedGuideDaySchedule', () => {
     expect(probe().id).toBe('selected');
     expect(probe().signalCount).toBe('1');
     expect(probe().signalIds).toBe('tip-selected');
+    expect(probe().kijktipProgrammeIds).toBe('selected');
   });
 
   it('keeps a covered-empty canonical selected day authoritative', async () => {
