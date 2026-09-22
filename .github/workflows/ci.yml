@@ -46,7 +46,6 @@ jobs:
             node scripts/ci/ci-scope.mjs "$PUSH_BASE_SHA" "$PUSH_HEAD_SHA" --diff-mode=push
           fi
 
-
   quality:
     needs: classify
     if: needs.classify.outputs.run_quality == 'true'
