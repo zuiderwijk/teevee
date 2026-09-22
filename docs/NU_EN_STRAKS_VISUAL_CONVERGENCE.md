@@ -895,7 +895,7 @@ Values frozen by this owner-approved production refinement:
 10. Reference→following dedicated gap = **0 pt**; channel bottom padding = **12 pt**, preserving base row totals.
 11. Following standard targets: min44 iOS /48 Android; 0 interaction gap; time width52; gap8; time13/18 Regular; title15/20 Medium; visible content uses progressive slack offsets **#1 2/3 / #2 1/3 / #3 0**; above 1.35 content remains centred.
 12. Above fontScale1.35, following content retains the accepted inline time+title max-two-line composition, height `max(minTarget, ceil(40×fontScale+8))`.
-13. Stacked following fallback remains only for fontScale>2.0 **and** available programme width<180, using §11.3.
+13. Stacked following fallback remains only for fontScale>2.0 **and** available programme width<180, using §11.4.
 14. Base channel row remains **216 iOS /228 Android** at normal font scale.
 15. Three following slot geometries always remain reserved even when programme data is missing.
 16. Programme press = transient semantic surface fill, no permanent card/opacity-first treatment.
