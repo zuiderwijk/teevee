@@ -193,6 +193,8 @@ function FollowingKijktipTitle({
       <Text
         testID={`now-next-following-title-${programmeId}`}
         accessible={false}
+        accessibilityElementsHidden
+        importantForAccessibility="no"
         numberOfLines={1}
         ellipsizeMode="tail"
         style={[
@@ -211,6 +213,8 @@ function FollowingKijktipTitle({
       <Text
         testID={`now-next-following-kijktip-${programmeId}`}
         accessible={false}
+        accessibilityElementsHidden
+        importantForAccessibility="no"
         numberOfLines={1}
         onLayout={rememberLabelWidth}
         style={[styles.followingKijktipLabel, { color: labelColor }]}
@@ -259,6 +263,8 @@ function FollowingKijktipTitle({
       <Text
         testID={`now-next-following-title-first-line-${programmeId}`}
         accessible={false}
+        accessibilityElementsHidden
+        importantForAccessibility="no"
         numberOfLines={1}
         style={[styles.followingTitle, { color: titleColor }]}
       >
@@ -366,6 +372,8 @@ const ChannelRow = memo(function ChannelRow({
                 <Text
                   testID={`now-next-reference-kijktip-${referenceProgramme.id}`}
                   accessible={false}
+                  accessibilityElementsHidden
+                  importantForAccessibility="no"
                   numberOfLines={1}
                   style={[
                     styles.referenceKijktipLabel,
