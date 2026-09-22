@@ -16,7 +16,7 @@ Accepted: 2026-09-13; day-selector and Primetime behaviour amended 2026-09-15; a
   - `/Teevee/Per Zender Kijktip refinement - 12pt Medium textSecondary.png`
   - Library file id: `file_00000000dd7c8210a35769aada30424b`
   - stable Library record: `libfile_d161c6bed2a481919a917acdeaeeec41`
-  - **superseded for final Kijktip styling** by the owner-approved shared time+Kijktip editorial label direction below; no final calibrated label asset is canonical yet.
+  - **superseded for final Kijktip styling** by the owner-approved shared time+Kijktip editorial label calibration below; the written calibrated metrics are canonical and no replacement image asset is required.
 
 The 2026-09-17 owner-approved refinement in this document supersedes the older visual references only for the explicitly listed refined details below. The 2026-09-18 owner-approved refinements additionally remove duplicate selected-channel text, expand the current-programme treatment and compact the temporal context after physical iPhone validation. The 2026-09-22 owner-approved Kijktip label refinement supersedes the earlier text-only disclosure treatment only for Kijktip presentation: Per zender uses one compact editorial label in the existing time-column zone containing both start time and `Kijktip`. Final surface, padding, radius and outer-box rules are production-frozen below. It does not reopen any row, title-column, chrome, rail, gesture or current-programme metric. All other accepted composition remains unchanged.
 
