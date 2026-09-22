@@ -77,19 +77,27 @@ async function inspectRss() {
   const channelBlock = (response.text.match(/<channel\b[^>]*>([\s\S]*?)<\/channel>/i) || [])[1] || '';
   const itemBlocks = [...response.text.matchAll(/<item\b[^>]*>([\s\S]*?)<\/item>/gi)].map((m) => m[1]);
 
-  const items = itemBlocks.slice(0, 50).map((xml, index) => {
+  const items = itemBlocks.slice(0, 100).map((xml, index) => {
     const title = textOf(xml, 'title');
     const link = textOf(xml, 'link');
     const guid = textOf(xml, 'guid');
     const pubDate = textOf(xml, 'pubDate');
     const description = textOf(xml, 'description');
     const contentEncoded = textOf(xml, 'content:encoded');
+    const start = textOf(xml, 'start');
+    const end = textOf(xml, 'end');
+    const channelName = textOf(xml, 'channel_name');
+    const category = textOf(xml, 'category');
     return {
       index,
       title,
       link,
       guid,
       pubDate,
+      start,
+      end,
+      channelName,
+      category,
       descriptionLength: description ? description.length : 0,
       contentEncodedLength: contentEncoded ? contentEncoded.length : 0,
       elementNames: [...new Set(elementNames(xml))],
@@ -109,7 +117,7 @@ async function inspectRss() {
     channelElements: [...new Set(elementNames(channelBlock))],
     itemCount: itemBlocks.length,
     sampleItemElements: [...new Set(items.flatMap((item) => item.elementNames))],
-    fields: ['title', 'link', 'guid', 'pubDate', 'description', 'content:encoded'],
+    fields: ['title', 'link', 'guid', 'pubDate', 'start', 'end', 'channel_name', 'category', 'description', 'content:encoded'],
   }));
   console.log('SPIKE_RSS_ITEMS ' + JSON.stringify(items));
   return items;
