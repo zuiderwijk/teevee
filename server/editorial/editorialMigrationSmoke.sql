@@ -80,9 +80,9 @@ values (
   'De slimste mens'
 );
 
-\ir ../../supabase/migrations/20260923003000_preserve_started_editorial_signals.sql
+\ir ../../supabase/migrations/20260922235737_preserve_started_editorial_signals.sql
 -- Recovery must be idempotent when the forward migration body is evaluated again.
-\ir ../../supabase/migrations/20260923003000_preserve_started_editorial_signals.sql
+\ir ../../supabase/migrations/20260922235737_preserve_started_editorial_signals.sql
 
 do $smoke$
 declare
