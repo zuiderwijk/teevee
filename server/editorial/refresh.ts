@@ -26,6 +26,7 @@ export type EditorialRefreshDiagnostics = {
 };
 
 export type EditorialRefreshResult = {
+  status: 'stored' | 'ignored-stale';
   source: 'tvgids';
   refreshedAt: string;
   storedSignalCount: number;
@@ -216,6 +217,7 @@ export async function refreshTvgidsEditorialSignals(
   });
 
   return {
+    status: write.status,
     source: 'tvgids',
     refreshedAt,
     storedSignalCount: write.storedSignalCount,
