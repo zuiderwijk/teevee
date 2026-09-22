@@ -2,6 +2,7 @@ import { TEEVEE_FONT_FAMILIES } from '@/theme/typography';
 
 import {
   GUIDE_ACCESSIBILITY_FONT_SCALE_THRESHOLD,
+  GUIDE_EDITORIAL_TYPOGRAPHY,
   GUIDE_VISUAL_METRICS,
   guideChromeExpandedHeight,
 } from './guideVisualMetrics';
@@ -50,6 +51,9 @@ export const NOW_NEXT_VISUAL_METRICS = {
   followingStackedPaddingY: 6,
   followingExtremeWidthThreshold: 180,
   followingExtremeFontScaleThreshold: 2,
+  referenceKijktipGap: 3,
+  followingKijktipGap: 8,
+  followingKijktipMinimumTitleBudget: 48,
   baseRowHeightIos: 216,
   baseRowHeightAndroid: 228,
   bottomClearance: 16,
@@ -148,6 +152,71 @@ export function nowNextReferenceBlockHeight(fontScale: number) {
     NOW_NEXT_TYPOGRAPHY.referenceTitle.lineHeight * scale * 2,
   );
   return Math.max(NOW_NEXT_VISUAL_METRICS.referenceProgrammeMinHeight, contentSafe);
+}
+
+export function nowNextReferenceKijktipTitleLineCount(fontScale: number) {
+  const scale = normalizedFontScale(fontScale);
+  const height = nowNextReferenceBlockHeight(scale);
+  const availableTitleLines = Math.floor(
+    (
+      height -
+      GUIDE_EDITORIAL_TYPOGRAPHY.kijktip.lineHeight * scale -
+      NOW_NEXT_VISUAL_METRICS.referenceKijktipGap
+    ) /
+      (NOW_NEXT_TYPOGRAPHY.referenceTitle.lineHeight * scale),
+  );
+  return Math.min(2, Math.max(1, availableTitleLines));
+}
+
+export function nowNextReferenceKijktipStackGeometry(
+  fontScale: number,
+  titleLineCount: number,
+) {
+  const scale = normalizedFontScale(fontScale);
+  const referenceHeight = nowNextReferenceBlockHeight(scale);
+  const safeTitleLines = Math.min(
+    nowNextReferenceKijktipTitleLineCount(scale),
+    Math.max(1, Math.trunc(titleLineCount)),
+  );
+  const labelLineHeight =
+    GUIDE_EDITORIAL_TYPOGRAPHY.kijktip.lineHeight * scale;
+  const titleLineHeight = NOW_NEXT_TYPOGRAPHY.referenceTitle.lineHeight * scale;
+  const stackHeight =
+    labelLineHeight +
+    NOW_NEXT_VISUAL_METRICS.referenceKijktipGap +
+    titleLineHeight * safeTitleLines;
+
+  return {
+    referenceHeight,
+    titleLineCount: safeTitleLines,
+    stackTop: referenceHeight - stackHeight,
+    labelLineHeight,
+    titleTop:
+      referenceHeight - titleLineHeight * safeTitleLines,
+    titleLineHeight,
+  } as const;
+}
+
+export function nowNextFollowingKijktipTitleBudget(
+  titleLaneWidth: number,
+  labelWidth: number,
+) {
+  const laneWidth = Math.max(0, normalizedProgrammeWidth(titleLaneWidth));
+  const safeLabelWidth = Math.max(0, normalizedProgrammeWidth(labelWidth));
+  const titleBudget = Math.max(
+    0,
+    laneWidth -
+      safeLabelWidth -
+      NOW_NEXT_VISUAL_METRICS.followingKijktipGap,
+  );
+
+  return {
+    titleBudget,
+    showEllipsisOnly:
+      titleBudget < NOW_NEXT_VISUAL_METRICS.followingKijktipMinimumTitleBudget,
+    labelReserve:
+      safeLabelWidth + NOW_NEXT_VISUAL_METRICS.followingKijktipGap,
+  } as const;
 }
 
 export function nowNextRailSlotPresentation(index: number) {
