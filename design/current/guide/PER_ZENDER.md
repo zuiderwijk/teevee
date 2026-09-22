@@ -1,7 +1,7 @@
 # Per zender — current accepted visual
 
 Status: **ACCEPTED**
-Accepted: 2026-09-13; day-selector and Primetime behaviour amended 2026-09-15; accepted visual refinement amended 2026-09-17; selected-channel-heading removal, current-programme spacing and compact temporal-context refinement accepted 2026-09-18; Kijktip editorial-disclosure refinement + production calibration accepted 2026-09-22
+Accepted: 2026-09-13; day-selector and Primetime behaviour amended 2026-09-15; accepted visual refinement amended 2026-09-17; selected-channel-heading removal, current-programme spacing and compact temporal-context refinement accepted 2026-09-18; Kijktip editorial-disclosure refinement + production calibration accepted 2026-09-22; Kijktip label direction accepted 2026-09-22 (final label-surface calibration pending)
 
 ## Canonical asset
 - Light + dark reference: `/Teevee/TV-gids app in licht en donker thema.png`
@@ -17,7 +17,7 @@ Accepted: 2026-09-13; day-selector and Primetime behaviour amended 2026-09-15; a
   - Library file id: `file_00000000dd7c8210a35769aada30424b`
   - stable Library record: `libfile_d161c6bed2a481919a917acdeaeeec41`
 
-The 2026-09-17 owner-approved refinement in this document supersedes the older visual references only for the explicitly listed refined details below. The 2026-09-18 owner-approved refinements additionally remove duplicate selected-channel text, expand the current-programme treatment and compact the temporal context after physical iPhone validation. The 2026-09-22 owner-approved Kijktip refinement adds only a quiet editorial-disclosure line inside the existing time column; it does not reopen any row, chrome, rail, gesture or current-programme metric. All other accepted composition remains unchanged.
+The 2026-09-17 owner-approved refinement in this document supersedes the older visual references only for the explicitly listed refined details below. The 2026-09-18 owner-approved refinements additionally remove duplicate selected-channel text, expand the current-programme treatment and compact the temporal context after physical iPhone validation. The 2026-09-22 owner-approved Kijktip label refinement supersedes the earlier text-only disclosure treatment only for Kijktip presentation: Per zender now uses one compact editorial label in the existing time-column zone containing both start time and `Kijktip`. It does not reopen any row, title-column, chrome, rail, gesture or current-programme metric. Exact label surface, padding and corner calibration remain pending one final Accepted Design Refinement. All other accepted composition remains unchanged.
 
 Detailed shared day-selector contract: `design/current/guide/GUIDE_DAY_SELECTOR.md`.
 Development-ready visual-convergence handoff: `docs/PER_ZENDER_VISUAL_CONVERGENCE.md`.
@@ -142,97 +142,100 @@ The physically validated refinement makes expanded and condensed temporal chrome
 - Programme times, titles and current description keep their existing substantive Dynamic Type behaviour; this cap applies only to compact functional chrome.
 - With the fixed 72-pt rail, centred 48×48 item, 52-pt context and centred 36-pt visible controls, the accepted 4/24 calibration yields approximately **24 pt visible logo→controls whitespace** and **32 pt controls→schedule whitespace**, intentionally grouping temporal navigation with the channel rail while giving programme content more breathing room.
 
-## Accepted Kijktip editorial-disclosure refinement — 2026-09-22
+## Owner-accepted Kijktip label refinement — 2026-09-22
 
-This is a targeted Per-zender refinement only. A programme may expose a boolean editorial state `isKijktip = true`; the exact feed/matching implementation is not a visual contract.
+This targeted refinement supersedes the earlier **text-only** Kijktip presentation from PR #122 while preserving its product semantics, programme ownership and frozen Per-zender geometry.
 
-Canonical visual:
-- `/Teevee/Per Zender Kijktip refinement - 12pt Medium textSecondary.png`
-- Library file id: `file_00000000dd7c8210a35769aada30424b`
+### Accepted visual direction
 
-### Placement and hierarchy
+For a programme with canonical `isKijktip = true`:
 
-For a Kijktip programme:
-- keep the programme title column and its width completely unchanged;
-- keep the existing programme start time in the time column;
-- add the literal label **`Kijktip`** as a quiet second line directly below the time;
-- time and programme title share the same first baseline;
-- the `Kijktip` line is left-aligned exactly to the time text;
-- vertical time→Kijktip gap: **2 pt**;
-- use the existing time-column width and programme-column X; do not steal horizontal space from the title;
-- no badge, pill, icon, accent colour, underline or additional current/Now label;
-- `Kijktip` has no independent interaction or hit target.
+- the **existing time-column zone** becomes one compact, editorial, more-square label;
+- the label contains **both the programme start time and the literal `Kijktip`**;
+- start time remains the first line; `Kijktip` remains the quiet second line;
+- the programme-title column remains exactly where it is and does not lose width;
+- the label has no independent interaction, focus target or selected state;
+- no icon, badge glyph, underline or extra current/Now signal is added;
+- standard/current row heights and all scrolling/paging mechanics remain unchanged.
 
-### Typography and colour
+The label is an editorial information container, not a button or promotional badge.
 
-- base typography: **12/16 pt**;
-- Instrument Sans **Medium**;
-- semantic **`textSecondary`**;
-- letterSpacing **0**;
-- monochrome in light/dark/system;
-- no special Kijktip colour token.
+### Accepted editorial colour family
 
-The 16-pt line-height is production-frozen. At scale 1.0, the 20-pt time line + fixed 2-pt gap + 16-pt Kijktip line form a 38-pt stack inside the 52-pt row.
+Variant C / Petrol Ink is the owner-approved editorial foreground direction:
 
-The label is intentionally quieter than both programme title and current-programme treatment. Do not use 13 pt, Semibold or a stronger text token without new owner-approved physical evidence.
+- conceptual semantic token: **`editorialAccent`**;
+- light: **`#315A63`**;
+- dark: **`#A9C9CF`**.
 
-### Standard 52-pt rows
+For Per zender, both time and `Kijktip` belong to the same accepted editorial label treatment. Exact internal foreground hierarchy, if any, is part of the final label calibration; Development must not invent a second colour locally.
 
-- normal non-Kijktip rows remain exactly unchanged and retain their existing vertically centred time/title composition;
-- a Kijktip row keeps the same **52-pt** base height;
-- at scale 1.0, time occupies Y **7…27**, Kijktip Y **29…45**, leaving 7 pt top/bottom breathing room;
-- time and programme-title **first baselines are identical**; use native baseline alignment rather than independently centring the title in a Kijktip row;
-- Kijktip is one line, never a wrap state;
-- do not change programme title typography, line count, separator geometry or pressed state merely because Kijktip is present.
+The label also receives a low-emphasis theme surface that separates it slightly from the Guide canvas. The semantic role is conceptually **`editorialAccentSurface`**, but the exact light/dark values and final token name are **not yet production-frozen**.
 
-### Current programme + Kijktip
+Surface direction:
+- light: subtly darker/more defined than the near-white Guide canvas;
+- dark: perceptually equivalent subtle separation from the dark canvas, normally requiring a slightly lighter surface rather than literal further darkening;
+- never a saturated petrol fill;
+- never a button-like/high-contrast chip.
 
-The existing current-programme treatment remains dominant and unchanged:
-- current row base height remains **176 pt**;
-- current title/description/progress geometry is unchanged;
-- no extra visible `Nu` label is added;
-- at scale 1.0, current time stays top **14** (Y14…34) and Kijktip sits at Y **36…52**;
-- current title remains top **14**; do not introduce a new current-row baseline-alignment rule that would move accepted current geometry;
-- `Kijktip` remains **12/16 Medium textSecondary** even when the programme is current; do not strengthen it to compete with the current title.
+### Typography preserved inside the label
 
-### Multiple Kijktips
+The accepted text metrics remain the starting point for final calibration:
+- start time: existing **16/20 Instrument Sans Regular**;
+- `Kijktip`: **12/16 Instrument Sans Medium**;
+- `Kijktip` letterSpacing **0**;
+- internal time→Kijktip relationship remains the accepted **2-pt** structural gap unless physical calibration proves the box needs a tiny optical adjustment.
 
-Multiple editorial tips in one evening use the exact same treatment independently. Do not cluster, number, colour-code or otherwise create a second editorial navigation system.
+Kijktip remains substantive/uncapped programme metadata. Do not apply the compact 1.20 chrome cap.
 
-### Dynamic Type
+### Geometry that remains frozen
 
-`Kijktip` is programme metadata, not compact Guide chrome:
-- it follows substantive system font scaling and is not capped at 1.20;
-- existing standard/current row Dynamic-Type formulas remain authoritative;
-- **do not add row height solely because `Kijktip` exists**;
-- the **2-pt time→Kijktip gap stays fixed and does not scale**;
-- standard Kijktip rows vertically centre the scaled time/Kijktip stack inside the existing scaled row; at scales 1.00 / 1.35 / 1.50 / 2.00 the stack tops are **7 / 9.7 / 11 / 15 pt**;
-- above 1.35, when the title may use two lines, its first baseline still aligns with the time baseline;
-- no Kijktip-specific wrap state or font cap is introduced;
-- at supported Larger Text sizes, preserve the same hierarchy and title column.
+The new label must fit the already accepted schedule geometry:
+- standard row base height **52 pt**;
+- current row base height **176 pt**;
+- time-column origin X **24**;
+- programme title X **100**;
+- right inset **24**;
+- no Kijktip-specific row-height term;
+- no title-column shift or width reduction;
+- no change to standard/current Dynamic Type row formulas.
 
-### Accessibility
+For the current programme, the existing title/description/progress hierarchy remains dominant and unchanged. The editorial label must fit without moving the current title from its accepted top position.
 
-Kijktip is editorial disclosure and must not be visual-only:
-- keep the programme row as the single action/focus target;
-- when `isKijktip = true`, announce once in the order **channel, title, Kijktip, start time to end time, current state if applicable**;
-- do not expose the visual Kijktip text as a second focusable element; explicitly suppress the child accessibility node where platform behaviour requires it;
-- full channel, title, start/end time and current-state semantics remain unchanged.
+### Accessibility and multiple Kijktips
+
+- the entire programme row remains the single programme action/focus target;
+- Kijktip is announced exactly once in the existing semantic order: **channel → title → Kijktip → start/end → current state when applicable**;
+- the visible label container and its child texts are not separate VoiceOver/TalkBack actions;
+- multiple Kijktips repeat the same treatment independently;
+- no grouping, numbering, special colour escalation or separate editorial navigation system.
+
+### Production calibration still required
+
+The owner-approved direction above is canonical on merge, but the following values remain deliberately **pending physical production calibration**:
+
+- exact label outer width/height behaviour inside the existing time-column zone;
+- horizontal and vertical padding;
+- corner radius / squareness;
+- exact `editorialAccentSurface` light/dark values;
+- pressed-surface interaction with the label;
+- any optical adjustment needed to preserve the accepted 2-pt internal text relationship across Dynamic Type.
+
+Until that calibration is owner-approved and merged, Development must **not** implement a guessed label box from screenshots or re-use the superseded text-only treatment as the target visual.
 
 ### Frozen around this refinement
 
-Do not change for Kijktip:
-- standard/current row heights or their scaling formulas;
-- time/programme column X positions;
-- title sizes/weights;
-- current title, description or progressbar treatment;
+Do not change:
+- standard/current row heights or scaling formulas;
+- programme title sizes/weights/X/width;
+- current title/description/progress treatment;
 - channel rail;
 - date/Primetime/Nu context;
 - Guide chrome/collapse;
-- row separators/pressed state;
+- row separators/pressed ownership;
 - horizontal adjacent-channel swipe or vertical scrolling;
 - Programme Detail interaction;
-- light/dark/system theme architecture.
+- light/dark/system architecture.
 
 ## Explicitly not accepted in this refinement
 - No one-time horizontal swipe nudge/peek is canonical yet; it remains a separate interaction refinement requiring explicit acceptance after physical/interaction validation.
