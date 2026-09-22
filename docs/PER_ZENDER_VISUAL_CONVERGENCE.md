@@ -4,7 +4,7 @@ Status: **CANONICAL PRODUCTION IMPLEMENTATION SPEC — accepted design, no redes
 Date: 2026-09-18  
 Kijktip refinement: 2026-09-22  
 Kijktip production calibration: 2026-09-22  
-Revision: **post-PR #86 production convergence — compact temporal context + PR #81 collapse-isolation architecture + owner-approved Per-zender Kijktip editorial disclosure with implementation-ready typography/baseline/Dynamic-Type calibration**
+Revision: **post-PR #86 production convergence — compact temporal context + PR #81 collapse-isolation architecture + owner-approved Per-zender Kijktip editorial disclosure with implementation-ready typography/alignment/Dynamic-Type calibration, including the owner physical alignment correction**
 
 This document is the production implementation specification for the accepted **Per zender** Guide presentation. It converts the owner-approved visual/UX baseline into concrete metrics and state rules. It is accepted-design convergence, not exploration or Development implementation.
 
@@ -519,15 +519,17 @@ At `contentScale = 1.0`:
 - Kijktip line-height = **16 pt**, occupying Y **29…45**;
 - remaining bottom breathing room = **7 pt**;
 - separator remains at the existing row bottom;
-- Kijktip is left-aligned exactly to the time text.
+- time + Kijktip form one intrinsic-width vertical stack whose origin remains **X24**;
+- Kijktip is horizontally centred under the rendered start time inside that stack.
 
-The time/title **first baselines are identical** in a standard Kijktip row. This is the alignment invariant; do not approximate it by independently centring the title and time cells.
+The standard programme title is deliberately independent of the Kijktip stack. It uses the exact same `standardTitleCell` as a non-Kijktip row:
+- left **100**;
+- right **24**;
+- top **0**;
+- bottom **0**;
+- `justifyContent: 'center'`.
 
-Implementation should therefore baseline-align the title's first line to the time line using native text baseline alignment. Do **not** derive a hardcoded title-top pixel from line-height arithmetic, because Instrument Sans native ascent/descent metrics differ slightly by platform. The exact production relationship is:
-
-`baseline(programme title line 1) = baseline(start time)`
-
-Normal non-Kijktip rows keep their existing independent vertical centring from §11.2.
+The owner physical correction **supersedes** the previous standard-row rule that the time and title first baselines must be equal. Baseline equality is no longer canonical. Keep the established non-Kijktip title rhythm; do not position or vertically shift the title from the time/Kijktip stack.
 
 #### Title-column invariants
 
@@ -537,6 +539,7 @@ The programme title receives:
 - no horizontal offset;
 - no narrower text column;
 - no changed size/weight/line-count rule;
+- no changed vertical title-cell alignment or rhythm;
 - no independent interaction linked to Kijktip.
 
 The Kijktip label remains a **single line**. Do not wrap, abbreviate or intentionally ellipsize the literal label. At the required physical validation sizes it must remain fully readable in the existing time-column composition. If it clips on a supported device/text setting, that is a convergence defect requiring review; it is not permission to widen/move the title column, add a Kijktip-specific row height or cap substantive programme typography.
@@ -600,11 +603,13 @@ Time:
 - `16/20 400 textSecondary`;
 - top = **14 pt**;
 - tabular numerals;
-- when current programme has `isKijktip = true`, use the same **12/16 Medium textSecondary** label at X24;
+- when current programme has `isKijktip = true`, time + Kijktip form the same intrinsic-width vertical time-column stack at the existing X24 origin;
+- Kijktip is horizontally centred under the rendered current-programme time;
 - structural time→Kijktip gap remains **2 pt**;
+- the time/Kijktip stack keeps the existing current top **14 pt**;
 - at contentScale 1.0: time occupies Y **14…34**, Kijktip occupies Y **36…52**;
 - current title remains X100/top14 and all current-row title/description/progress geometry stays unchanged;
-- unlike a standard Kijktip row, do **not** introduce a new baseline-alignment rule for the current row: the accepted current time/title top edge at Y14 is frozen, and Kijktip must not move either element.
+- no new current-row geometry or title-alignment rule is introduced by Kijktip.
 
 Title:
 
@@ -702,10 +707,11 @@ Representative geometry:
 
 Fractional values are intentional. Let native layout/subpixel rendering resolve them; do not round the stack independently from the already rounded row height.
 
-Baseline rule at every scale:
-- standard Kijktip row time baseline = programme-title first-line baseline;
-- when title becomes two lines above 1.35, only its **first** baseline aligns to time;
-- do not vertically recenter the title block independently after adding Kijktip.
+Alignment rule at every scale:
+- the time/Kijktip stack uses the scaled stack geometry above and remains vertically centred in the standard row;
+- its origin stays X24 and Kijktip remains horizontally centred under the rendered start time;
+- the programme title uses the same `standardTitleCell` vertical centring as a non-Kijktip row, including the existing two-line allowance above 1.35;
+- the previous time/title first-baseline equality is superseded; never couple title position to the Kijktip stack.
 
 The existing row growth is sufficient for the two-line title at representative accessibility sizes; Kijktip adds **no row-height term**.
 
@@ -1047,7 +1053,7 @@ Surface-specific implementation calibrations now frozen for Development handoff:
 10. Current top14, title→description gap **10**, description→progress minimum **20 at every Dynamic Type scale**, progress 4 high/radius2/bottom16; current-row scaling uses the content-safe minimum from §14.2.
 11. Separator left20 at bottom of each row.
 12. Collapse isolation: temporal context **52 only**; hard temporal-label multiplier 1.20; fixed settled viewport top112; native collapse56; standard full contraction/visual compensation **140/84**, accessibility shared-tab mode **156/100**; rest gaps interpolate **4→0** above the context and **24→0** below it; Reduce Motion switches endpoints discretely at28.
-13. Kijktip: literal `Kijktip`; base **12/16 Medium textSecondary**, letterSpacing0; X24; **2-pt fixed/non-scaling** time→label gap; base standard stack top7 with time Y7…27 and Kijktip Y29…45; standard time/title first baselines equal; current time stays top14 and current Kijktip is Y36…52 at scale1 without moving current title; one line/no wrap/no intentional truncation; standard/current row formulas unchanged; title X100/width unchanged; substantive/uncapped Dynamic Type; single parent programme accessibility action announces Kijktip once.
+13. Kijktip: literal `Kijktip`; base **12/16 Medium textSecondary**, letterSpacing0; time + label form an intrinsic-width stack at X24; Kijktip is horizontally centred under the rendered time; **2-pt fixed/non-scaling** time→label gap; base standard stack top7 with time Y7…27 and Kijktip Y29…45; standard title uses the same `standardTitleCell` as non-Kijktip rows (left100/right24/top0/bottom0/`justifyContent: center`) and the old time/title baseline-equality rule is superseded; current time stack stays top14 and current Kijktip is Y36…52 at scale1 without moving current title/description/progress; one line/no wrap/no intentional truncation; standard/current row formulas unchanged; substantive/uncapped Dynamic Type; single parent programme accessibility action announces Kijktip once.
 
 Development must not choose alternatives locally. A future retune requires new owner-approved evidence and an update to this source of truth.
 
@@ -1091,7 +1097,7 @@ When Lead schedules Per-zender visual convergence, Development must be able to i
 18. preserve the PR #81 fixed-native-viewport/collapse-isolation architecture: strip 72→60, strip→context **4→0**, context→schedule **24→0**, one fixed 52-pt temporal context, 48×48 items unchanged, native collapse56; standard shared chrome uses contraction/compensation **140/84**, accessibility shared-tab mode **156/100**; no per-frame normal-flow mutation above the active schedule ScrollView;
 19. remove the obsolete wrapped-context runtime paths listed in §21 while preserving semantic native↔schedule anchor conversion;
 20. enforce `maximumFontSizeMultiplier = 1.20` for Per-zender date/Primetime/Nu labels, keep them one line in the 52-pt context, and validate light/dark/system, substantive programme Dynamic Type, VoiceOver, TalkBack and Reduce Motion;
-21. when `isKijktip = true`, render literal `Kijktip` only in the existing time column at X24 using **12/16 Medium textSecondary**, with a **fixed 2-pt** gap below time; at scale1 standard rows use time Y7…27 and Kijktip Y29…45 with the title first baseline equal to the time baseline; current rows retain time/title top14 and use Kijktip Y36…52; at larger scales use the §14.1 stack formula, keep Kijktip one line/uncapped, keep title X100/width and all row formulas unchanged, and expose Kijktip once through the existing programme accessibility action rather than as a separate element;
+21. when `isKijktip = true`, render literal `Kijktip` only in the existing time column using **12/16 Medium textSecondary**: time + Kijktip form an intrinsic-width vertical stack at the existing X24 origin, Kijktip is horizontally centred under the rendered time, and the gap remains a **fixed 2 pt**; at scale1 standard rows use time Y7…27 and Kijktip Y29…45 while the title uses exactly the same `standardTitleCell` alignment as non-Kijktip rows; the old time/title first-baseline equality is superseded; current rows keep the existing top14 title/description/progress geometry and use the same centred time/Kijktip relationship with Kijktip Y36…52; at larger scales use the §14.1 stack formula, keep Kijktip one line/uncapped, keep title X100/width and all row formulas unchanged, and expose Kijktip once through the existing programme accessibility action rather than as a separate element;
 22. do not add Kijktip badge/pill/icon/accent colour, Kijktip interaction, extra current/`Nu` label, row-height override or title-column reduction;
 23. do not add swipe nudge, overflow button, arrows, fade masks or old exploration chrome;
 24. run the implementation's normal automated/physical gates when Development occurs.
@@ -1168,8 +1174,8 @@ Per-zender visual convergence is ready only when all are true on the exact imple
 - no schedule-wide now line, current card fill, red left rail, now-dot or hourly-grid dominance;
 - light/dark/system use semantic tokens;
 - Per-zender date/Primetime/Nu compact chrome is hard-capped at 1.20 and remains one line; no 88-pt/wrapped-context state or selected-channel injection exists; programme content retains substantive Dynamic Type; VoiceOver, TalkBack and Reduce Motion follow this specification;
-- Kijktip rows use **12/16 Medium `textSecondary`**, letterSpacing0, in the time column with a **fixed non-scaling 2-pt** gap below time, exact left alignment to time, and unchanged title X/width;
-- at scale1 a standard Kijktip row has stack top7: time Y7…27 and Kijktip Y29…45; the time baseline exactly equals the title first-line baseline;
+- Kijktip rows use **12/16 Medium `textSecondary`**, letterSpacing0; time + Kijktip form an intrinsic-width stack at X24 with a **fixed non-scaling 2-pt** gap, Kijktip horizontally centred under the rendered time, and unchanged title X/width;
+- at scale1 a standard Kijktip row has stack top7: time Y7…27 and Kijktip Y29…45; the title uses the same vertically centred `standardTitleCell` as a non-Kijktip row, and the former time/title baseline-equality rule is superseded;
 - at 1.35 / 1.50 / 2.00 the §14.1 formula yields Kijktip stack tops **9.7 / 11 / 15** with no Kijktip-specific row-height change;
 - normal rows without Kijktip remain visually unchanged;
 - current Kijktip row preserves the existing current-row formula: at scale1 time/title remain top14, Kijktip Y36…52, and title/description/progress do not move;

@@ -1,5 +1,20 @@
 # Teevee Development Logboek
 
+## 22 september 2026 — PR #127 owner physical Per-zender Kijktip alignment made canonical
+
+Owner physical review superseded the earlier Per-zender Kijktip alignment rule after the runtime correction on exact head `a3b13c8ebc5044665fb6470583a02bcd6238bf11` passed Lead runtime review.
+
+This docs-only follow-up aligns the canonical source of truth with that accepted runtime:
+- standard non-current rows keep time + Kijktip as one intrinsic-width vertical stack at the existing X24 origin, horizontally centre Kijktip under the rendered time and retain the fixed non-scaling 2-pt vertical gap plus the existing scaled stack geometry;
+- the programme title uses the exact same `standardTitleCell` as a non-Kijktip row (left100/right24/top0/bottom0/`justifyContent: center`), so Kijktip cannot disturb title rhythm; the old exact-left label rule and standard time/title first-baseline equality are explicitly superseded;
+- current Kijktip rows keep current title/description/progress geometry unchanged; only time + Kijktip use the same centred time-column relationship.
+
+No runtime code, tests, Nu & Straks presentation, data/signal ownership, backend, row-height metrics or accessibility semantics change in this follow-up.
+
+**Next gate:** exact-head docs/design CI, then return PR #127 to Lead for the final pre-physical revalidation gate. Do not merge and do not send to Independent QA yet.
+
+---
+
 ## 22 september 2026 — PR #127 visible Kijktip Guide presentation increment
 
 PR #126 is merged to `main` as `f5bc682f27848bbe6ca6adaa3116dfc6e60d3f6d` after Lead and Independent QA acceptance, so the server-side editorial ingestion/matching/persistence, typed transport and current/non-current runtime enrichment ownership are now the production foundation.

@@ -162,7 +162,7 @@ Use an open vertical schedule, not a card stack. Keep the sticky horizontal chan
 
 Guide editorial Kijktip disclosure is deliberately metadata-like rather than badge-like. The shared editorial typography is **12/16 Instrument Sans Medium**, semantic `textSecondary`, letterSpacing0, substantive/uncapped Dynamic Type, with no icon/pill/accent colour or independent interaction.
 
-In Per zender, `Kijktip` sits only in the existing time column directly below the start time with the accepted fixed **2-pt** gap. It does not consume programme-title width; existing row/current geometry remains authoritative.
+In Per zender, time + `Kijktip` form one intrinsic-width vertical stack at the existing X24 time-column origin. `Kijktip` is horizontally centred under the rendered start time and keeps the accepted fixed **2-pt** vertical gap. For a standard non-current Kijktip row, the programme title uses exactly the same title-cell alignment and vertical rhythm as a non-Kijktip row; the earlier time/title first-baseline-equality rule is superseded. Current title/description/progress geometry remains authoritative and unchanged; only its time/Kijktip pair uses the same horizontal centring relationship. Kijktip does not consume programme-title width or alter row height, separators or interaction.
 
 ### Nu & Straks
 Each channel presents one dominant programme at the selected reference time plus three quieter following programmes. No progress bars, genre chips, artwork, chevrons or `Daarna` labels. The hierarchy itself communicates current/reference versus following content.

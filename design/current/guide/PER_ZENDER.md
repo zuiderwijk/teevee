@@ -1,7 +1,7 @@
 # Per zender — current accepted visual
 
 Status: **ACCEPTED**
-Accepted: 2026-09-13; day-selector and Primetime behaviour amended 2026-09-15; accepted visual refinement amended 2026-09-17; selected-channel-heading removal, current-programme spacing and compact temporal-context refinement accepted 2026-09-18; Kijktip editorial-disclosure refinement + production calibration accepted 2026-09-22
+Accepted: 2026-09-13; day-selector and Primetime behaviour amended 2026-09-15; accepted visual refinement amended 2026-09-17; selected-channel-heading removal, current-programme spacing and compact temporal-context refinement accepted 2026-09-18; Kijktip editorial-disclosure refinement + production calibration + owner physical alignment correction accepted 2026-09-22
 
 ## Canonical asset
 - Light + dark reference: `/Teevee/TV-gids app in licht en donker thema.png`
@@ -17,7 +17,7 @@ Accepted: 2026-09-13; day-selector and Primetime behaviour amended 2026-09-15; a
   - Library file id: `file_00000000dd7c8210a35769aada30424b`
   - stable Library record: `libfile_d161c6bed2a481919a917acdeaeeec41`
 
-The 2026-09-17 owner-approved refinement in this document supersedes the older visual references only for the explicitly listed refined details below. The 2026-09-18 owner-approved refinements additionally remove duplicate selected-channel text, expand the current-programme treatment and compact the temporal context after physical iPhone validation. The 2026-09-22 owner-approved Kijktip refinement adds only a quiet editorial-disclosure line inside the existing time column; it does not reopen any row, chrome, rail, gesture or current-programme metric. All other accepted composition remains unchanged.
+The 2026-09-17 owner-approved refinement in this document supersedes the older visual references only for the explicitly listed refined details below. The 2026-09-18 owner-approved refinements additionally remove duplicate selected-channel text, expand the current-programme treatment and compact the temporal context after physical iPhone validation. The 2026-09-22 owner-approved Kijktip refinement adds only a quiet editorial-disclosure line inside the existing time column; later owner physical evidence on the implementation supersedes only its original exact-left/baseline-coupled alignment: Kijktip is centred under the rendered time and the standard title keeps the normal title-cell rhythm. It does not reopen any row, chrome, rail, gesture or current-programme metric. All other accepted composition remains unchanged.
 
 Detailed shared day-selector contract: `design/current/guide/GUIDE_DAY_SELECTOR.md`.
 Development-ready visual-convergence handoff: `docs/PER_ZENDER_VISUAL_CONVERGENCE.md`.
@@ -156,10 +156,11 @@ For a Kijktip programme:
 - keep the programme title column and its width completely unchanged;
 - keep the existing programme start time in the time column;
 - add the literal label **`Kijktip`** as a quiet second line directly below the time;
-- time and programme title share the same first baseline;
-- the `Kijktip` line is left-aligned exactly to the time text;
+- time + Kijktip form one intrinsic-width vertical stack whose origin remains the existing **X24** time-column origin;
+- horizontally centre `Kijktip` under the rendered start time;
 - vertical time→Kijktip gap: **2 pt**;
 - use the existing time-column width and programme-column X; do not steal horizontal space from the title;
+- the programme title uses the exact same standard title-cell alignment as a non-Kijktip row: left100/right24/top0/bottom0/`justifyContent: center`; do not couple title position to the time/Kijktip stack;
 - no badge, pill, icon, accent colour, underline or additional current/Now label;
 - `Kijktip` has no independent interaction or hit target.
 
@@ -181,7 +182,7 @@ The label is intentionally quieter than both programme title and current-program
 - normal non-Kijktip rows remain exactly unchanged and retain their existing vertically centred time/title composition;
 - a Kijktip row keeps the same **52-pt** base height;
 - at scale 1.0, time occupies Y **7…27**, Kijktip Y **29…45**, leaving 7 pt top/bottom breathing room;
-- time and programme-title **first baselines are identical**; use native baseline alignment rather than independently centring the title in a Kijktip row;
+- the programme title uses the same vertically centred title-cell rhythm as a non-Kijktip row; the previous time/title **first-baseline equality is superseded and no longer canonical**;
 - Kijktip is one line, never a wrap state;
 - do not change programme title typography, line count, separator geometry or pressed state merely because Kijktip is present.
 
@@ -191,8 +192,9 @@ The existing current-programme treatment remains dominant and unchanged:
 - current row base height remains **176 pt**;
 - current title/description/progress geometry is unchanged;
 - no extra visible `Nu` label is added;
+- time + Kijktip use the same intrinsic-width stack at X24, with Kijktip horizontally centred under the rendered current time;
 - at scale 1.0, current time stays top **14** (Y14…34) and Kijktip sits at Y **36…52**;
-- current title remains top **14**; do not introduce a new current-row baseline-alignment rule that would move accepted current geometry;
+- current title remains top **14**; do not introduce new current-row title/description/progress geometry;
 - `Kijktip` remains **12/16 Medium textSecondary** even when the programme is current; do not strengthen it to compete with the current title.
 
 ### Multiple Kijktips
@@ -207,7 +209,7 @@ Multiple editorial tips in one evening use the exact same treatment independentl
 - **do not add row height solely because `Kijktip` exists**;
 - the **2-pt time→Kijktip gap stays fixed and does not scale**;
 - standard Kijktip rows vertically centre the scaled time/Kijktip stack inside the existing scaled row; at scales 1.00 / 1.35 / 1.50 / 2.00 the stack tops are **7 / 9.7 / 11 / 15 pt**;
-- above 1.35, when the title may use two lines, its first baseline still aligns with the time baseline;
+- above 1.35, when the title may use two lines, it keeps the same standard title-cell centring/rhythm as a non-Kijktip row; the superseded baseline-equality rule does not return at Larger Text sizes;
 - no Kijktip-specific wrap state or font cap is introduced;
 - at supported Larger Text sizes, preserve the same hierarchy and title column.
 

@@ -129,7 +129,7 @@ Superseded as Totaal production references:
 
 ### Per zender
 Status: **ACCEPTED**
-Owner-approved direction: 2026-09-13; day-navigation and Primetime amendments 2026-09-15; visual refinement 2026-09-17; identity/current-programme/compact temporal-context refinements 2026-09-18; Kijktip editorial-disclosure refinement + production calibration 2026-09-22
+Owner-approved direction: 2026-09-13; day-navigation and Primetime amendments 2026-09-15; visual refinement 2026-09-17; identity/current-programme/compact temporal-context refinements 2026-09-18; Kijktip editorial-disclosure refinement + production calibration + owner physical alignment correction 2026-09-22
 Detailed manifest: `design/current/guide/PER_ZENDER.md`
 Production specification: `docs/PER_ZENDER_VISUAL_CONVERGENCE.md`
 
@@ -157,8 +157,8 @@ Accepted visual characteristics:
 - expanded/rest rail → temporal-context spacing is **4 pt** and temporal context → schedule is **24 pt**; in settled condensed state both gaps are **0 pt** while the temporal context remains **52 pt**;
 - current programme uses a deliberately spacious **176-pt base row** with 19/23 title, 10-pt title→description gap, 15/22 description up to 4 lines, at least 20 pt clear space before the local progressbar, and no current card, red left rail, global current-time line or now-dot;
 - programme rows prioritise time and title and use a temporary semantic `surface` fill only while pressed;
-- for `isKijktip = true`, editorial disclosure appears only as `Kijktip` in the existing time column: **12/16 Instrument Sans Medium**, semantic `textSecondary`, letterSpacing0, with a **fixed non-scaling 2-pt** gap below and exact left alignment to the start time; title X/width, row height and interaction stay unchanged;
-- normal rows without Kijktip remain unchanged; at base scale a standard Kijktip row uses time Y7…27 / Kijktip Y29…45 with the title first baseline equal to the time baseline; current Kijktip rows keep current time/title top14 and Kijktip Y36…52, with the existing current-programme treatment dominant and no extra `Nu` label;
+- for `isKijktip = true`, editorial disclosure appears only as `Kijktip` in the existing time column: **12/16 Instrument Sans Medium**, semantic `textSecondary`, letterSpacing0; time + Kijktip form an intrinsic-width stack at the existing X24 origin, Kijktip is horizontally centred under the rendered time, and the vertical gap remains a **fixed non-scaling 2 pt**; title X/width, row height and interaction stay unchanged;
+- normal rows without Kijktip remain unchanged; at base scale a standard Kijktip row uses time Y7…27 / Kijktip Y29…45 while its title uses exactly the same vertically centred title-cell alignment/rhythm as a non-Kijktip row; the former standard-row time/title first-baseline equality is superseded; current Kijktip rows keep current title/description/progress geometry unchanged, use the same centred time/Kijktip relationship, keep time/title top14 and Kijktip Y36…52, and add no extra `Nu` label;
 - Kijktip uses no pill, icon, accent colour or independent interaction, remains one line, scales as uncapped substantive programme metadata, and never introduces a Kijktip-specific row-height or wrap state;
 - light/dark/system follow the shared Guide shell;
 - date remains primarily typographic; in Per zender from 06:00–23:59 the current/next television days display only `Vandaag` / `Morgen`, other days use explicit weekday + date, and from 00:00–05:59 all day labels are explicit weekday + date with no `Vandaag`/`Morgen`;
