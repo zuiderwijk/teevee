@@ -68,6 +68,7 @@ describe('shared Kijktip editorial typography and Per-zender geometry', () => {
 
   it('freezes Per-zender editorial-label padding, radius and intrinsic width formula', () => {
     expect(PER_CHANNEL_VISUAL_METRICS.kijktipPaddingX).toBe(5);
+    expect(PER_CHANNEL_VISUAL_METRICS.kijktipPaddingY).toBe(5);
     expect(PER_CHANNEL_VISUAL_METRICS.kijktipRadius).toBe(6);
     expect(PER_CHANNEL_VISUAL_METRICS.kijktipMinOuterWidth).toBe(48);
     expect(perChannelKijktipLabelOuterWidth(32, 28)).toBe(48);
@@ -103,7 +104,7 @@ describe('shared Kijktip editorial typography and Per-zender geometry', () => {
     },
   );
 
-  it('uses S1 7/20/2/16/7 inside the exact 52-pt standard surface', () => {
+  it('keeps the S1 7/20/2/16 content positions inside the compact Y2…50 surface', () => {
     expect(perChannelKijktipStackGeometry(1)).toMatchObject({
       rowHeight: 52,
       surfaceLeft: 19,
