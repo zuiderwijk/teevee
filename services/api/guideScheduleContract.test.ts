@@ -98,6 +98,60 @@ describe('parseGuideScheduleApiResponse', () => {
           },
         ],
       },
+      editorialSignals: [],
+    });
+  });
+
+  it('validates editorial signals beside a valid schedule', () => {
+    expect(
+      parseGuideScheduleApiResponse({
+        status: 'ok',
+        schedule,
+        editorialSignals: [
+          {
+            programmeId: 'programme-1',
+            type: 'kijktip',
+            source: 'tvgids',
+            sourceItemId: 'tip-1',
+            sourceUrl: 'https://www.tvgids.nl/tip/race',
+            publishedAt: '2026-09-14T10:00:00+02:00',
+            matchedBy: 'channel-title-start',
+          },
+        ],
+      }),
+    ).toMatchObject({
+      status: 'ok',
+      editorialSignals: [
+        {
+          programmeId: 'programme-1',
+          type: 'kijktip',
+          source: 'tvgids',
+          sourceItemId: 'tip-1',
+          publishedAt: '2026-09-14T08:00:00.000Z',
+        },
+      ],
+    });
+  });
+
+  it('rejects malformed serialized editorial enrichment without rejecting the valid schedule', () => {
+    const parsed = parseGuideScheduleApiResponse({
+      status: 'ok',
+      schedule,
+      editorialSignals: [
+        {
+          programmeId: 'unknown-programme',
+          type: 'kijktip',
+          source: 'tvgids',
+          sourceItemId: 'tip-1',
+          matchedBy: 'channel-title-start',
+        },
+      ],
+    });
+
+    expect(parsed).toMatchObject({
+      status: 'ok',
+      schedule: { timezone: 'Europe/Amsterdam' },
+      editorialSignals: [],
     });
   });
 
