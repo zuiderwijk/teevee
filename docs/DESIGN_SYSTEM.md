@@ -1,6 +1,6 @@
 # Teevee Design System Direction
 
-Status: visual-design baseline updated through 21 September 2026. Guide and Programme Detail direction below reflects owner-approved design decisions. Instrument Sans is the accepted UI typeface. Exact production token values still require implementation/device validation. Tonight remains provisional.
+Status: visual-design baseline updated through 22 September 2026. Guide and Programme Detail direction below reflects owner-approved design decisions. Instrument Sans is the accepted UI typeface. Exact production token values still require implementation/device validation. Tonight remains provisional.
 
 ## Objective
 Teevee should communicate premium utility: calm, precise, contemporary and highly legible. The Guide can contain substantial schedule information without looking dense or cheap.
@@ -159,6 +159,8 @@ Exact Totaal calibration is owner-approved in `docs/TOTAAL_VISUAL_CONVERGENCE.md
 
 ### Per zender
 Use an open vertical schedule, not a card stack. Keep the sticky horizontal channel-logo strip visually grouped with temporal controls while giving programme content clearer separation: **4 pt rail→utilities** in expanded/rest, then **24 pt utilities→schedule**. Horizontal schedule swipe changes channel; no decorative previous/next arrows are required when gesture behaviour and logo strip make navigation understandable.
+
+Per-zender editorial Kijktip disclosure is deliberately metadata-like rather than badge-like: `Kijktip` sits only in the existing time column, directly below the start time, using **12 pt Instrument Sans Medium** with semantic `textSecondary` and a **2-pt** gap. It does not consume programme-title width, add an icon/pill/accent colour or create a new interaction. Existing row/current geometry and Dynamic Type remain authoritative.
 
 ### Nu & Straks
 Each channel presents one dominant programme at the selected reference time plus three quieter following programmes. No progress bars, genre chips, artwork, chevrons or `Daarna` labels. The hierarchy itself communicates current/reference versus following content.

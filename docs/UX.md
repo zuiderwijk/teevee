@@ -141,6 +141,8 @@ Purpose: inspect the schedule of one channel while making adjacent-channel compa
 - the schedule continues naturally through midnight within the same television-day context;
 - use **4 pt** channel rail→temporal context and **24 pt** temporal context→schedule in expanded/rest; both gaps collapse to **0 pt** in settled condensed state while the temporal context itself remains exactly **52 pt**. This deliberately keeps temporal navigation optically closer to the selected-logo rail and gives the programme list more breathing room;
 - programme rows remain open and typographic rather than stacked cards;
+- when programme context exposes `isKijktip = true`, Per zender shows a quiet non-interactive `Kijktip` second line in the existing time column directly below the start time; no badge/pill/icon/accent colour and no title-column width loss;
+- Kijktip does not change standard/current row heights, current-programme treatment, channel/temporal chrome or gesture ownership; it is included once in the existing programme accessibility semantics and is not a separate focus target;
 - do not add genre chips or thumbnails merely to increase information density.
 
 ## Nu & Straks — accepted interaction baseline

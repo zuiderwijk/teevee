@@ -2,7 +2,8 @@
 
 Status: **CANONICAL PRODUCTION IMPLEMENTATION SPEC — accepted design, no redesign**  
 Date: 2026-09-18  
-Revision: **post-PR #86 production convergence — compact temporal context + PR #81 collapse-isolation architecture**
+Kijktip refinement: 2026-09-22  
+Revision: **post-PR #86 production convergence — compact temporal context + PR #81 collapse-isolation architecture + owner-approved Per-zender Kijktip editorial disclosure**
 
 This document is the production implementation specification for the accepted **Per zender** Guide presentation. It converts the owner-approved visual/UX baseline into concrete metrics and state rules. It is accepted-design convergence, not exploration or Development implementation.
 
@@ -35,9 +36,10 @@ Exact canonical pixels remain:
 
 - Per zender light + dark: `/Teevee/TV-gids app in licht en donker thema.png`, Library file id `file_000000008b2481f4ad34bb1547fc813e`;
 - Guide day-selector states: `/Teevee/Teevee Guide day selector - states and bottom sheet.png`, Library file id `file_00000000390c8210b76256621721592b`;
-- sticky/condensed behaviour: `/Teevee/Teevee Guide day selector - sticky scroll behavior.png`, Library file id `file_00000000314481f69f6a34d18ece1c21`.
+- sticky/condensed behaviour: `/Teevee/Teevee Guide day selector - sticky scroll behavior.png`, Library file id `file_00000000314481f69f6a34d18ece1c21`;
+- Per-zender Kijktip refinement: `/Teevee/Per Zender Kijktip refinement - 12pt Medium textSecondary.png`, Library file id `file_00000000dd7c8210a35769aada30424b`.
 
-The 2026-09-17 written refinement supersedes those historical pixels only for the explicitly changed details in this document: temporal utility states, programme-title calibration, settled condensed channel-strip height, channel-rail positioning behaviour and programme-row pressed feedback. The 2026-09-18 owner refinements additionally supersede selected-channel text outside the rail, the former compressed current-programme treatment, the old 24-pt rail→utilities calibration, the physically rejected 16/12 expanded spacing distribution, long Per-zender relative date labels and Dynamic-Type-driven wrapped temporal chrome. All other accepted composition remains intact.
+The 2026-09-17 written refinement supersedes those historical pixels only for the explicitly changed details in this document: temporal utility states, programme-title calibration, settled condensed channel-strip height, channel-rail positioning behaviour and programme-row pressed feedback. The 2026-09-18 owner refinements additionally supersede selected-channel text outside the rail, the former compressed current-programme treatment, the old 24-pt rail→utilities calibration, the physically rejected 16/12 expanded spacing distribution, long Per-zender relative date labels and Dynamic-Type-driven wrapped temporal chrome. The 2026-09-22 Kijktip refinement changes only editorial disclosure inside the existing time column. All other accepted composition remains intact.
 
 ### Source precedence
 
@@ -473,7 +475,8 @@ Time:
 - `16/20 400 textSecondary`;
 - one line;
 - tabular numerals;
-- vertically centred: `(52 - 20) / 2 = 16` pt top equivalent.
+- vertically centred: `(52 - 20) / 2 = 16` pt top equivalent for a normal non-Kijktip row;
+- a Kijktip row uses the explicit two-line time-column exception in §11.3.
 
 Title:
 
@@ -485,7 +488,40 @@ Title:
 
 Prefer actual flex/layout centring over manually rounding 15.5 to a platform-specific integer. Full untruncated title remains available to accessibility APIs.
 
-### 11.3 Programme-row pressed feedback
+### 11.3 Kijktip editorial-disclosure row
+
+A programme with canonical `isKijktip = true` adds only one quiet editorial-disclosure line in the existing time column. The matching/data method that produced `isKijktip` is outside this visual contract.
+
+Base typography:
+- label text: literal **`Kijktip`**;
+- **12/16 Instrument Sans Medium**;
+- semantic **`textSecondary`**;
+- no colour accent, pill, icon, badge or underline;
+- no independent interaction.
+
+Geometry at fontScale 1.0:
+- keep time X **24**;
+- keep programme title X **100** and right inset **24**;
+- keep row height **52**;
+- time and title share the same first baseline;
+- `Kijktip` is left-aligned exactly to the time text;
+- time→Kijktip vertical gap = **2 pt**;
+- compose the time + Kijktip stack within the existing row; base two-line stack is 20 + 2 + 16 = **38 pt** high;
+- target base top inset for the two-line stack = **7 pt**, leaving 7 pt bottom breathing room;
+- align the programme title to the time's first baseline rather than centring the title independently in that Kijktip row.
+
+This top-aligned Kijktip-row composition is an explicit exception to the normal single-line vertical centring in §11.2. It applies only when `isKijktip = true`; normal rows remain visually unchanged.
+
+The programme title receives:
+- no badge;
+- no icon;
+- no horizontal offset;
+- no narrower text column;
+- no changed size/weight/line-count rule.
+
+Multiple Kijktips in one evening repeat the same treatment independently. Do not create grouping, numbering or stronger editorial chrome.
+
+### 11.4 Programme-row pressed feedback
 
 The entire row is tappable.
 
@@ -541,7 +577,8 @@ Time:
 
 - `16/20 400 textSecondary`;
 - top = 14;
-- tabular numerals.
+- tabular numerals;
+- when current programme has `isKijktip = true`, add the same **12/16 Medium textSecondary** `Kijktip` line at X24 with **2 pt** below the time; keep current title X100/top14 and all current-row geometry unchanged.
 
 Title:
 
@@ -579,7 +616,7 @@ Current row always shows one local progress bar:
 
 `progress = clamp((nowMs - startMs) / (endMs - startMs), 0, 1)`
 
-Do not add a current card fill, red left rail, schedule-wide current-time line, now-dot, visible `Nu bezig` badge or second progress signal.
+Do not add a current card fill, red left rail, schedule-wide current-time line, now-dot, visible `Nu bezig` badge or second progress signal. A current Kijktip does not add another visible `Nu`/current label and does not strengthen the Kijktip label; the existing current-programme treatment remains dominant.
 
 Current row uses the same temporary full-row `surface` pressed feedback as a standard row; the progressbar remains visible over that temporary pressed surface.
 
@@ -607,7 +644,9 @@ Rules:
 
 - every non-current row uses the same computed height at that scale;
 - time/title remain uncapped substantive text;
-- time remains one line and vertically centred;
+- Kijktip is substantive programme metadata: base **12/16 Medium**, uncapped and scaled by the same `contentScale`;
+- normal rows keep the one-line time vertically centred;
+- Kijktip rows retain the time/title first-baseline alignment and 2-pt structural time→Kijktip gap inside the same computed row height; no additional Kijktip-specific height is added;
 - title stays max one line through `fontScale <= 1.35`;
 - above 1.35, title may use max two lines;
 - two-line title block is vertically centred;
@@ -624,6 +663,8 @@ Representative heights:
 | 2.00 | 104 |
 
 The 17/21 title scales as substantive content. Do not retain offsets/examples based on the superseded 18/22 title.
+
+For a Kijktip standard row, derive the two-line time-column stack from the existing scaled row rather than introducing another row formula. At base scale the accepted top inset is 7 pt; at larger scales preserve balanced top/bottom breathing around `20 × contentScale + 2 + 16 × contentScale` while keeping the title's first baseline aligned to the time. The 2-pt gap is structural and does not scale.
 
 ### 14.2 Current row
 
@@ -674,7 +715,7 @@ These three visible labels remain **one line** in both expanded/rest and condens
 
 Touch targets remain minimum 44 pt iOS / 48 dp Android; the cap applies to visible compact-label scaling, not hit areas or accessibility semantics. VoiceOver/TalkBack receive the full selected date and action labels.
 
-Programme times, programme titles and current description remain uncapped substantive content and continue to follow §§14.1–14.2.
+Programme times, programme titles, Kijktip editorial metadata and current description remain uncapped substantive content and continue to follow §§14.1–14.2. The 1.20 cap applies only to the documented compact chrome, not Kijktip.
 
 Presentation tabs follow the shared Guide accessibility composition: **48 pt / one line through fontScale 1.35**, then **64 pt / maximum two lines above 1.35**, while retaining the shared 1.20 compact-label cap. Channel fallback retains its existing compact-chrome scaling rule. This shared-shell amendment does not change the fixed 52-pt Per-zender temporal context.
 
@@ -804,6 +845,7 @@ System follows OS appearance. Do not create a second dark-mode composition.
 
 - role button;
 - accessibility label includes full channel, full title, start and end time;
+- append `Kijktip` once when `isKijktip = true`; do not expose the visual Kijktip Text as a separate focus target;
 - append current state where relevant;
 - hint may state that it opens Programme Detail;
 - temporary pressed `surface` fill is visual feedback only, not a semantic selected state.
@@ -949,6 +991,7 @@ Surface-specific implementation calibrations now frozen for Development handoff:
 10. Current top14, title→description gap **10**, description→progress minimum **20 at every Dynamic Type scale**, progress 4 high/radius2/bottom16; current-row scaling uses the content-safe minimum from §14.2.
 11. Separator left20 at bottom of each row.
 12. Collapse isolation: temporal context **52 only**; hard temporal-label multiplier 1.20; fixed settled viewport top112; native collapse56; standard full contraction/visual compensation **140/84**, accessibility shared-tab mode **156/100**; rest gaps interpolate **4→0** above the context and **24→0** below it; Reduce Motion switches endpoints discretely at28.
+13. Kijktip: literal label `Kijktip`; base **12/16 Medium textSecondary**; X24 aligned to time; **2-pt** time→label gap; no badge/icon/accent; standard Kijktip row remains 52 and current row remains 176; title X100/width unchanged; Kijktip is substantive/uncapped Dynamic Type metadata with no separate interaction.
 
 Development must not choose alternatives locally. A future retune requires new owner-approved evidence and an update to this source of truth.
 
@@ -992,8 +1035,10 @@ When Lead schedules Per-zender visual convergence, Development must be able to i
 18. preserve the PR #81 fixed-native-viewport/collapse-isolation architecture: strip 72→60, strip→context **4→0**, context→schedule **24→0**, one fixed 52-pt temporal context, 48×48 items unchanged, native collapse56; standard shared chrome uses contraction/compensation **140/84**, accessibility shared-tab mode **156/100**; no per-frame normal-flow mutation above the active schedule ScrollView;
 19. remove the obsolete wrapped-context runtime paths listed in §21 while preserving semantic native↔schedule anchor conversion;
 20. enforce `maximumFontSizeMultiplier = 1.20` for Per-zender date/Primetime/Nu labels, keep them one line in the 52-pt context, and validate light/dark/system, substantive programme Dynamic Type, VoiceOver, TalkBack and Reduce Motion;
-21. do not add swipe nudge, overflow button, arrows, fade masks or old exploration chrome;
-22. run the implementation's normal automated/physical gates when Development occurs.
+21. when `isKijktip = true`, render `Kijktip` only in the existing time column at X24 using **12/16 Medium textSecondary**, 2 pt below the start time; keep title X100/width unchanged, keep standard/current row heights and current treatment unchanged, and expose `Kijktip` once through the existing programme accessibility action rather than as a separate element;
+22. do not add Kijktip badge/pill/icon/accent colour, Kijktip interaction, extra current/`Nu` label, row-height override or title-column reduction;
+23. do not add swipe nudge, overflow button, arrows, fade masks or old exploration chrome;
+24. run the implementation's normal automated/physical gates when Development occurs.
 
 This design-spec increment changes no runtime code.
 
@@ -1021,7 +1066,8 @@ This refinement does not reopen:
 - no decorative channel arrows;
 - no expanded historical time picker;
 - no duration-driven programme geometry;
-- selected logo as sufficient visible channel identity in both expanded/rest and condensed states; no duplicate selected-channel text outside the rail.
+- selected logo as sufficient visible channel identity in both expanded/rest and condensed states; no duplicate selected-channel text outside the rail;
+- Kijktip does not change fixed-row geometry, current-programme geometry, temporal controls, rail/chrome or gesture ownership.
 
 ## 26. Explicitly outside this accepted refinement
 
@@ -1066,5 +1112,12 @@ Per-zender visual convergence is ready only when all are true on the exact imple
 - no schedule-wide now line, current card fill, red left rail, now-dot or hourly-grid dominance;
 - light/dark/system use semantic tokens;
 - Per-zender date/Primetime/Nu compact chrome is hard-capped at 1.20 and remains one line; no 88-pt/wrapped-context state or selected-channel injection exists; programme content retains substantive Dynamic Type; VoiceOver, TalkBack and Reduce Motion follow this specification;
+- Kijktip rows use 12/16 Medium `textSecondary` in the time column with a 2-pt gap below time, exact left alignment to time, and unchanged title X/width;
+- normal rows without Kijktip remain visually unchanged;
+- current Kijktip row preserves 176-pt current geometry and existing current title/description/progress treatment with no extra `Nu` label;
+- three or more Kijktips in one evening remain calm repeated metadata rather than badge-like emphasis;
+- Larger Text scales Kijktip as substantive metadata without adding Kijktip-specific row height or clipping the title column;
+- Kijktip behaves identically in light/dark/system through `textSecondary` and adds no accent token;
+- programme accessibility announces Kijktip once without a second focus target;
 - one-time swipe nudge and `•••` overflow remain absent;
-- final physical comparison uses the exact canonical references plus the written 2026-09-17 and 2026-09-18 refinements, never a superseded runtime screenshot.
+- final physical comparison uses the exact canonical references plus the written 2026-09-17, 2026-09-18 and 2026-09-22 refinements, never a superseded runtime screenshot.
