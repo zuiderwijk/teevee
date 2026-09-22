@@ -160,6 +160,102 @@ async function inspectLinkedPages(items) {
   console.log('SPIKE_LINKED_PAGES ' + JSON.stringify(results));
 }
 
+function normalizeComparable(value = '') {
+  return value
+    .normalize('NFKC')
+    .toLocaleLowerCase('nl-NL')
+    .replace(/[\u2018\u2019]/g, "'")
+    .replace(/[\u2013\u2014]/g, '-')
+    .replace(/^[\s\p{P}]+|[\s\p{P}]+$/gu, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+function normalizeChannel(value = '') {
+  return normalizeComparable(value).replace(/\s+/g, '');
+}
+
+function evaluateMatches(items, schedule) {
+  const channelByAlias = new Map();
+  for (const channel of schedule.channels) {
+    for (const alias of [channel.name, channel.displayName, channel.shortName].filter(Boolean)) {
+      channelByAlias.set(normalizeChannel(alias), channel.id);
+    }
+  }
+
+  const okWindows = schedule.windows.filter((window) => window.apiStatus === 'ok');
+  const withinOkWindow = (ms) => okWindows.some((window) => ms >= Date.parse(window.from) && ms < Date.parse(window.to));
+
+  const results = items.map((item) => {
+    const startMs = Date.parse(item.start || '');
+    const canonicalChannelId = channelByAlias.get(normalizeChannel(item.channelName || '')) || null;
+    const inCoverage = Number.isFinite(startMs) && withinOkWindow(startMs);
+    if (!inCoverage) return { index: item.index, title: item.title, channelName: item.channelName, start: item.start, status: 'outside-canonical-coverage' };
+    if (!canonicalChannelId) return { index: item.index, title: item.title, channelName: item.channelName, start: item.start, status: 'unsupported-channel' };
+
+    const wantedTitle = normalizeComparable(item.title || '');
+    const sameChannel = schedule.programmes.filter((p) => p.channelId === canonicalChannelId);
+    const sameTitle = sameChannel.filter((p) => normalizeComparable(p.title) === wantedTitle);
+    const candidates = sameTitle
+      .map((p) => ({ ...p, startDeltaMinutes: Math.abs(Date.parse(p.startAt) - startMs) / 60000 }))
+      .filter((p) => p.startDeltaMinutes <= 5)
+      .sort((a, b) => a.startDeltaMinutes - b.startDeltaMinutes);
+
+    if (candidates.length === 1) {
+      const match = candidates[0];
+      return {
+        index: item.index,
+        title: item.title,
+        channelName: item.channelName,
+        start: item.start,
+        status: 'matched',
+        programmeId: match.id,
+        canonicalTitle: match.title,
+        canonicalStartAt: match.startAt,
+        startDeltaMinutes: match.startDeltaMinutes,
+      };
+    }
+    if (candidates.length > 1) {
+      return { index: item.index, title: item.title, channelName: item.channelName, start: item.start, status: 'ambiguous', candidateCount: candidates.length };
+    }
+
+    const nearestSameTitle = sameTitle
+      .map((p) => ({ title: p.title, startAt: p.startAt, deltaMinutes: Math.abs(Date.parse(p.startAt) - startMs) / 60000 }))
+      .sort((a, b) => a.deltaMinutes - b.deltaMinutes)
+      .slice(0, 3);
+    return {
+      index: item.index,
+      title: item.title,
+      channelName: item.channelName,
+      start: item.start,
+      status: sameTitle.length ? 'time-mismatch' : 'title-mismatch',
+      nearestSameTitle,
+    };
+  });
+
+  const counts = Object.fromEntries([...new Set(results.map((r) => r.status))].map((status) => [status, results.filter((r) => r.status === status).length]));
+  const eligible = results.filter((r) => !['outside-canonical-coverage', 'unsupported-channel'].includes(r.status));
+  const matched = eligible.filter((r) => r.status === 'matched').length;
+  const empiricalMatchRate = eligible.length ? matched / eligible.length : 0;
+
+  console.log('SPIKE_MATCH_SUMMARY ' + JSON.stringify({
+    totalItems: items.length,
+    counts,
+    eligibleItems: eligible.length,
+    matchedItems: matched,
+    empiricalMatchRate,
+    sourceIdItems: items.filter((item) => Object.values(item.idsByField).flat().length > 0).length,
+    rules: {
+      title: 'small deterministic normalization + exact equality',
+      channel: 'explicit canonical channel alias',
+      startToleranceMinutes: 5,
+      candidateCardinality: 'exactly one',
+    },
+  }));
+  console.log('SPIKE_MATCH_RESULTS ' + JSON.stringify(results));
+  return results;
+}
+
 async function inspectTeeveeSchedule() {
   const windows = [];
   const start = new Date(Date.UTC(2026, 8, 20, 4, 0, 0));
@@ -170,6 +266,7 @@ async function inspectTeeveeSchedule() {
   }
 
   const all = [];
+  const allChannels = [];
   const windowResults = [];
   for (const window of windows) {
     const response = await fetchText(GUIDE_URL, {
@@ -181,6 +278,7 @@ async function inspectTeeveeSchedule() {
     try { payload = JSON.parse(response.text); } catch {}
     const schedule = payload && payload.status === 'ok' ? payload.schedule : null;
     if (schedule && schedule.programmes) all.push(...schedule.programmes);
+    if (schedule && schedule.channels) allChannels.push(...schedule.channels);
     windowResults.push({
       ...window,
       httpStatus: response.status,
@@ -192,11 +290,14 @@ async function inspectTeeveeSchedule() {
     });
   }
   const programmes = [...new Map(all.map((p) => [p.id, p])).values()];
+  const channels = [...new Map(allChannels.map((channel) => [channel.id, channel])).values()];
   console.log('SPIKE_TEEVEE_SCHEDULE ' + JSON.stringify({
     windows: windowResults,
     uniqueProgrammes: programmes.length,
+    channels,
     sample: programmes.slice(0, 12),
   }));
+  return { windows: windowResults, programmes, channels };
 }
 
 async function main() {
@@ -208,7 +309,8 @@ async function main() {
   }));
   const items = await inspectRss();
   await inspectLinkedPages(items);
-  await inspectTeeveeSchedule();
+  const schedule = await inspectTeeveeSchedule();
+  evaluateMatches(items, schedule);
 }
 
 main().catch((error) => {
