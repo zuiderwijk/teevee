@@ -1,6 +1,6 @@
 # TVgids editorial feed -> Teevee programme matching research
 
-Status: research, 2026-09-22.  
+Status: empirical research complete, 2026-09-22 (PR #120).  
 Scope: technical suitability of public TVgids.nl editorial RSS surfaces for programme-level enrichment in Teevee. This does **not** change the production EPG/provider-rights decision.
 
 ## Executive conclusion
@@ -20,7 +20,7 @@ The public `/tips` surface links individual tips to these broadcast-specific URL
 
 Multiple occurrences of the same programme can have different `lineair` IDs, so this behaves as a broadcast-level source identifier rather than merely a programme-title identifier.
 
-The raw RSS XML item schema could not be inspected through the available external web reader because TVgids serves it as `application/rss+xml`. Therefore do **not** assume that `tips.rss` currently exposes the `lineair` ID in `<link>`, `<guid>` or a custom element until one raw feed capture verifies it. This is the first implementation spike to perform.
+PR #120 captured the raw feed in GitHub Actions and verified the actual per-item schema. `tips.rss` contains 100 current items and exposes `title`, `link`, `description`, `pubDate`, `start`, `end`, `guid`, `enclosure`, `category`, `channel_name` and `channel_icon`. It does **not** expose a `lineair/<id>` in the RSS item fields observed on 2026-09-22. Matching therefore cannot depend on a TVgids broadcast ID unless a future authorized source adds one.
 
 ## Relevant Teevee constraints
 
