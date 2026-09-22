@@ -5,10 +5,9 @@ import Animated, {
   useAnimatedStyle,
 } from 'react-native-reanimated';
 
-import { isProgrammeCurrent, type Programme } from '@/data/domain/epg';
 import { useTeeveeTheme } from '@/theme/useTeeveeTheme';
 
-import { programmeFrame, timeToX } from './geometry';
+import { timeToX } from './geometry';
 import {
   TOTAAL_TYPOGRAPHY,
   totaalStableScrollVisuals,
@@ -17,7 +16,6 @@ import {
   TOTAAL_MICRO_PROGRAMME_INSET_X,
   type TotaalRepeatedTitleRun,
   type TotaalRepeatedTitleRunPresentation,
-  totaalMicroProgrammeShowsEllipsis,
   totaalRepeatedRunVisibleLayout,
 } from './totaalMicroProgrammes';
 
@@ -28,7 +26,6 @@ type TotaalMicroProgrammeOverlayProps = {
   minuteWidth: number;
   rowHeight: number;
   viewportWidth: number;
-  nowMs: number;
   scrollX: SharedValue<number>;
   scrollY: SharedValue<number>;
   contentTopInset: number;
@@ -39,13 +36,11 @@ type TotaalMicroProgrammeOverlayProps = {
 
 type RepeatedTitleRunOverlayProps = {
   run: TotaalRepeatedTitleRun;
-  programmes: readonly Programme[];
   rowIndex: number;
   windowStartMs: number;
   minuteWidth: number;
   rowHeight: number;
   viewportWidth: number;
-  nowMs: number;
   scrollX: SharedValue<number>;
   fontScale: number;
   textColor: string;
@@ -53,20 +48,17 @@ type RepeatedTitleRunOverlayProps = {
 
 const RepeatedTitleRunOverlay = memo(function RepeatedTitleRunOverlay({
   run,
-  programmes,
   rowIndex,
   windowStartMs,
   minuteWidth,
   rowHeight,
   viewportWidth,
-  nowMs,
   scrollX,
   fontScale,
   textColor,
 }: RepeatedTitleRunOverlayProps) {
   const runStartX = timeToX(run.startMs, windowStartMs, minuteWidth);
   const runEndX = timeToX(run.endMs, windowStartMs, minuteWidth);
-  const runWidth = Math.max(0, runEndX - runStartX);
 
   const outerStyle = useAnimatedStyle(() => {
     const layout = totaalRepeatedRunVisibleLayout(
@@ -80,20 +72,6 @@ const RepeatedTitleRunOverlay = memo(function RepeatedTitleRunOverlay({
       width: layout.visibleWidth,
       opacity: layout.visibleWidth > 0 ? 1 : 0,
       transform: [{ translateX: layout.viewportOffsetX }],
-    };
-  }, [fontScale, runEndX, runStartX, viewportWidth]);
-
-  const individualStyle = useAnimatedStyle(() => {
-    const layout = totaalRepeatedRunVisibleLayout(
-      runStartX,
-      runEndX,
-      scrollX.value,
-      viewportWidth,
-      fontScale,
-    );
-    return {
-      opacity: layout.showSharedTitle ? 0 : 1,
-      transform: [{ translateX: layout.contentTranslateX }],
     };
   }, [fontScale, runEndX, runStartX, viewportWidth]);
 
@@ -125,51 +103,6 @@ const RepeatedTitleRunOverlay = memo(function RepeatedTitleRunOverlay({
       ]}
     >
       <Animated.View
-        testID={`totaal-repeated-run-ellipses-${run.id}`}
-        pointerEvents="none"
-        style={[
-          styles.runContent,
-          {
-            width: runWidth,
-            height: rowHeight,
-          },
-          individualStyle,
-        ]}
-      >
-        {programmes.map((programme) => {
-          const frame = programmeFrame(programme, windowStartMs, minuteWidth);
-          if (!totaalMicroProgrammeShowsEllipsis(frame.width, fontScale)) return null;
-          const current = isProgrammeCurrent(programme, nowMs);
-          return (
-            <View
-              key={programme.id}
-              testID={`totaal-run-micro-${programme.id}`}
-              pointerEvents="none"
-              accessible={false}
-              style={[
-                styles.microVisual,
-                {
-                  left: frame.left - runStartX,
-                  width: frame.width,
-                },
-              ]}
-            >
-              <Text
-                accessible={false}
-                numberOfLines={1}
-                style={[
-                  current ? styles.currentEllipsis : styles.ellipsis,
-                  { color: textColor },
-                ]}
-              >
-                …
-              </Text>
-            </View>
-          );
-        })}
-      </Animated.View>
-
-      <Animated.View
         testID={`totaal-repeated-title-${run.id}`}
         pointerEvents="none"
         accessible={false}
@@ -195,7 +128,6 @@ export const TotaalMicroProgrammeOverlay = memo(function TotaalMicroProgrammeOve
   minuteWidth,
   rowHeight,
   viewportWidth,
-  nowMs,
   scrollX,
   scrollY,
   contentTopInset,
@@ -233,17 +165,15 @@ export const TotaalMicroProgrammeOverlay = memo(function TotaalMicroProgrammeOve
       <Animated.View style={[styles.grid, gridStyle]}>
         {runPresentations.map(({ run, programmes }) => {
           const rowIndex = channelRowIndex.get(run.channelId);
-          return rowIndex === undefined ? null : (
+          return rowIndex === undefined || programmes.length === 0 ? null : (
             <RepeatedTitleRunOverlay
               key={run.id}
               run={run}
-              programmes={programmes}
               rowIndex={rowIndex}
               windowStartMs={windowStartMs}
               minuteWidth={minuteWidth}
               rowHeight={rowHeight}
               viewportWidth={viewportWidth}
-              nowMs={nowMs}
               scrollX={scrollX}
               fontScale={fontScale}
               textColor={theme.colors.text}
@@ -276,25 +206,6 @@ const styles = StyleSheet.create({
     position: 'absolute',
     left: 0,
     overflow: 'hidden',
-  },
-  runContent: {
-    position: 'absolute',
-    left: 0,
-    top: 0,
-  },
-  microVisual: {
-    position: 'absolute',
-    top: 0,
-    bottom: 0,
-    alignItems: 'center',
-    justifyContent: 'center',
-    overflow: 'hidden',
-  },
-  ellipsis: {
-    ...TOTAAL_TYPOGRAPHY.programmeTitle,
-  },
-  currentEllipsis: {
-    ...TOTAAL_TYPOGRAPHY.currentProgrammeTitle,
   },
   sharedTitle: {
     position: 'absolute',

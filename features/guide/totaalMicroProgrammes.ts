@@ -1,11 +1,7 @@
 import type { Programme } from '@/data/domain/epg';
 
-import { TOTAAL_TYPOGRAPHY } from './totaal';
-
 export const TOTAAL_MICRO_PROGRAMME_BASE_THRESHOLD = 48;
 export const TOTAAL_MICRO_PROGRAMME_INSET_X = 6;
-export const TOTAAL_MICRO_PROGRAMME_ELLIPSIS_BASE_MIN_WIDTH =
-  TOTAAL_TYPOGRAPHY.programmeTitle.fontSize + TOTAAL_MICRO_PROGRAMME_INSET_X * 2;
 
 const INTERNAL_WHITESPACE = /\s+/g;
 
@@ -42,25 +38,6 @@ function safeScale(fontScale: number) {
 export function totaalMicroProgrammeThreshold(fontScale: number): number {
   'worklet';
   return TOTAAL_MICRO_PROGRAMME_BASE_THRESHOLD * safeScale(fontScale);
-}
-
-/**
- * One programme-title em plus the existing 6-pt micro inset on both sides is the
- * smallest calm visual box for the ellipsis. Below it, the programme remains a full
- * action with its real boundary but carries no visible text glyph.
- */
-export function totaalMicroProgrammeEllipsisMinWidth(fontScale: number): number {
-  'worklet';
-  return TOTAAL_MICRO_PROGRAMME_ELLIPSIS_BASE_MIN_WIDTH * safeScale(fontScale);
-}
-
-export function totaalMicroProgrammeShowsEllipsis(
-  frameWidth: number,
-  fontScale: number,
-): boolean {
-  'worklet';
-  const width = Number.isFinite(frameWidth) ? Math.max(0, frameWidth) : 0;
-  return width >= totaalMicroProgrammeEllipsisMinWidth(fontScale);
 }
 
 export function totaalIsMicroProgrammeFrameWidth(
@@ -219,8 +196,8 @@ export type TotaalRepeatedTitleRunPresentation = {
 
 /**
  * Run identity/membership is full-schedule and immutable across programme-window buckets.
- * Presentation members are derived only from the already-bounded programme window so a
- * long repeated run cannot remount offscreen ellipsis nodes outside the canonical window.
+ * Presentation eligibility is derived only from the already-bounded programme window so
+ * a long repeated run is mounted only while at least one member intersects that window.
  */
 export function totaalRepeatedTitleRunPresentationsForWindow(
   runs: readonly TotaalRepeatedTitleRun[],

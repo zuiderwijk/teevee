@@ -14,10 +14,7 @@ import {
   totaalProgrammePressBackgroundColor,
   totaalProgrammeSecondaryLabel,
 } from './totaal';
-import {
-  totaalIsMicroProgrammeFrameWidth,
-  totaalMicroProgrammeShowsEllipsis,
-} from './totaalMicroProgrammes';
+import { totaalIsMicroProgrammeFrameWidth } from './totaalMicroProgrammes';
 
 type TotaalProgrammeCellProps = {
   channel: Channel;
@@ -26,7 +23,6 @@ type TotaalProgrammeCellProps = {
   windowStartMs: number;
   minuteWidth: number;
   fontScale: number;
-  repeatedTitleRunMember: boolean;
   onSelectProgramme: (selection: ProgrammeSelection) => void;
 };
 
@@ -37,7 +33,6 @@ export const TotaalProgrammeCell = memo(function TotaalProgrammeCell({
   windowStartMs,
   minuteWidth,
   fontScale,
-  repeatedTitleRunMember,
   onSelectProgramme,
 }: TotaalProgrammeCellProps) {
   const theme = useTeeveeTheme();
@@ -46,8 +41,6 @@ export const TotaalProgrammeCell = memo(function TotaalProgrammeCell({
   const endMs = Date.parse(programme.endAt);
   const current = isProgrammeCurrent(programme, nowMs);
   const microcell = totaalIsMicroProgrammeFrameWidth(frame.width, fontScale);
-  const showMicroEllipsis =
-    microcell && totaalMicroProgrammeShowsEllipsis(frame.width, fontScale);
   const content = totaalProgrammeContentPresentation(frame.width);
   const accessibilityStatus = current ? ', nu bezig' : '';
   const secondary = totaalProgrammeSecondaryLabel(
@@ -76,26 +69,7 @@ export const TotaalProgrammeCell = memo(function TotaalProgrammeCell({
         },
       ]}
     >
-      {microcell ? (
-        repeatedTitleRunMember || !showMicroEllipsis ? null : (
-          <View
-            testID={`totaal-programme-micro-content-${programme.id}`}
-            style={styles.microContent}
-          >
-            <Text
-              testID={`totaal-programme-micro-${programme.id}`}
-              accessible={false}
-              numberOfLines={1}
-              style={[
-                current ? styles.currentProgrammeTitle : styles.programmeTitle,
-                { color: theme.colors.text },
-              ]}
-            >
-              …
-            </Text>
-          </View>
-        )
-      ) : (
+      {microcell ? null : (
         <View style={styles.programmeTextContent}>
           <Text
             testID={`totaal-programme-title-${programme.id}`}
@@ -151,13 +125,6 @@ const styles = StyleSheet.create({
     minWidth: 0,
     flexShrink: 1,
     justifyContent: 'center',
-  },
-  microContent: {
-    flex: 1,
-    minWidth: 0,
-    alignItems: 'center',
-    justifyContent: 'center',
-    overflow: 'hidden',
   },
   programmeTitle: {
     ...TOTAAL_TYPOGRAPHY.programmeTitle,

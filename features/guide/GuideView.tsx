@@ -1224,9 +1224,6 @@ export const GuideView = memo(function GuideView({
                           windowStartMs={windowStart}
                           minuteWidth={layout.minuteWidth}
                           fontScale={effectiveFontScale}
-                          repeatedTitleRunMember={microProgrammeMetadata.repeatedRunByProgrammeId.has(
-                            programme.id,
-                          )}
                           onSelectProgramme={onSelectProgramme}
                         />
                       ),
@@ -1252,7 +1249,6 @@ export const GuideView = memo(function GuideView({
             minuteWidth={layout.minuteWidth}
             rowHeight={layout.rowHeight}
             viewportWidth={programmeViewportWidth}
-            nowMs={nowMs}
             scrollX={scrollX}
             scrollY={scrollY}
             contentTopInset={stableScrollGeometry.contentTopInset}
