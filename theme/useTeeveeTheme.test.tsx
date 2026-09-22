@@ -38,6 +38,8 @@ function ThemeProbe() {
       data-testid="theme-probe"
       data-dark={String(theme.dark)}
       data-background={theme.colors.background}
+      data-editorial-accent={theme.colors.editorialAccent}
+      data-editorial-accent-surface={theme.colors.editorialAccentSurface}
     />
   );
 }
@@ -99,16 +101,28 @@ describe('useTeeveeTheme live system updates', () => {
 
     expect(node.dataset.dark).toBe('false');
     expect(node.dataset.background).toBe(lightTheme.colors.background);
+    expect(node.dataset.editorialAccent).toBe(lightTheme.colors.editorialAccent);
+    expect(node.dataset.editorialAccentSurface).toBe(
+      lightTheme.colors.editorialAccentSurface,
+    );
 
     await switchScheme('dark');
     expect(probe()).toBe(node);
     expect(node.dataset.dark).toBe('true');
     expect(node.dataset.background).toBe(darkTheme.colors.background);
+    expect(node.dataset.editorialAccent).toBe(darkTheme.colors.editorialAccent);
+    expect(node.dataset.editorialAccentSurface).toBe(
+      darkTheme.colors.editorialAccentSurface,
+    );
 
     await switchScheme('light');
     expect(probe()).toBe(node);
     expect(node.dataset.dark).toBe('false');
     expect(node.dataset.background).toBe(lightTheme.colors.background);
+    expect(node.dataset.editorialAccent).toBe(lightTheme.colors.editorialAccent);
+    expect(node.dataset.editorialAccentSurface).toBe(
+      lightTheme.colors.editorialAccentSurface,
+    );
   });
 
   it('falls back to light when the system reports no explicit scheme', async () => {

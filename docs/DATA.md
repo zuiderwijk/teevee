@@ -21,7 +21,7 @@ The next data increment is the already-approved Kijktip vertical slice, not Sear
 
 Editorial enrichment is optional and parallel to core EPG state:
 
-`TVgids tips.rss -> editorial-refresh -> deterministic matching against canonical ScheduleRepository -> private programme_editorial_signals snapshot -> guide-schedule sibling editorialSignals -> mobile runtime editorial state`
+`TVgids tips.rss -> editorial-refresh -> deterministic matching against canonical ScheduleRepository -> private programme_editorial_signals lifecycle store -> guide-schedule sibling editorialSignals -> mobile runtime editorial state`
 
 Hard invariants:
 - the mobile app never fetches or parses TVgids RSS;
@@ -41,10 +41,18 @@ Source/matching:
 - ambiguity, unsupported channels, unavailable coverage, title mismatch plus start drift and all non-deterministic cases fail closed.
 
 Persistence/lifecycle:
-- `teevee.programme_editorial_signals` is private/service-role-only and keyed by source + signal type + canonical programme ID;
-- it deliberately has **no FK/cascade to `teevee.programmes`**, because ADR 0007 schedule-window replacement deletes/reinserts programme rows; instead snapshot writes validate programme IDs before mutation, reads join current programmes, and the next successful authoritative source snapshot removes stale/orphaned signals;
-- `teevee.editorial_source_state` records latest successful source snapshot/freshness and prevents an older concurrent refresh from replacing a newer snapshot;
-- a failed feed fetch/decode/match/persistence run leaves the previous successful editorial snapshot untouched;
+- `teevee.programme_editorial_signals` is private/service-role-only and keeps both canonical-programme uniqueness and the separate unique `(source, signal_type, source_item_id)` identity constraint;
+- it deliberately has **no FK/cascade to `teevee.programmes`**, because ADR 0007 schedule-window replacement deletes/reinserts programme rows;
+- each successful source refresh validates/deduplicates incoming matched signals under the existing per-source advisory lock and stale-write guard;
+- reconciliation happens **before incoming upsert**: an incoming `sourceItemId` explicitly rematched to a different canonical programme first removes its obsolete binding, then orphaned rows are cleaned, then omitted future signals are retracted, and only then are incoming rows inserted/updated. This is required because canonical `Programme.id` contains broadcast start and can therefore change after an EPG start-time correction;
+- for a canonical programme that is still **future** at the refresh timestamp, omission from a later successful TVgids snapshot remains authoritative and may retract/remove that Kijktip;
+- once `programme.start_at <= refreshedAt`, **simple omission** preserves the Kijktip as historical broadcast metadata; an explicit same-`sourceItemId` rematch is different evidence and safely rekeys that source item to the corrected canonical programme;
+- historical signals remain readable only while the canonical programme remains in Teevee's retained schedule store; orphan cleanup removes them after that canonical row leaves retention;
+- the unapplied PR #127 forward migration includes one deliberately narrow, idempotent historical recovery allowlist backed by **direct PR #120 `tips.rss` capture evidence**, not by article/title inference. It recovers the owner-observed NPO 1 `De slimste mens` broadcast of 22 September only when explicit channel + exact title + ±5-minute start still resolve to exactly one retained canonical candidate; ambiguity/missing evidence fails closed;
+- the recovery URL is used solely because it was the GUID/link of that explicit `tips.rss` item. General TVgids news articles remain outside the Kijktip source contract;
+- `teevee.editorial_source_state` records latest successful refresh/freshness and prevents an older concurrent refresh from overwriting newer state; recovery may refresh only its diagnostic signal count and never rewrites freshness;
+- a failed feed fetch/decode/match/persistence run leaves previously persisted editorial state untouched;
+- executable PostgreSQL-17 lifecycle smoke evidence is recorded in `docs/EDITORIAL_PERSISTENCE_RECOVERY_2026-09-23.md`;
 - `editorial-refresh` is an independent protected Edge Function with its own Vault-backed cron token and hourly `:41` cadence; it is not part of `epg-refresh` or Guide read critical path.
 
 Transport/runtime:

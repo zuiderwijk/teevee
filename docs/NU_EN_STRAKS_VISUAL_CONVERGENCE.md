@@ -301,6 +301,7 @@ Channel identity is optically associated with the reference programme rather tha
 
 Production target:
 - identity zone width: **64 pt**;
+- identity zone uses **bottom alignment inside the deterministic reference-programme height**, matching the reference title's vertical ownership rather than centring in that block;
 - logo max: **40 × 32 pt**, aspect-fit;
 - preserve source proportions;
 - never recolour or distort a broadcaster mark for consistency;
@@ -336,7 +337,7 @@ When the reference programme has canonical `isKijktip = true`, render one compac
 
 Production-frozen:
 - `editorialAccent`: **#315A63 light / #A9C9CF dark**;
-- `editorialAccentSurface`: **#E4ECEE light / #1C2527 dark**.
+- `editorialAccentSurface`: **#EEECE7 light / #171715 dark**.
 
 Kijktip text uses `editorialAccent`; the box uses `editorialAccentSurface`.
 
@@ -654,7 +655,7 @@ Use semantic theme tokens only.
 Light:
 - background: '#F7F7F5';
 - Kijktip editorial foreground direction: `editorialAccent` **#315A63**;
-- Kijktip label surface: `editorialAccentSurface` **#E4ECEE**;
+- Kijktip label surface: `editorialAccentSurface` **#EEECE7**;
 - primary text: '#171717';
 - quiet secondary/muted tokens as defined by the theme;
 - pressed programme: semantic 'surface';
@@ -666,7 +667,7 @@ Light:
 Dark:
 - background: '#10100F';
 - Kijktip editorial foreground direction: `editorialAccent` **#A9C9CF**;
-- Kijktip label surface: `editorialAccentSurface` **#1C2527**;
+- Kijktip label surface: `editorialAccentSurface` **#171715**;
 - primary text: '#F4F4F1';
 - same semantic hierarchy;
 - pressed programme: semantic 'surface';
@@ -785,7 +786,7 @@ Development must add coverage for at least:
 52. reference + following Kijktips may coexist without grouping, numbering or a shared label rail;
 53. the same broadcast may move from following inline label to reference overline label without semantic duplication;
 54. accessibility still announces channel, title, Kijktip, start/end, then current state where applicable, with one programme focus target;
-55. final Kijktip metrics are frozen: surface #E4ECEE/#1C2527, horizontal padding6, vertical padding0, radius4, outer height16S, outer width=intrinsic text+12, reference gap3 and following reserve=(outer width+8); runtime tests must cover them.
+55. final Kijktip metrics are frozen: surface #EEECE7/#171715, horizontal padding6, vertical padding0, radius4, outer height16S, outer width=intrinsic text+12, reference gap3 and following reserve=(outer width+8); runtime tests must cover them.
 
 Time-sensitive tests use injected/fixed instants. No wall-clock sleeps.
 
@@ -850,7 +851,7 @@ Physical Android interaction acceptance remains separately open until a physical
 
 After runtime implementation, physically validate on the exact implementation head:
 
-1. `editorialAccentSurface` reads as subtle local editorial surface in light **#E4ECEE** and dark **#1C2527**;
+1. `editorialAccentSurface` reads as subtle local editorial surface in light **#EEECE7** and dark **#171715**;
 2. Kijktip foreground uses **#315A63 light / #A9C9CF dark** and remains subordinate to programme titles/current state;
 3. reference/following labels use horizontal padding6, vertical padding0 and radius4 without reading as buttons;
 4. reference label outer height tracks 16×S and does not grow reference/channel-row geometry;
@@ -879,7 +880,7 @@ Values frozen by this owner-approved production refinement:
 5. Nu/Primetime visible height36; gap8; platform touch minimum44/48; labels14/18 Semibold; active/current Nu and return-action Nu remain distinct.
 6. Time rail: height52; quarter slot48×48; whole/half labels13/18 Medium, selected Semibold; major tick **1×10 railTick @1.00**; quarter tick **1×6 railTick @0.78**; horizontal bottom line **1 pt railTick @0.78**; marker2×12 currentTime; snap interval48.
 7. `railTick`: **#80807A light / #72726B dark**; global `border` remains unchanged.
-8. Channel geometry: left20; identity64; gap16; programme X100; right24.
+8. Channel geometry: left20; identity64; gap16; programme X100; right24; identity content is **bottom-aligned inside the reference block** for both logo and fallback.
 9. Reference block min64; reference title18/22 Semibold max2, **bottom-aligned with 0 bottom inset**; no visible end-time metadata.
 10. Reference→following dedicated gap = **0 pt**; channel bottom padding = **12 pt**, preserving base row totals.
 11. Following standard targets: min44 iOS /48 Android; 0 interaction gap; time width52; gap8; time13/18 Regular; title15/20 Medium; visible content uses progressive slack offsets **#1 2/3 / #2 1/3 / #3 0**; above 1.35 content remains centred.
@@ -890,7 +891,7 @@ Values frozen by this owner-approved production refinement:
 16. Programme press = transient semantic surface fill, no permanent card/opacity-first treatment.
 17. No artwork, genres, progressbars, chevrons or repeated 'Daarna' labels.
 18. NowNextGuideView remains behind deferred import.
-19. Kijktip semantic colours: `editorialAccent` **#315A63 light / #A9C9CF dark**; `editorialAccentSurface` **#E4ECEE light / #1C2527 dark**.
+19. Kijktip semantic colours: `editorialAccent` **#315A63 light / #A9C9CF dark**; `editorialAccentSurface` **#EEECE7 light / #171715 dark**.
 20. Kijktip-only label: 12/16 Instrument Sans Medium; horizontal padding6; vertical padding0; radius4; outer height16S; outer width=intrinsic text width+12; no border/shadow/independent pressed state.
 21. Reference Kijktip: label above title; fixed gap3; content-safe formula `clamp(1,2,floor((H-16S-3)/(22S)))`; no reference/channel-row height growth.
 22. Following Kijktip: inline after title; fixed gap8; protected reserve=(label outer width+8); **48-pt** minimum final-line title budget; no right-aligned label column or target-height growth.

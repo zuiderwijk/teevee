@@ -1,5 +1,82 @@
 # Teevee Development Logboek
 
+## 23 september 2026 — PR #127 Lead persistence blockers closed without UI changes
+
+Lead REQUIRED FIX #5785619629 accepted the current Guide UI/runtime and reopened only editorial persistence. The UI implementation is therefore untouched from reviewed head `c23609dc579438242c46fb5888ea0483b80b94e9`.
+
+Two persistence defects are corrected in the still-unapplied forward migration `20260923003000_preserve_started_editorial_signals.sql`.
+
+First, source reconciliation now occurs before incoming upsert. Because canonical programme identity includes broadcast start, an EPG time correction can rematch the same TVgids `sourceItemId` to a different `Programme.id`. The writer keeps the unique source-item constraint, advisory lock and stale guard, but now removes explicit source-item rekeys first, then orphans, then omitted future signals, and only then upserts incoming matches. A simple omission after programme start remains historical retention; an explicit same-source-item rematch safely moves the source identity to the corrected programme.
+
+Second, the migration adds one conservative recovery allowlist for an already-deleted historical Kijktip. PR #120 live job `106846180653` directly captured `De slimste mens` / NPO 1 / 22 September 21:30 CEST in `tips.rss` with GUID/link `…de-slimste-mens-kiki-boreel…2026-09-22`. Matching job `106846829261` resolved that exact item to canonical `programme-0gh2ai605h9qyw` at 19:30 UTC with zero drift. The recovery does not hardcode that programme ID: it reruns the existing Tier-B evidence shape against retained storage — explicit channel, exact title, ±5 minutes, exactly one candidate — and otherwise does nothing. The news-looking URL is used only because it was the direct `tips.rss` GUID/link; general TVgids news remains excluded.
+
+A temporary PR-only CI job executed `server/editorial/editorialMigrationSmoke.sql` against disposable **PostgreSQL 17** on head `e927eb320283742c5b1f403527b0bc33e7666f5f`. The real forward migration executed twice: first recovery `INSERT 0 1`, second idempotent pass `INSERT 0 0`. The smoke then passed future present, future omitted, started present, started omitted, same-source-item corrected-start rekey, orphan cleanup, stale refresh and historical getter assertions; PostgreSQL completed the assertion block with `DO` and the test transaction ended with `ROLLBACK`. Job `106974086358` succeeded. The temporary CI plumbing is removed again before final exact-head CI; the reusable smoke SQL remains in-repo.
+
+The migration has **not** been applied to the hosted Teevee production project. Migration history therefore remains clean and deployment remains a later merge/deploy action, not part of this fix session.
+
+Full evidence: `docs/EDITORIAL_PERSISTENCE_RECOVERY_2026-09-23.md`.
+
+**Next step:** final exact-head CI, then return PR #127 to Lead. Do not merge and do not send to Independent QA.
+
+---
+
+## 23 september 2026 — PR #127 closes owner physical regressions and compact-label follow-up
+
+Owner comments #5785161879 and #5785190676 reopen three narrow issues on exact head `aa5c947f5d9e44089a33cb4d5ae71d5a6b916ffd`.
+
+Nu & Straks keeps all existing row/reference/following geometry but changes the 64-pt channel identity zone from centred to bottom-aligned ownership, matching the already bottom-aligned reference programme. Horizontal identity/programme geometry, logo max40×32, targets, accessibility and Kijktip reference/following layout are unchanged.
+
+Per zender preserves the accepted structural grid and text positions — time text X24, title X100/right24, standard time Y7…27/Kijktip Y29…45 and current time Y21…41/Kijktip Y43…59 — while compacting only the editorial surface. Surface padding becomes 5 pt, surface-left X19, min width48 and width=max(48,max(intrinsic time,intrinsic Kijktip)+10). At S1 standard surface Y2…50 is 5/20/2/16/5 internally with 2-pt external row breathing; current surface is Y16…64. At scale S the surface height is 36S+12 inside the unchanged standard/current row authorities.
+
+Editorial persistence gains a **forward migration** rather than rewriting applied history. A successful TVgids refresh still validates/deduplicates and uses the existing advisory-lock/stale-write guard, but now upserts current matches, retracts an omitted signal only while its canonical programme is future, preserves an omitted signal after programme start as historical broadcast metadata, and removes orphaned signals when the canonical programme leaves retained schedule storage. The public/mobile editorial signal contract is unchanged.
+
+Deterministic UI, migration-contract and repository coverage is extended for these three fixes. Exact-head CI remains required before returning to Lead; no merge or Independent QA handoff occurs from Development.
+
+---
+
+## 23 september 2026 — PR #127 shared Kijktip surface-tone correction
+
+Lead REQUIRED FIX #5784910137 applies the later owner-approved shared `editorialAccentSurface` calibration without reopening layout: light changes from `#E4ECEE` to **`#EEECE7`** and dark from `#1C2527` to **`#171715`**. `editorialAccent` foreground remains unchanged. Because this is one shared semantic token, both Per zender and Nu & Straks receive the warmer/neutral surface tone through the existing theme architecture; no Nu & Straks component, layout or metric changes are made.
+
+The already Lead-approved Per-zender physical geometry remains exactly authoritative: time-text origin X24, surface-left X16, 8-pt horizontal inset, S1 standard 7/20/2/16/7, standard surface outer height equal to the existing scaled row height, current surface top14 with the same breathing, and title X100/right24. The remaining stale Per-zender production-summary wording that still described outer X24 / vertical padding0 / `36S+2` as surface height is corrected to distinguish intrinsic content height from surface outer height.
+
+Deterministic token and Guide integration expectations are updated to the new shared surface values. **Next step:** exact-head CI, then return to Lead for final pre-physical review. Do not merge and do not send to Independent QA.
+
+---
+
+## 22 september 2026 — PR #127 owner physical Per-zender Kijktip time-grid refinement
+
+Physical iPhone review of exact head `b385e9a8467361b521e613de567711c682728383` rejected only the Per-zender Kijktip label alignment/breathing. The editorial colour/radius/typography direction remains accepted and Nu & Straks is explicitly frozen.
+
+The correction makes the time grid authoritative. `perChannel.timeTextX = 24` now means the visible start-time text origin for normal, standard-Kijktip and current-Kijktip rows. With the existing 8-pt horizontal label inset, the decorative/editorial surface therefore starts at X16. The outer surface no longer centres the time inside its minimum width; an intrinsic inner stack begins at X24, with Kijktip centred beneath the rendered time.
+
+Vertical calibration now spends the existing standard-row slack inside the surface instead of outside it. At S1 the standard surface is exactly the frozen 52-pt row: 7 top + 20 time + fixed 2 gap + 16 Kijktip + 7 bottom. For Dynamic Type, `verticalBreathing = (round(52S) - (36S + 2)) / 2`; the surface height remains the existing `round(52S)` row authority. Current uses the same internal breathing and scaled surface height, anchored at the existing 14-pt current-content origin, while current title/description/progress remain unchanged.
+
+This supersedes only PR #129's Per-zender `surface-left X24 / vertical padding0 / 36S+2 surface-height` box metrics. Editorial tokens, radius6, 8-pt horizontal padding, 2-pt internal gap, 52/176 base rows, X100/right24 title geometry, separators, programme Pressable/accessibility, editorial-signal ownership and all Nu & Straks runtime remain unchanged.
+
+Deterministic coverage locks X24 text-origin parity, X16 surface-left, S1 7/20/2/16/7 composition, scaled S1.35/S1.5/S2 containment, width/min-width ownership, unchanged current content and multiple-Kijktip anchor/accessibility behaviour.
+
+**Next step:** exact-head CI, then Lead exact-head review and a focused owner physical iPhone recheck. Do not merge and do not send to Independent QA before physical PASS.
+
+---
+
+## 22 september 2026 — PR #127 reconciled to final PR #129 Kijktip label calibration
+
+PR #127 keeps its already-reviewed editorial-signal architecture and runtime ownership, but is reconciled against canonical main after PR #128/#129 superseded the earlier bare-text final styling. Current main wins unchanged for all six canonical design/spec authorities from PR #129.
+
+Runtime convergence is deliberately narrow:
+- adds semantic theme tokens `editorialAccent` (#315A63 light / #A9C9CF dark) and `editorialAccentSurface` (#E4ECEE light / #1C2527 dark) through the existing Light/Dark/System theme architecture;
+- Per zender renders one compact time + Kijktip editorial label at X24 with 8-pt horizontal padding, radius6, minimum width56, fixed 2-pt internal gap and the frozen 36S+2 outer height; normal title-cell rhythm, 52/176 row ownership and current title/description/progress remain unchanged;
+- Nu & Straks renders the calibrated Kijktip-only label with 6-pt horizontal padding, radius4 and 16S height; reference gap3/content-safe title formula and following reserve=(label outer width+8), 48-pt title floor, intrinsic short-title placement, Larger Text final-line ownership and >2.0/<180 fallback remain intact;
+- visible label containers/children remain presentation-only while each programme stays one Pressable/focus/action with Kijktip announced exactly once;
+- selected-day ownership, signal-only runtime reactivity, no duplicate hosted request/schedule replacement, Totaal, Programme Detail, Guide horizon/06:00/DST and gesture/scroll ownership are unchanged.
+
+Deterministic tests are updated for semantic theme values, System appearance resolution, Per-zender label geometry/intrinsic-width contract, Nu & Straks reference/following outer-label geometry and all prior #127 data/accessibility/layout regressions.
+
+**Gate:** exact-head CI is mandatory, then Lead exact-head runtime review and a new focused physical iPhone acceptance of the calibrated labels. Do not merge or send to Independent QA before those gates.
+
+---
+
 ## 22 september 2026 — PR #126 first production Kijktip backend/transport increment
 
 The first production-grade Kijktip vertical-slice implementation keeps editorial enrichment strictly optional and separate from core EPG identity/availability. No visible Kijktip UI is introduced.

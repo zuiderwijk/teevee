@@ -1,6 +1,6 @@
 # Teevee — Canonical Project State
 
-Last updated: 2026-09-22.
+Last updated: 2026-09-23.
 Status: ACTIVE — **Kijktip enrichment vertical slice before Phase 5 Search**.
 Current implementation priority: **Kijktip enrichment vertical slice**
 Next broader product phase: **Phase 5 — Search and Discovery**
@@ -32,10 +32,13 @@ Complete the already-prepared Kijktip vertical slice end-to-end **before Search*
 
 Merged foundations:
 - **PR #120 — empirical TVgids.nl Kijktip matching research**, merged as `15261e3da8273efcb6e4e41d20ab3cb0f62acccf`. Canonical authority: `docs/TVGIDS_EDITORIAL_FEED_MATCHING_2026-09-22.md`. It establishes server-side, deterministic, fail-closed matching from `tips.rss` to canonical programmes and keeps editorial enrichment outside the provider-independent core `Programme` identity.
-- **PR #122 — Per-zender Kijktip production calibration**, merged as `404c46f465a63006db5681ca439e3199a72f937a`. Its accepted Per-zender Kijktip presentation is implementation authority; do not redesign it during enrichment work.
-- **PR #123 — Nu & Straks Kijktip production calibration**, merged as `608cfe395b7ef2e727c1c436de164328b15e5b7e`. Its accepted reference/following Kijktip presentation and accessibility semantics are implementation authority.
+- **PR #126 — production editorial ingestion/transport foundation**, merged before the active visible increment. It provides server-side RSS ingestion/matching, private `ProgrammeEditorialSignal` persistence, independent protected refresh, fail-open typed transport, selected-day signal ownership and separate mobile runtime editorial state without mutating canonical `Programme`.
+- **PR #128 — owner-approved Kijktip editorial-label direction**, merged as `b0f2b458794741ad1e35b798120e50cecbfc43c3`, superseding the earlier bare-text final styling while preserving the accepted signal/accessibility/row-geometry foundations.
+- **PR #129 — final implementation-ready Kijktip label calibration**, merged as `0f43178382b8d313a668eabe4577e4c4ef303f29`. It is the current visual implementation authority: semantic `editorialAccent` / `editorialAccentSurface` tokens, Per-zender time+Kijktip label geometry and Nu & Straks Kijktip-only reference/following label geometry are frozen.
 
-Search is paused until the Kijktip data/enrichment path, approved Guide presentation wiring, deterministic verification and required acceptance gates are complete. **PR #126 is the first production implementation increment:** server-side `tips.rss` ingestion, deterministic Tier B/C matching, private persisted `ProgrammeEditorialSignal` snapshots, independent protected editorial refresh, fail-open typed hosted transport and separate mobile runtime enrichment state. It deliberately adds **no visible Kijktip UI** and does not mutate canonical `Programme`. After PR #126 passes Lead review and merges, the remaining Kijktip work is the already-calibrated Per-zender/Nu & Straks presentation wiring plus its review/physical-acceptance gates. After full Kijktip acceptance, resume Phase 5 with Search. Tonight remains deferred/provisional.
+**PR #127 is the active visible Guide implementation increment.** The owner-approved UI/runtime from Lead review is frozen unchanged: Nu & Straks identity stays bottom-aligned with all row/reference/following geometry intact, and Per-zender keeps time X24, surface X19/padding5/min48, standard Y2…50, current Y16…64 and title X100/right24. Lead REQUIRED FIX #5785619629 is addressed only in persistence: the unapplied forward migration now reconciles same-`sourceItemId` canonical rekeys/orphans/future omissions before upsert; preserves simple started omissions historically; and performs one fail-closed/idempotent recovery for the owner-observed 22 September NPO 1 `De slimste mens` broadcast from direct PR #120 `tips.rss` evidence. A disposable PostgreSQL 17 run executed the real migration twice and passed recovery, future/started presence+omission, corrected-start rekey, orphan, stale-refresh and historical-getter assertions, then rolled back. Production migration history remains untouched and the forward migration remains unapplied there. Evidence: `docs/EDITORIAL_PERSISTENCE_RECOVERY_2026-09-23.md`. Totaal, Programme Detail, 06:00/DST/horizon semantics and Guide gesture ownership remain unchanged. **Next gate: Lead exact-head review. Do not merge or send to Independent QA yet.**
+
+Search remains paused until PR #127 passes fresh exact-head runtime review, focused physical iPhone acceptance, Independent QA and the final Lead merge gate. After full Kijktip acceptance, resume Phase 5 with Search. Tonight remains deferred/provisional.
 
 Rights status for this vertical slice is closed: the product owner confirms the intended Teevee Kijktip use of TVgids `tips.rss` is rights-cleared. That source is **not a Kijktip release blocker**. This does not change the separate Phase 8 production EPG-provider redistribution-rights gate or the independent licensing/provenance requirements for channel logos and programme artwork.
 
@@ -177,7 +180,7 @@ Physical Android interaction acceptance remains OPEN/DEFERRED because no Android
 - physical Android validation.
 
 ## Current next step
-**Finish the PR #126 backend/transport gate, then continue the Kijktip vertical slice with visible Guide wiring in a separate increment.** PR #126 must pass Lead review before merge; it already keeps RSS ingestion/matching/storage/refresh server-side, transports optional `ProgrammeEditorialSignal[]` separately from `GuideSchedule`, and installs that enrichment separately in mobile runtime without rendering it. After this increment merges, wire the signals into the owner-approved Per-zender (PR #122) and Nu & Straks (PR #123) presentations with deterministic coverage and the applicable physical/accessibility acceptance gates. Do not start Search until the complete Kijktip vertical slice is accepted. Tonight remains deferred/provisional.
+**Close PR #127 through the remaining acceptance gates without reopening the accepted Guide UI/runtime or persistence design.** The implementation and persistence corrections are complete; the next sequence is final Lead exact-head review, focused owner physical iPhone recheck, Independent QA and final Lead merge gate. After PR #127 is merged and the Kijktip vertical slice is fully accepted, resume Phase 5 with Search as the first slice. Tonight remains deferred/provisional.
 
 Owner checkout: `~/projects/teevee`.
 

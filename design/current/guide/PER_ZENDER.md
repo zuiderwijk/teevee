@@ -1,7 +1,7 @@
 # Per zender — current accepted visual
 
 Status: **ACCEPTED**
-Accepted: 2026-09-13; day-selector and Primetime behaviour amended 2026-09-15; accepted visual refinement amended 2026-09-17; selected-channel-heading removal, current-programme spacing and compact temporal-context refinement accepted 2026-09-18; Kijktip editorial-disclosure refinement + production calibration accepted 2026-09-22; Kijktip label direction + final production calibration accepted 2026-09-22
+Accepted: 2026-09-13; day-selector and Primetime behaviour amended 2026-09-15; accepted visual refinement amended 2026-09-17; selected-channel-heading removal, current-programme spacing and compact temporal-context refinement accepted 2026-09-18; Kijktip editorial-disclosure refinement + production calibration accepted 2026-09-22; Kijktip label direction + final production calibration accepted 2026-09-22; owner physical time-grid + vertical-breathing correction accepted 2026-09-22
 
 ## Canonical asset
 - Light + dark reference: `/Teevee/TV-gids app in licht en donker thema.png`
@@ -155,15 +155,15 @@ Shared Guide editorial semantics are production-frozen:
   - light: **`#315A63`**
   - dark: **`#A9C9CF`**
 - **`editorialAccentSurface`**
-  - light: **`#E4ECEE`**
-  - dark: **`#1C2527`**
+  - light: **`#EEECE7`**
+  - dark: **`#171715`**
 
 Both the start time and `Kijktip` inside the Per-zender label use `editorialAccent`.
 
 Contrast:
-- light `editorialAccent` on `editorialAccentSurface`: **6.32:1**;
-- dark `editorialAccent` on `editorialAccentSurface`: **8.89:1**;
-- surface separation from Guide canvas is intentionally subtle: about **1.12:1 light / 1.22:1 dark**.
+- light `editorialAccent` on `editorialAccentSurface`: **6.41:1**;
+- dark `editorialAccent` on `editorialAccentSurface`: **10.21:1**;
+- surface separation from Guide canvas is intentionally subtle: about **1.10:1 light / 1.06:1 dark**.
 
 The label has:
 - no border;
@@ -188,14 +188,16 @@ Typography:
 - internal time→Kijktip gap: **2 pt fixed**, non-scaling.
 
 Box:
-- left edge: **X24**;
-- horizontal padding: **8 pt** each side;
-- vertical padding: **0 pt**;
+- **X24 is the start-time text origin**, identical to every non-Kijktip row;
+- with fixed **5-pt** horizontal inset, the editorial surface begins at **X19**;
+- horizontal padding: **5 pt** each side;
 - radius: **6 pt**;
-- minimum outer width: **56 pt**;
+- minimum outer width: **48 pt**;
 - outer width:
-  `max(56, max(intrinsicTimeWidth, intrinsicKijktipWidth) + 16)`;
+  `max(48, max(intrinsicTimeWidth, intrinsicKijktipWidth) + 10)`;
 - no border/shadow.
+
+The editorial surface is subordinate to the structural time grid: it may extend left of X24, but it must never move the time text away from X24. Inside the surface, the time/Kijktip stack starts at X24 and remains intrinsic; `Kijktip` is optically centred under the rendered time. The earlier X16/inset8/min-width56 calibration is superseded by this compact owner refinement.
 
 The label is an editorial information container, not a button or promotional badge.
 
@@ -204,34 +206,46 @@ The label is an editorial information container, not a button or promotional bad
 The frozen standard row remains **52 pt at S=1**.
 
 At `S = 1`:
-- label outer Y: **7…45**;
-- time line box: **7…27**;
-- Kijktip line box: **29…45**;
-- label outer height: **38 pt**;
-- top/bottom row breathing room: **7 pt / 7 pt**.
+- row remains **0…52**;
+- time line box remains **7…27**;
+- fixed internal gap remains **2 pt**;
+- Kijktip line box remains **29…45**;
+- compact surface Y is **2…50**;
+- surface padding is **5 pt top / 5 pt bottom**;
+- row-external breathing is **2 pt top / 2 pt bottom**;
+- horizontal padding is **5 pt**.
 
 At arbitrary substantive content scale `S = max(1, effectiveFontScale)`:
 
-`labelOuterHeight = 20S + 2 + 16S = 36S + 2`
+`rowHeight = round(52S)`
 
-`labelTop = (round(52S) - labelOuterHeight) / 2`
+`contentHeight = (20S) + 2 + (16S) = 36S + 2`
 
-Horizontal padding stays 8 pt and radius stays 6 pt; they do not scale. The programme-title column remains X100 with unchanged width. Above 1.35 the existing max-two-line title rule remains authoritative.
+`contentStackTop = (rowHeight - contentHeight) / 2`
+
+`surfacePaddingY = 5`
+
+`surfaceTop = contentStackTop - 5`
+
+`surfaceOuterHeight = contentHeight + 10 = 36S + 12`
+
+The existing row formula remains the only row-height authority; the compact surface sits inside it symmetrically and introduces no Kijktip-specific height branch. Time and Kijktip scale substantively, while the 2-pt internal gap, 5-pt surface padding and 6-pt radius remain fixed. The programme-title column remains X100 with unchanged width. Above 1.35 the existing max-two-line title rule remains authoritative.
 
 ### Current programme
 
 The frozen current row remains **176 pt at S=1** and uses the existing Dynamic Type row formula.
 
-At `S=1`:
-- label outer Y: **14…52**;
-- time line box: **14…34**;
-- Kijktip line box: **36…52**;
-- label outer height: **38 pt**;
+The accepted current time/Kijktip text positions stay unchanged:
+- time line box remains **21…41** at S1;
+- fixed gap remains **2 pt**;
+- Kijktip line box remains **43…59**;
+- compact surface Y becomes **16…64**;
+- surface padding is **5 pt top / 5 pt bottom**;
 - current title remains X100/top14.
 
-The label does not move or resize the current title/description/progress composition. Current state remains visually dominant through title hierarchy and the existing progress treatment.
+The surface occupies only the time-column zone and does not move or resize the current title/description/progress composition. Current state remains visually dominant through title hierarchy and the existing progress treatment.
 
-At Larger Text, scale the time/Kijktip text substantively and preserve the same fixed 2-pt internal gap, 8-pt horizontal padding and 6-pt radius. The existing current-row formula remains the only row-height authority.
+At Larger Text, reuse the standard-row content-stack centring plus fixed 5-pt surface padding, offset from the existing current-content origin. The existing current-row formula remains the only row-height authority and must contain the surface without clipping.
 
 ### Accessibility and multiple Kijktips
 

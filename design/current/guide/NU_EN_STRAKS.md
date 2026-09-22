@@ -43,7 +43,7 @@ Physical iPhone evidence on the production-convergence candidates justified reop
 - the selected/current rail marker remains the strongest temporal marker;
 - all standalone visible reference-time copy is removed, including `Referentietijd`, live `Nu · HH:MM` and browse `HH:MM`; the rail itself carries visible temporal orientation;
 - visible reference-programme `tot HH:MM` metadata is removed because the following programme start time normally communicates the same boundary; full start/end times remain available to accessibility and Programme Detail;
-- the reference programme block remains minimum 64 pt but its title is bottom-aligned; the dedicated reference→following gap is **0 pt**, with the former 4 pt moved to row-bottom padding so base row height remains unchanged;
+- the reference programme block remains minimum 64 pt but its title is bottom-aligned; the channel identity zone uses the same bottom ownership inside that unchanged reference block so logo/fallback identity stays optically associated with the reference programme; the dedicated reference→following gap is **0 pt**, with the former 4 pt moved to row-bottom padding so base row height remains unchanged;
 - the three following programme rows remain directly adjacent with no additional interaction gap while retaining independent minimum 44 pt iOS / 48 dp Android touch targets; at standard text, visible content uses the accepted progressive target-slack offsets (#1 = 2/3, #2 = 1/3, #3 = 0) while Larger Text remains centred;
 - rail ticks keep 1-pt thickness but use dedicated `railTick` contrast: light `#80807A`, dark `#72726B`; major opacity 1.00, quarter opacity 0.78;
 - above font scale 1.35, shared Guide tabs remain 64 pt / max two lines; Nu & Straks itself stays on the same **52-pt utility-only context** because the reference-time lane has been removed;
@@ -65,8 +65,8 @@ Production-frozen:
   - light: **#315A63**
   - dark: **#A9C9CF**
 - **`editorialAccentSurface`**
-  - light: **#E4ECEE**
-  - dark: **#1C2527**
+  - light: **#EEECE7**
+  - dark: **#171715**
 
 Kijktip text uses `editorialAccent`; the compact label uses `editorialAccentSurface`.
 
