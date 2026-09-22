@@ -39,7 +39,7 @@ Exact canonical pixels remain:
 - Per zender light + dark: `/Teevee/TV-gids app in licht en donker thema.png`, Library file id `file_000000008b2481f4ad34bb1547fc813e`;
 - Guide day-selector states: `/Teevee/Teevee Guide day selector - states and bottom sheet.png`, Library file id `file_00000000390c8210b76256621721592b`;
 - sticky/condensed behaviour: `/Teevee/Teevee Guide day selector - sticky scroll behavior.png`, Library file id `file_00000000314481f69f6a34d18ece1c21`;
-- Per-zender Kijktip text-only refinement reference: `/Teevee/Per Zender Kijktip refinement - 12pt Medium textSecondary.png`, Library file id `file_00000000dd7c8210a35769aada30424b`; **superseded for final Kijktip styling** by the 22 September owner-approved shared time+Kijktip label direction. The new label direction is recorded textually here; exact surface/padding/radius metrics are pending final calibration.
+- Per-zender Kijktip text-only refinement reference: `/Teevee/Per Zender Kijktip refinement - 12pt Medium textSecondary.png`, Library file id `file_00000000dd7c8210a35769aada30424b`; **superseded for final Kijktip styling** by the 22 September owner-approved shared time+Kijktip label calibration. The written metrics in this specification are authoritative; no replacement image asset is required for implementation.
 
 The 2026-09-17 written refinement supersedes those historical pixels only for the explicitly changed details in this document: temporal utility states, programme-title calibration, settled condensed channel-strip height, channel-rail positioning behaviour and programme-row pressed feedback. The 2026-09-18 owner refinements additionally supersede selected-channel text outside the rail, the former compressed current-programme treatment, the old 24-pt rail→utilities calibration, the physically rejected 16/12 expanded spacing distribution, long Per-zender relative date labels and Dynamic-Type-driven wrapped temporal chrome. The 2026-09-22 Kijktip label refinement changes only editorial disclosure inside the existing time-column zone: the prior bare-text stack is superseded by one compact time+Kijktip label. All other accepted composition remains intact.
 
@@ -1183,12 +1183,12 @@ Per-zender visual convergence is ready only when all are true on the exact imple
 - Per-zender date/Primetime/Nu compact chrome is hard-capped at 1.20 and remains one line; no 88-pt/wrapped-context state or selected-channel injection exists; programme content retains substantive Dynamic Type; VoiceOver, TalkBack and Reduce Motion follow this specification;
 - Kijktip uses the owner-approved compact **time + Kijktip editorial label** in the existing time-column zone; programme title X/width remains unchanged;
 - conceptual editorial foreground is `editorialAccent`: **#315A63 light / #A9C9CF dark**;
-- time remains 16/20 Regular and Kijktip remains 12/16 Medium as the label text inputs; exact label surface/padding/radius/outer box is pending final physical calibration;
+- time remains 16/20 Regular and Kijktip remains 12/16 Medium; label surface/padding/radius/outer box follow the production-frozen §11.3 metrics;
 - normal rows without Kijktip remain visually unchanged;
 - standard/current row heights and their Dynamic Type formulas remain unchanged; current title/description/progress geometry does not move;
 - three Kijktips distributed across one evening preserve identical row tops/heights, scroll anchors and programme interaction geometry;
 - Larger Text must fit the label within the existing scaled row formulas without a Kijktip-specific height branch;
 - programme accessibility announces Kijktip once through the single row action; label/container text creates no second focus target;
-- Kijktip label runtime styling is **not implementation-ready** until the final surface/padding/radius calibration is owner-approved and merged;
+- Kijktip label runtime styling is **implementation-ready** against the production-frozen §11.3 metrics; physical-device review remains an implementation-fidelity gate;
 - one-time swipe nudge and `•••` overflow remain absent;
 - final physical comparison uses the exact canonical references plus the written 2026-09-17, 2026-09-18 and 2026-09-22 refinements, never a superseded runtime screenshot.
