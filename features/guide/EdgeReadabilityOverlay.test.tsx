@@ -8,6 +8,7 @@ import type { GuideFixture } from '@/data/domain/epg';
 
 import { EdgeReadabilityOverlay } from './EdgeReadabilityOverlay';
 import { guideLayoutForFontScale } from './layout';
+import { totaalEdgeReadableTitleFloor } from './totaal';
 
 type StyleValue = Record<string, unknown> | StyleValue[] | null | undefined;
 type MockProps = {
@@ -36,11 +37,13 @@ vi.mock('react-native', () => {
         'data-testid': testID,
         'data-width': resolved.width,
         'data-opacity': resolved.opacity,
+        'data-padding-x': resolved.paddingHorizontal,
       },
       children,
     );
   };
-  const Text = ({ children }: MockProps) => createElement('span', null, children);
+  const Text = ({ children, testID }: MockProps) =>
+    createElement('span', { 'data-testid': testID }, children);
   return {
     View,
     Text,
@@ -117,20 +120,26 @@ afterEach(async () => {
   vi.unstubAllGlobals();
 });
 
-async function renderAt(viewportX: number) {
+async function renderAtRemaining(
+  remainingWidth: number,
+  fontScale = 1,
+) {
+  const layout = guideLayoutForFontScale(fontScale);
+  const programmeEndX = layout.minuteWidth * 60;
+
   await act(async () => {
     root.render(
       <EdgeReadabilityOverlay
         fixture={fixture}
-        layout={guideLayoutForFontScale(1)}
+        layout={layout}
         windowStart={START}
         viewportWidth={120}
         nowMs={START}
-        scrollX={sharedValue(viewportX)}
+        scrollX={sharedValue(programmeEndX - remainingWidth)}
         scrollY={sharedValue(0)}
         contentTopInset={100}
         collapseProgress={sharedValue(0)}
-        fontScale={1}
+        fontScale={fontScale}
         reduceMotion={false}
       />,
     );
@@ -139,7 +148,7 @@ async function renderAt(viewportX: number) {
 
 describe('EdgeReadabilityOverlay', () => {
   it('keeps mask/boundary while suppressing a meaningless tiny title fragment', async () => {
-    await renderAt(179);
+    await renderAtRemaining(1);
 
     const mask = container.querySelector<HTMLElement>(
       '[data-testid="guide-edge-mask-programme-1"]',
@@ -154,17 +163,64 @@ describe('EdgeReadabilityOverlay', () => {
     expect(mask?.dataset.width).toBe('1');
     expect(mask?.dataset.opacity).toBe('1');
     expect(text?.dataset.opacity).toBe('0');
-    expect(text?.querySelector('span')?.textContent).toBe('Betekenisvolle titel');
     expect(boundary?.dataset.opacity).toBe('0.55');
   });
 
-  it('re-anchors the title once the visible remainder reaches 48 pt', async () => {
-    await renderAt(132);
+  it('reveals the base-scale title only when 48 pt of inner text width remains after compact padding', async () => {
+    const floor = totaalEdgeReadableTitleFloor(1);
 
+    await renderAtRemaining(floor.outerWidth - 0.01);
+    expect(
+      container.querySelector<HTMLElement>(
+        '[data-testid="guide-edge-text-programme-1"]',
+      )?.dataset.opacity,
+    ).toBe('0');
+
+    await renderAtRemaining(floor.outerWidth);
+    const mask = container.querySelector<HTMLElement>(
+      '[data-testid="guide-edge-mask-programme-1"]',
+    );
     const text = container.querySelector<HTMLElement>(
       '[data-testid="guide-edge-text-programme-1"]',
     );
+
+    expect(Number(mask?.dataset.width)).toBeCloseTo(60, 8);
+    expect(Number(mask?.dataset.paddingX)).toBe(6);
+    expect(
+      Number(mask?.dataset.width) - Number(mask?.dataset.paddingX) * 2,
+    ).toBe(48);
     expect(text?.dataset.opacity).toBe('1');
-    expect(text?.querySelector('span')?.textContent).toBe('Betekenisvolle titel');
+  });
+
+  it('scales the usable inner title floor at Larger Text and applies standard padding', async () => {
+    const floor = totaalEdgeReadableTitleFloor(1.35);
+
+    await renderAtRemaining(floor.outerWidth);
+    const mask = container.querySelector<HTMLElement>(
+      '[data-testid="guide-edge-mask-programme-1"]',
+    );
+    const text = container.querySelector<HTMLElement>(
+      '[data-testid="guide-edge-text-programme-1"]',
+    );
+
+    expect(Number(mask?.dataset.width)).toBeCloseTo(80.8, 8);
+    expect(Number(mask?.dataset.paddingX)).toBe(8);
+    expect(
+      Number(mask?.dataset.width) - Number(mask?.dataset.paddingX) * 2,
+    ).toBeCloseTo(64.8, 8);
+    expect(text?.dataset.opacity).toBe('1');
+  });
+
+  it('does not show secondary metadata while the remainder is still in compact mode', async () => {
+    await renderAtRemaining(63.99);
+
+    expect(
+      container.querySelector('[data-testid="guide-edge-secondary-programme-1"]'),
+    ).toBeNull();
+    expect(
+      container.querySelector<HTMLElement>(
+        '[data-testid="guide-edge-text-programme-1"]',
+      )?.dataset.opacity,
+    ).toBe('1');
   });
 });

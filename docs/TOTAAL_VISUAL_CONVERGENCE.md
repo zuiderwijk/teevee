@@ -615,8 +615,10 @@ Preserve the proven EdgeReadabilityOverlay / masking contract.
 For normal/non-micro programmes, when horizontal scrolling cuts through a programme:
 - programme geometry remains unchanged;
 - the left-edge mask remains active for any positive partial-left remainder so the underlying offscreen-positioned title cannot leak a one-letter, bare-ellipsis or similar fragment through the viewport edge;
-- sticky title text is a separate presentation decision and appears only when the visible remainder is at least the existing `48 × S` readable-presentation threshold;
-- once that threshold is reached, readable title content may re-anchor into the visible remainder;
+- sticky title text is a separate presentation decision based on **usable inner title width after the active programme padding**, not on the microcell/repeated-run frame threshold;
+- the base inner readability budget is derived from the existing standard mode: `64 pt - (2 × 8 pt padding) = 48 pt`, then scaled by `S`;
+- the required outer remainder is that scaled inner budget plus the horizontal padding of the width mode in which the remainder falls: base scale therefore requires **60 pt outer / 48 pt inner** in compact mode; at `S = 1.35` it requires **80.8 pt outer / 64.8 pt inner** in standard mode;
+- once that padding-aware floor is reached, readable title content may re-anchor into the visible remainder;
 - the duplicated readability layer must not create a second accessibility focus target;
 - when visible remainder <52 pt, secondary time disappears;
 - reverse scrolling must not briefly collapse newly visible text because a stale settled viewport lies beyond the programme;
@@ -964,7 +966,7 @@ Development must cover at least:
 29. Nu restores exact now + containing television day;
 30. Dynamic Type formula for minuteWidth/channelWidth/rowHeight;
 31. row height deterministic across channels/content/duration;
-32. partial-left readability invariants and boundary switching;
+32. partial-left readability invariants and boundary switching, including padding-aware outer title floor derived from the scaled inner readability budget;
 33. programme window remains viewport-bucketed with 1.5× overscan;
 34. animated vs non-animated programme-window prealignment ownership;
 35. Programme Detail round-trip keeps Totaal instance and scroll context;

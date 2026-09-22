@@ -134,6 +134,59 @@ export function totaalProgrammeContentPresentation(
   };
 }
 
+/**
+ * Normal-programme EdgeReadability needs a minimum *inner* title budget after
+ * programme padding, not the microcell frame threshold.
+ *
+ * The base inner budget is derived from the existing standard width mode:
+ * 64 pt outer - 8 pt padding on each side = 48 pt usable title width.
+ * Dynamic Type scales that inner budget by S. We then solve for the smallest
+ * outer remainder whose actual width mode leaves that inner width after its
+ * existing 6/8/10 pt horizontal padding.
+ */
+export function totaalEdgeReadableTitleFloor(fontScale = 1) {
+  const [standardStart, comfortableStart] =
+    TOTAAL_PROGRAMME_READABILITY_THRESHOLDS;
+  const standardPresentation =
+    totaalProgrammeContentPresentation(standardStart);
+  const baseInnerWidth =
+    standardStart - standardPresentation.paddingX * 2;
+  const innerWidth = baseInnerWidth * normaliseScale(fontScale);
+
+  const compactPresentation = totaalProgrammeContentPresentation(0);
+  const compactOuterWidth =
+    innerWidth + compactPresentation.paddingX * 2;
+  if (compactOuterWidth < standardStart) {
+    return {
+      innerWidth,
+      outerWidth: compactOuterWidth,
+      paddingX: compactPresentation.paddingX,
+      mode: compactPresentation.mode,
+    } as const;
+  }
+
+  const standardOuterWidth =
+    innerWidth + standardPresentation.paddingX * 2;
+  if (standardOuterWidth < comfortableStart) {
+    return {
+      innerWidth,
+      outerWidth: standardOuterWidth,
+      paddingX: standardPresentation.paddingX,
+      mode: standardPresentation.mode,
+    } as const;
+  }
+
+  const comfortablePresentation =
+    totaalProgrammeContentPresentation(comfortableStart);
+  return {
+    innerWidth,
+    outerWidth:
+      innerWidth + comfortablePresentation.paddingX * 2,
+    paddingX: comfortablePresentation.paddingX,
+    mode: comfortablePresentation.mode,
+  } as const;
+}
+
 export function totaalCollapseProgressForScrollOffset(
   scrollY: number,
   reduceMotion: boolean,

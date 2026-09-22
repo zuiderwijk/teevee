@@ -28,13 +28,11 @@ import {
   TOTAAL_PROGRAMME_READABILITY_THRESHOLDS,
   TOTAAL_TYPOGRAPHY,
   TOTAAL_VISUAL_METRICS,
+  totaalEdgeReadableTitleFloor,
   totaalProgrammeContentPresentation,
   totaalStableScrollVisuals,
 } from './totaal';
-import {
-  totaalIsMicroProgrammeFrameWidth,
-  totaalMicroProgrammeThreshold,
-} from './totaalMicroProgrammes';
+import { totaalIsMicroProgrammeFrameWidth } from './totaalMicroProgrammes';
 
 type EdgeReadabilityOverlayProps = {
   fixture: GuideFixture;
@@ -87,7 +85,8 @@ function EdgeRow({
   const secondary = isCurrent
     ? `tot ${formatGuideTime(endMs)}`
     : formatGuideTime(startMs);
-  const readableTextWidth = totaalMicroProgrammeThreshold(fontScale);
+  const readableTextWidth =
+    totaalEdgeReadableTitleFloor(fontScale).outerWidth;
   const edgeId = edge?.programme.id ?? `row-${rowIndex}`;
 
   const maskStyle = useAnimatedStyle(() => {
@@ -164,6 +163,7 @@ function EdgeRow({
         </Text>
         {presentation.showSecondary && edge ? (
           <Text
+            testID={`guide-edge-secondary-${edgeId}`}
             numberOfLines={1}
             style={[styles.secondary, { color: secondaryTextColor }]}
           >

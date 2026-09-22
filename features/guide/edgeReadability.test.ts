@@ -8,7 +8,10 @@ import {
   edgeReadableProgramme,
   edgeReadabilityPresentation,
 } from './edgeReadability';
-import { totaalMicroProgrammeThreshold } from './totaalMicroProgrammes';
+import {
+  totaalEdgeReadableTitleFloor,
+  totaalProgrammeContentPresentation,
+} from './totaal';
 
 const windowStart = Date.parse('2026-09-13T08:00:00Z');
 const programme: Programme = {
@@ -87,41 +90,98 @@ describe('edge boundary switching', () => {
 
 
 describe('edge readability presentation', () => {
-  const readabilityFloor = totaalMicroProgrammeThreshold(1);
+  it('derives the base outer title floor from the canonical inner budget plus active compact padding', () => {
+    const floor = totaalEdgeReadableTitleFloor(1);
 
-  it('keeps the mask active while hiding a meaningless tiny title fragment', () => {
-    expect(readabilityFloor).toBe(48);
+    expect(floor).toEqual({
+      innerWidth: 48,
+      outerWidth: 60,
+      paddingX: 6,
+      mode: 'compact',
+    });
+    expect(floor.outerWidth - floor.paddingX * 2).toBe(floor.innerWidth);
+  });
+
+  it('scales the inner title budget at Larger Text and accounts for standard-mode padding', () => {
+    const floor = totaalEdgeReadableTitleFloor(1.35);
+
+    expect(floor.innerWidth).toBeCloseTo(64.8, 8);
+    expect(floor.outerWidth).toBeCloseTo(80.8, 8);
+    expect(floor.paddingX).toBe(8);
+    expect(floor.mode).toBe('standard');
+    expect(floor.outerWidth - floor.paddingX * 2).toBeCloseTo(
+      floor.innerWidth,
+      8,
+    );
+  });
+
+  it('keeps the mask visible just below the padding-aware title floor and reveals text exactly at it', () => {
+    const floor = totaalEdgeReadableTitleFloor(1);
+
     expect(
-      edgeReadabilityPresentation(0, 180, 179, 120, readabilityFloor),
-    ).toEqual({
-      width: 1,
-      active: true,
+      edgeReadabilityPresentation(
+        0,
+        180,
+        180 - floor.outerWidth + 0.001,
+        120,
+        floor.outerWidth,
+      ),
+    ).toMatchObject({
       maskVisible: true,
       titleVisible: false,
-      endVisible: true,
     });
-  });
-
-  it('reveals the re-anchored title exactly at the canonical 48 × S floor', () => {
     expect(
-      edgeReadabilityPresentation(0, 180, 132.001, 120, readabilityFloor)
-        .titleVisible,
-    ).toBe(false);
-    expect(
-      edgeReadabilityPresentation(0, 180, 132, 120, readabilityFloor),
+      edgeReadabilityPresentation(
+        0,
+        180,
+        180 - floor.outerWidth,
+        120,
+        floor.outerWidth,
+      ),
     ).toMatchObject({
-      width: 48,
-      active: true,
+      width: 60,
       maskVisible: true,
       titleVisible: true,
-      endVisible: true,
     });
   });
 
-  it('stays stable across hard horizontal reversal around the text floor', () => {
-    const forward = edgeReadabilityPresentation(0, 180, 120, 120, readabilityFloor);
-    const tiny = edgeReadabilityPresentation(0, 180, 179, 120, readabilityFloor);
-    const reversed = edgeReadabilityPresentation(0, 180, 120, 120, readabilityFloor);
+  it('keeps secondary metadata hidden below its existing 64-pt meaningful presentation threshold', () => {
+    const titleFloor = totaalEdgeReadableTitleFloor(1);
+
+    expect(titleFloor.outerWidth).toBeLessThan(64);
+    expect(totaalProgrammeContentPresentation(63.99)).toMatchObject({
+      mode: 'compact',
+      showSecondary: false,
+    });
+    expect(totaalProgrammeContentPresentation(64)).toMatchObject({
+      mode: 'standard',
+      showSecondary: true,
+    });
+  });
+
+  it('stays stable across hard horizontal reversal around the padding-aware title floor', () => {
+    const floor = totaalEdgeReadableTitleFloor(1);
+    const forward = edgeReadabilityPresentation(
+      0,
+      180,
+      180 - floor.outerWidth,
+      120,
+      floor.outerWidth,
+    );
+    const tiny = edgeReadabilityPresentation(
+      0,
+      180,
+      179,
+      120,
+      floor.outerWidth,
+    );
+    const reversed = edgeReadabilityPresentation(
+      0,
+      180,
+      180 - floor.outerWidth,
+      120,
+      floor.outerWidth,
+    );
 
     expect([forward.titleVisible, tiny.titleVisible, reversed.titleVisible]).toEqual([
       true,
