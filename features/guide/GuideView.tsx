@@ -937,6 +937,7 @@ export const GuideView = memo(function GuideView({
             loading={selectedWindow.loading}
             unavailable={selectedWindow.unavailable}
             labelVariant="per-channel"
+            preserveInlineIntrinsicWidth
             onSelectDay={changeDay}
           />
 
@@ -1328,6 +1329,8 @@ const styles = StyleSheet.create({
   },
   nowTouchTarget: {
     marginLeft: 'auto',
+    flexGrow: 0,
+    flexShrink: 0,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -1335,6 +1338,8 @@ const styles = StyleSheet.create({
     height: TOTAAL_VISUAL_METRICS.nowVisibleHeight,
     minWidth: TOTAAL_VISUAL_METRICS.nowMinWidth,
     paddingHorizontal: TOTAAL_VISUAL_METRICS.nowPaddingX,
+    flexGrow: 0,
+    flexShrink: 0,
     borderRadius: TOTAAL_VISUAL_METRICS.nowRadius,
     borderWidth: 1,
     alignItems: 'center',
@@ -1342,6 +1347,8 @@ const styles = StyleSheet.create({
   },
   nowText: {
     ...GUIDE_TYPOGRAPHY.utility,
+    flexGrow: 0,
+    flexShrink: 0,
     letterSpacing: 0,
   },
   axisRow: {

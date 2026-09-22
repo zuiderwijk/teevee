@@ -10,6 +10,47 @@ export type EdgeReadableProgramme = {
   endsInViewport: boolean;
 };
 
+export type EdgeReadabilityPresentation = {
+  width: number;
+  active: boolean;
+  maskVisible: boolean;
+  titleVisible: boolean;
+  endVisible: boolean;
+};
+
+export function edgeReadabilityPresentation(
+  startX: number,
+  endX: number,
+  viewportX: number,
+  viewportWidth: number,
+  minimumReadableTextWidth: number,
+): EdgeReadabilityPresentation {
+  'worklet';
+
+  const safeStartX = Number.isFinite(startX) ? Math.max(0, startX) : 0;
+  const safeEndX = Number.isFinite(endX)
+    ? Math.max(safeStartX, endX)
+    : safeStartX;
+  const safeViewportX = Number.isFinite(viewportX) ? Math.max(0, viewportX) : 0;
+  const safeViewportWidth = Number.isFinite(viewportWidth)
+    ? Math.max(0, viewportWidth)
+    : 0;
+  const readableFloor = Number.isFinite(minimumReadableTextWidth)
+    ? Math.max(0, minimumReadableTextWidth)
+    : 0;
+  const remaining = Math.max(0, safeEndX - safeViewportX);
+  const width = Math.min(safeViewportWidth, remaining);
+  const active = safeViewportX > safeStartX && safeViewportX < safeEndX;
+
+  return {
+    width,
+    active,
+    maskVisible: active && width > 0,
+    titleVisible: active && width >= readableFloor,
+    endVisible: remaining <= safeViewportWidth,
+  };
+}
+
 export function edgeReadableProgramme(
   programmes: Programme[],
   viewportX: number,
