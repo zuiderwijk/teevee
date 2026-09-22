@@ -100,6 +100,9 @@ vi.mock('react-native', async () => {
     accessible?: boolean;
     importantForAccessibility?: string;
     onLayout?: (event: { nativeEvent: { layout: { width: number } } }) => void;
+    onTextLayout?: (event: {
+      nativeEvent: { lines: { text: string }[] };
+    }) => void;
   };
 
   const View = ({
@@ -125,12 +128,32 @@ vi.mock('react-native', async () => {
     accessible,
     style,
     onLayout,
+    onTextLayout,
   }: HostProps) => {
     React.useEffect(() => {
       if (onLayout && testID?.includes('kijktip')) {
         onLayout({ nativeEvent: { layout: { width: 44 } } });
       }
     }, [onLayout, testID]);
+
+    React.useEffect(() => {
+      if (
+        onTextLayout &&
+        testID?.includes('kijktip-measure') &&
+        typeof children === 'string'
+      ) {
+        const words = children.split(' ');
+        const firstLine = words.slice(0, Math.max(1, words.length - 1)).join(' ');
+        const secondLine = words.slice(Math.max(1, words.length - 1)).join(' ');
+        onTextLayout({
+          nativeEvent: {
+            lines: secondLine
+              ? [{ text: firstLine }, { text: secondLine }]
+              : [{ text: firstLine }],
+          },
+        });
+      }
+    }, [children, onTextLayout, testID]);
 
     return createElement(
       'span',
@@ -562,6 +585,82 @@ describe('Nu & Straks production interaction boundary', () => {
         'aria-label',
       ),
     ).toBe('NPO 1, Referentieprogramma, 20:00 tot 20:30, nu bezig');
+  });
+
+  it('keeps following Kijktip on the final visible title line in Larger Text without target growth beyond the frozen formula', async () => {
+    viewport.fontScale = 1.8;
+    runtime.signals = [kijktipSignal('one-follow-1')];
+
+    await act(async () =>
+      root.render(
+        <NowNextGuideView
+          guideDataVersion={1}
+          presentationNavigation={<span />}
+          onSelectProgramme={vi.fn()}
+        />,
+      ),
+    );
+    await act(async () => Promise.resolve());
+
+    expect(
+      getByTestId(
+        container,
+        'now-next-following-one-0-one-follow-1',
+      ).getAttribute('data-style'),
+    ).toContain('"height":80');
+    expect(
+      getByTestId(
+        container,
+        'now-next-following-title-first-line-one-follow-1',
+      ).textContent,
+    ).toBe('Volgend');
+    expect(
+      getByTestId(
+        container,
+        'now-next-following-title-one-follow-1',
+      ).textContent,
+    ).toBe('één');
+    expect(
+      getByTestId(
+        container,
+        'now-next-following-kijktip-one-follow-1',
+      ).textContent,
+    ).toBe('Kijktip');
+  });
+
+  it('keeps Kijktip inline with the title in the >2.0/<180 stacked fallback', async () => {
+    viewport.fontScale = 2.1;
+    viewport.width = 300;
+    runtime.signals = [kijktipSignal('one-follow-1')];
+
+    await act(async () =>
+      root.render(
+        <NowNextGuideView
+          guideDataVersion={1}
+          presentationNavigation={<span />}
+          onSelectProgramme={vi.fn()}
+        />,
+      ),
+    );
+    await act(async () => Promise.resolve());
+
+    const target = getByTestId(
+      container,
+      'now-next-following-one-0-one-follow-1',
+    );
+    expect(target.getAttribute('data-style')).toContain('"height":137');
+    expect(
+      getByTestId(
+        container,
+        'now-next-following-kijktip-one-follow-1',
+      ).textContent,
+    ).toBe('Kijktip');
+    expect(
+      getByTestId(
+        container,
+        'now-next-following-content-one-0',
+      ).getAttribute('data-style'),
+    ).toContain('"justifyContent":"center"');
   });
 
   it('renders the refined rail labels/ticks and keeps exact live/reference accessibility semantics', async () => {
