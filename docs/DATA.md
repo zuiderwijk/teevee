@@ -1,12 +1,20 @@
 # Teevee Programme Data Strategy
 
-Status: **Phase 5 Search and Discovery**. Phase 3 proved the provider-independent hosted data path and Phase 4 closed the television-day-aware Guide runtime, D-2..D+7 navigation/horizon behaviour and production Guide convergence. The Phase 4 cache decision is to keep the current fixture-first + in-memory runtime fallback and not introduce persistent mobile schedule caching without new measured evidence. Production provider selection/rights remain a later release gate and release-like offline cold-start/persistent-cache validation remains Phase 9.
+Status: **Kijktip enrichment vertical slice is the current data implementation priority before Phase 5 Search**. Phase 3 proved the provider-independent hosted data path and Phase 4 closed the television-day-aware Guide runtime, D-2..D+7 navigation/horizon behaviour and production Guide convergence. Phase 5 Search and Discovery remains the next broader product phase, but Search is paused until the already-researched Kijktip enrichment path is fully implemented and accepted. The Phase 4 cache decision is unchanged: keep the current fixture-first + in-memory runtime fallback and do not introduce persistent mobile schedule caching without new measured evidence. Production provider selection/rights remain a later release gate and release-like offline cold-start/persistent-cache validation remains Phase 9.
 
 ## Goal
 Teevee must support the complete core Guide without coupling the mobile experience to one EPG supplier. Replacing the temporary development source with an authorized Bindinc/TVgids or commercial provider must not require a Guide rewrite.
 
 ## Core rule
 The mobile client never consumes an external EPG feed directly.
+
+## Current Kijktip enrichment handoff
+The next data increment is the already-approved Kijktip vertical slice, not Search.
+
+- **PR #120** completed empirical matching research and is canonical in `docs/TVGIDS_EDITORIAL_FEED_MATCHING_2026-09-22.md`: `tips.rss` is ingested server-side; matching is deterministic/fail-closed against canonical Teevee programmes; unresolved or ambiguous items do not create a Kijktip signal; the core `Programme` provider identity remains unchanged.
+- **PR #122** froze the Per-zender Kijktip production presentation.
+- **PR #123** froze the Nu & Straks Kijktip production presentation.
+- No production Kijktip data/enrichment implementation is claimed by these foundations alone. Complete the enrichment path and accepted presentation wiring before starting Search.
 
 External data flows through:
 
