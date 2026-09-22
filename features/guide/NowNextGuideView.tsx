@@ -229,6 +229,7 @@ function FollowingKijktipTitle({
       <View style={[styles.followingKijktipTitleLane, { width: titleLaneWidth }]}>
         {maxTitleLines === 2 ? (
           <Text
+            testID={`now-next-following-kijktip-measure-${programmeId}`}
             accessible={false}
             numberOfLines={2}
             onTextLayout={rememberTitleLayout}
@@ -249,6 +250,7 @@ function FollowingKijktipTitle({
   return (
     <View style={[styles.followingKijktipTitleLane, { width: titleLaneWidth }]}>
       <Text
+        testID={`now-next-following-kijktip-measure-${programmeId}`}
         accessible={false}
         numberOfLines={2}
         onTextLayout={rememberTitleLayout}
