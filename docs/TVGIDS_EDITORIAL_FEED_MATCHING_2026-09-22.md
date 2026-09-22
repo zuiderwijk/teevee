@@ -279,7 +279,7 @@ The production matcher should therefore use:
 3. otherwise channel + exact start, unique candidate, with title mismatch diagnostic;
 4. otherwise no Kijktip signal.
 
-This closes the empirical matching question. It does **not** authorize TVgids content redistribution, select the production EPG provider, or implement UI/runtime behavior.
+This closes the empirical matching question. PR #120 itself did not establish usage rights. The product owner has since confirmed that the intended Teevee Kijktip use of `https://www.tvgids.nl/tips.rss` is rights-cleared, so rights for this editorial source are **not a Kijktip release blocker**. This does not select or clear the eventual production EPG provider and does not change the separate licensing/redistribution-rights gates for production schedule data, channel logos or programme artwork.
 
 ## Product semantics
 
