@@ -1,7 +1,7 @@
 import type { ProgrammeEditorialSignal } from '@/data/domain/editorial';
 import type { Channel, GuideSchedule, GuideScheduleQuery, Programme } from '@/data/domain/epg';
 
-import { parseProgrammeEditorialSignals } from './editorialSignalContract';
+import { parseProgrammeEditorialSignals } from './editorialSignalContract.ts';
 
 export type GuideScheduleApiRequest = GuideScheduleQuery;
 
