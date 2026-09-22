@@ -48,8 +48,8 @@ describe('shared Guide responsive chrome', () => {
     expect(darkTheme.colors.onCurrentTime).toBe('#0D0D0D');
     expect(lightTheme.colors.editorialAccent).toBe('#315A63');
     expect(darkTheme.colors.editorialAccent).toBe('#A9C9CF');
-    expect(lightTheme.colors.editorialAccentSurface).toBe('#E4ECEE');
-    expect(darkTheme.colors.editorialAccentSurface).toBe('#1C2527');
+    expect(lightTheme.colors.editorialAccentSurface).toBe('#EEECE7');
+    expect(darkTheme.colors.editorialAccentSurface).toBe('#171715');
   });
 });
 

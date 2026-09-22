@@ -574,7 +574,7 @@ describe('Nu & Straks production interaction boundary', () => {
       paddingHorizontal: 6,
       paddingVertical: 0,
       borderRadius: 4,
-      backgroundColor: '#E4ECEE',
+      backgroundColor: '#EEECE7',
     });
     expect(
       flattenedStyle(
@@ -600,7 +600,7 @@ describe('Nu & Straks production interaction boundary', () => {
         paddingVertical: 0,
         borderRadius: 4,
         marginLeft: 8,
-        backgroundColor: '#E4ECEE',
+        backgroundColor: '#EEECE7',
       });
       expect(
         flattenedStyle(
@@ -667,7 +667,7 @@ describe('Nu & Straks production interaction boundary', () => {
       paddingVertical: 0,
       borderRadius: 4,
       height: 16,
-      backgroundColor: '#E4ECEE',
+      backgroundColor: '#EEECE7',
     });
   });
 
@@ -710,7 +710,7 @@ describe('Nu & Straks production interaction boundary', () => {
       paddingHorizontal: 6,
       borderRadius: 4,
       height: 16,
-      backgroundColor: '#E4ECEE',
+      backgroundColor: '#EEECE7',
     });
   });
 
@@ -747,7 +747,7 @@ describe('Nu & Straks production interaction boundary', () => {
       paddingHorizontal: 6,
       borderRadius: 4,
       height: 16,
-      backgroundColor: '#E4ECEE',
+      backgroundColor: '#EEECE7',
     });
     expect(label.textContent).toBe('Kijktip');
   });
@@ -785,7 +785,7 @@ describe('Nu & Straks production interaction boundary', () => {
       paddingHorizontal: 6,
       borderRadius: 4,
       height: 16,
-      backgroundColor: '#E4ECEE',
+      backgroundColor: '#EEECE7',
     });
     expect(label.textContent).toBe('Kijktip');
   });

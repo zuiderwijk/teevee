@@ -505,15 +505,15 @@ Production-frozen tokens:
   - light **#315A63**
   - dark **#A9C9CF**
 - `editorialAccentSurface`
-  - light **#E4ECEE**
-  - dark **#1C2527**
+  - light **#EEECE7**
+  - dark **#171715**
 
 Both start time and `Kijktip` inside this label use `editorialAccent`.
 
 Contrast:
-- foreground on label surface: **6.32:1 light / 8.89:1 dark**;
-- label surface against Guide canvas: about **1.12:1 light / 1.22:1 dark**;
-- label surface against temporary programme pressed surface: about **1.20:1 light / 1.13:1 dark**.
+- foreground on label surface: **6.41:1 light / 10.21:1 dark**;
+- label surface against Guide canvas: about **1.10:1 light / 1.06:1 dark**;
+- label surface against temporary programme pressed surface: about **1.18:1 light / 1.02:1 dark**.
 
 The subtle surface separation is intentional; the text carries legibility. Do not strengthen the surface into a saturated petrol chip.
 
@@ -734,11 +734,11 @@ For a Kijktip row, **the existing standard-row height formula remains the only r
 Inside the label:
 - time continues to scale as substantive 16/20 content;
 - Kijktip continues to scale as substantive 12/16 Medium content;
-- the accepted 2-pt time→Kijktip relationship is the baseline input to final label calibration and does not automatically scale;
-- label uses fixed 8-pt horizontal padding, 0 vertical padding, radius6 and the final editorial semantic colours from §11.3;
+- the accepted 2-pt time→Kijktip relationship remains fixed and does not scale;
+- label uses fixed 8-pt horizontal padding and radius6; vertical breathing is derived from the existing scaled standard-row height;
 - above 1.35, the programme title may still use max two lines under the existing Per-zender rule; the title column is never narrowed for the label.
 
-The final label footprint is defined by `36S + 2` and must fit the existing scaled row formulas without a Kijktip-specific row-height branch. Automated/physical validation must catch clipping or overlap regressions; do not change frozen programme/title geometry.
+The intrinsic content height is `36S + 2`; it is **not** the surface outer height. Standard surface outer height equals the existing `round(52S)` row height, with `verticalBreathing = (round(52S) - (36S + 2)) / 2`. Current uses that same internal breathing with surface top14. Automated/physical validation must catch clipping or overlap regressions; do not change frozen programme/title geometry.
 
 Representative standard-row heights remain:
 
@@ -1078,7 +1078,7 @@ Surface-specific implementation calibrations now frozen for Development handoff:
 10. Current top14, title→description gap **10**, description→progress minimum **20 at every Dynamic Type scale**, progress 4 high/radius2/bottom16; current-row scaling uses the content-safe minimum from §14.2.
 11. Separator left20 at bottom of each row.
 12. Collapse isolation: temporal context **52 only**; hard temporal-label multiplier 1.20; fixed settled viewport top112; native collapse56; standard full contraction/visual compensation **140/84**, accessibility shared-tab mode **156/100**; rest gaps interpolate **4→0** above the context and **24→0** below it; Reduce Motion switches endpoints discretely at28.
-13. Kijktip final label: shared **time + Kijktip** editorial label at X24; `editorialAccent` #315A63 light / #A9C9CF dark; `editorialAccentSurface` #E4ECEE light / #1C2527 dark; time16/20 Regular + Kijktip12/16 Medium; fixed gap2; horizontal padding8; vertical padding0; radius6; min width56; outer width=max(56,max(intrinsic time,intrinsic Kijktip)+16); label height=36S+2; title X100/width and standard/current row formulas unchanged; one parent programme accessibility action.
+13. Kijktip final label: shared **time + Kijktip** editorial label with **X24 as the start-time text origin** and surface-left **X16** from the fixed 8-pt horizontal inset; `editorialAccent` #315A63 light / #A9C9CF dark; `editorialAccentSurface` #EEECE7 light / #171715 dark; time16/20 Regular + Kijktip12/16 Medium; fixed gap2; radius6; min width56; outer width=max(56,max(intrinsic time,intrinsic Kijktip)+16). Standard surface outer height equals the existing scaled row height, with internal breathing derived from row height minus the `36S+2` content height; S1 is 7/20/2/16/7. Current surface starts at top14 and uses the same internal breathing. Title X100/right24, standard/current row formulas and one parent programme accessibility action remain unchanged.
 
 Development must not choose alternatives locally. A future retune requires new owner-approved evidence and an update to this source of truth.
 

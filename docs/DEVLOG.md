@@ -1,5 +1,15 @@
 # Teevee Development Logboek
 
+## 23 september 2026 — PR #127 shared Kijktip surface-tone correction
+
+Lead REQUIRED FIX #5784910137 applies the later owner-approved shared `editorialAccentSurface` calibration without reopening layout: light changes from `#E4ECEE` to **`#EEECE7`** and dark from `#1C2527` to **`#171715`**. `editorialAccent` foreground remains unchanged. Because this is one shared semantic token, both Per zender and Nu & Straks receive the warmer/neutral surface tone through the existing theme architecture; no Nu & Straks component, layout or metric changes are made.
+
+The already Lead-approved Per-zender physical geometry remains exactly authoritative: time-text origin X24, surface-left X16, 8-pt horizontal inset, S1 standard 7/20/2/16/7, standard surface outer height equal to the existing scaled row height, current surface top14 with the same breathing, and title X100/right24. The remaining stale Per-zender production-summary wording that still described outer X24 / vertical padding0 / `36S+2` as surface height is corrected to distinguish intrinsic content height from surface outer height.
+
+Deterministic token and Guide integration expectations are updated to the new shared surface values. **Next step:** exact-head CI, then return to Lead for final pre-physical review. Do not merge and do not send to Independent QA.
+
+---
+
 ## 22 september 2026 — PR #127 owner physical Per-zender Kijktip time-grid refinement
 
 Physical iPhone review of exact head `b385e9a8467361b521e613de567711c682728383` rejected only the Per-zender Kijktip label alignment/breathing. The editorial colour/radius/typography direction remains accepted and Nu & Straks is explicitly frozen.

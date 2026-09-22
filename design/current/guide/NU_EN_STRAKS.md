@@ -65,8 +65,8 @@ Production-frozen:
   - light: **#315A63**
   - dark: **#A9C9CF**
 - **`editorialAccentSurface`**
-  - light: **#E4ECEE**
-  - dark: **#1C2527**
+  - light: **#EEECE7**
+  - dark: **#171715**
 
 Kijktip text uses `editorialAccent`; the compact label uses `editorialAccentSurface`.
 

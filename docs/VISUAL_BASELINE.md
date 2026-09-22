@@ -159,7 +159,7 @@ Accepted visual characteristics:
 - current programme uses a deliberately spacious **176-pt base row** with 19/23 title, 10-pt title→description gap, 15/22 description up to 4 lines, at least 20 pt clear space before the local progressbar, and no current card, red left rail, global current-time line or now-dot;
 - programme rows prioritise time and title and use a temporary semantic `surface` fill only while pressed;
 - for `isKijktip = true`, Per zender uses one compact, more-square **editorial label in the existing time-column zone containing both start time and `Kijktip`**; title X/width, row height and programme interaction remain unchanged;
-- semantic colours are production-frozen: `editorialAccent` **#315A63 light / #A9C9CF dark** and `editorialAccentSurface` **#E4ECEE light / #1C2527 dark**;
+- semantic colours are production-frozen: `editorialAccent` **#315A63 light / #A9C9CF dark** and `editorialAccentSurface` **#EEECE7 light / #171715 dark**;
 - Per-zender time grid is authoritative: **X24 is the start-time text origin for every row**. With horizontal padding8 the editorial surface begins at **X16**; radius6/min-width56/width=max(56,max(intrinsic time,intrinsic Kijktip)+16) remain unchanged. Standard S1 surface fills Y0…52 with internal 7/20/2/16/7 breathing/content; current surface is anchored at Y14 and uses the same internal breathing without moving current title/description/progress. The earlier surface-left X24 / vertical-padding0 calibration is superseded;
 - time remains 16/20 Regular and Kijktip 12/16 Medium, both using `editorialAccent`; normal non-Kijktip rows and the current title/description/progress hierarchy remain unchanged;
 - Kijktip label has no independent interaction/focus target and never introduces a Kijktip-specific row-height branch;
@@ -207,7 +207,7 @@ Accepted visual characteristics:
 - each following programme has a real non-overlapping minimum target of 44 pt on iOS / 48 dp on Android;
 - all standalone visible reference-time copy and reference-programme `tot HH:MM` metadata are removed; the reference title is bottom-aligned within its existing block and the dedicated reference→following gap is **0 pt** while touch geometry remains production-safe;
 - active/current `Nu` and return-to-live `Nu` use distinct visual and semantic states;
-- Nu & Straks Kijktip uses a compact **Kijktip-only editorial label** with `editorialAccent` **#315A63 light / #A9C9CF dark** on `editorialAccentSurface` **#E4ECEE light / #1C2527 dark**;
+- Nu & Straks Kijktip uses a compact **Kijktip-only editorial label** with `editorialAccent` **#315A63 light / #A9C9CF dark** on `editorialAccentSurface` **#EEECE7 light / #171715 dark**;
 - label box uses horizontal padding6, vertical padding0, radius4, outer height=`16S`, outer width=`intrinsic Kijktip width + 12`;
 - reference label remains above the dominant title with a fixed **3-pt** relationship and content-safe formula `clamp(1,2,floor((H-16S-3)/(22S)))`, with no Kijktip-specific reference-height growth;
 - following label remains inline directly after the visible title with fixed **8-pt** separation; protected reserve=`label outer width + 8`, with the frozen 48-pt minimum final-line title budget;

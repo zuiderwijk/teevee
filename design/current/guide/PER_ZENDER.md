@@ -155,15 +155,15 @@ Shared Guide editorial semantics are production-frozen:
   - light: **`#315A63`**
   - dark: **`#A9C9CF`**
 - **`editorialAccentSurface`**
-  - light: **`#E4ECEE`**
-  - dark: **`#1C2527`**
+  - light: **`#EEECE7`**
+  - dark: **`#171715`**
 
 Both the start time and `Kijktip` inside the Per-zender label use `editorialAccent`.
 
 Contrast:
-- light `editorialAccent` on `editorialAccentSurface`: **6.32:1**;
-- dark `editorialAccent` on `editorialAccentSurface`: **8.89:1**;
-- surface separation from Guide canvas is intentionally subtle: about **1.12:1 light / 1.22:1 dark**.
+- light `editorialAccent` on `editorialAccentSurface`: **6.41:1**;
+- dark `editorialAccent` on `editorialAccentSurface`: **10.21:1**;
+- surface separation from Guide canvas is intentionally subtle: about **1.10:1 light / 1.06:1 dark**.
 
 The label has:
 - no border;
