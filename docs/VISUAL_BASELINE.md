@@ -143,7 +143,7 @@ Canonical visual assets in the user's Teevee Library:
 - historical Per-zender Kijktip text-only refinement: `/Teevee/Per Zender Kijktip refinement - 12pt Medium textSecondary.png`
   - Library file id: `file_00000000dd7c8210a35769aada30424b`
   - stable Library record: `libfile_d161c6bed2a481919a917acdeaeeec41`
-  - superseded for final Kijktip styling by the owner-approved shared time+Kijktip editorial label direction; final calibrated label asset still pending.
+  - superseded for final Kijktip styling by the owner-approved shared time+Kijktip editorial label calibration; written production metrics are canonical and no replacement image asset is required.
 
 Accepted visual characteristics:
 - open chronological fixed-row typographic schedule; programme duration does not determine vertical row geometry;
