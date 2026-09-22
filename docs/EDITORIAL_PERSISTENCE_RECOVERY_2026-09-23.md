@@ -97,7 +97,7 @@ Evidence:
 - smoke head: `e927eb320283742c5b1f403527b0bc33e7666f5f`;
 - CI run: **#961 / 35795611230**;
 - job: **editorial-migration-smoke / 106974086358 — SUCCESS**;
-- migration file under test: `supabase/migrations/20260923003000_preserve_started_editorial_signals.sql`;
+- migration file under test: `supabase/migrations/20260922235737_preserve_started_editorial_signals.sql`;
 - transaction: explicit `BEGIN` … `ROLLBACK`.
 
 Observed execution:
