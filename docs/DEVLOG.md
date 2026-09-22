@@ -1,5 +1,20 @@
 # Teevee Development Logboek
 
+## 22 september 2026 — Owner reprioritisation: Kijktip vertical slice before Search
+
+The owner changed the immediate implementation order after the Phase 4 closeout. Phase 4 remains CLOSED and Phase 5 Search and Discovery remains the next broader product phase, but **Search is paused until the already-prepared Kijktip enrichment vertical slice is fully implemented and accepted**. This supersedes the same-day administrative “Search first” next-step wording only; it does not reopen Phase 4 or change the Phase 5 product scope.
+
+The required Kijktip foundations are already merged:
+- **PR #120** — empirical TVgids.nl `tips.rss` matching research and fail-closed canonical matching contract;
+- **PR #122** — owner-approved Per-zender Kijktip production calibration;
+- **PR #123** — owner-approved Nu & Straks Kijktip production calibration.
+
+No new Kijktip product/design decision is introduced here and no runtime implementation is part of this reprioritisation.
+
+**Next step:** implement the Kijktip data/enrichment vertical slice end-to-end using PR #120/#122/#123 as canonical constraints; complete its verification and acceptance gates; only then resume Phase 5 with Search. Tonight remains deferred/provisional.
+
+---
+
 ## 22 september 2026 — Phase 4 administratively closed after Totaal production merge
 
 PR #114 merged to `main` as `4cea66eca92b7224ff51940b30de09db11928427`, closing the final open Phase 4 Guide production-convergence work.

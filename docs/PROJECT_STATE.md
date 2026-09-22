@@ -1,8 +1,9 @@
 # Teevee — Canonical Project State
 
 Last updated: 2026-09-22.
-Status: ACTIVE — **Phase 5 Search and Discovery**.
-Current phase: **Phase 5 — Search and Discovery**
+Status: ACTIVE — **Kijktip enrichment vertical slice before Phase 5 Search**.
+Current implementation priority: **Kijktip enrichment vertical slice**
+Next broader product phase: **Phase 5 — Search and Discovery**
 Previous phase: **Phase 4 — Core Guide MVP hardening — CLOSED**
 
 > Mandatory start point for every development-agent session. Read `AGENTS.md` and this file before changing the repository. Historical implementation detail belongs in Git history, `DEVLOG.md`, accepted PRs/issues and timestamped evidence documents; this file stays focused on current canonical state and the single next step.
@@ -24,7 +25,17 @@ Previous phase: **Phase 4 — Core Guide MVP hardening — CLOSED**
 3. **Phase 2 — App Shell:** complete and physically accepted on iPhone.
 4. **Phase 3 — Real Data Vertical Slice:** complete and physically accepted on iPhone. Real provider -> hosted ingest -> canonical persistence -> public typed read -> mobile canonical datasource is proven, including fixture-first startup, real-data transition, fallback and context retention.
 5. **Phase 4 — Core Guide MVP hardening:** **CLOSED**. The 06:00 television-day foundation, television-day-aware runtime, D-2..D+7 navigation/date context, measured Totaal performance hardening, Per-zender production convergence, Programme Detail production convergence, Nu & Straks production convergence and Totaal production convergence are all merged. Totaal PR #114 completed the final open Guide convergence work: its runtime was owner-accepted on iPhone, independently QA-reviewed, its sole QA accessibility blocker was corrected and re-verified at the final Lead merge gate, exact-head CI #877 passed 72 test files / 538 tests plus iOS/Android/web exports, and merge commit `4cea66eca92b7224ff51940b30de09db11928427` landed on `main`. The cache decision remains **no persistent mobile schedule cache now** absent new measured evidence; true no-network cold start and any persistence technology decision remain a release-like Phase 9 gate. Physical Android interaction acceptance remains deferred until Android hardware is available and does not keep Phase 4 open.
-6. **Phase 5 — Search and Discovery:** **ACTIVE**. Deliver Search first. Tonight remains later and provisional until its value and data requirements are clear.
+6. **Phase 5 — Search and Discovery:** **NEXT broader product phase**. Search remains the first Phase 5 slice **after** the current Kijktip enrichment vertical slice has been fully implemented and accepted. Tonight remains later and provisional until its value and data requirements are clear.
+
+## Current implementation priority — Kijktip enrichment vertical slice
+Complete the already-prepared Kijktip vertical slice end-to-end **before Search**. This is a sequencing decision, not a new product/design decision.
+
+Merged foundations:
+- **PR #120 — empirical TVgids.nl Kijktip matching research**, merged as `15261e3da8273efcb6e4e41d20ab3cb0f62acccf`. Canonical authority: `docs/TVGIDS_EDITORIAL_FEED_MATCHING_2026-09-22.md`. It establishes server-side, deterministic, fail-closed matching from `tips.rss` to canonical programmes and keeps editorial enrichment outside the provider-independent core `Programme` identity.
+- **PR #122 — Per-zender Kijktip production calibration**, merged as `404c46f465a63006db5681ca439e3199a72f937a`. Its accepted Per-zender Kijktip presentation is implementation authority; do not redesign it during enrichment work.
+- **PR #123 — Nu & Straks Kijktip production calibration**, merged as `608cfe395b7ef2e727c1c436de164328b15e5b7e`. Its accepted reference/following Kijktip presentation and accessibility semantics are implementation authority.
+
+Search is paused until the Kijktip data/enrichment path, approved Guide presentation wiring, deterministic verification and required acceptance gates are complete. After full Kijktip acceptance, resume Phase 5 with Search. Tonight remains deferred/provisional.
 
 ## Frozen television-day and Guide-horizon semantics
 ADR 0008 is canonical:
@@ -164,9 +175,9 @@ Physical Android interaction acceptance remains OPEN/DEFERRED because no Android
 - physical Android validation.
 
 ## Current next step
-**Begin Phase 5 — Search and Discovery with Search first.** Build from the existing Search shell and the provider-independent canonical programme/channel domain. The MVP Search slice is one prominent search field that retrieves programmes and channels, prioritises useful upcoming broadcasts and answers when/where something airs. Reuse canonical Teevee schedule/domain boundaries; do not couple the mobile client to an external EPG provider. Keep Tonight deferred until its product value and data requirements are clear, and do not reopen accepted Phase 4 Guide convergence without concrete regression evidence.
+**Implement the Kijktip data/enrichment vertical slice end-to-end before Search.** Start from the merged PR #120 matching contract: ingest TVgids.nl `tips.rss` server-side, resolve only deterministic fail-closed matches against canonical Teevee programmes, and keep the canonical `Programme` model/provider boundary unchanged. Then wire the resolved Kijktip enrichment into the already owner-approved Per-zender (PR #122) and Nu & Straks (PR #123) presentations with deterministic coverage and the applicable review/physical-acceptance gates. Do not start Search until this Kijktip vertical slice is fully accepted. After that, resume Phase 5 with Search; Tonight remains deferred/provisional.
 
 Owner checkout: `~/projects/teevee`.
 
 ## Resume instruction
-> Read `AGENTS.md`, this file, `docs/PRODUCT.md`, `docs/UX.md`, `docs/ARCHITECTURE.md`, `docs/DATA.md`, `docs/ENGINEERING_QUALITY_POLICY.md` and `docs/BUILD_SPEC.md` before changing the repository. Phase 4 is CLOSED: Per zender, Programme Detail, Nu & Straks and Totaal production convergence are merged and accepted, with PR #114 closing the final Guide convergence work. Phase 5 Search and Discovery is ACTIVE and Search is the first slice. Start from the existing Search shell and canonical programme/channel data; Tonight remains deferred/provisional. Do not reopen accepted Guide metrics or mechanics without concrete technical/accessibility regression evidence. Physical Android interaction validation remains deferred until Android hardware is available.
+> Read `AGENTS.md`, this file, `docs/TVGIDS_EDITORIAL_FEED_MATCHING_2026-09-22.md`, the accepted Per-zender/Nu & Straks Kijktip production specifications, `docs/PRODUCT.md`, `docs/UX.md`, `docs/ARCHITECTURE.md`, `docs/DATA.md`, `docs/ENGINEERING_QUALITY_POLICY.md` and `docs/BUILD_SPEC.md` before changing the repository. Phase 4 is CLOSED. The immediate implementation priority is the Kijktip enrichment vertical slice using merged PR #120/#122/#123 as constraints. Search is paused until that slice is fully accepted; afterwards Phase 5 resumes with Search. Tonight remains deferred/provisional. Do not reopen accepted Guide metrics/mechanics or the approved Kijktip presentations without concrete technical/accessibility evidence. Physical Android interaction validation remains deferred until Android hardware is available.
