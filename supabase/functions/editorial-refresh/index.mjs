@@ -82,6 +82,10 @@ export default {
         scheduleRepository: new SupabaseScheduleRepository(client),
         editorialRepository: new SupabaseEditorialSignalRepository(client),
       });
+      console.info(
+        'Teevee editorial refresh completed',
+        JSON.stringify(result),
+      );
 
       return Response.json({
         status: 'completed',
