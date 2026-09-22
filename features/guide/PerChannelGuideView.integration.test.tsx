@@ -22,6 +22,33 @@ vi.mock('@/theme/useTeeveeTheme', async () => {
   return { useTeeveeTheme: () => lightTheme };
 });
 
+vi.mock('./ChannelIdentity', () => ({
+  ChannelIdentity: () => null,
+}));
+vi.mock('./GuideChrome', () => ({
+  GuideChrome: () => null,
+}));
+vi.mock('./GuideDaySelector', () => ({
+  GuideDaySelector: () => null,
+}));
+vi.mock('./useGuideClock', () => ({
+  useGuideClock: () => Date.parse('2026-09-22T18:45:00.000Z'),
+}));
+vi.mock('./useGuideDaySelection', () => ({
+  useGuideDaySelection: () => ({
+    selectedDayStartMs: Date.parse('2026-09-22T04:00:00.000Z'),
+    selectDay: vi.fn(),
+  }),
+}));
+vi.mock('./useSelectedGuideDaySchedule', () => ({
+  useSelectedGuideDaySchedule: () => ({
+    schedule: null,
+    editorialSignals: [],
+    loading: false,
+    unavailable: false,
+  }),
+}));
+
 vi.mock('react-native-safe-area-context', () => ({
   useSafeAreaInsets: () => ({ top: 59, right: 0, bottom: 34, left: 0 }),
 }));
