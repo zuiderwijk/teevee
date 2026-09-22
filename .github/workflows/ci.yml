@@ -46,17 +46,6 @@ jobs:
             node scripts/ci/ci-scope.mjs "$PUSH_BASE_SHA" "$PUSH_HEAD_SHA" --diff-mode=push
           fi
 
-  spike-live-probe:
-    needs: classify
-    if: github.event_name == 'pull_request' && github.head_ref == 'spike/tvgids-kijktip-matching-2026-09-22'
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v7
-      - uses: actions/setup-node@v7
-        with:
-          node-version: 22
-      - name: Capture live TVgids/Teevee matching evidence
-        run: node scripts/spikes/tvgids-kijktip-live-probe.mjs
 
   quality:
     needs: classify
