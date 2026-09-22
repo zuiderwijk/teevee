@@ -587,6 +587,85 @@ describe('Nu & Straks production interaction boundary', () => {
     ).toBe('NPO 1, Referentieprogramma, 20:00 tot 20:30, nu bezig');
   });
 
+  it.each([1, 2, 3])(
+    'renders %i following Kijktip disclosures independently',
+    async (count) => {
+      runtime.signals = ['one-follow-1', 'one-follow-2', 'one-follow-3']
+        .slice(0, count)
+        .map(kijktipSignal);
+
+      await act(async () =>
+        root.render(
+          <NowNextGuideView
+            guideDataVersion={1}
+            presentationNavigation={<span />}
+            onSelectProgramme={vi.fn()}
+          />,
+        ),
+      );
+
+      expect(
+        container.querySelectorAll(
+          '[data-testid^="now-next-following-kijktip-one-follow-"]',
+        ),
+      ).toHaveLength(count);
+    },
+  );
+
+  it('keeps one Kijktip semantic disclosure when the same programme moves from following to reference', async () => {
+    runtime.signals = [kijktipSignal('one-follow-1')];
+
+    await act(async () =>
+      root.render(
+        <NowNextGuideView
+          guideDataVersion={1}
+          presentationNavigation={<span />}
+          onSelectProgramme={vi.fn()}
+        />,
+      ),
+    );
+
+    const following = getByTestId(
+      container,
+      'now-next-following-one-0-one-follow-1',
+    );
+    expect(following.getAttribute('aria-label')).toBe(
+      'NPO 1, Volgend één, Kijktip, 20:30 tot 21:00',
+    );
+    expect(following.getAttribute('aria-label')?.match(/Kijktip/g)).toHaveLength(1);
+
+    clock.nowMs = Date.parse('2026-09-18T18:31:00.000Z');
+    await act(async () =>
+      root.render(
+        <NowNextGuideView
+          guideDataVersion={1}
+          presentationNavigation={<span />}
+          onSelectProgramme={vi.fn()}
+        />,
+      ),
+    );
+
+    const reference = getByTestId(
+      container,
+      'now-next-reference-one-one-follow-1',
+    );
+    expect(reference.getAttribute('aria-label')).toBe(
+      'NPO 1, Volgend één, Kijktip, 20:30 tot 21:00, nu bezig',
+    );
+    expect(reference.getAttribute('aria-label')?.match(/Kijktip/g)).toHaveLength(1);
+    expect(
+      container.querySelector(
+        '[data-testid="now-next-following-kijktip-one-follow-1"]',
+      ),
+    ).toBeNull();
+    expect(
+      getByTestId(
+        container,
+        'now-next-reference-kijktip-one-follow-1',
+      ).textContent,
+    ).toBe('Kijktip');
+  });
+
   it('keeps following Kijktip on the final visible title line in Larger Text without target growth beyond the frozen formula', async () => {
     viewport.fontScale = 1.8;
     runtime.signals = [kijktipSignal('one-follow-1')];
