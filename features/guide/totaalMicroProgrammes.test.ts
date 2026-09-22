@@ -6,8 +6,6 @@ import { windowGuideProgrammesByChannel } from './guideProgrammeWindow';
 import {
   deriveTotaalMicroProgrammeMetadata,
   totaalIsMicroProgrammeFrameWidth,
-  totaalMicroProgrammeEllipsisMinWidth,
-  totaalMicroProgrammeShowsEllipsis,
   totaalMicroProgrammeThreshold,
   totaalNormaliseRepeatedProgrammeTitle,
   totaalRepeatedRunVisibleLayout,
@@ -46,6 +44,8 @@ describe('Totaal micro-programme classification', () => {
     expect(totaalMicroProgrammeThreshold(1)).toBe(48);
     expect(totaalIsMicroProgrammeFrameWidth(47.999, 1)).toBe(true);
     expect(totaalIsMicroProgrammeFrameWidth(48, 1)).toBe(false);
+    expect(totaalIsMicroProgrammeFrameWidth(15, 1)).toBe(true);
+    expect(totaalIsMicroProgrammeFrameWidth(30, 1)).toBe(true);
     expect(totaalIsMicroProgrammeFrameWidth(45, 1)).toBe(true);
     expect(totaalIsMicroProgrammeFrameWidth(60, 1)).toBe(false);
   });
@@ -63,15 +63,7 @@ describe('Totaal micro-programme classification', () => {
     expect(clippedRemainder).toBeLessThan(totaalMicroProgrammeThreshold(1));
   });
 
-  it('derives the ultra-micro ellipsis floor from one title em plus existing micro insets', () => {
-    expect(totaalMicroProgrammeEllipsisMinWidth(1)).toBe(27);
-    expect(totaalMicroProgrammeShowsEllipsis(26.999, 1)).toBe(false);
-    expect(totaalMicroProgrammeShowsEllipsis(27, 1)).toBe(true);
-    expect(totaalMicroProgrammeShowsEllipsis(45, 1)).toBe(true);
-    expect(totaalMicroProgrammeEllipsisMinWidth(1.5)).toBe(40.5);
-    expect(totaalMicroProgrammeShowsEllipsis(40.499, 1.5)).toBe(false);
-    expect(totaalMicroProgrammeShowsEllipsis(40.5, 1.5)).toBe(true);
-  });
+
 });
 
 describe('Totaal repeated-title run derivation', () => {
@@ -253,7 +245,7 @@ describe('Totaal repeated-title visible layout', () => {
     expect(layout.showSharedTitle).toBe(true);
   });
 
-  it('keeps three five-minute cells as individual ellipses at base scale', () => {
+  it('keeps three five-minute cells below the shared-title threshold', () => {
     const result = metadata([
       programme('a', 0, 5),
       programme('b', 5, 5),
@@ -287,7 +279,7 @@ describe('Totaal repeated-title visible layout', () => {
     });
   });
 
-  it('falls back to individual ellipses when visible run width drops below threshold', () => {
+  it('shows no shared title when visible run width drops below threshold', () => {
     const layout = totaalRepeatedRunVisibleLayout(0, 90, 50, 40, 1);
     expect(layout.visibleWidth).toBe(40);
     expect(layout.showSharedTitle).toBe(false);

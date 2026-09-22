@@ -151,7 +151,6 @@ describe('TotaalMicroProgrammeOverlay', () => {
           minuteWidth={3}
           rowHeight={76}
           viewportWidth={300}
-          nowMs={START}
           scrollX={sharedValue(120)}
           scrollY={sharedValue(0)}
           contentTopInset={100}
@@ -162,21 +161,36 @@ describe('TotaalMicroProgrammeOverlay', () => {
       );
     });
 
-    expect(container.querySelectorAll('[data-testid^="totaal-run-micro-"]')).toHaveLength(4);
-    for (const programme of boundedProgrammes) {
-      expect(
-        container.querySelector(`[data-testid="totaal-run-micro-${programme.id}"]`),
-      ).not.toBeNull();
-    }
-    expect(
-      container.querySelector(`[data-testid="totaal-run-micro-${programmes[0]!.id}"]`),
-    ).toBeNull();
+    expect(container.querySelectorAll('[data-testid^="totaal-run-micro-"]')).toHaveLength(0);
 
     const runViewport = container.querySelector<HTMLElement>(
       `[data-testid="totaal-repeated-run-${run.id}"]`,
     );
     expect(runViewport?.dataset.width).toBe('300');
     expect(run.programmes).toHaveLength(20);
+
+    await act(async () => {
+      root.render(
+        <TotaalMicroProgrammeOverlay
+          runPresentations={[{ run, programmes: [] }]}
+          channelRowIndex={new Map([['one', 0]])}
+          windowStartMs={START}
+          minuteWidth={3}
+          rowHeight={76}
+          viewportWidth={300}
+          scrollX={sharedValue(120)}
+          scrollY={sharedValue(0)}
+          contentTopInset={100}
+          collapseProgress={sharedValue(0)}
+          fontScale={1}
+          reduceMotion={false}
+        />,
+      );
+    });
+
+    expect(
+      container.querySelector(`[data-testid="totaal-repeated-run-${run.id}"]`),
+    ).toBeNull();
   });
 
   it('keeps shared-title presentation pointer-transparent, accessibility-hidden and Medium', async () => {
@@ -204,7 +218,6 @@ describe('TotaalMicroProgrammeOverlay', () => {
           minuteWidth={3}
           rowHeight={76}
           viewportWidth={300}
-          nowMs={START + 2 * 60_000}
           scrollX={scrollX}
           scrollY={scrollY}
           contentTopInset={100}
@@ -221,10 +234,6 @@ describe('TotaalMicroProgrammeOverlay', () => {
     const title = container.querySelector<HTMLElement>(
       `[data-testid="totaal-repeated-title-${run.id}"]`,
     );
-    const ellipses = container.querySelector<HTMLElement>(
-      `[data-testid="totaal-repeated-run-ellipses-${run.id}"]`,
-    );
-
     expect(rootOverlay?.dataset.pointerEvents).toBe('none');
     expect(rootOverlay?.dataset.accessibilityHidden).toBe('true');
     expect(rootOverlay?.dataset.importantForAccessibility).toBe('no-hide-descendants');
@@ -233,7 +242,6 @@ describe('TotaalMicroProgrammeOverlay', () => {
     expect(title?.dataset.accessible).toBe('false');
     expect(title?.dataset.left).toBe('6');
     expect(title?.dataset.background).toBeUndefined();
-    expect(ellipses?.dataset.opacity).toBe('0');
     expect(title?.querySelector('span')?.dataset.fontFamily).toBe(
       TOTAAL_TYPOGRAPHY.programmeTitle.fontFamily,
     );
@@ -263,7 +271,6 @@ describe('TotaalMicroProgrammeOverlay', () => {
           minuteWidth={3}
           rowHeight={76}
           viewportWidth={300}
-          nowMs={START + 2 * 60_000}
           scrollX={sharedValue(0)}
           scrollY={sharedValue(0)}
           contentTopInset={100}
@@ -307,7 +314,6 @@ describe('TotaalMicroProgrammeOverlay', () => {
           minuteWidth={3}
           rowHeight={76}
           viewportWidth={40}
-          nowMs={START}
           scrollX={scrollX}
           scrollY={sharedValue(0)}
           contentTopInset={100}
@@ -324,10 +330,8 @@ describe('TotaalMicroProgrammeOverlay', () => {
       )?.dataset.opacity,
     ).toBe('0');
     expect(
-      container.querySelector<HTMLElement>(
-        `[data-testid="totaal-repeated-run-ellipses-${run.id}"]`,
-      )?.dataset.opacity,
-    ).toBe('1');
+      container.querySelector(`[data-testid="totaal-repeated-run-ellipses-${run.id}"]`),
+    ).toBeNull();
     expect(
       container.querySelectorAll('[data-testid^="totaal-run-micro-"]'),
     ).toHaveLength(0);

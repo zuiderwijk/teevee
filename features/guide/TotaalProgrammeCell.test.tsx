@@ -5,7 +5,6 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { Channel, Programme } from '@/data/domain/epg';
 
-import { TOTAAL_TYPOGRAPHY } from './totaal';
 import { TotaalProgrammeCell } from './TotaalProgrammeCell';
 
 type MockStyle =
@@ -162,7 +161,6 @@ describe('TotaalProgrammeCell', () => {
           windowStartMs={Date.parse('2026-09-21T18:00:00.000Z')}
           minuteWidth={3}
           fontScale={1}
-          repeatedTitleRunMember={false}
           onSelectProgramme={() => undefined}
         />,
       );
@@ -194,7 +192,6 @@ describe('TotaalProgrammeCell', () => {
           windowStartMs={Date.parse('2026-09-21T18:00:00.000Z')}
           minuteWidth={3}
           fontScale={1}
-          repeatedTitleRunMember={false}
           onSelectProgramme={() => undefined}
         />,
       );
@@ -210,62 +207,85 @@ describe('TotaalProgrammeCell', () => {
     ).toBe('NPO 1 volledig, Nieuwsuur, 20:00 tot 20:30, nu bezig');
   });
 
-  it('renders a 15-minute microcell as one centred ellipsis with full action semantics', async () => {
-    const short = programme(
-      'short',
+  it.each([
+    [5, 'micro-5'],
+    [10, 'micro-10'],
+    [15, 'micro-15'],
+  ])(
+    'keeps a %i-minute microcell visually empty with full action/boundary semantics',
+    async (durationMinutes, id) => {
+      const startMs = Date.parse('2026-09-21T18:30:00.000Z');
+      const short = programme(
+        id,
+        new Date(startMs).toISOString(),
+        new Date(startMs + durationMinutes * 60_000).toISOString(),
+        'Volledige microtitel',
+      );
+
+      await act(async () => {
+        root.render(
+          <TotaalProgrammeCell
+            channel={channel}
+            programme={short}
+            nowMs={Date.parse('2026-09-21T18:00:00.000Z')}
+            windowStartMs={Date.parse('2026-09-21T18:00:00.000Z')}
+            minuteWidth={3}
+            fontScale={1}
+            onSelectProgramme={() => undefined}
+          />,
+        );
+      });
+
+      const button = container.querySelector<HTMLElement>(
+        `[data-testid="programme-${id}"]`,
+      );
+      expect(button?.dataset.width).toBe(String(durationMinutes * 3));
+      expect(
+        container.querySelector(`[data-testid="totaal-programme-title-${id}"]`),
+      ).toBeNull();
+      expect(
+        container.querySelector(`[data-testid="totaal-programme-secondary-${id}"]`),
+      ).toBeNull();
+      expect(
+        container.querySelector(`[data-testid="totaal-programme-micro-${id}"]`),
+      ).toBeNull();
+      expect(button?.getAttribute('aria-label')).toContain('Volledige microtitel');
+      expect(
+        container.querySelector(`[data-testid="totaal-programme-boundary-${id}"]`),
+      ).not.toBeNull();
+    },
+  );
+
+  it('renders exact 48-pt frame width as a normal programme', async () => {
+    const exactThreshold = programme(
+      'exact-threshold',
       '2026-09-21T18:30:00.000Z',
-      '2026-09-21T18:45:00.000Z',
-      'Volledige microtitel',
+      '2026-09-21T18:46:00.000Z',
+      'Exact threshold',
     );
 
     await act(async () => {
       root.render(
         <TotaalProgrammeCell
           channel={channel}
-          programme={short}
+          programme={exactThreshold}
           nowMs={Date.parse('2026-09-21T18:00:00.000Z')}
           windowStartMs={Date.parse('2026-09-21T18:00:00.000Z')}
           minuteWidth={3}
           fontScale={1}
-          repeatedTitleRunMember={false}
           onSelectProgramme={() => undefined}
         />,
       );
     });
 
-    const button = container.querySelector<HTMLElement>('[data-testid="programme-short"]');
-    expect(button?.dataset.left).toBe('90');
-    expect(button?.dataset.width).toBe('45');
     expect(
-      container.querySelector('[data-testid="totaal-programme-title-short"]'),
-    ).toBeNull();
+      container.querySelector<HTMLElement>('[data-testid="programme-exact-threshold"]')
+        ?.dataset.width,
+    ).toBe('48');
     expect(
-      container.querySelector('[data-testid="totaal-programme-secondary-short"]'),
-    ).toBeNull();
-    expect(
-      container.querySelector('[data-testid="totaal-programme-micro-short"]')?.textContent,
-    ).toBe('…');
-    expect(
-      container.querySelector<HTMLElement>(
-        '[data-testid="totaal-programme-micro-short"]',
-      )?.dataset.fontFamily,
-    ).toBe(TOTAAL_TYPOGRAPHY.programmeTitle.fontFamily);
-    expect(
-      container.querySelector<HTMLElement>(
-        '[data-testid="totaal-programme-micro-content-short"]',
-      )?.dataset.alignItems,
-    ).toBe('center');
-    expect(
-      container.querySelector<HTMLElement>(
-        '[data-testid="totaal-programme-micro-content-short"]',
-      )?.dataset.justifyContent,
-    ).toBe('center');
-    expect(button?.getAttribute('aria-label')).toBe(
-      'NPO 1 volledig, Volledige microtitel, 20:30 tot 20:45',
-    );
-    expect(
-      container.querySelector('[data-testid="totaal-programme-boundary-short"]'),
-    ).not.toBeNull();
+      container.querySelector('[data-testid="totaal-programme-title-exact-threshold"]')
+        ?.textContent,
+    ).toBe('Exact threshold');
   });
 
   it('keeps an ultra-current microcell visually empty while retaining exact current accessibility semantics', async () => {
@@ -286,7 +306,6 @@ describe('TotaalProgrammeCell', () => {
           windowStartMs={Date.parse('2026-09-21T18:00:00.000Z')}
           minuteWidth={3}
           fontScale={1}
-          repeatedTitleRunMember={false}
           onSelectProgramme={({ programme: selectedProgramme }) =>
             selected.push(selectedProgramme.id)
           }
@@ -330,7 +349,6 @@ describe('TotaalProgrammeCell', () => {
           windowStartMs={Date.parse('2026-09-21T18:00:00.000Z')}
           minuteWidth={3}
           fontScale={1}
-          repeatedTitleRunMember
           onSelectProgramme={({ programme: selectedProgramme }) =>
             selected.push(selectedProgramme.id)
           }
@@ -370,7 +388,6 @@ describe('TotaalProgrammeCell', () => {
           windowStartMs={Date.parse('2026-09-21T18:00:00.000Z')}
           minuteWidth={3}
           fontScale={1}
-          repeatedTitleRunMember={false}
           onSelectProgramme={() => undefined}
         />,
       );
