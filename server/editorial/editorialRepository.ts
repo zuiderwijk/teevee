@@ -9,11 +9,17 @@ export type EditorialSignalSnapshotWrite = {
   signals: ProgrammeEditorialSignal[];
 };
 
-export type EditorialSignalSnapshotWriteResult = {
-  status: 'stored';
-  removedSignalCount: number;
-  storedSignalCount: number;
-};
+export type EditorialSignalSnapshotWriteResult =
+  | {
+      status: 'stored';
+      removedSignalCount: number;
+      storedSignalCount: number;
+    }
+  | {
+      status: 'ignored-stale';
+      removedSignalCount: 0;
+      storedSignalCount: 0;
+    };
 
 export interface ProgrammeEditorialSignalRepository {
   replaceSourceSnapshot(
