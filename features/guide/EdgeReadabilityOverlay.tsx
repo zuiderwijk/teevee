@@ -18,6 +18,7 @@ import {
   edgeBoundaryBucket,
   edgeBoundaryXs,
   edgeReadableProgramme,
+  edgeReadabilityPresentation,
   type EdgeReadableProgramme,
 } from './edgeReadability';
 import { formatGuideTime } from './guideRenderData';
@@ -30,9 +31,10 @@ import {
   totaalProgrammeContentPresentation,
   totaalStableScrollVisuals,
 } from './totaal';
-import { totaalIsMicroProgrammeFrameWidth } from './totaalMicroProgrammes';
-
-const MIN_READABLE_TEXT_WIDTH = 16;
+import {
+  totaalIsMicroProgrammeFrameWidth,
+  totaalMicroProgrammeThreshold,
+} from './totaalMicroProgrammes';
 
 type EdgeReadabilityOverlayProps = {
   fixture: GuideFixture;
@@ -59,6 +61,7 @@ type EdgeRowProps = {
   secondaryTextColor: string;
   canvasColor: string;
   boundaryColor: string;
+  fontScale: number;
 };
 
 function EdgeRow({
@@ -72,6 +75,7 @@ function EdgeRow({
   secondaryTextColor,
   canvasColor,
   boundaryColor,
+  fontScale,
 }: EdgeRowProps) {
   const startX = edge?.frame.left ?? 0;
   const endX = edge ? edge.frame.left + edge.frame.width : 0;
@@ -83,37 +87,56 @@ function EdgeRow({
   const secondary = isCurrent
     ? `tot ${formatGuideTime(endMs)}`
     : formatGuideTime(startMs);
+  const readableTextWidth = totaalMicroProgrammeThreshold(fontScale);
+  const edgeId = edge?.programme.id ?? `row-${rowIndex}`;
 
-  const animatedStyle = useAnimatedStyle(() => {
+  const maskStyle = useAnimatedStyle(() => {
     if (!hasEdge) return { width: 0, opacity: 0 };
-
-    const x = scrollX.value;
-    const remaining = Math.max(0, endX - x);
-    const width = Math.min(viewportWidth, remaining);
-    const active = x > startX && x < endX;
-
+    const state = edgeReadabilityPresentation(
+      startX,
+      endX,
+      scrollX.value,
+      viewportWidth,
+      readableTextWidth,
+    );
     return {
-      width,
-      opacity: active && width >= MIN_READABLE_TEXT_WIDTH ? 1 : 0,
+      width: state.width,
+      opacity: state.maskVisible ? 1 : 0,
     };
-  }, [endX, hasEdge, startX, viewportWidth]);
+  }, [endX, hasEdge, readableTextWidth, startX, viewportWidth]);
+
+  const textStyle = useAnimatedStyle(() => {
+    if (!hasEdge) return { opacity: 0 };
+    const state = edgeReadabilityPresentation(
+      startX,
+      endX,
+      scrollX.value,
+      viewportWidth,
+      readableTextWidth,
+    );
+    return { opacity: state.titleVisible ? 1 : 0 };
+  }, [endX, hasEdge, readableTextWidth, startX, viewportWidth]);
 
   const boundaryStyle = useAnimatedStyle(() => {
     if (!hasEdge) return { opacity: 0 };
-    const x = scrollX.value;
-    const remaining = Math.max(0, endX - x);
-    const active = x > startX && x < endX;
-    const endVisible = remaining <= viewportWidth;
+    const state = edgeReadabilityPresentation(
+      startX,
+      endX,
+      scrollX.value,
+      viewportWidth,
+      readableTextWidth,
+    );
     return {
       opacity:
-        active && endVisible
+        state.active && state.endVisible
           ? TOTAAL_VISUAL_METRICS.programmeBoundaryOpacity
           : 0,
     };
-  }, [endX, hasEdge, startX, viewportWidth]);
+  }, [endX, hasEdge, readableTextWidth, startX, viewportWidth]);
 
   return (
     <Animated.View
+      testID={`guide-edge-mask-${edgeId}`}
       style={[
         styles.edgeMask,
         {
@@ -122,10 +145,13 @@ function EdgeRow({
           paddingHorizontal: presentation.paddingX,
           backgroundColor: canvasColor,
         },
-        animatedStyle,
+        maskStyle,
       ]}
     >
-      <View style={styles.textContent}>
+      <Animated.View
+        testID={`guide-edge-text-${edgeId}`}
+        style={[styles.textContent, textStyle]}
+      >
         <Text
           numberOfLines={presentation.titleLines}
           ellipsizeMode="tail"
@@ -144,8 +170,9 @@ function EdgeRow({
             {secondary}
           </Text>
         ) : null}
-      </View>
+      </Animated.View>
       <Animated.View
+        testID={`guide-edge-boundary-${edgeId}`}
         pointerEvents="none"
         style={[
           styles.boundary,
@@ -292,6 +319,7 @@ export function EdgeReadabilityOverlay({
             secondaryTextColor={theme.colors.textSecondary}
             canvasColor={theme.colors.background}
             boundaryColor={theme.colors.border}
+            fontScale={fontScale}
           />
         ))}
       </Animated.View>
