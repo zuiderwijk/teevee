@@ -4,7 +4,7 @@
 
 Lead REQUIRED FIX #5785619629 accepted the current Guide UI/runtime and reopened only editorial persistence. The UI implementation is therefore untouched from reviewed head `c23609dc579438242c46fb5888ea0483b80b94e9`.
 
-Two persistence defects are corrected in the still-unapplied forward migration `20260923003000_preserve_started_editorial_signals.sql`.
+Two persistence defects are corrected in the still-unapplied forward migration `20260922235737_preserve_started_editorial_signals.sql`.
 
 First, source reconciliation now occurs before incoming upsert. Because canonical programme identity includes broadcast start, an EPG time correction can rematch the same TVgids `sourceItemId` to a different `Programme.id`. The writer keeps the unique source-item constraint, advisory lock and stale guard, but now removes explicit source-item rekeys first, then orphans, then omitted future signals, and only then upserts incoming matches. A simple omission after programme start remains historical retention; an explicit same-source-item rematch safely moves the source identity to the corrected programme.
 
