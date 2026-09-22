@@ -182,6 +182,8 @@ export function ProgrammeRow({
             <Text
               testID={`per-channel-kijktip-${programme.id}`}
               accessible={false}
+              accessibilityElementsHidden
+              importantForAccessibility="no"
               numberOfLines={1}
               style={[
                 styles.currentKijktip,
@@ -260,6 +262,8 @@ export function ProgrammeRow({
           <Text
             testID={`per-channel-kijktip-${programme.id}`}
             accessible={false}
+            accessibilityElementsHidden
+            importantForAccessibility="no"
             numberOfLines={1}
             style={[
               styles.standardKijktipLabel,
