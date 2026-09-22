@@ -223,6 +223,10 @@ function evaluateMatches(items, schedule) {
       .map((p) => ({ title: p.title, startAt: p.startAt, deltaMinutes: Math.abs(Date.parse(p.startAt) - startMs) / 60000 }))
       .sort((a, b) => a.deltaMinutes - b.deltaMinutes)
       .slice(0, 3);
+    const nearestByTime = sameChannel
+      .map((p) => ({ title: p.title, startAt: p.startAt, deltaMinutes: Math.abs(Date.parse(p.startAt) - startMs) / 60000 }))
+      .sort((a, b) => a.deltaMinutes - b.deltaMinutes)
+      .slice(0, 3);
     return {
       index: item.index,
       title: item.title,
@@ -230,6 +234,7 @@ function evaluateMatches(items, schedule) {
       start: item.start,
       status: sameTitle.length ? 'time-mismatch' : 'title-mismatch',
       nearestSameTitle,
+      nearestByTime,
     };
   });
 
