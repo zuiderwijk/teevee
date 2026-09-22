@@ -84,7 +84,7 @@ Teevee has a dedicated Supabase project:
 - Free plan;
 - region `eu-west-2`.
 
-Private schema `teevee` contains canonical channels, programmes, authoritative schedule coverage segments, and the separate optional `programme_editorial_signals` / `editorial_source_state` enrichment store. Transactional schedule replacement continues to enforce ADR 0007 and stale-write protection. Editorial signals intentionally do not FK/cascade to programme rows because normal schedule-window replacement deletes/reinserts programmes. Successful editorial refreshes validate current programme IDs, upsert current feed matches, remove omitted signals only while the broadcast is still future, preserve omitted signals after `start_at` as historical broadcast metadata, and clean orphaned signals after the canonical programme leaves retained schedule storage. Reads continue to join current programmes.
+Private schema `teevee` contains canonical channels, programmes, authoritative schedule coverage segments, and the separate optional `programme_editorial_signals` / `editorial_source_state` enrichment store. Transactional schedule replacement continues to enforce ADR 0007 and stale-write protection. Editorial signals intentionally do not FK/cascade to programme rows because normal schedule-window replacement deletes/reinserts programmes. The editorial writer keeps a per-source advisory lock and stale guard, then reconciles source-item rekeys, orphans and omitted-future rows **before** incoming upsert. This preserves the unique source-item constraint when a normal EPG start correction changes canonical `Programme.id`, while simple omission after `start_at` still retains historical Kijktip metadata. Reads continue to join current programmes. The PR #127 forward migration also contains one fail-closed, idempotent recovery from direct historical `tips.rss` evidence; no general article/title inference is introduced.
 
 ### Security boundary
 - private Teevee tables are unavailable to `anon` and `authenticated`;
@@ -120,7 +120,7 @@ Protected server-side refresh:
 Independent protected Kijktip refresh:
 - fetches/decodes TVgids `tips.rss` server-side only;
 - applies the deterministic PR #120 channel/title/start matcher against canonical schedule reads;
-- reconciles one authoritative TVgids source snapshot only after a successful complete run: current/future feed membership stays authoritative, while already-started matched broadcasts retain their historical Kijktip metadata until canonical schedule retention expires;
+- reconciles one authoritative TVgids source snapshot only after a successful complete run: explicit same-source-item canonical rekeys, orphan cleanup and future omissions are resolved before upsert; current/future feed membership stays authoritative, while a simply omitted already-started broadcast retains historical Kijktip metadata until canonical schedule retention expires;
 - uses a dedicated Vault-backed cron token and a simple hourly `:41` schedule;
 - records non-user diagnostics for feed count, Tier A/B/C matches, ambiguity, title mismatch, unsupported channel, coverage miss, invalid/undecodable records, duplicates and unmatched items;
 - is not called by `epg-refresh`, `guide-schedule` or the mobile client.

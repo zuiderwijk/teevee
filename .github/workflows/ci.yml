@@ -97,38 +97,3 @@ jobs:
         if: github.event_name != 'pull_request'
         working-directory: android
         run: ./gradlew :app:assembleDebug --no-daemon
-
-  editorial-migration-smoke:
-    if: github.event_name == 'pull_request' && github.event.pull_request.number == 127
-    runs-on: ubuntu-latest
-    services:
-      postgres:
-        image: postgres:17
-        env:
-          POSTGRES_PASSWORD: postgres
-          POSTGRES_DB: postgres
-        ports:
-          - 5432:5432
-        options: >-
-          --health-cmd "pg_isready -U postgres"
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-    env:
-      PGHOST: localhost
-      PGPORT: 5432
-      PGUSER: postgres
-      PGPASSWORD: postgres
-      PGDATABASE: postgres
-    steps:
-      - uses: actions/checkout@v7
-      - name: Ensure PostgreSQL client
-        shell: bash
-        run: |
-          if ! command -v psql >/dev/null 2>&1; then
-            sudo apt-get update
-            sudo apt-get install -y postgresql-client
-          fi
-      - name: Execute editorial lifecycle migration smoke
-        run: psql -v ON_ERROR_STOP=1 -f server/editorial/editorialMigrationSmoke.sql
-

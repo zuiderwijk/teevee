@@ -269,6 +269,24 @@ The 10 title mismatches were caused by:
 
 No empirical evidence required title fuzzing, semantic similarity or AI matching.
 
+### Historical recovery evidence — owner-observed 22 September broadcast
+
+PR #120's retained GitHub Actions evidence also provides a direct, source-contract-safe recovery record for the later owner-observed persistence regression.
+
+Successful live `tips.rss` job `106846180653` captured item 9 as:
+- title: `De slimste mens`;
+- channel: `NPO 1`;
+- start: `Tue, 22 Sep 2026 21:30:00 +0200` = **19:30 UTC**;
+- end: `22:20 +0200`;
+- GUID/link: `https://www.tvgids.nl/nieuws/televisie/de-slimste-mens-kiki-boreel-amusement-quiz-npo-1-2026-09-22`;
+- publication: `Mon, 21 Sep 2026 22:15:00 +0200`.
+
+Successful deterministic matching job `106846829261` then resolved that exact RSS item with the established Tier-B contract to canonical programme `programme-0gh2ai605h9qyw`, canonical title `De slimste mens`, canonical start **2026-09-22 19:30 UTC**, start delta **0 minutes**.
+
+A later read-only production inspection still found that exact retained canonical programme but no persisted Kijktip signal. PR #127 may therefore recover this one historical signal from the **captured `tips.rss` evidence itself**. The URL is not being promoted because it is a news article; it is retained only as the GUID/link that the explicit Kijktip feed emitted. No title-only recovery, category-news RSS, roundup article or general `/nieuws/` discovery is permitted.
+
+Recovery remains fail-closed: explicit NPO 1 channel + exact source title + ±5-minute source start must resolve to exactly one retained canonical candidate. If that tuple is missing or ambiguous, no row is created.
+
 ### Research conclusion
 
 The current `tips.rss` feed is technically sufficient for a conservative programme-level Kijktip enrichment because it directly supplies **title + channel + broadcast start/end**. Exact TVgids broadcast identity would be preferable if an authorized future source exposes it, but it is not required for a viable deterministic match.

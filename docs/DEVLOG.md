@@ -1,5 +1,25 @@
 # Teevee Development Logboek
 
+## 23 september 2026 — PR #127 Lead persistence blockers closed without UI changes
+
+Lead REQUIRED FIX #5785619629 accepted the current Guide UI/runtime and reopened only editorial persistence. The UI implementation is therefore untouched from reviewed head `c23609dc579438242c46fb5888ea0483b80b94e9`.
+
+Two persistence defects are corrected in the still-unapplied forward migration `20260923003000_preserve_started_editorial_signals.sql`.
+
+First, source reconciliation now occurs before incoming upsert. Because canonical programme identity includes broadcast start, an EPG time correction can rematch the same TVgids `sourceItemId` to a different `Programme.id`. The writer keeps the unique source-item constraint, advisory lock and stale guard, but now removes explicit source-item rekeys first, then orphans, then omitted future signals, and only then upserts incoming matches. A simple omission after programme start remains historical retention; an explicit same-source-item rematch safely moves the source identity to the corrected programme.
+
+Second, the migration adds one conservative recovery allowlist for an already-deleted historical Kijktip. PR #120 live job `106846180653` directly captured `De slimste mens` / NPO 1 / 22 September 21:30 CEST in `tips.rss` with GUID/link `…de-slimste-mens-kiki-boreel…2026-09-22`. Matching job `106846829261` resolved that exact item to canonical `programme-0gh2ai605h9qyw` at 19:30 UTC with zero drift. The recovery does not hardcode that programme ID: it reruns the existing Tier-B evidence shape against retained storage — explicit channel, exact title, ±5 minutes, exactly one candidate — and otherwise does nothing. The news-looking URL is used only because it was the direct `tips.rss` GUID/link; general TVgids news remains excluded.
+
+A temporary PR-only CI job executed `server/editorial/editorialMigrationSmoke.sql` against disposable **PostgreSQL 17** on head `e927eb320283742c5b1f403527b0bc33e7666f5f`. The real forward migration executed twice: first recovery `INSERT 0 1`, second idempotent pass `INSERT 0 0`. The smoke then passed future present, future omitted, started present, started omitted, same-source-item corrected-start rekey, orphan cleanup, stale refresh and historical getter assertions; PostgreSQL completed the assertion block with `DO` and the test transaction ended with `ROLLBACK`. Job `106974086358` succeeded. The temporary CI plumbing is removed again before final exact-head CI; the reusable smoke SQL remains in-repo.
+
+The migration has **not** been applied to the hosted Teevee production project. Migration history therefore remains clean and deployment remains a later merge/deploy action, not part of this fix session.
+
+Full evidence: `docs/EDITORIAL_PERSISTENCE_RECOVERY_2026-09-23.md`.
+
+**Next step:** final exact-head CI, then return PR #127 to Lead. Do not merge and do not send to Independent QA.
+
+---
+
 ## 23 september 2026 — PR #127 closes owner physical regressions and compact-label follow-up
 
 Owner comments #5785161879 and #5785190676 reopen three narrow issues on exact head `aa5c947f5d9e44089a33cb4d5ae71d5a6b916ffd`.
