@@ -97,6 +97,7 @@ vi.mock('react-native', async () => {
     style?: unknown | ((state: { pressed: boolean }) => unknown);
     pointerEvents?: string;
     numberOfLines?: number;
+    ellipsizeMode?: string;
     accessible?: boolean;
     accessibilityElementsHidden?: boolean;
     importantForAccessibility?: string;
@@ -126,6 +127,7 @@ vi.mock('react-native', async () => {
     children,
     testID,
     numberOfLines,
+    ellipsizeMode,
     accessible,
     accessibilityElementsHidden,
     importantForAccessibility,
@@ -163,6 +165,7 @@ vi.mock('react-native', async () => {
       {
         'data-testid': testID,
         'data-number-of-lines': numberOfLines,
+        'data-ellipsize-mode': ellipsizeMode,
         'data-accessible': accessible === undefined ? undefined : String(accessible),
         'data-accessibility-elements-hidden':
           accessibilityElementsHidden === undefined
@@ -394,6 +397,35 @@ function getByTestId(container: HTMLElement, id: string): HTMLElement {
   return node;
 }
 
+function flattenedStyle(node: HTMLElement): Record<string, unknown> {
+  const serialized = node.getAttribute('data-style');
+  if (!serialized) return {};
+  const value = JSON.parse(serialized) as unknown;
+  const output: Record<string, unknown> = {};
+
+  const merge = (entry: unknown) => {
+    if (Array.isArray(entry)) {
+      entry.forEach(merge);
+      return;
+    }
+    if (entry && typeof entry === 'object') {
+      Object.assign(output, entry);
+    }
+  };
+
+  merge(value);
+  return output;
+}
+
+function withProgrammeTitle(programmeId: string, title: string): GuideSchedule {
+  return {
+    ...schedule,
+    programmes: schedule.programmes.map((programme) =>
+      programme.id === programmeId ? { ...programme, title } : programme,
+    ),
+  };
+}
+
 function Harness({
   onSelected,
 }: {
@@ -552,6 +584,141 @@ describe('Nu & Straks production interaction boundary', () => {
     ).toContain('"height":44');
   });
 
+  it('keeps a short following Kijktip title intrinsic-width-first with an exact 8-pt label gap', async () => {
+    runtime.schedule = withProgrammeTitle('one-follow-1', 'Kort');
+    runtime.fixture = runtime.schedule;
+    runtime.signals = [kijktipSignal('one-follow-1')];
+
+    await act(async () =>
+      root.render(
+        <NowNextGuideView
+          guideDataVersion={1}
+          presentationNavigation={<span />}
+          onSelectProgramme={vi.fn()}
+        />,
+      ),
+    );
+
+    const title = getByTestId(
+      container,
+      'now-next-following-title-one-follow-1',
+    );
+    const label = getByTestId(
+      container,
+      'now-next-following-kijktip-one-follow-1',
+    );
+    const titleStyle = flattenedStyle(title);
+    const labelStyle = flattenedStyle(label);
+
+    expect(title.textContent).toBe('Kort');
+    expect(titleStyle.flexGrow).toBe(0);
+    expect(titleStyle.flex).toBeUndefined();
+    expect(titleStyle.flexShrink).toBe(1);
+    expect(titleStyle.maxWidth).toBe(158);
+    expect(labelStyle.marginLeft).toBe(8);
+  });
+
+  it('bounds a long following title by the protected budget while keeping tail ellipsis ownership', async () => {
+    runtime.schedule = withProgrammeTitle(
+      'one-follow-1',
+      'Een zeer lange programmanaam die nooit de Kijktip mag verdringen',
+    );
+    runtime.fixture = runtime.schedule;
+    runtime.signals = [kijktipSignal('one-follow-1')];
+
+    await act(async () =>
+      root.render(
+        <NowNextGuideView
+          guideDataVersion={1}
+          presentationNavigation={<span />}
+          onSelectProgramme={vi.fn()}
+        />,
+      ),
+    );
+
+    const title = getByTestId(
+      container,
+      'now-next-following-title-one-follow-1',
+    );
+    const label = getByTestId(
+      container,
+      'now-next-following-kijktip-one-follow-1',
+    );
+
+    expect(flattenedStyle(title)).toMatchObject({
+      flexGrow: 0,
+      flexShrink: 1,
+      maxWidth: 158,
+    });
+    expect(title.getAttribute('data-number-of-lines')).toBe('1');
+    expect(title.getAttribute('data-ellipsize-mode')).toBe('tail');
+    expect(flattenedStyle(label).marginLeft).toBe(8);
+  });
+
+  it('keeps the title visible at the exact 48-pt protected boundary', async () => {
+    viewport.width = 280;
+    runtime.schedule = withProgrammeTitle('one-follow-1', 'Grens');
+    runtime.fixture = runtime.schedule;
+    runtime.signals = [kijktipSignal('one-follow-1')];
+
+    await act(async () =>
+      root.render(
+        <NowNextGuideView
+          guideDataVersion={1}
+          presentationNavigation={<span />}
+          onSelectProgramme={vi.fn()}
+        />,
+      ),
+    );
+
+    const title = getByTestId(
+      container,
+      'now-next-following-title-one-follow-1',
+    );
+    const label = getByTestId(
+      container,
+      'now-next-following-kijktip-one-follow-1',
+    );
+
+    expect(title.textContent).toBe('Grens');
+    expect(flattenedStyle(title).maxWidth).toBe(48);
+    expect(flattenedStyle(title).flexGrow).toBe(0);
+    expect(flattenedStyle(label).marginLeft).toBe(8);
+    expect(label.textContent).toBe('Kijktip');
+  });
+
+  it('renders one deliberate ellipsis below the 48-pt title budget and keeps the 8-pt Kijktip gap', async () => {
+    viewport.width = 279;
+    runtime.schedule = withProgrammeTitle('one-follow-1', 'Te smal');
+    runtime.fixture = runtime.schedule;
+    runtime.signals = [kijktipSignal('one-follow-1')];
+
+    await act(async () =>
+      root.render(
+        <NowNextGuideView
+          guideDataVersion={1}
+          presentationNavigation={<span />}
+          onSelectProgramme={vi.fn()}
+        />,
+      ),
+    );
+
+    const title = getByTestId(
+      container,
+      'now-next-following-title-one-follow-1',
+    );
+    const label = getByTestId(
+      container,
+      'now-next-following-kijktip-one-follow-1',
+    );
+
+    expect(title.textContent).toBe('…');
+    expect(flattenedStyle(title).maxWidth).toBe(48);
+    expect(flattenedStyle(title).flexGrow).toBe(0);
+    expect(flattenedStyle(label).marginLeft).toBe(8);
+    expect(label.textContent).toBe('Kijktip');
+  });
+
   it('reacts to editorial-only runtime changes without replacing schedule ownership', async () => {
     const originalSchedule = runtime.schedule;
 
@@ -702,18 +869,23 @@ describe('Nu & Straks production interaction boundary', () => {
         'now-next-following-one-0-one-follow-1',
       ).getAttribute('data-style'),
     ).toContain('"height":80');
-    expect(
-      getByTestId(
-        container,
-        'now-next-following-title-first-line-one-follow-1',
-      ).textContent,
-    ).toBe('Volgend');
-    expect(
-      getByTestId(
-        container,
-        'now-next-following-title-one-follow-1',
-      ).textContent,
-    ).toBe('één');
+    const firstLine = getByTestId(
+      container,
+      'now-next-following-title-first-line-one-follow-1',
+    );
+    const finalLine = getByTestId(
+      container,
+      'now-next-following-title-one-follow-1',
+    );
+    expect(firstLine.textContent).toBe('Volgend');
+    expect(flattenedStyle(firstLine).flex).toBe(1);
+    expect(flattenedStyle(firstLine).maxWidth).toBeUndefined();
+    expect(finalLine.textContent).toBe('één');
+    expect(flattenedStyle(finalLine)).toMatchObject({
+      flexGrow: 0,
+      flexShrink: 1,
+      maxWidth: 158,
+    });
     expect(
       getByTestId(
         container,
@@ -743,12 +915,21 @@ describe('Nu & Straks production interaction boundary', () => {
       'now-next-following-one-0-one-follow-1',
     );
     expect(target.getAttribute('data-style')).toContain('"height":137');
-    expect(
-      getByTestId(
-        container,
-        'now-next-following-kijktip-one-follow-1',
-      ).textContent,
-    ).toBe('Kijktip');
+    const stackedTitle = getByTestId(
+      container,
+      'now-next-following-title-one-follow-1',
+    );
+    const stackedLabel = getByTestId(
+      container,
+      'now-next-following-kijktip-one-follow-1',
+    );
+    expect(stackedLabel.textContent).toBe('Kijktip');
+    expect(flattenedStyle(stackedTitle)).toMatchObject({
+      flexGrow: 0,
+      flexShrink: 1,
+      maxWidth: 124,
+    });
+    expect(flattenedStyle(stackedLabel).marginLeft).toBe(8);
     expect(
       getByTestId(
         container,
