@@ -3,16 +3,24 @@ import { act, createElement, type ReactNode } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { guideTelevisionDayHorizon } from '@/data/domain/guideTime';
+
 import { COMPACT_GUIDE_MAX_FONT_SIZE_MULTIPLIER } from './guideVisualMetrics';
 import { GuideDaySelector } from './GuideDaySelector';
 
 type StyleValue = Record<string, unknown> | StyleValue[] | null | undefined;
+
 type MockProps = {
   children?: ReactNode;
   testID?: string;
+  accessibilityLabel?: string;
+  accessibilityRole?: string;
+  accessibilityState?: { selected?: boolean; busy?: boolean };
+  visible?: boolean;
+  onPress?: () => void;
+  onRequestClose?: () => void;
   style?: StyleValue | ((state: { pressed: boolean }) => StyleValue);
   maxFontSizeMultiplier?: number;
-  visible?: boolean;
 };
 
 function flattenStyle(style: StyleValue): Record<string, unknown> {
@@ -27,44 +35,58 @@ function flattenStyle(style: StyleValue): Record<string, unknown> {
 }
 
 vi.mock('react-native', () => {
-  const node = (tag: string) =>
-    ({ children, testID, style, maxFontSizeMultiplier }: MockProps) => {
-      const resolved =
-        typeof style === 'function'
-          ? flattenStyle(style({ pressed: false }))
-          : flattenStyle(style);
-      return createElement(
-        tag,
-        {
-          'data-testid': testID,
-          'data-flex-grow': resolved.flexGrow,
-          'data-flex-shrink': resolved.flexShrink,
-          'data-max-font': maxFontSizeMultiplier,
-        },
-        children,
-      );
-    };
+  const element = (tag: string, props: MockProps) => {
+    const resolvedStyle =
+      typeof props.style === 'function'
+        ? flattenStyle(props.style({ pressed: false }))
+        : flattenStyle(props.style);
+    return createElement(
+      tag,
+      {
+        'data-testid': props.testID,
+        'aria-label': props.accessibilityLabel,
+        'aria-selected': props.accessibilityState?.selected,
+        'aria-busy': props.accessibilityState?.busy,
+        'data-flex-grow': resolvedStyle.flexGrow,
+        'data-flex-shrink': resolvedStyle.flexShrink,
+        'data-max-font': props.maxFontSizeMultiplier,
+        onClick: props.onPress,
+      },
+      props.children,
+    );
+  };
 
   return {
-    Pressable: node('button'),
-    SafeAreaView: node('div'),
-    ScrollView: node('div'),
-    Text: node('span'),
-    View: node('div'),
-    Modal: ({ children, visible }: MockProps) =>
-      visible ? createElement('div', null, children) : null,
-    StyleSheet: { create: <T,>(styles: T) => styles },
+    Modal: ({ children, visible }: MockProps) => (visible ? createElement('div', { 'data-modal': 'true' }, children) : null),
+    Platform: { OS: 'ios' },
+    Pressable: (props: MockProps) => element('button', props),
+    SafeAreaView: (props: MockProps) => element('div', props),
+    ScrollView: (props: MockProps) => element('div', props),
+    View: (props: MockProps) => element('div', props),
+    Text: (props: MockProps) => element('span', props),
+    StyleSheet: {
+      hairlineWidth: 1,
+      absoluteFill: {},
+      create: <T,>(value: T) => value,
+    },
   };
 });
 
 vi.mock('@/theme/useTeeveeTheme', () => ({
   useTeeveeTheme: () => ({
+    dark: false,
     colors: {
-      text: '#111',
-      textSecondary: '#555',
-      border: '#ddd',
+      background: '#fff',
       surface: '#fff',
       surfaceElevated: '#f5f5f5',
+      text: '#111',
+      textSecondary: '#555',
+      textMuted: '#777',
+      border: '#ddd',
+      accent: '#111',
+      currentTime: '#d44',
+      programme: '#eee',
+      programmeCurrent: '#ddd',
     },
   }),
 }));
@@ -85,8 +107,107 @@ afterEach(async () => {
   vi.unstubAllGlobals();
 });
 
-describe('GuideDaySelector intrinsic compact allocation', () => {
-  it('keeps the full one-line date and chevron intrinsically allocated at Larger Text', async () => {
+async function click(selector: string) {
+  const element = container.querySelector<HTMLElement>(selector);
+  if (!element) throw new Error(`Missing ${selector}`);
+  await act(async () => element.click());
+}
+
+describe('GuideDaySelector', () => {
+  it('opens exactly ten D-2..D+7 options with one explicit accessible selected state', async () => {
+    const nowMs = Date.parse('2026-09-15T17:00:00Z');
+    const horizon = guideTelevisionDayHorizon(nowMs);
+    const onSelectDay = vi.fn();
+
+    await act(async () => {
+      root.render(
+        <GuideDaySelector
+          selectedDayStartMs={horizon[0]!.fromMs}
+          nowMs={nowMs}
+          onSelectDay={onSelectDay}
+        />,
+      );
+    });
+    await click('[data-testid="guide-day-selector"]');
+
+    const options = [...container.querySelectorAll<HTMLElement>('[data-testid^="guide-day-option-"]')];
+    expect(options).toHaveLength(10);
+    expect(options[0]?.dataset.testid).toBe('guide-day-option--2');
+    expect(options.at(-1)?.dataset.testid).toBe('guide-day-option-7');
+    expect(options.filter((option) => option.getAttribute('aria-selected') === 'true')).toHaveLength(1);
+  });
+
+  it('uses the preceding absolute television-day date before 06:00 and never exposes an unbounded calendar', async () => {
+    const nowMs = Date.parse('2026-09-15T03:59:00Z');
+    const selectedDay = guideTelevisionDayHorizon(nowMs).find(({ offset }) => offset === 0)!;
+
+    await act(async () => {
+      root.render(
+        <GuideDaySelector
+          selectedDayStartMs={selectedDay.fromMs}
+          nowMs={nowMs}
+          onSelectDay={() => undefined}
+        />,
+      );
+    });
+
+    const selector = container.querySelector<HTMLElement>('[data-testid="guide-day-selector"]');
+    expect(selector?.getAttribute('aria-label')).toContain('Ma 14 sep');
+    expect(selector?.getAttribute('aria-label')).not.toContain('Vandaag · ma 14 sep');
+
+    await click('[data-testid="guide-day-selector"]');
+    expect(container.querySelectorAll('[data-testid^="guide-day-option-"]')).toHaveLength(10);
+    expect(container.textContent).not.toContain('Kies datum');
+  });
+
+  it('uses Per-zender compact date semantics without injecting selected-channel text', async () => {
+    const nowMs = Date.parse('2026-09-15T17:00:00Z');
+    const selectedDay = guideTelevisionDayHorizon(nowMs).find(({ offset }) => offset === 0)!;
+
+    await act(async () => {
+      root.render(
+        <GuideDaySelector
+          selectedDayStartMs={selectedDay.fromMs}
+          nowMs={nowMs}
+          labelVariant="per-channel"
+          onSelectDay={() => undefined}
+        />,
+      );
+    });
+
+    const selector = container.querySelector<HTMLElement>('[data-testid="guide-day-selector"]');
+    expect(selector?.getAttribute('aria-label')).toBe('Vandaag. Kies een dag');
+    expect(container.textContent).not.toContain('NPO');
+  });
+
+  it('announces loading state and commits the chosen day from the whole option row', async () => {
+    const nowMs = Date.parse('2026-09-15T17:00:00Z');
+    const horizon = guideTelevisionDayHorizon(nowMs);
+    const onSelectDay = vi.fn();
+
+    await act(async () => {
+      root.render(
+        <GuideDaySelector
+          selectedDayStartMs={horizon[2]!.fromMs}
+          nowMs={nowMs}
+          loading
+          onSelectDay={onSelectDay}
+        />,
+      );
+    });
+
+    expect(
+      container.querySelector('[data-testid="guide-day-selector"]')?.getAttribute('aria-busy'),
+    ).toBe('true');
+
+    await click('[data-testid="guide-day-selector"]');
+    await click('[data-testid="guide-day-option-7"]');
+
+    expect(onSelectDay).toHaveBeenCalledWith(horizon.at(-1)!.fromMs);
+    expect(container.querySelector('[data-modal="true"]')).toBeNull();
+  });
+
+  it('keeps Totaal one-line date + chevron intrinsically allocated at the compact Larger Text cap', async () => {
     const nowMs = Date.parse('2026-09-22T00:00:00.000Z');
     const selectedDayStartMs = Date.parse('2026-09-21T04:00:00.000Z');
 
@@ -113,13 +234,11 @@ describe('GuideDaySelector intrinsic compact allocation', () => {
       '[data-testid="guide-day-selector-chevron"]',
     );
 
+    expect(COMPACT_GUIDE_MAX_FONT_SIZE_MULTIPLIER).toBe(1.2);
     expect(control?.dataset.flexShrink).toBe('0');
     expect(group?.dataset.flexShrink).toBe('0');
     expect(label?.dataset.flexShrink).toBe('0');
-    expect(label?.dataset.maxFont).toBe(
-      String(COMPACT_GUIDE_MAX_FONT_SIZE_MULTIPLIER),
-    );
-    expect(COMPACT_GUIDE_MAX_FONT_SIZE_MULTIPLIER).toBe(1.2);
+    expect(label?.dataset.maxFont).toBe('1.2');
     expect(label?.textContent).toBe('Ma 21 sep');
     expect(chevron?.textContent).toBe('⌄');
   });
