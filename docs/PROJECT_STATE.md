@@ -37,6 +37,8 @@ Merged foundations:
 
 Search is paused until the Kijktip data/enrichment path, approved Guide presentation wiring, deterministic verification and required acceptance gates are complete. **PR #126 is the first production implementation increment:** server-side `tips.rss` ingestion, deterministic Tier B/C matching, private persisted `ProgrammeEditorialSignal` snapshots, independent protected editorial refresh, fail-open typed hosted transport and separate mobile runtime enrichment state. It deliberately adds **no visible Kijktip UI** and does not mutate canonical `Programme`. After PR #126 passes Lead review and merges, the remaining Kijktip work is the already-calibrated Per-zender/Nu & Straks presentation wiring plus its review/physical-acceptance gates. After full Kijktip acceptance, resume Phase 5 with Search. Tonight remains deferred/provisional.
 
+Rights status for this vertical slice is closed: the product owner confirms the intended Teevee Kijktip use of TVgids `tips.rss` is rights-cleared. That source is **not a Kijktip release blocker**. This does not change the separate Phase 8 production EPG-provider redistribution-rights gate or the independent licensing/provenance requirements for channel logos and programme artwork.
+
 ## Frozen television-day and Guide-horizon semantics
 ADR 0008 is canonical:
 - television day = **06:00 Europe/Amsterdam -> 06:00 next local day**;
