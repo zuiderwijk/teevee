@@ -63,11 +63,21 @@ export const PER_CHANNEL_VISUAL_METRICS = {
   collapseDistance: 56,
   reduceMotionSwitchOffset: 28,
   viewportReferenceRows: 2,
+  kijktipTimeGap: 2,
 } as const;
 
 // Each weight uses its own static Instrument Sans family name. Do not add a
 // `fontWeight` alongside these families; that can trigger platform-specific
 // synthetic weight selection even though the intended static face is loaded.
+export const GUIDE_EDITORIAL_TYPOGRAPHY = {
+  kijktip: {
+    fontFamily: TEEVEE_FONT_FAMILIES.medium,
+    fontSize: 12,
+    lineHeight: 16,
+    letterSpacing: 0,
+  },
+} as const;
+
 export const GUIDE_TYPOGRAPHY = {
   brandMark: {
     fontFamily: TEEVEE_FONT_FAMILIES.bold,
@@ -159,6 +169,51 @@ export function minimumTouchTargetForPlatform(platform: string) {
 export function standardProgrammeRowHeight(fontScale = 1) {
   const contentScale = Number.isFinite(fontScale) ? Math.max(1, fontScale) : 1;
   return Math.round(PER_CHANNEL_VISUAL_METRICS.standardRowHeight * contentScale);
+}
+
+export function perChannelKijktipStackGeometry(fontScale = 1) {
+  const contentScale =
+    Number.isFinite(fontScale) && fontScale > 0 ? Math.max(1, fontScale) : 1;
+  const rowHeight = standardProgrammeRowHeight(contentScale);
+  const timeLineHeight = GUIDE_TYPOGRAPHY.programmeTime.lineHeight * contentScale;
+  const labelLineHeight =
+    GUIDE_EDITORIAL_TYPOGRAPHY.kijktip.lineHeight * contentScale;
+  const stackHeight =
+    timeLineHeight +
+    PER_CHANNEL_VISUAL_METRICS.kijktipTimeGap +
+    labelLineHeight;
+  const stackTop = (rowHeight - stackHeight) / 2;
+
+  return {
+    rowHeight,
+    stackTop,
+    timeTop: stackTop,
+    timeLineHeight,
+    labelTop:
+      stackTop +
+      timeLineHeight +
+      PER_CHANNEL_VISUAL_METRICS.kijktipTimeGap,
+    labelLineHeight,
+    stackHeight,
+  } as const;
+}
+
+export function perChannelCurrentKijktipGeometry(fontScale = 1) {
+  const contentScale =
+    Number.isFinite(fontScale) && fontScale > 0 ? Math.max(1, fontScale) : 1;
+  const timeLineHeight = GUIDE_TYPOGRAPHY.programmeTime.lineHeight * contentScale;
+  const labelLineHeight =
+    GUIDE_EDITORIAL_TYPOGRAPHY.kijktip.lineHeight * contentScale;
+
+  return {
+    timeTop: PER_CHANNEL_VISUAL_METRICS.currentContentTopInset,
+    timeLineHeight,
+    labelTop:
+      PER_CHANNEL_VISUAL_METRICS.currentContentTopInset +
+      timeLineHeight +
+      PER_CHANNEL_VISUAL_METRICS.kijktipTimeGap,
+    labelLineHeight,
+  } as const;
 }
 
 export function currentProgrammeTitleLineCount(fontScale = 1) {
