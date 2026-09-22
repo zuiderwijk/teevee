@@ -1,5 +1,21 @@
 # Teevee Development Logboek
 
+## 22 september 2026 — Phase 4 administratively closed after Totaal production merge
+
+PR #114 merged to `main` as `4cea66eca92b7224ff51940b30de09db11928427`, closing the final open Phase 4 Guide production-convergence work.
+
+Totaal production convergence is now canonical as merged, owner-accepted and QA-proven. The accepted runtime line passed focused physical iPhone/product acceptance. Independent QA reviewed the production candidate, identified one ChannelIdentity accessibility-subtree blocker, and that blocker was corrected before merge; the final Lead merge gate independently verified the fix closed without reopening the owner-approved visual/product runtime. Final exact PR head `b054aac298ca9cdb37240881172db5d2ac6a4cf6` passed CI #877 / run `35753152718`: strict TypeScript, lint, **72 test files / 538 tests**, and iOS/Android/web Expo exports.
+
+Phase 4 is therefore closed. The existing decision to avoid a persistent mobile schedule cache remains unchanged; true offline cold-start/persistence and physical Android interaction validation remain later release/device gates rather than Phase 4 blockers.
+
+The stale Totaal implementation `EXACT NEXT STEP` has been removed from `docs/PROJECT_STATE.md`. Phase 5 — Search and Discovery is now active. The canonical next step is **Search first**: build from the existing Search shell and provider-independent programme/channel domain, with one prominent search field targeting programmes and channels and prioritising useful upcoming broadcasts that answer when/where something airs. Tonight remains deferred until its product value and data requirements are clear.
+
+PR #78 is superseded by the later canonical Per-zender/Totaal production design and convergence work and is closed unmerged as project maintenance.
+
+**Next step:** begin the Phase 5 Search MVP slice; do not reopen accepted Phase 4 Guide convergence without concrete regression evidence.
+
+---
+
 ## 22 september 2026 — PR #114 focused physical-runtime refinement after owner iPhone review
 
 Owner iPhone review of exact head `90ae6df241babe172a91ab608708abf0e21ba5d2` confirmed the Totaal vertical endpoint no-overscroll policy and widened current-marker body, then exposed four narrow physical-runtime issues without reopening the production design.
