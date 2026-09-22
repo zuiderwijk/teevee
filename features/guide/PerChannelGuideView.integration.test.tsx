@@ -350,7 +350,7 @@ describe('Per-zender Kijktip production presentation', () => {
     );
   });
 
-  it('adds current Kijktip at Y36 while preserving the 176-pt current composition', async () => {
+  it('anchors the current Kijktip surface at Y14 while preserving the 176-pt current composition', async () => {
     const rows = [row('current', 0, true)];
 
     await renderPage(rows, new Set(['current']));
@@ -369,6 +369,14 @@ describe('Per-zender Kijktip production presentation', () => {
     const currentContent = getByTestId(
       container,
       'per-channel-current-content-current',
+    );
+    const description = getByTestId(
+      container,
+      'per-channel-description-current',
+    );
+    const progress = getByTestId(
+      container,
+      'per-channel-progress-current',
     );
 
     expect(programmeRow.getAttribute('data-style')).toContain('"height":176');
@@ -401,10 +409,15 @@ describe('Per-zender Kijktip production presentation', () => {
       left: 100,
       right: 24,
       top: 14,
+      bottom: 40,
     });
-    expect(
-      getByTestId(container, 'per-channel-progress-current'),
-    ).toBeDefined();
+    expect(flattenedStyle(description).marginTop).toBe(10);
+    expect(flattenedStyle(progress)).toMatchObject({
+      left: 100,
+      right: 24,
+      bottom: 16,
+      height: 4,
+    });
     expect(programmeRow.getAttribute('aria-label')).toBe(
       'NPO 1, Programma current, Kijktip, 20:30 tot 21:30, nu bezig',
     );
