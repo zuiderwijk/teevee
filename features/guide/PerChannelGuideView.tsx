@@ -172,30 +172,45 @@ export function ProgrammeRow({
           pointerEvents="none"
           style={styles.currentVisualLayer}
         >
-          <Text
-            numberOfLines={1}
-            style={[styles.currentTime, { color: theme.colors.textSecondary }]}
-          >
-            {formatTime(startMs)}
-          </Text>
           {isKijktip && currentKijktipGeometry ? (
-            <Text
-              testID={`per-channel-kijktip-${programme.id}`}
-              accessible={false}
-              accessibilityElementsHidden
-              importantForAccessibility="no"
-              numberOfLines={1}
+            <View
+              testID={`per-channel-kijktip-time-stack-${programme.id}`}
               style={[
-                styles.currentKijktip,
-                {
-                  top: currentKijktipGeometry.labelTop,
-                  color: theme.colors.textSecondary,
-                },
+                styles.currentKijktipTimeStack,
+                { top: currentKijktipGeometry.timeTop },
               ]}
             >
-              {KIJKTIP_LABEL}
+              <Text
+                numberOfLines={1}
+                style={[
+                  styles.currentKijktipTime,
+                  { color: theme.colors.textSecondary },
+                ]}
+              >
+                {formatTime(startMs)}
+              </Text>
+              <Text
+                testID={`per-channel-kijktip-${programme.id}`}
+                accessible={false}
+                accessibilityElementsHidden
+                importantForAccessibility="no"
+                numberOfLines={1}
+                style={[
+                  styles.kijktipTimeStackLabel,
+                  { color: theme.colors.textSecondary },
+                ]}
+              >
+                {KIJKTIP_LABEL}
+              </Text>
+            </View>
+          ) : (
+            <Text
+              numberOfLines={1}
+              style={[styles.currentTime, { color: theme.colors.textSecondary }]}
+            >
+              {formatTime(startMs)}
             </Text>
-          ) : null}
+          )}
           <View style={styles.currentContent}>
             <Text
               numberOfLines={titleLines}
@@ -230,63 +245,56 @@ export function ProgrammeRow({
             />
           </View>
         </View>
-      ) : isKijktip && standardKijktipGeometry ? (
-        <>
-          <View
-            testID={`per-channel-kijktip-leading-line-${programme.id}`}
-            style={[
-              styles.standardKijktipLeadingLine,
-              { top: standardKijktipGeometry.stackTop },
-            ]}
-          >
-            <Text
-              numberOfLines={1}
-              style={[
-                styles.standardKijktipTime,
-                { color: theme.colors.textSecondary },
-              ]}
-            >
-              {formatTime(startMs)}
-            </Text>
-            <Text
-              numberOfLines={titleLines}
-              ellipsizeMode="tail"
-              style={[
-                styles.standardKijktipTitle,
-                { color: theme.colors.text },
-              ]}
-            >
-              {programme.title}
-            </Text>
-          </View>
-          <Text
-            testID={`per-channel-kijktip-${programme.id}`}
-            accessible={false}
-            accessibilityElementsHidden
-            importantForAccessibility="no"
-            numberOfLines={1}
-            style={[
-              styles.standardKijktipLabel,
-              {
-                top: standardKijktipGeometry.labelTop,
-                color: theme.colors.textSecondary,
-              },
-            ]}
-          >
-            {KIJKTIP_LABEL}
-          </Text>
-        </>
       ) : (
         <>
-          <View style={styles.standardTimeCell}>
-            <Text
-              numberOfLines={1}
-              style={[styles.programmeTime, { color: theme.colors.textSecondary }]}
+          {isKijktip && standardKijktipGeometry ? (
+            <View
+              testID={`per-channel-kijktip-time-stack-${programme.id}`}
+              style={[
+                styles.standardKijktipTimeStack,
+                { top: standardKijktipGeometry.stackTop },
+              ]}
             >
-              {formatTime(startMs)}
-            </Text>
-          </View>
-          <View style={styles.standardTitleCell}>
+              <Text
+                numberOfLines={1}
+                style={[
+                  styles.programmeTime,
+                  { color: theme.colors.textSecondary },
+                ]}
+              >
+                {formatTime(startMs)}
+              </Text>
+              <Text
+                testID={`per-channel-kijktip-${programme.id}`}
+                accessible={false}
+                accessibilityElementsHidden
+                importantForAccessibility="no"
+                numberOfLines={1}
+                style={[
+                  styles.kijktipTimeStackLabel,
+                  { color: theme.colors.textSecondary },
+                ]}
+              >
+                {KIJKTIP_LABEL}
+              </Text>
+            </View>
+          ) : (
+            <View style={styles.standardTimeCell}>
+              <Text
+                numberOfLines={1}
+                style={[
+                  styles.programmeTime,
+                  { color: theme.colors.textSecondary },
+                ]}
+              >
+                {formatTime(startMs)}
+              </Text>
+            </View>
+          )}
+          <View
+            testID={`per-channel-title-cell-${programme.id}`}
+            style={styles.standardTitleCell}
+          >
             <Text
               numberOfLines={titleLines}
               ellipsizeMode="tail"
@@ -1189,33 +1197,14 @@ const styles = StyleSheet.create({
     bottom: 0,
     justifyContent: 'center',
   },
-  standardKijktipLeadingLine: {
+  standardKijktipTimeStack: {
     position: 'absolute',
     left: PER_CHANNEL_VISUAL_METRICS.timeTextX,
-    right: PER_CHANNEL_VISUAL_METRICS.programmeRightInset,
-    flexDirection: 'row',
-    alignItems: 'baseline',
+    alignItems: 'center',
   },
-  standardKijktipTime: {
-    ...GUIDE_TYPOGRAPHY.programmeTime,
-    width:
-      PER_CHANNEL_VISUAL_METRICS.programmeColumnX -
-      PER_CHANNEL_VISUAL_METRICS.timeTextX,
-    flexShrink: 0,
-    fontVariant: ['tabular-nums'],
-    letterSpacing: 0,
-  },
-  standardKijktipTitle: {
-    ...GUIDE_TYPOGRAPHY.programmeTitle,
-    flex: 1,
-    minWidth: 0,
-    letterSpacing: 0,
-  },
-  standardKijktipLabel: {
-    position: 'absolute',
-    left: PER_CHANNEL_VISUAL_METRICS.timeTextX,
-    width: TIME_COLUMN_CONTENT_WIDTH,
+  kijktipTimeStackLabel: {
     ...GUIDE_EDITORIAL_TYPOGRAPHY.kijktip,
+    marginTop: PER_CHANNEL_VISUAL_METRICS.kijktipTimeGap,
   },
   programmeTime: {
     ...GUIDE_TYPOGRAPHY.programmeTime,
@@ -1235,11 +1224,15 @@ const styles = StyleSheet.create({
     fontVariant: ['tabular-nums'],
     letterSpacing: 0,
   },
-  currentKijktip: {
+  currentKijktipTimeStack: {
     position: 'absolute',
     left: PER_CHANNEL_VISUAL_METRICS.timeTextX,
-    width: TIME_COLUMN_CONTENT_WIDTH,
-    ...GUIDE_EDITORIAL_TYPOGRAPHY.kijktip,
+    alignItems: 'center',
+  },
+  currentKijktipTime: {
+    ...GUIDE_TYPOGRAPHY.programmeTime,
+    fontVariant: ['tabular-nums'],
+    letterSpacing: 0,
   },
   currentContent: {
     position: 'absolute',
