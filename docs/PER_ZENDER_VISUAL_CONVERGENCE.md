@@ -1057,7 +1057,7 @@ When Lead schedules Per-zender visual convergence, Development must be able to i
 19. remove the obsolete wrapped-context runtime paths listed in §21 while preserving semantic native↔schedule anchor conversion;
 20. enforce `maximumFontSizeMultiplier = 1.20` for Per-zender date/Primetime/Nu labels, keep them one line in the 52-pt context, and validate light/dark/system, substantive programme Dynamic Type, VoiceOver, TalkBack and Reduce Motion;
 21. when `isKijktip = true`, render the owner-approved compact **time + Kijktip editorial label** in the existing time-column zone; keep title X100/width and all row formulas unchanged; retain one programme accessibility action; do not implement guessed surface/padding/radius metrics before the final label calibration is merged;
-22. do not add Kijktip badge/pill/icon/accent colour, Kijktip interaction, extra current/`Nu` label, row-height override or title-column reduction;
+22. do not add Kijktip iconography, independent interaction, extra current/`Nu` label, row-height override, title-column reduction or a saturated/promotional label fill; the accepted petrol editorial foreground and subtle label surface are the only Kijktip colour direction;
 23. do not add swipe nudge, overflow button, arrows, fade masks or old exploration chrome;
 24. run the implementation's normal automated/physical gates when Development occurs.
 
