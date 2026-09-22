@@ -38,9 +38,12 @@ import {
 import {
   COMPACT_GUIDE_MAX_FONT_SIZE_MULTIPLIER,
   currentProgrammeTitleLineCount,
+  GUIDE_EDITORIAL_TYPOGRAPHY,
   GUIDE_TYPOGRAPHY,
   GUIDE_VISUAL_METRICS,
   minimumTouchTargetForPlatform,
+  perChannelCurrentKijktipGeometry,
+  perChannelKijktipStackGeometry,
   PER_CHANNEL_VISUAL_METRICS,
   programmeTitleLineCount,
 } from './guideVisualMetrics';
@@ -69,6 +72,11 @@ import {
   timestampForScrollOffset,
   viewportReferenceInset,
 } from './perChannel';
+import {
+  guideProgrammeAccessibilityLabel,
+  kijktipProgrammeIds,
+  KIJKTIP_LABEL,
+} from './kijktipPresentation';
 import { useGuideClock } from './useGuideClock';
 import { useGuideDaySelection } from './useGuideDaySelection';
 import { useSelectedGuideDaySchedule } from './useSelectedGuideDaySchedule';
@@ -88,6 +96,7 @@ type SchedulePageProps = {
   rows: PerChannelProgrammeRow[];
   width: number;
   fontScale: number;
+  kijktipProgrammeIds: ReadonlySet<string>;
   onSelectProgramme: (selection: ProgrammeSelection) => void;
 };
 
@@ -106,15 +115,17 @@ function currentDetail(row: PerChannelProgrammeRow) {
   return subtitle || null;
 }
 
-function ProgrammeRow({
+export function ProgrammeRow({
   channel,
   row,
   fontScale,
+  isKijktip,
   onSelectProgramme,
 }: {
   channel: Channel;
   row: PerChannelProgrammeRow;
   fontScale: number;
+  isKijktip: boolean;
   onSelectProgramme: (selection: ProgrammeSelection) => void;
 }) {
   const theme = useTeeveeTheme();
@@ -125,12 +136,25 @@ function ProgrammeRow({
     ? currentProgrammeTitleLineCount(fontScale)
     : programmeTitleLineCount(fontScale);
   const detail = current ? currentDetail(row) : null;
+  const standardKijktipGeometry = isKijktip
+    ? perChannelKijktipStackGeometry(fontScale)
+    : null;
+  const currentKijktipGeometry = isKijktip
+    ? perChannelCurrentKijktipGeometry(fontScale)
+    : null;
 
   return (
     <Pressable
       testID={`per-channel-programme-${programme.id}`}
       accessibilityRole="button"
-      accessibilityLabel={`${channel.displayName}, ${programme.title}, ${formatTime(startMs)} tot ${formatTime(endMs)}${current ? ', nu bezig' : ''}`}
+      accessibilityLabel={guideProgrammeAccessibilityLabel({
+        channelName: channel.displayName,
+        title: programme.title,
+        startLabel: formatTime(startMs),
+        endLabel: formatTime(endMs),
+        current,
+        isKijktip,
+      })}
       accessibilityHint="Opent programmadetails"
       onPress={() => onSelectProgramme({ programme, channel })}
       style={({ pressed }) => [
@@ -154,6 +178,22 @@ function ProgrammeRow({
           >
             {formatTime(startMs)}
           </Text>
+          {isKijktip && currentKijktipGeometry ? (
+            <Text
+              testID={`per-channel-kijktip-${programme.id}`}
+              accessible={false}
+              numberOfLines={1}
+              style={[
+                styles.currentKijktip,
+                {
+                  top: currentKijktipGeometry.labelTop,
+                  color: theme.colors.textSecondary,
+                },
+              ]}
+            >
+              {KIJKTIP_LABEL}
+            </Text>
+          ) : null}
           <View style={styles.currentContent}>
             <Text
               numberOfLines={titleLines}
@@ -188,6 +228,50 @@ function ProgrammeRow({
             />
           </View>
         </View>
+      ) : isKijktip && standardKijktipGeometry ? (
+        <>
+          <View
+            testID={`per-channel-kijktip-leading-line-${programme.id}`}
+            style={[
+              styles.standardKijktipLeadingLine,
+              { top: standardKijktipGeometry.stackTop },
+            ]}
+          >
+            <Text
+              numberOfLines={1}
+              style={[
+                styles.standardKijktipTime,
+                { color: theme.colors.textSecondary },
+              ]}
+            >
+              {formatTime(startMs)}
+            </Text>
+            <Text
+              numberOfLines={titleLines}
+              ellipsizeMode="tail"
+              style={[
+                styles.standardKijktipTitle,
+                { color: theme.colors.text },
+              ]}
+            >
+              {programme.title}
+            </Text>
+          </View>
+          <Text
+            testID={`per-channel-kijktip-${programme.id}`}
+            accessible={false}
+            numberOfLines={1}
+            style={[
+              styles.standardKijktipLabel,
+              {
+                top: standardKijktipGeometry.labelTop,
+                color: theme.colors.textSecondary,
+              },
+            ]}
+          >
+            {KIJKTIP_LABEL}
+          </Text>
+        </>
       ) : (
         <>
           <View style={styles.standardTimeCell}>
@@ -222,6 +306,7 @@ const SchedulePage = memo(function SchedulePage({
   rows,
   width,
   fontScale,
+  kijktipProgrammeIds,
   onSelectProgramme,
 }: SchedulePageProps) {
   const theme = useTeeveeTheme();
@@ -246,6 +331,7 @@ const SchedulePage = memo(function SchedulePage({
           channel={channel}
           row={row}
           fontScale={fontScale}
+          isKijktip={kijktipProgrammeIds.has(row.programme.id)}
           onSelectProgramme={onSelectProgramme}
         />
       ))}
@@ -294,6 +380,10 @@ export const PerChannelGuideView = memo(function PerChannelGuideView({
   const nowMs = useGuideClock();
   const { selectedDayStartMs, selectDay } = useGuideDaySelection(nowMs);
   const selectedDay = useSelectedGuideDaySchedule(selectedDayStartMs, guideDataVersion);
+  const selectedKijktipProgrammeIds = useMemo(
+    () => kijktipProgrammeIds(selectedDay.editorialSignals),
+    [selectedDay.editorialSignals],
+  );
   const currentRuntimeSchedule = runtimeGuideScheduleFor(nowMs);
   const establishedChannelsRef = useRef<Channel[] | null>(
     currentRuntimeSchedule?.channels.length ? currentRuntimeSchedule.channels : null,
@@ -920,6 +1010,7 @@ export const PerChannelGuideView = memo(function PerChannelGuideView({
                 rows={rows}
                 width={windowWidth}
                 fontScale={effectiveFontScale}
+                kijktipProgrammeIds={selectedKijktipProgrammeIds}
                 onSelectProgramme={onSelectProgramme}
               />
             ))}
@@ -1094,6 +1185,34 @@ const styles = StyleSheet.create({
     bottom: 0,
     justifyContent: 'center',
   },
+  standardKijktipLeadingLine: {
+    position: 'absolute',
+    left: PER_CHANNEL_VISUAL_METRICS.timeTextX,
+    right: PER_CHANNEL_VISUAL_METRICS.programmeRightInset,
+    flexDirection: 'row',
+    alignItems: 'baseline',
+  },
+  standardKijktipTime: {
+    ...GUIDE_TYPOGRAPHY.programmeTime,
+    width:
+      PER_CHANNEL_VISUAL_METRICS.programmeColumnX -
+      PER_CHANNEL_VISUAL_METRICS.timeTextX,
+    flexShrink: 0,
+    fontVariant: ['tabular-nums'],
+    letterSpacing: 0,
+  },
+  standardKijktipTitle: {
+    ...GUIDE_TYPOGRAPHY.programmeTitle,
+    flex: 1,
+    minWidth: 0,
+    letterSpacing: 0,
+  },
+  standardKijktipLabel: {
+    position: 'absolute',
+    left: PER_CHANNEL_VISUAL_METRICS.timeTextX,
+    width: TIME_COLUMN_CONTENT_WIDTH,
+    ...GUIDE_EDITORIAL_TYPOGRAPHY.kijktip,
+  },
   programmeTime: {
     ...GUIDE_TYPOGRAPHY.programmeTime,
     fontVariant: ['tabular-nums'],
@@ -1111,6 +1230,12 @@ const styles = StyleSheet.create({
     ...GUIDE_TYPOGRAPHY.programmeTime,
     fontVariant: ['tabular-nums'],
     letterSpacing: 0,
+  },
+  currentKijktip: {
+    position: 'absolute',
+    left: PER_CHANNEL_VISUAL_METRICS.timeTextX,
+    width: TIME_COLUMN_CONTENT_WIDTH,
+    ...GUIDE_EDITORIAL_TYPOGRAPHY.kijktip,
   },
   currentContent: {
     position: 'absolute',
