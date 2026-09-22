@@ -57,6 +57,24 @@ describe('Kijktip title normalization', () => {
 });
 
 describe('deterministic TVgids tip matching', () => {
+  it('uses Tier A only when a future source supplies a resolvable canonical broadcast identity', () => {
+    expect(
+      matchTvgidsTipToSchedule(
+        item({ title: 'Different editorial title' }),
+        'nl-rtl-4',
+        schedule([programme('source-programme', 'Canonical title')]),
+        'source-programme',
+      ),
+    ).toMatchObject({
+      status: 'matched',
+      signal: {
+        programmeId: 'source-programme',
+        matchedBy: 'source-id',
+      },
+      titleMismatch: true,
+    });
+  });
+
   it.each([0, 1, 2, 3, 4, 5])(
     'Tier B matches exact normalized title at a %i minute start drift',
     (minutes) => {
