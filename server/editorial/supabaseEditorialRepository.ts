@@ -29,19 +29,30 @@ function parseWriteResult(value: unknown): EditorialSignalSnapshotWriteResult {
   }
   const payload = value as Record<string, unknown>;
   if (
-    payload.status !== 'stored' ||
-    typeof payload.removedSignalCount !== 'number' ||
-    typeof payload.storedSignalCount !== 'number'
+    payload.status === 'ignored-stale' &&
+    payload.removedSignalCount === 0 &&
+    payload.storedSignalCount === 0
   ) {
-    throw new Error(
-      'Supabase replace_editorial_signal_snapshot returned an invalid payload',
-    );
+    return {
+      status: 'ignored-stale',
+      removedSignalCount: 0,
+      storedSignalCount: 0,
+    };
   }
-  return {
-    status: 'stored',
-    removedSignalCount: payload.removedSignalCount,
-    storedSignalCount: payload.storedSignalCount,
-  };
+  if (
+    payload.status === 'stored' &&
+    typeof payload.removedSignalCount === 'number' &&
+    typeof payload.storedSignalCount === 'number'
+  ) {
+    return {
+      status: 'stored',
+      removedSignalCount: payload.removedSignalCount,
+      storedSignalCount: payload.storedSignalCount,
+    };
+  }
+  throw new Error(
+    'Supabase replace_editorial_signal_snapshot returned an invalid payload',
+  );
 }
 
 export class SupabaseEditorialSignalRepository
