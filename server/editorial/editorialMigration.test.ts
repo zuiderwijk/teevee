@@ -7,7 +7,7 @@ import { describe, expect, it } from 'vitest';
 const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
 const migrationPath = resolve(
   repoRoot,
-  'supabase/migrations/20260922173000_create_editorial_signal_store.sql',
+  'supabase/migrations/20260922174626_create_editorial_signal_store.sql',
 );
 const sql = readFileSync(migrationPath, 'utf8');
 
