@@ -87,19 +87,21 @@ Purpose: compare multiple channels across time.
 - future/non-current programmes prioritise start time; end time is normally unnecessary in the grid;
 - programme cells use the accepted open-grid language: no permanent rounded/fill card treatment merely to define every cell;
 - title is the primary programme signal; avoid genres and other low-value metadata inside compact schedule cells;
-- genuine microcells use the unchanged classification `full frame width < 48 × S`, with `S = max(1, effectiveFontScale)`, and always omit meaningless title fragments + secondary time;
-- individual micro presentation has a typography-derived `27 × S` floor: below it no visible glyph is shown; from `27 × S` up to (but not including) `48 × S`, show the centred `…`;
-- a visually empty ultra-microcell remains a complete programme action with its boundary, accessibility label and Programme Detail destination;
-- >=2 directly adjacent same-title microcells may share one visual title when their visible combined run width is at least `48 × S`; the shared label is bounded/sticky within the run only;
+- genuine microcells use the unchanged classification `full frame width < 48 × S`, with `S = max(1, effectiveFontScale)`, and show no visible title/time/ellipsis glyph individually;
+- a visually empty microcell remains a complete programme action with its real boundary, Pressable/pressed semantics, accessibility label/current state and Programme Detail destination;
+- >=2 directly adjacent same-title microcells may share one visual title when their visible combined run width is at least `48 × S`; below that threshold the run remains text-free and the shared label is bounded/sticky within the run only;
 - repeated-title sharing is presentation-only: internal boundaries, exact duration frames, hit targets, accessibility actions and Programme Detail destinations remain programme-by-programme;
 - use the accepted shared Guide day selector for D-2..D+7 navigation;
+- in Totaal's frozen 52-pt one-line context, date+chevron and `Nu` keep intrinsic readable width within the compact 1.20 cap when horizontal room exists; `Nu` never ellipsizes;
 - `Nu` returns to the actual current instant and corresponding television day;
 - browsing through midnight is continuous and does not require selecting the next calendar day;
 - when crossing 06:00, date context updates to the next television day while the timeline may remain continuous;
 - platform-standard tactile scrolling remains the default: Totaal horizontal schedule/time-axis inertia and bounce stay native, and normal vertical scrolling/fling/deceleration stay native;
 - **Totaal alone intentionally disables vertical endpoint overscroll/rubber-band** because the fixed date/Nu/time-axis/Guide chrome stack does not move with the schedule/channel canvas; physical iPhone validation rejected the resulting partial-content displacement. Do not generalise this exception to Per zender or Nu & Straks.
 
-Programme geometry continues to represent real schedule time. Text may adapt within the visible part of a programme cell, but the programme block itself must not move away from its real start/duration geometry.
+Programme geometry continues to represent real schedule time. Text may adapt within the visible part of a programme cell, but the programme block itself must not move away from its real start/duration geometry. For a partially-left normal programme, keep the masking surface active even when sticky title text is hidden; reveal that sticky title only from the existing `48 × S` readable remainder so the left edge never exposes one-letter or bare-ellipsis fragments.
+
+The Totaal Guide clock is wall-clock aligned: with its 30-second cadence refreshes target `:00` and `:30`, AppState→active refreshes immediately, and the next tick is realigned after resume.
 
 At larger system text sizes, adapt row height, geometry and secondary metadata density rather than clipping essential information or globally disabling text scaling.
 
