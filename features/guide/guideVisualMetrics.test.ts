@@ -67,11 +67,11 @@ describe('shared Kijktip editorial typography and Per-zender geometry', () => {
   });
 
   it('freezes Per-zender editorial-label padding, radius and intrinsic width formula', () => {
-    expect(PER_CHANNEL_VISUAL_METRICS.kijktipPaddingX).toBe(8);
+    expect(PER_CHANNEL_VISUAL_METRICS.kijktipPaddingX).toBe(5);
     expect(PER_CHANNEL_VISUAL_METRICS.kijktipRadius).toBe(6);
-    expect(PER_CHANNEL_VISUAL_METRICS.kijktipMinOuterWidth).toBe(56);
-    expect(perChannelKijktipLabelOuterWidth(32, 28)).toBe(56);
-    expect(perChannelKijktipLabelOuterWidth(52, 40)).toBe(68);
+    expect(PER_CHANNEL_VISUAL_METRICS.kijktipMinOuterWidth).toBe(48);
+    expect(perChannelKijktipLabelOuterWidth(32, 28)).toBe(48);
+    expect(perChannelKijktipLabelOuterWidth(52, 40)).toBe(62);
   });
 
   it.each([
@@ -83,25 +83,22 @@ describe('shared Kijktip editorial typography and Per-zender geometry', () => {
     'fills the frozen standard row with calibrated Per-zender Kijktip breathing at S=%s',
     (scale, expectedRowHeight, expectedBreathing) => {
       const geometry = perChannelKijktipStackGeometry(scale);
-      expect(geometry.surfaceLeft).toBe(16);
+      expect(geometry.surfaceLeft).toBe(19);
       expect(geometry.contentOriginX).toBe(24);
-      expect(geometry.surfaceTop).toBe(0);
       expect(geometry.rowHeight).toBe(expectedRowHeight);
-      expect(geometry.outerHeight).toBe(expectedRowHeight);
-      expect(geometry.verticalBreathing).toBeCloseTo(expectedBreathing, 6);
+      expect(geometry.stackTop).toBeCloseTo(expectedBreathing, 6);
+      expect(geometry.surfacePaddingY).toBe(5);
+      expect(geometry.externalBreathing).toBeCloseTo(expectedBreathing - 5, 6);
+      expect(geometry.surfaceTop).toBeCloseTo(expectedBreathing - 5, 6);
       expect(geometry.timeTop).toBeCloseTo(expectedBreathing, 6);
       expect(geometry.timeLineHeight).toBeCloseTo(20 * scale, 6);
-      expect(geometry.labelTop).toBeCloseTo(
-        expectedBreathing + 20 * scale + 2,
-        6,
-      );
+      expect(geometry.labelTop).toBeCloseTo(expectedBreathing + 20 * scale + 2, 6);
       expect(geometry.labelLineHeight).toBeCloseTo(16 * scale, 6);
       expect(geometry.contentHeight).toBeCloseTo(36 * scale + 2, 6);
-      expect(
-        geometry.verticalBreathing * 2 + geometry.contentHeight,
-      ).toBeCloseTo(expectedRowHeight, 6);
-      expect(geometry.minOuterWidth).toBe(56);
-      expect(geometry.paddingX).toBe(8);
+      expect(geometry.outerHeight).toBeCloseTo(36 * scale + 12, 6);
+      expect(geometry.surfaceBottom).toBeCloseTo(expectedRowHeight - (expectedBreathing - 5), 6);
+      expect(geometry.minOuterWidth).toBe(48);
+      expect(geometry.paddingX).toBe(5);
       expect(geometry.radius).toBe(6);
     },
   );
@@ -109,50 +106,55 @@ describe('shared Kijktip editorial typography and Per-zender geometry', () => {
   it('uses S1 7/20/2/16/7 inside the exact 52-pt standard surface', () => {
     expect(perChannelKijktipStackGeometry(1)).toMatchObject({
       rowHeight: 52,
-      surfaceLeft: 16,
+      surfaceLeft: 19,
       contentOriginX: 24,
-      surfaceTop: 0,
-      verticalBreathing: 7,
+      surfaceTop: 2,
+      surfacePaddingY: 5,
+      externalBreathing: 2,
+      stackTop: 7,
       timeTop: 7,
       timeLineHeight: 20,
       labelTop: 29,
       labelLineHeight: 16,
       contentHeight: 38,
-      outerHeight: 52,
+      outerHeight: 48,
+      surfaceBottom: 50,
     });
   });
 
   it('anchors the current surface at the existing current-content origin without moving current content', () => {
     expect(perChannelCurrentKijktipGeometry(1)).toEqual({
-      surfaceLeft: 16,
+      surfaceLeft: 19,
       contentOriginX: 24,
-      surfaceTop: 14,
-      verticalBreathing: 7,
+      surfaceTop: 16,
+      surfacePaddingY: 5,
+      externalBreathing: 2,
       timeTop: 21,
       timeLineHeight: 20,
       labelTop: 43,
       labelLineHeight: 16,
       contentHeight: 38,
-      outerHeight: 52,
-      surfaceBottom: 66,
-      minOuterWidth: 56,
-      paddingX: 8,
+      outerHeight: 48,
+      surfaceBottom: 64,
+      minOuterWidth: 48,
+      paddingX: 5,
       radius: 6,
     });
     expect(perChannelCurrentKijktipGeometry(1.5)).toEqual({
-      surfaceLeft: 16,
+      surfaceLeft: 19,
       contentOriginX: 24,
-      surfaceTop: 14,
-      verticalBreathing: 11,
+      surfaceTop: 20,
+      surfacePaddingY: 5,
+      externalBreathing: 6,
       timeTop: 25,
       timeLineHeight: 30,
       labelTop: 57,
       labelLineHeight: 24,
       contentHeight: 56,
-      outerHeight: 78,
-      surfaceBottom: 92,
-      minOuterWidth: 56,
-      paddingX: 8,
+      outerHeight: 66,
+      surfaceBottom: 86,
+      minOuterWidth: 48,
+      paddingX: 5,
       radius: 6,
     });
   });

@@ -285,19 +285,19 @@ describe('Per-zender Kijktip production presentation', () => {
 
     expect(programmeRow.getAttribute('data-style')).toContain('"height":52');
     expect(flattenedStyle(timeStack)).toMatchObject({
-      left: 16,
-      top: 0,
-      height: 52,
-      minWidth: 56,
-      paddingHorizontal: 8,
-      paddingTop: 7,
-      paddingBottom: 7,
+      left: 19,
+      top: 2,
+      height: 48,
+      minWidth: 48,
+      paddingHorizontal: 5,
+      paddingTop: 5,
+      paddingBottom: 5,
       borderRadius: 6,
       alignItems: 'flex-start',
       backgroundColor: '#EEECE7',
     });
     expect(flattenedStyle(timeStack).width).toBeUndefined();
-    expect(16 + Number(flattenedStyle(timeStack).paddingHorizontal)).toBe(24);
+    expect(19 + Number(flattenedStyle(timeStack).paddingHorizontal)).toBe(24);
     expect(flattenedStyle(content)).toMatchObject({
       alignItems: 'center',
     });
@@ -350,7 +350,7 @@ describe('Per-zender Kijktip production presentation', () => {
     );
   });
 
-  it('anchors the current Kijktip surface at Y14 while preserving the 176-pt current composition', async () => {
+  it('anchors the compact current Kijktip surface at Y16 while preserving the 176-pt current composition', async () => {
     const rows = [row('current', 0, true)];
 
     await renderPage(rows, new Set(['current']));
@@ -381,19 +381,19 @@ describe('Per-zender Kijktip production presentation', () => {
 
     expect(programmeRow.getAttribute('data-style')).toContain('"height":176');
     expect(flattenedStyle(timeStack)).toMatchObject({
-      left: 16,
-      top: 14,
-      height: 52,
-      minWidth: 56,
-      paddingHorizontal: 8,
-      paddingTop: 7,
-      paddingBottom: 7,
+      left: 19,
+      top: 16,
+      height: 48,
+      minWidth: 48,
+      paddingHorizontal: 5,
+      paddingTop: 5,
+      paddingBottom: 5,
       borderRadius: 6,
       alignItems: 'flex-start',
       backgroundColor: '#EEECE7',
     });
     expect(flattenedStyle(timeStack).width).toBeUndefined();
-    expect(16 + Number(flattenedStyle(timeStack).paddingHorizontal)).toBe(24);
+    expect(19 + Number(flattenedStyle(timeStack).paddingHorizontal)).toBe(24);
     expect(flattenedStyle(content)).toMatchObject({
       alignItems: 'center',
     });

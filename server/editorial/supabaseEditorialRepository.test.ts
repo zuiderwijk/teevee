@@ -68,6 +68,40 @@ describe('SupabaseEditorialSignalRepository', () => {
     });
   });
 
+  it('returns retained historical signals without client-side age filtering', async () => {
+    const rpc = vi.fn().mockResolvedValue({
+      data: [
+        {
+          programmeId: 'programme-historical',
+          type: 'kijktip',
+          source: 'tvgids',
+          sourceItemId: 'tip-historical',
+          publishedAt: '2026-09-20T18:00:00.000Z',
+          matchedBy: 'channel-title-start',
+        },
+      ],
+      error: null,
+    });
+    const repository = new SupabaseEditorialSignalRepository({ rpc });
+
+    await expect(
+      repository.getSignalsForProgrammeIds(['programme-historical']),
+    ).resolves.toEqual([
+      {
+        programmeId: 'programme-historical',
+        type: 'kijktip',
+        source: 'tvgids',
+        sourceItemId: 'tip-historical',
+        publishedAt: '2026-09-20T18:00:00.000Z',
+        matchedBy: 'channel-title-start',
+      },
+    ]);
+
+    expect(rpc).toHaveBeenCalledWith('teevee_get_editorial_signals', {
+      p_programme_ids: ['programme-historical'],
+    });
+  });
+
   it('validates serialized signals returned by the RPC', async () => {
     const repository = new SupabaseEditorialSignalRepository({
       rpc: vi.fn().mockResolvedValue({

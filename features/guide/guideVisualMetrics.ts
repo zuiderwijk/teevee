@@ -64,9 +64,10 @@ export const PER_CHANNEL_VISUAL_METRICS = {
   reduceMotionSwitchOffset: 28,
   viewportReferenceRows: 2,
   kijktipTimeGap: 2,
-  kijktipPaddingX: 8,
+  kijktipPaddingX: 5,
+  kijktipPaddingY: 5,
   kijktipRadius: 6,
-  kijktipMinOuterWidth: 56,
+  kijktipMinOuterWidth: 48,
 } as const;
 
 // Each weight uses its own static Instrument Sans family name. Do not add a
@@ -202,28 +203,33 @@ export function perChannelKijktipStackGeometry(fontScale = 1) {
     timeLineHeight +
     PER_CHANNEL_VISUAL_METRICS.kijktipTimeGap +
     labelLineHeight;
-  const verticalBreathing = Math.max(0, (rowHeight - contentHeight) / 2);
+  const stackTop = Math.max(0, (rowHeight - contentHeight) / 2);
+  const surfacePaddingY = PER_CHANNEL_VISUAL_METRICS.kijktipPaddingY;
+  const externalBreathing = Math.max(0, stackTop - surfacePaddingY);
   const surfaceLeft =
     PER_CHANNEL_VISUAL_METRICS.timeTextX -
     PER_CHANNEL_VISUAL_METRICS.kijktipPaddingX;
+  const outerHeight = contentHeight + surfacePaddingY * 2;
 
   return {
     rowHeight,
     surfaceLeft,
     contentOriginX: PER_CHANNEL_VISUAL_METRICS.timeTextX,
-    surfaceTop: 0,
-    verticalBreathing,
-    stackTop: verticalBreathing,
-    timeTop: verticalBreathing,
+    surfaceTop: externalBreathing,
+    surfacePaddingY,
+    externalBreathing,
+    stackTop,
+    timeTop: stackTop,
     timeLineHeight,
     labelTop:
-      verticalBreathing +
+      stackTop +
       timeLineHeight +
       PER_CHANNEL_VISUAL_METRICS.kijktipTimeGap,
     labelLineHeight,
     contentHeight,
     stackHeight: contentHeight,
-    outerHeight: rowHeight,
+    outerHeight,
+    surfaceBottom: externalBreathing + outerHeight,
     minOuterWidth: PER_CHANNEL_VISUAL_METRICS.kijktipMinOuterWidth,
     paddingX: PER_CHANNEL_VISUAL_METRICS.kijktipPaddingX,
     radius: PER_CHANNEL_VISUAL_METRICS.kijktipRadius,
@@ -232,14 +238,19 @@ export function perChannelKijktipStackGeometry(fontScale = 1) {
 
 export function perChannelCurrentKijktipGeometry(fontScale = 1) {
   const standardGeometry = perChannelKijktipStackGeometry(fontScale);
-  const surfaceTop = PER_CHANNEL_VISUAL_METRICS.currentContentTopInset;
-  const timeTop = surfaceTop + standardGeometry.verticalBreathing;
+  const surfaceTop =
+    PER_CHANNEL_VISUAL_METRICS.currentContentTopInset +
+    standardGeometry.externalBreathing;
+  const timeTop =
+    PER_CHANNEL_VISUAL_METRICS.currentContentTopInset +
+    standardGeometry.stackTop;
 
   return {
     surfaceLeft: standardGeometry.surfaceLeft,
     contentOriginX: standardGeometry.contentOriginX,
     surfaceTop,
-    verticalBreathing: standardGeometry.verticalBreathing,
+    surfacePaddingY: standardGeometry.surfacePaddingY,
+    externalBreathing: standardGeometry.externalBreathing,
     timeTop,
     timeLineHeight: standardGeometry.timeLineHeight,
     labelTop:
@@ -248,8 +259,8 @@ export function perChannelCurrentKijktipGeometry(fontScale = 1) {
       PER_CHANNEL_VISUAL_METRICS.kijktipTimeGap,
     labelLineHeight: standardGeometry.labelLineHeight,
     contentHeight: standardGeometry.contentHeight,
-    outerHeight: standardGeometry.rowHeight,
-    surfaceBottom: surfaceTop + standardGeometry.rowHeight,
+    outerHeight: standardGeometry.outerHeight,
+    surfaceBottom: surfaceTop + standardGeometry.outerHeight,
     minOuterWidth: PER_CHANNEL_VISUAL_METRICS.kijktipMinOuterWidth,
     paddingX: PER_CHANNEL_VISUAL_METRICS.kijktipPaddingX,
     radius: PER_CHANNEL_VISUAL_METRICS.kijktipRadius,

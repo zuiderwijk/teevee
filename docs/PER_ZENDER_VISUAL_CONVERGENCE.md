@@ -527,11 +527,11 @@ Text:
 
 Box:
 - `perChannel.timeTextX = 24` is always the **start-time text origin**, not the editorial surface edge;
-- with fixed horizontal inset 8, surface-left = **16** = `24 - 8`;
-- horizontal padding = **8 pt** left + **8 pt** right;
+- with fixed horizontal inset 5, surface-left = **19** = `24 - 5`;
+- horizontal padding = **5 pt** left + **5 pt** right;
 - radius = **6 pt**;
-- minimum outer width = **56 pt**;
-- outer width = `max(56, max(intrinsicTimeWidth, intrinsicKijktipWidth) + 16)`;
+- minimum outer width = **48 pt**;
+- outer width = `max(48, max(intrinsicTimeWidth, intrinsicKijktipWidth) + 10)`;
 - no border;
 - no shadow/elevation;
 - no independent pressed/selected treatment.
@@ -544,12 +544,12 @@ The full programme row owns pressed feedback. During row press the label retains
 
 At `contentScale = 1.0`:
 - row Y = **0…52**;
-- surface Y = **0…52**;
-- top breathing = **7 pt**;
-- time line box = **7…27**;
-- fixed gap = **2 pt**;
-- Kijktip line box = **29…45**;
-- bottom breathing = **7 pt**;
+- compact surface Y = **2…50**;
+- surface padding = **5 pt top / 5 pt bottom**;
+- time line box remains **7…27**;
+- fixed gap remains **2 pt**;
+- Kijktip line box remains **29…45**;
+- external row breathing = **2 pt top / 2 pt bottom**;
 - programme title remains X100/right24.
 
 At arbitrary `S = max(1, effectiveFontScale)`:
@@ -558,11 +558,13 @@ At arbitrary `S = max(1, effectiveFontScale)`:
 
 `contentHeight = (20 × S) + 2 + (16 × S) = 36S + 2`
 
-`verticalBreathing = (rowHeight - contentHeight) / 2`
+`contentStackTop = (rowHeight - contentHeight) / 2`
 
-`surfaceOuterHeight = rowHeight`
+`surfaceTop = contentStackTop - 5`
 
-Horizontal padding stays 8 pt and radius stays 6 pt. This uses only the existing standard-row authority; there is no Kijktip row-height branch. Normal non-Kijktip rows keep their independent vertical centring. Above 1.35 the title may still use max two lines under the existing Per-zender rule; title X/width is never changed for Kijktip.
+`surfaceOuterHeight = contentHeight + 10 = 36S + 12`
+
+Horizontal/vertical surface padding stays 5 pt and radius stays 6 pt. This uses only the existing standard-row authority; there is no Kijktip row-height branch. Normal non-Kijktip rows keep their independent vertical centring. Above 1.35 the title may still use max two lines under the existing Per-zender rule; title X/width is never changed for Kijktip.
 
 Representative breathing:
 - S1 → **7 pt**;
@@ -576,17 +578,15 @@ The current row keeps its existing content origin and Dynamic Type row formula.
 
 At `S=1`:
 - current row remains **176 pt**;
-- surface top = **14 pt** = `currentContentTopInset`;
-- surface Y = **14…66**;
-- top breathing = **7 pt**;
-- time line box = **21…41**;
-- fixed gap = **2 pt**;
-- Kijktip line box = **43…59**;
-- bottom breathing = **7 pt**;
+- time line box remains **21…41**;
+- fixed gap remains **2 pt**;
+- Kijktip line box remains **43…59**;
+- compact surface Y = **16…64**;
+- surface padding = **5 pt top / 5 pt bottom**;
 - current title remains X100/top14;
 - title/description/progress geometry is unchanged.
 
-At Larger Text the surface reuses the same `verticalBreathing` and `surfaceOuterHeight = round(52 × S)` as the standard Kijktip label, anchored at the existing 14-pt current-content origin. The existing current-row formula remains the only row-height authority and must contain the label without clipping. Programme typography is never reduced to make the label fit.
+At Larger Text the surface reuses the same content-stack centring and fixed 5-pt surface padding as the standard Kijktip label, offset from the existing 14-pt current-content origin. The existing current-row formula remains the only row-height authority and must contain the label without clipping. Programme typography is never reduced to make the label fit.
 
 #### Accessibility and multiples
 
@@ -735,10 +735,10 @@ Inside the label:
 - time continues to scale as substantive 16/20 content;
 - Kijktip continues to scale as substantive 12/16 Medium content;
 - the accepted 2-pt time→Kijktip relationship remains fixed and does not scale;
-- label uses fixed 8-pt horizontal padding and radius6; vertical breathing is derived from the existing scaled standard-row height;
+- label uses fixed 5-pt horizontal and vertical surface padding plus radius6; the intrinsic content stack remains centred by the existing scaled standard-row height;
 - above 1.35, the programme title may still use max two lines under the existing Per-zender rule; the title column is never narrowed for the label.
 
-The intrinsic content height is `36S + 2`; it is **not** the surface outer height. Standard surface outer height equals the existing `round(52S)` row height, with `verticalBreathing = (round(52S) - (36S + 2)) / 2`. Current uses that same internal breathing with surface top14. Automated/physical validation must catch clipping or overlap regressions; do not change frozen programme/title geometry.
+The intrinsic content height is `36S + 2`; compact surface outer height is `36S + 12`. Standard content stays centred by `(round(52S) - (36S + 2)) / 2`, and the surface begins 5 pt above that stack. Current preserves the same accepted content positions, with the compact S1 surface at Y16…64. Automated/physical validation must catch clipping or overlap regressions; do not change frozen programme/title geometry.
 
 Representative standard-row heights remain:
 
@@ -1078,7 +1078,7 @@ Surface-specific implementation calibrations now frozen for Development handoff:
 10. Current top14, title→description gap **10**, description→progress minimum **20 at every Dynamic Type scale**, progress 4 high/radius2/bottom16; current-row scaling uses the content-safe minimum from §14.2.
 11. Separator left20 at bottom of each row.
 12. Collapse isolation: temporal context **52 only**; hard temporal-label multiplier 1.20; fixed settled viewport top112; native collapse56; standard full contraction/visual compensation **140/84**, accessibility shared-tab mode **156/100**; rest gaps interpolate **4→0** above the context and **24→0** below it; Reduce Motion switches endpoints discretely at28.
-13. Kijktip final label: shared **time + Kijktip** editorial label with **X24 as the start-time text origin** and surface-left **X16** from the fixed 8-pt horizontal inset; `editorialAccent` #315A63 light / #A9C9CF dark; `editorialAccentSurface` #EEECE7 light / #171715 dark; time16/20 Regular + Kijktip12/16 Medium; fixed gap2; radius6; min width56; outer width=max(56,max(intrinsic time,intrinsic Kijktip)+16). Standard surface outer height equals the existing scaled row height, with internal breathing derived from row height minus the `36S+2` content height; S1 is 7/20/2/16/7. Current surface starts at top14 and uses the same internal breathing. Title X100/right24, standard/current row formulas and one parent programme accessibility action remain unchanged.
+13. Kijktip final label: shared **time + Kijktip** editorial label with **X24 as the start-time text origin** and compact surface-left **X19** from fixed 5-pt horizontal padding; `editorialAccent` #315A63 light / #A9C9CF dark; `editorialAccentSurface` #EEECE7 light / #171715 dark; time16/20 Regular + Kijktip12/16 Medium; fixed gap2; radius6; min width48; outer width=max(48,max(intrinsic time,intrinsic Kijktip)+10). S1 keeps time Y7…27 and Kijktip Y29…45 while surface Y2…50 gives 5/20/2/16/5 internally plus 2-pt external row breathing. At scale S, surface height=36S+12 inside the unchanged row authority. Current keeps time Y21…41/Kijktip Y43…59 with S1 surface Y16…64. Title X100/right24, standard/current row formulas and one parent programme accessibility action remain unchanged.
 
 Development must not choose alternatives locally. A future retune requires new owner-approved evidence and an update to this source of truth.
 

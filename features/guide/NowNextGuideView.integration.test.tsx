@@ -1159,6 +1159,33 @@ describe('Nu & Straks production interaction boundary', () => {
     ).getAttribute('data-style');
     expect(referenceStyle).toContain('"justifyContent":"flex-end"');
 
+    const identityStyle = flattenedStyle(
+      getByTestId(container, 'now-next-channel-identity-one'),
+    );
+    expect(identityStyle).toMatchObject({
+      width: 64,
+      height: 64,
+      marginRight: 16,
+      alignItems: 'center',
+      justifyContent: 'flex-end',
+    });
+    expect(
+      flattenedStyle(getByTestId(container, 'now-next-channel-one')),
+    ).toMatchObject({
+      height: 216,
+      paddingTop: 8,
+      paddingLeft: 20,
+      paddingRight: 24,
+    });
+    expect(
+      flattenedStyle(getByTestId(container, 'now-next-channel-identity-two')),
+    ).toMatchObject({
+      width: 64,
+      height: 64,
+      marginRight: 16,
+      justifyContent: 'flex-end',
+    });
+
     const expectedOffsets = [16, 8, 0];
     for (const slot of [0, 1, 2]) {
       const contentStyle = getByTestId(

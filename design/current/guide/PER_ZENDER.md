@@ -189,15 +189,15 @@ Typography:
 
 Box:
 - **X24 is the start-time text origin**, identical to every non-Kijktip row;
-- with fixed 8-pt horizontal inset, the editorial surface begins at **X16**;
-- horizontal padding: **8 pt** each side;
+- with fixed **5-pt** horizontal inset, the editorial surface begins at **X19**;
+- horizontal padding: **5 pt** each side;
 - radius: **6 pt**;
-- minimum outer width: **56 pt**;
+- minimum outer width: **48 pt**;
 - outer width:
-  `max(56, max(intrinsicTimeWidth, intrinsicKijktipWidth) + 16)`;
+  `max(48, max(intrinsicTimeWidth, intrinsicKijktipWidth) + 10)`;
 - no border/shadow.
 
-The editorial surface is subordinate to the structural time grid: it may extend left of X24, but it must never move the time text away from X24. Inside the surface, the time/Kijktip stack starts at X24 and remains intrinsic; `Kijktip` is optically centred under the rendered time. The earlier “surface-left X24 / vertical padding 0” rule is superseded.
+The editorial surface is subordinate to the structural time grid: it may extend left of X24, but it must never move the time text away from X24. Inside the surface, the time/Kijktip stack starts at X24 and remains intrinsic; `Kijktip` is optically centred under the rendered time. The earlier X16/inset8/min-width56 calibration is superseded by this compact owner refinement.
 
 The label is an editorial information container, not a button or promotional badge.
 
@@ -206,12 +206,14 @@ The label is an editorial information container, not a button or promotional bad
 The frozen standard row remains **52 pt at S=1**.
 
 At `S = 1`:
-- surface outer Y: **0…52**;
-- vertical breathing inside the surface: **7 pt top / 7 pt bottom**;
-- time line box: **7…27**;
-- fixed internal gap: **2 pt**;
-- Kijktip line box: **29…45**;
-- horizontal padding remains **8 pt**.
+- row remains **0…52**;
+- time line box remains **7…27**;
+- fixed internal gap remains **2 pt**;
+- Kijktip line box remains **29…45**;
+- compact surface Y is **2…50**;
+- surface padding is **5 pt top / 5 pt bottom**;
+- row-external breathing is **2 pt top / 2 pt bottom**;
+- horizontal padding is **5 pt**.
 
 At arbitrary substantive content scale `S = max(1, effectiveFontScale)`:
 
@@ -219,28 +221,31 @@ At arbitrary substantive content scale `S = max(1, effectiveFontScale)`:
 
 `contentHeight = (20S) + 2 + (16S) = 36S + 2`
 
-`verticalBreathing = (rowHeight - contentHeight) / 2`
+`contentStackTop = (rowHeight - contentHeight) / 2`
 
-`surfaceOuterHeight = rowHeight`
+`surfacePaddingY = 5`
 
-The surface therefore consumes exactly the existing scaled standard-row authority; it introduces no Kijktip-specific height branch. Time and Kijktip scale substantively, while the 2-pt internal gap, 8-pt horizontal padding and 6-pt radius remain fixed. The programme-title column remains X100 with unchanged width. Above 1.35 the existing max-two-line title rule remains authoritative.
+`surfaceTop = contentStackTop - 5`
+
+`surfaceOuterHeight = contentHeight + 10 = 36S + 12`
+
+The existing row formula remains the only row-height authority; the compact surface sits inside it symmetrically and introduces no Kijktip-specific height branch. Time and Kijktip scale substantively, while the 2-pt internal gap, 5-pt surface padding and 6-pt radius remain fixed. The programme-title column remains X100 with unchanged width. Above 1.35 the existing max-two-line title rule remains authoritative.
 
 ### Current programme
 
 The frozen current row remains **176 pt at S=1** and uses the existing Dynamic Type row formula.
 
-The surface keeps the existing current-content top ownership:
-- `surfaceTop = currentContentTopInset = 14`;
-- it uses the same scaled internal breathing formula as the standard row;
-- at S1 the surface is **14…66**;
-- time line box is **21…41**;
-- fixed gap is **2 pt**;
-- Kijktip line box is **43…59**;
+The accepted current time/Kijktip text positions stay unchanged:
+- time line box remains **21…41** at S1;
+- fixed gap remains **2 pt**;
+- Kijktip line box remains **43…59**;
+- compact surface Y becomes **16…64**;
+- surface padding is **5 pt top / 5 pt bottom**;
 - current title remains X100/top14.
 
-The surface may share the same vertical band as current content because it occupies only the time-column zone. It does not move or resize the current title/description/progress composition. Current state remains visually dominant through title hierarchy and the existing progress treatment.
+The surface occupies only the time-column zone and does not move or resize the current title/description/progress composition. Current state remains visually dominant through title hierarchy and the existing progress treatment.
 
-At Larger Text, reuse the standard-row `verticalBreathing` and `surfaceOuterHeight = round(52S)` inside the current row; the existing current-row formula remains the only row-height authority and must contain the surface without clipping.
+At Larger Text, reuse the standard-row content-stack centring plus fixed 5-pt surface padding, offset from the existing current-content origin. The existing current-row formula remains the only row-height authority and must contain the surface without clipping.
 
 ### Accessibility and multiple Kijktips
 

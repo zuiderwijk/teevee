@@ -1,6 +1,6 @@
 # Teevee — Canonical Project State
 
-Last updated: 2026-09-22.
+Last updated: 2026-09-23.
 Status: ACTIVE — **Kijktip enrichment vertical slice before Phase 5 Search**.
 Current implementation priority: **Kijktip enrichment vertical slice**
 Next broader product phase: **Phase 5 — Search and Discovery**
@@ -36,7 +36,7 @@ Merged foundations:
 - **PR #128 — owner-approved Kijktip editorial-label direction**, merged as `b0f2b458794741ad1e35b798120e50cecbfc43c3`, superseding the earlier bare-text final styling while preserving the accepted signal/accessibility/row-geometry foundations.
 - **PR #129 — final implementation-ready Kijktip label calibration**, merged as `0f43178382b8d313a668eabe4577e4c4ef303f29`. It is the current visual implementation authority: semantic `editorialAccent` / `editorialAccentSurface` tokens, Per-zender time+Kijktip label geometry and Nu & Straks Kijktip-only reference/following label geometry are frozen.
 
-**PR #127 is the active visible Guide implementation increment.** Its approved data/runtime ownership remains intact, including selected-day Per-zender signals, shared Nu & Straks runtime subscription, signal-only reactivity, no duplicate hosted request and one programme accessibility action. After owner physical iPhone review of head `b385e9a8467361b521e613de567711c682728383`, only the Per-zender label geometry is being refined: X24 is the invariant start-time text origin, the 8-pt padded surface begins at X16, and standard/current labels gain calibrated internal vertical breathing within the existing row authorities. Nu & Straks is explicitly not reopened. Totaal, Programme Detail, 06:00/DST/horizon semantics and Guide gesture ownership remain unchanged.
+**PR #127 is the active visible Guide implementation increment.** Its approved signal ownership remains intact, but owner physical review of `aa5c947f5d9e44089a33cb4d5ae71d5a6b916ffd` opened three focused corrections before physical acceptance: (1) Nu & Straks channel identity must bottom-align with the already bottom-aligned reference programme without changing row/reference geometry; (2) the editorial persistence lifecycle must preserve a started broadcast's Kijktip while its canonical programme remains retained, while future omissions remain retractable; and (3) Per-zender keeps X24 time-text ownership but compacts the surface to 5-pt padding/X19/min-width48 with unchanged time/Kijktip text positions and row formulas. Totaal, Programme Detail, 06:00/DST/horizon semantics and Guide gesture ownership remain unchanged.
 
 Search remains paused until PR #127 passes fresh exact-head runtime review, focused physical iPhone acceptance, Independent QA and the final Lead merge gate. After full Kijktip acceptance, resume Phase 5 with Search. Tonight remains deferred/provisional.
 

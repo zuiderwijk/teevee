@@ -184,8 +184,8 @@ export function ProgrammeRow({
                   left: currentKijktipGeometry.surfaceLeft,
                   top: currentKijktipGeometry.surfaceTop,
                   height: currentKijktipGeometry.outerHeight,
-                  paddingTop: currentKijktipGeometry.verticalBreathing,
-                  paddingBottom: currentKijktipGeometry.verticalBreathing,
+                  paddingTop: currentKijktipGeometry.surfacePaddingY,
+                  paddingBottom: currentKijktipGeometry.surfacePaddingY,
                   backgroundColor: theme.colors.editorialAccentSurface,
                 },
               ]}
@@ -283,8 +283,8 @@ export function ProgrammeRow({
                   left: standardKijktipGeometry.surfaceLeft,
                   top: standardKijktipGeometry.surfaceTop,
                   height: standardKijktipGeometry.outerHeight,
-                  paddingTop: standardKijktipGeometry.verticalBreathing,
-                  paddingBottom: standardKijktipGeometry.verticalBreathing,
+                  paddingTop: standardKijktipGeometry.surfacePaddingY,
+                  paddingBottom: standardKijktipGeometry.surfacePaddingY,
                   backgroundColor: theme.colors.editorialAccentSurface,
                 },
               ]}

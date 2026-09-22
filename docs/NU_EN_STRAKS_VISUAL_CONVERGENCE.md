@@ -301,6 +301,7 @@ Channel identity is optically associated with the reference programme rather tha
 
 Production target:
 - identity zone width: **64 pt**;
+- identity zone uses **bottom alignment inside the deterministic reference-programme height**, matching the reference title's vertical ownership rather than centring in that block;
 - logo max: **40 × 32 pt**, aspect-fit;
 - preserve source proportions;
 - never recolour or distort a broadcaster mark for consistency;
@@ -879,7 +880,7 @@ Values frozen by this owner-approved production refinement:
 5. Nu/Primetime visible height36; gap8; platform touch minimum44/48; labels14/18 Semibold; active/current Nu and return-action Nu remain distinct.
 6. Time rail: height52; quarter slot48×48; whole/half labels13/18 Medium, selected Semibold; major tick **1×10 railTick @1.00**; quarter tick **1×6 railTick @0.78**; horizontal bottom line **1 pt railTick @0.78**; marker2×12 currentTime; snap interval48.
 7. `railTick`: **#80807A light / #72726B dark**; global `border` remains unchanged.
-8. Channel geometry: left20; identity64; gap16; programme X100; right24.
+8. Channel geometry: left20; identity64; gap16; programme X100; right24; identity content is **bottom-aligned inside the reference block** for both logo and fallback.
 9. Reference block min64; reference title18/22 Semibold max2, **bottom-aligned with 0 bottom inset**; no visible end-time metadata.
 10. Reference→following dedicated gap = **0 pt**; channel bottom padding = **12 pt**, preserving base row totals.
 11. Following standard targets: min44 iOS /48 Android; 0 interaction gap; time width52; gap8; time13/18 Regular; title15/20 Medium; visible content uses progressive slack offsets **#1 2/3 / #2 1/3 / #3 0**; above 1.35 content remains centred.

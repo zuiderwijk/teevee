@@ -1,5 +1,19 @@
 # Teevee Development Logboek
 
+## 23 september 2026 — PR #127 closes owner physical regressions and compact-label follow-up
+
+Owner comments #5785161879 and #5785190676 reopen three narrow issues on exact head `aa5c947f5d9e44089a33cb4d5ae71d5a6b916ffd`.
+
+Nu & Straks keeps all existing row/reference/following geometry but changes the 64-pt channel identity zone from centred to bottom-aligned ownership, matching the already bottom-aligned reference programme. Horizontal identity/programme geometry, logo max40×32, targets, accessibility and Kijktip reference/following layout are unchanged.
+
+Per zender preserves the accepted structural grid and text positions — time text X24, title X100/right24, standard time Y7…27/Kijktip Y29…45 and current time Y21…41/Kijktip Y43…59 — while compacting only the editorial surface. Surface padding becomes 5 pt, surface-left X19, min width48 and width=max(48,max(intrinsic time,intrinsic Kijktip)+10). At S1 standard surface Y2…50 is 5/20/2/16/5 internally with 2-pt external row breathing; current surface is Y16…64. At scale S the surface height is 36S+12 inside the unchanged standard/current row authorities.
+
+Editorial persistence gains a **forward migration** rather than rewriting applied history. A successful TVgids refresh still validates/deduplicates and uses the existing advisory-lock/stale-write guard, but now upserts current matches, retracts an omitted signal only while its canonical programme is future, preserves an omitted signal after programme start as historical broadcast metadata, and removes orphaned signals when the canonical programme leaves retained schedule storage. The public/mobile editorial signal contract is unchanged.
+
+Deterministic UI, migration-contract and repository coverage is extended for these three fixes. Exact-head CI remains required before returning to Lead; no merge or Independent QA handoff occurs from Development.
+
+---
+
 ## 23 september 2026 — PR #127 shared Kijktip surface-tone correction
 
 Lead REQUIRED FIX #5784910137 applies the later owner-approved shared `editorialAccentSurface` calibration without reopening layout: light changes from `#E4ECEE` to **`#EEECE7`** and dark from `#1C2527` to **`#171715`**. `editorialAccent` foreground remains unchanged. Because this is one shared semantic token, both Per zender and Nu & Straks receive the warmer/neutral surface tone through the existing theme architecture; no Nu & Straks component, layout or metric changes are made.

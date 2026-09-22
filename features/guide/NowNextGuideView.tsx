@@ -357,6 +357,7 @@ const ChannelRow = memo(function ChannelRow({
       ]}
     >
       <View
+        testID={`now-next-channel-identity-${channel.id}`}
         importantForAccessibility="no-hide-descendants"
         accessibilityElementsHidden
         style={[styles.channelIdentityZone, { height: rowLayout.referenceHeight }]}
@@ -1099,6 +1100,7 @@ export const NowNextGuideView = memo(function NowNextGuideView({
                 ]}
               >
                 <View
+                  testID={`now-next-channel-identity-${channel.id}`}
                   style={[
                     styles.channelIdentityZone,
                     { height: rowLayout.referenceHeight },
@@ -1295,7 +1297,7 @@ const styles = StyleSheet.create({
     width: NOW_NEXT_VISUAL_METRICS.channelIdentityWidth,
     marginRight: NOW_NEXT_VISUAL_METRICS.channelProgrammeGap,
     alignItems: 'center',
-    justifyContent: 'center',
+    justifyContent: 'flex-end',
   },
   programmesColumn: {
     flex: 1,
