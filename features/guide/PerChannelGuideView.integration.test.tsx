@@ -12,6 +12,8 @@ type HostProps = {
   testID?: string;
   accessibilityLabel?: string;
   accessible?: boolean;
+  accessibilityElementsHidden?: boolean;
+  importantForAccessibility?: string;
   style?: unknown | ((state: { pressed: boolean }) => unknown);
   numberOfLines?: number;
   onPress?: () => void;
@@ -75,6 +77,8 @@ vi.mock('react-native', async () => {
     children,
     testID,
     accessible,
+    accessibilityElementsHidden,
+    importantForAccessibility,
     style,
     numberOfLines,
   }: HostProps) =>
@@ -84,6 +88,11 @@ vi.mock('react-native', async () => {
         'data-testid': testID,
         'data-accessible':
           accessible === undefined ? undefined : String(accessible),
+        'data-accessibility-elements-hidden':
+          accessibilityElementsHidden === undefined
+            ? undefined
+            : String(accessibilityElementsHidden),
+        'data-important-for-accessibility': importantForAccessibility,
         'data-number-of-lines': numberOfLines,
         'data-style': JSON.stringify(style),
       },
@@ -257,6 +266,8 @@ describe('Per-zender Kijktip production presentation', () => {
     expect(leading.getAttribute('data-style')).toContain('"top":7');
     expect(label.getAttribute('data-style')).toContain('"top":29');
     expect(label.getAttribute('data-accessible')).toBe('false');
+    expect(label.getAttribute('data-accessibility-elements-hidden')).toBe('true');
+    expect(label.getAttribute('data-important-for-accessibility')).toBe('no');
     expect(programmeRow.getAttribute('aria-label')).toBe(
       'NPO 1, Programma tip, Kijktip, 20:30 tot 21:30',
     );
