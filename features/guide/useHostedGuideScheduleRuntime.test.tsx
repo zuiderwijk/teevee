@@ -7,6 +7,7 @@ import type { GuideSchedule } from '@/data/domain/epg';
 import {
   clearRuntimeGuideSchedule,
   runtimeGuideScheduleFor,
+  runtimeProgrammeEditorialSignalsFor,
 } from '@/data/runtime/guideScheduleRuntime';
 import type { GuideScheduleApi } from '@/services/api/guideScheduleContract';
 
@@ -43,7 +44,7 @@ vi.mock('react-native', () => ({
 }));
 
 vi.mock('@/services/api/guideScheduleLoader', () => ({
-  loadTwoTelevisionDayGuideSchedule: loader.load,
+  loadTwoTelevisionDayGuideScheduleBundle: loader.load,
 }));
 
 const api: GuideScheduleApi = {
@@ -78,6 +79,19 @@ function canonicalSchedule(
       },
     ],
   };
+}
+
+function bundle(
+  schedule: GuideSchedule,
+  editorialSignals: {
+    programmeId: string;
+    type: 'kijktip';
+    source: 'tvgids';
+    sourceItemId: string;
+    matchedBy: 'channel-title-start';
+  }[] = [],
+) {
+  return { schedule, editorialSignals };
 }
 
 function coveredEmptyCanonicalSchedule(
@@ -183,9 +197,9 @@ async function sendAppState(state: AppStateValue) {
 describe('useHostedGuideScheduleRuntime television-day lifecycle', () => {
   it('preserves fixture-first startup, does not roll at midnight/05:59, and rolls at 06:00', async () => {
     const firstSchedule = canonicalSchedule('first');
-    const nextDaySchedule = deferred<GuideSchedule | null>();
+    const nextDaySchedule = deferred<ReturnType<typeof bundle> | null>();
     loader.load
-      .mockResolvedValueOnce(firstSchedule)
+      .mockResolvedValueOnce(bundle(firstSchedule))
       .mockImplementationOnce(() => nextDaySchedule.promise);
 
     await act(async () => root.render(<RuntimeProbe />));
@@ -216,7 +230,9 @@ describe('useHostedGuideScheduleRuntime television-day lifecycle', () => {
     expect(runtimeGuideScheduleFor(lifecycle.nowMs)).toBeNull();
 
     await act(async () => {
-      nextDaySchedule.resolve(canonicalSchedule('next-day', '2026-09-15T04:01:00Z'));
+      nextDaySchedule.resolve(
+        bundle(canonicalSchedule('next-day', '2026-09-15T04:01:00Z')),
+      );
       await nextDaySchedule.promise;
       await Promise.resolve();
     });
@@ -227,7 +243,7 @@ describe('useHostedGuideScheduleRuntime television-day lifecycle', () => {
 
   it('installs a covered-empty canonical current schedule as authoritative', async () => {
     const empty = coveredEmptyCanonicalSchedule();
-    loader.load.mockResolvedValueOnce(empty);
+    loader.load.mockResolvedValueOnce(bundle(empty));
 
     await act(async () => root.render(<RuntimeProbe />));
     await runStartupFrame();
@@ -239,10 +255,12 @@ describe('useHostedGuideScheduleRuntime television-day lifecycle', () => {
   });
 
   it('treats a zero-channel current result as structurally unusable, separately from covered-empty', async () => {
-    loader.load.mockResolvedValueOnce({
-      ...coveredEmptyCanonicalSchedule(),
-      channels: [],
-    });
+    loader.load.mockResolvedValueOnce(
+      bundle({
+        ...coveredEmptyCanonicalSchedule(),
+        channels: [],
+      }),
+    );
 
     await act(async () => root.render(<RuntimeProbe />));
     await runStartupFrame();
@@ -253,7 +271,7 @@ describe('useHostedGuideScheduleRuntime television-day lifecycle', () => {
 
   it('keeps the installed current schedule when forced revalidation is unavailable or fails', async () => {
     const installed = canonicalSchedule('cached');
-    loader.load.mockResolvedValueOnce(installed);
+    loader.load.mockResolvedValueOnce(bundle(installed));
 
     await act(async () => root.render(<RuntimeProbe />));
     await runStartupFrame();
@@ -273,17 +291,19 @@ describe('useHostedGuideScheduleRuntime television-day lifecycle', () => {
 
   it('refreshes on resume without remounting for freshness-only hosted data', async () => {
     const firstSchedule = canonicalSchedule('same');
-    loader.load.mockResolvedValueOnce(firstSchedule);
+    loader.load.mockResolvedValueOnce(bundle(firstSchedule));
 
     await act(async () => root.render(<RuntimeProbe />));
     await runStartupFrame();
     expect(runtimeVersion()).toBe(1);
 
     lifecycle.nowMs = Date.parse('2026-09-14T23:00:00Z'); // 01:00 CEST, same television day
-    loader.load.mockResolvedValueOnce({
-      ...firstSchedule,
-      generatedAt: '2026-09-14T21:00:00Z',
-    });
+    loader.load.mockResolvedValueOnce(
+      bundle({
+        ...firstSchedule,
+        generatedAt: '2026-09-14T21:00:00Z',
+      }),
+    );
     await sendAppState('active');
 
     expect(loader.load).toHaveBeenCalledTimes(2);
@@ -291,16 +311,51 @@ describe('useHostedGuideScheduleRuntime television-day lifecycle', () => {
     expect(runtimeGuideScheduleFor(lifecycle.nowMs)).toBe(firstSchedule);
   });
 
+
+  it('installs editorial signals without remounting when only enrichment changes', async () => {
+    const current = canonicalSchedule('same');
+    loader.load.mockResolvedValueOnce(bundle(current));
+
+    await act(async () => root.render(<RuntimeProbe />));
+    await runStartupFrame();
+    expect(runtimeVersion()).toBe(1);
+    expect(runtimeProgrammeEditorialSignalsFor(lifecycle.nowMs)).toEqual([]);
+
+    loader.load.mockResolvedValueOnce(
+      bundle(current, [
+        {
+          programmeId: 'same',
+          type: 'kijktip',
+          source: 'tvgids',
+          sourceItemId: 'tip-same',
+          matchedBy: 'channel-title-start',
+        },
+      ]),
+    );
+    await sendAppState('active');
+
+    expect(runtimeVersion()).toBe(1);
+    expect(runtimeProgrammeEditorialSignalsFor(lifecycle.nowMs)).toEqual([
+      {
+        programmeId: 'same',
+        type: 'kijktip',
+        source: 'tvgids',
+        sourceItemId: 'tip-same',
+        matchedBy: 'channel-title-start',
+      },
+    ]);
+  });
+
   it('ignores stale out-of-order hosted responses after a newer resume refresh wins', async () => {
     const initial = canonicalSchedule('initial');
-    loader.load.mockResolvedValueOnce(initial);
+    loader.load.mockResolvedValueOnce(bundle(initial));
 
     await act(async () => root.render(<RuntimeProbe />));
     await runStartupFrame();
     expect(runtimeVersion()).toBe(1);
 
-    const olderRequest = deferred<GuideSchedule | null>();
-    const newerRequest = deferred<GuideSchedule | null>();
+    const olderRequest = deferred<ReturnType<typeof bundle> | null>();
+    const newerRequest = deferred<ReturnType<typeof bundle> | null>();
     loader.load
       .mockImplementationOnce(() => olderRequest.promise)
       .mockImplementationOnce(() => newerRequest.promise);
@@ -311,7 +366,7 @@ describe('useHostedGuideScheduleRuntime television-day lifecycle', () => {
 
     const newerSchedule = canonicalSchedule('newer', '2026-09-14T21:30:00Z');
     await act(async () => {
-      newerRequest.resolve(newerSchedule);
+      newerRequest.resolve(bundle(newerSchedule));
       await newerRequest.promise;
       await Promise.resolve();
     });
@@ -319,7 +374,9 @@ describe('useHostedGuideScheduleRuntime television-day lifecycle', () => {
     expect(runtimeGuideScheduleFor(lifecycle.nowMs)).toBe(newerSchedule);
 
     await act(async () => {
-      olderRequest.resolve(canonicalSchedule('older', '2026-09-14T21:15:00Z'));
+      olderRequest.resolve(
+        bundle(canonicalSchedule('older', '2026-09-14T21:15:00Z')),
+      );
       await olderRequest.promise;
       await Promise.resolve();
     });
