@@ -231,6 +231,8 @@ function FollowingKijktipTitle({
           <Text
             testID={`now-next-following-kijktip-measure-${programmeId}`}
             accessible={false}
+            accessibilityElementsHidden
+            importantForAccessibility="no"
             numberOfLines={2}
             onTextLayout={rememberTitleLayout}
             style={[
@@ -252,6 +254,8 @@ function FollowingKijktipTitle({
       <Text
         testID={`now-next-following-kijktip-measure-${programmeId}`}
         accessible={false}
+        accessibilityElementsHidden
+        importantForAccessibility="no"
         numberOfLines={2}
         onTextLayout={rememberTitleLayout}
         style={[
