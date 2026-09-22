@@ -175,16 +175,27 @@ export function ProgrammeRow({
           {isKijktip && currentKijktipGeometry ? (
             <View
               testID={`per-channel-kijktip-time-stack-${programme.id}`}
+              accessible={false}
+              accessibilityElementsHidden
+              importantForAccessibility="no-hide-descendants"
               style={[
-                styles.currentKijktipTimeStack,
-                { top: currentKijktipGeometry.timeTop },
+                styles.kijktipTimeLabel,
+                {
+                  top: currentKijktipGeometry.timeTop,
+                  height: currentKijktipGeometry.outerHeight,
+                  backgroundColor: theme.colors.editorialAccentSurface,
+                },
               ]}
             >
               <Text
+                testID={`per-channel-kijktip-time-${programme.id}`}
+                accessible={false}
+                accessibilityElementsHidden
+                importantForAccessibility="no"
                 numberOfLines={1}
                 style={[
                   styles.currentKijktipTime,
-                  { color: theme.colors.textSecondary },
+                  { color: theme.colors.editorialAccent },
                 ]}
               >
                 {formatTime(startMs)}
@@ -197,7 +208,7 @@ export function ProgrammeRow({
                 numberOfLines={1}
                 style={[
                   styles.kijktipTimeStackLabel,
-                  { color: theme.colors.textSecondary },
+                  { color: theme.colors.editorialAccent },
                 ]}
               >
                 {KIJKTIP_LABEL}
@@ -250,16 +261,27 @@ export function ProgrammeRow({
           {isKijktip && standardKijktipGeometry ? (
             <View
               testID={`per-channel-kijktip-time-stack-${programme.id}`}
+              accessible={false}
+              accessibilityElementsHidden
+              importantForAccessibility="no-hide-descendants"
               style={[
-                styles.standardKijktipTimeStack,
-                { top: standardKijktipGeometry.stackTop },
+                styles.kijktipTimeLabel,
+                {
+                  top: standardKijktipGeometry.stackTop,
+                  height: standardKijktipGeometry.outerHeight,
+                  backgroundColor: theme.colors.editorialAccentSurface,
+                },
               ]}
             >
               <Text
+                testID={`per-channel-kijktip-time-${programme.id}`}
+                accessible={false}
+                accessibilityElementsHidden
+                importantForAccessibility="no"
                 numberOfLines={1}
                 style={[
                   styles.programmeTime,
-                  { color: theme.colors.textSecondary },
+                  { color: theme.colors.editorialAccent },
                 ]}
               >
                 {formatTime(startMs)}
@@ -272,7 +294,7 @@ export function ProgrammeRow({
                 numberOfLines={1}
                 style={[
                   styles.kijktipTimeStackLabel,
-                  { color: theme.colors.textSecondary },
+                  { color: theme.colors.editorialAccent },
                 ]}
               >
                 {KIJKTIP_LABEL}
@@ -1197,9 +1219,13 @@ const styles = StyleSheet.create({
     bottom: 0,
     justifyContent: 'center',
   },
-  standardKijktipTimeStack: {
+  kijktipTimeLabel: {
     position: 'absolute',
     left: PER_CHANNEL_VISUAL_METRICS.timeTextX,
+    minWidth: PER_CHANNEL_VISUAL_METRICS.kijktipMinOuterWidth,
+    paddingHorizontal: PER_CHANNEL_VISUAL_METRICS.kijktipPaddingX,
+    paddingVertical: PER_CHANNEL_VISUAL_METRICS.kijktipPaddingY,
+    borderRadius: PER_CHANNEL_VISUAL_METRICS.kijktipRadius,
     alignItems: 'center',
   },
   kijktipTimeStackLabel: {
@@ -1223,11 +1249,6 @@ const styles = StyleSheet.create({
     ...GUIDE_TYPOGRAPHY.programmeTime,
     fontVariant: ['tabular-nums'],
     letterSpacing: 0,
-  },
-  currentKijktipTimeStack: {
-    position: 'absolute',
-    left: PER_CHANNEL_VISUAL_METRICS.timeTextX,
-    alignItems: 'center',
   },
   currentKijktipTime: {
     ...GUIDE_TYPOGRAPHY.programmeTime,

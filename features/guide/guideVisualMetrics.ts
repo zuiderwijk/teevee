@@ -64,6 +64,10 @@ export const PER_CHANNEL_VISUAL_METRICS = {
   reduceMotionSwitchOffset: 28,
   viewportReferenceRows: 2,
   kijktipTimeGap: 2,
+  kijktipPaddingX: 8,
+  kijktipPaddingY: 0,
+  kijktipRadius: 6,
+  kijktipMinOuterWidth: 56,
 } as const;
 
 // Each weight uses its own static Instrument Sans family name. Do not add a
@@ -171,6 +175,23 @@ export function standardProgrammeRowHeight(fontScale = 1) {
   return Math.round(PER_CHANNEL_VISUAL_METRICS.standardRowHeight * contentScale);
 }
 
+export function perChannelKijktipLabelOuterWidth(
+  intrinsicTimeWidth: number,
+  intrinsicKijktipWidth: number,
+) {
+  const timeWidth = Number.isFinite(intrinsicTimeWidth)
+    ? Math.max(0, intrinsicTimeWidth)
+    : 0;
+  const kijktipWidth = Number.isFinite(intrinsicKijktipWidth)
+    ? Math.max(0, intrinsicKijktipWidth)
+    : 0;
+  return Math.max(
+    PER_CHANNEL_VISUAL_METRICS.kijktipMinOuterWidth,
+    Math.max(timeWidth, kijktipWidth) +
+      PER_CHANNEL_VISUAL_METRICS.kijktipPaddingX * 2,
+  );
+}
+
 export function perChannelKijktipStackGeometry(fontScale = 1) {
   const contentScale =
     Number.isFinite(fontScale) && fontScale > 0 ? Math.max(1, fontScale) : 1;
@@ -195,6 +216,11 @@ export function perChannelKijktipStackGeometry(fontScale = 1) {
       PER_CHANNEL_VISUAL_METRICS.kijktipTimeGap,
     labelLineHeight,
     stackHeight,
+    outerHeight: stackHeight,
+    minOuterWidth: PER_CHANNEL_VISUAL_METRICS.kijktipMinOuterWidth,
+    paddingX: PER_CHANNEL_VISUAL_METRICS.kijktipPaddingX,
+    paddingY: PER_CHANNEL_VISUAL_METRICS.kijktipPaddingY,
+    radius: PER_CHANNEL_VISUAL_METRICS.kijktipRadius,
   } as const;
 }
 
@@ -213,6 +239,14 @@ export function perChannelCurrentKijktipGeometry(fontScale = 1) {
       timeLineHeight +
       PER_CHANNEL_VISUAL_METRICS.kijktipTimeGap,
     labelLineHeight,
+    outerHeight:
+      timeLineHeight +
+      PER_CHANNEL_VISUAL_METRICS.kijktipTimeGap +
+      labelLineHeight,
+    minOuterWidth: PER_CHANNEL_VISUAL_METRICS.kijktipMinOuterWidth,
+    paddingX: PER_CHANNEL_VISUAL_METRICS.kijktipPaddingX,
+    paddingY: PER_CHANNEL_VISUAL_METRICS.kijktipPaddingY,
+    radius: PER_CHANNEL_VISUAL_METRICS.kijktipRadius,
   } as const;
 }
 

@@ -66,6 +66,7 @@ import {
   nowNextCollapseProgressForScrollOffset,
   nowNextFollowingContentPlacement,
   nowNextFollowingKijktipTitleBudget,
+  nowNextKijktipLabelMetrics,
   nowNextProgrammePressBackgroundColor,
   nowNextRailSlotPresentation,
   nowNextReferenceKijktipTitleLineCount,
@@ -141,22 +142,27 @@ function FollowingKijktipTitle({
   title,
   maxTitleLines,
   titleLaneWidth,
+  fontScale,
   titleColor,
-  labelColor,
+  labelForegroundColor,
+  labelSurfaceColor,
 }: {
   programmeId: string;
   title: string;
   maxTitleLines: 1 | 2;
   titleLaneWidth: number;
+  fontScale: number;
   titleColor: string;
-  labelColor: string;
+  labelForegroundColor: string;
+  labelSurfaceColor: string;
 }) {
-  const [labelWidth, setLabelWidth] = useState(0);
+  const [labelOuterWidth, setLabelOuterWidth] = useState(0);
+  const labelMetrics = nowNextKijktipLabelMetrics(fontScale);
   const [firstLineText, setFirstLineText] = useState<string | null>(null);
   const [measuredLineCount, setMeasuredLineCount] = useState(1);
   const budget = nowNextFollowingKijktipTitleBudget(
     titleLaneWidth,
-    labelWidth,
+    labelOuterWidth,
   );
   const secondLineTitle =
     maxTitleLines === 2 && measuredLineCount > 1 && firstLineText
@@ -168,7 +174,9 @@ function FollowingKijktipTitle({
 
   const rememberLabelWidth = useCallback((event: LayoutChangeEvent) => {
     const width = event.nativeEvent.layout.width;
-    setLabelWidth((current) => (Math.abs(current - width) < 0.5 ? current : width));
+    setLabelOuterWidth((current) =>
+      Math.abs(current - width) < 0.5 ? current : width,
+    );
   }, []);
 
   const rememberTitleLayout = useCallback(
@@ -209,17 +217,35 @@ function FollowingKijktipTitle({
       >
         {visibleTitle}
       </Text>
-      <Text
+      <View
         testID={`now-next-following-kijktip-${programmeId}`}
         accessible={false}
         accessibilityElementsHidden
-        importantForAccessibility="no"
-        numberOfLines={1}
+        importantForAccessibility="no-hide-descendants"
+        pointerEvents="none"
         onLayout={rememberLabelWidth}
-        style={[styles.followingKijktipLabel, { color: labelColor }]}
+        style={[
+          styles.followingKijktipLabel,
+          {
+            height: labelMetrics.outerHeight,
+            backgroundColor: labelSurfaceColor,
+          },
+        ]}
       >
-        {KIJKTIP_LABEL}
-      </Text>
+        <Text
+          testID={`now-next-following-kijktip-text-${programmeId}`}
+          accessible={false}
+          accessibilityElementsHidden
+          importantForAccessibility="no"
+          numberOfLines={1}
+          style={[
+            styles.followingKijktipLabelText,
+            { color: labelForegroundColor },
+          ]}
+        >
+          {KIJKTIP_LABEL}
+        </Text>
+      </View>
     </View>
   );
 
@@ -374,19 +400,34 @@ const ChannelRow = memo(function ChannelRow({
                 pointerEvents="none"
                 style={styles.referenceKijktipStack}
               >
-                <Text
+                <View
                   testID={`now-next-reference-kijktip-${referenceProgramme.id}`}
                   accessible={false}
                   accessibilityElementsHidden
-                  importantForAccessibility="no"
-                  numberOfLines={1}
+                  importantForAccessibility="no-hide-descendants"
+                  pointerEvents="none"
                   style={[
                     styles.referenceKijktipLabel,
-                    { color: theme.colors.textSecondary },
+                    {
+                      height: nowNextKijktipLabelMetrics(fontScale).outerHeight,
+                      backgroundColor: theme.colors.editorialAccentSurface,
+                    },
                   ]}
                 >
-                  {KIJKTIP_LABEL}
-                </Text>
+                  <Text
+                    testID={`now-next-reference-kijktip-text-${referenceProgramme.id}`}
+                    accessible={false}
+                    accessibilityElementsHidden
+                    importantForAccessibility="no"
+                    numberOfLines={1}
+                    style={[
+                      styles.referenceKijktipLabelText,
+                      { color: theme.colors.editorialAccent },
+                    ]}
+                  >
+                    {KIJKTIP_LABEL}
+                  </Text>
+                </View>
                 <Text
                   numberOfLines={referenceKijktipTitleLines}
                   ellipsizeMode="tail"
@@ -506,8 +547,10 @@ const ChannelRow = memo(function ChannelRow({
                         title={programme.title}
                         maxTitleLines={rowLayout.mode === 'standard' ? 1 : 2}
                         titleLaneWidth={followingTitleLaneWidth}
+                        fontScale={fontScale}
                         titleColor={theme.colors.textSecondary}
-                        labelColor={theme.colors.textSecondary}
+                        labelForegroundColor={theme.colors.editorialAccent}
+                        labelSurfaceColor={theme.colors.editorialAccentSurface}
                       />
                     ) : (
                       <Text
@@ -1270,8 +1313,16 @@ const styles = StyleSheet.create({
     width: '100%',
   },
   referenceKijktipLabel: {
-    ...GUIDE_EDITORIAL_TYPOGRAPHY.kijktip,
+    alignSelf: 'flex-start',
+    paddingHorizontal: NOW_NEXT_VISUAL_METRICS.kijktipLabelPaddingX,
+    paddingVertical: NOW_NEXT_VISUAL_METRICS.kijktipLabelPaddingY,
+    borderRadius: NOW_NEXT_VISUAL_METRICS.kijktipLabelRadius,
+    alignItems: 'center',
+    justifyContent: 'center',
     marginBottom: NOW_NEXT_VISUAL_METRICS.referenceKijktipGap,
+  },
+  referenceKijktipLabelText: {
+    ...GUIDE_EDITORIAL_TYPOGRAPHY.kijktip,
   },
   gapTitle: {
     ...NOW_NEXT_TYPOGRAPHY.followingTitle,
@@ -1337,7 +1388,7 @@ const styles = StyleSheet.create({
   },
   followingKijktipFinalLine: {
     flexDirection: 'row',
-    alignItems: 'baseline',
+    alignItems: 'center',
     minWidth: 0,
   },
   followingKijktipTitleFragment: {
@@ -1348,9 +1399,16 @@ const styles = StyleSheet.create({
     letterSpacing: 0,
   },
   followingKijktipLabel: {
-    ...GUIDE_EDITORIAL_TYPOGRAPHY.kijktip,
     marginLeft: NOW_NEXT_VISUAL_METRICS.followingKijktipGap,
+    paddingHorizontal: NOW_NEXT_VISUAL_METRICS.kijktipLabelPaddingX,
+    paddingVertical: NOW_NEXT_VISUAL_METRICS.kijktipLabelPaddingY,
+    borderRadius: NOW_NEXT_VISUAL_METRICS.kijktipLabelRadius,
+    alignItems: 'center',
+    justifyContent: 'center',
     flexShrink: 0,
+  },
+  followingKijktipLabelText: {
+    ...GUIDE_EDITORIAL_TYPOGRAPHY.kijktip,
   },
   scheduleUnavailable: {
     paddingHorizontal: GUIDE_VISUAL_METRICS.screenInsetX,

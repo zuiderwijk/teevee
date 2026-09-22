@@ -285,10 +285,22 @@ describe('Per-zender Kijktip production presentation', () => {
     expect(flattenedStyle(timeStack)).toMatchObject({
       left: 24,
       top: 7,
+      height: 38,
+      minWidth: 56,
+      paddingHorizontal: 8,
+      paddingVertical: 0,
+      borderRadius: 6,
       alignItems: 'center',
+      backgroundColor: '#E4ECEE',
     });
-    expect(flattenedStyle(label).marginTop).toBe(2);
-    expect(flattenedStyle(label).width).toBeUndefined();
+    expect(flattenedStyle(timeStack).width).toBeUndefined();
+    expect(flattenedStyle(label)).toMatchObject({
+      marginTop: 2,
+      color: '#315A63',
+    });
+    expect(
+      flattenedStyle(getByTestId(container, 'per-channel-kijktip-time-tip')).color,
+    ).toBe('#315A63');
     expect(flattenedStyle(titleCell)).toMatchObject({
       left: 100,
       right: 24,
@@ -347,10 +359,24 @@ describe('Per-zender Kijktip production presentation', () => {
     expect(flattenedStyle(timeStack)).toMatchObject({
       left: 24,
       top: 14,
+      height: 38,
+      minWidth: 56,
+      paddingHorizontal: 8,
+      paddingVertical: 0,
+      borderRadius: 6,
       alignItems: 'center',
+      backgroundColor: '#E4ECEE',
     });
-    expect(flattenedStyle(label).marginTop).toBe(2);
-    expect(flattenedStyle(label).width).toBeUndefined();
+    expect(flattenedStyle(timeStack).width).toBeUndefined();
+    expect(flattenedStyle(label)).toMatchObject({
+      marginTop: 2,
+      color: '#315A63',
+    });
+    expect(
+      flattenedStyle(
+        getByTestId(container, 'per-channel-kijktip-time-current'),
+      ).color,
+    ).toBe('#315A63');
     expect(
       getByTestId(container, 'per-channel-progress-current'),
     ).toBeDefined();

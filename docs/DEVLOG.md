@@ -1,5 +1,22 @@
 # Teevee Development Logboek
 
+## 22 september 2026 — PR #127 reconciled to final PR #129 Kijktip label calibration
+
+PR #127 keeps its already-reviewed editorial-signal architecture and runtime ownership, but is reconciled against canonical main after PR #128/#129 superseded the earlier bare-text final styling. Current main wins unchanged for all six canonical design/spec authorities from PR #129.
+
+Runtime convergence is deliberately narrow:
+- adds semantic theme tokens `editorialAccent` (#315A63 light / #A9C9CF dark) and `editorialAccentSurface` (#E4ECEE light / #1C2527 dark) through the existing Light/Dark/System theme architecture;
+- Per zender renders one compact time + Kijktip editorial label at X24 with 8-pt horizontal padding, radius6, minimum width56, fixed 2-pt internal gap and the frozen 36S+2 outer height; normal title-cell rhythm, 52/176 row ownership and current title/description/progress remain unchanged;
+- Nu & Straks renders the calibrated Kijktip-only label with 6-pt horizontal padding, radius4 and 16S height; reference gap3/content-safe title formula and following reserve=(label outer width+8), 48-pt title floor, intrinsic short-title placement, Larger Text final-line ownership and >2.0/<180 fallback remain intact;
+- visible label containers/children remain presentation-only while each programme stays one Pressable/focus/action with Kijktip announced exactly once;
+- selected-day ownership, signal-only runtime reactivity, no duplicate hosted request/schedule replacement, Totaal, Programme Detail, Guide horizon/06:00/DST and gesture/scroll ownership are unchanged.
+
+Deterministic tests are updated for semantic theme values, System appearance resolution, Per-zender label geometry/intrinsic-width contract, Nu & Straks reference/following outer-label geometry and all prior #127 data/accessibility/layout regressions.
+
+**Gate:** exact-head CI is mandatory, then Lead exact-head runtime review and a new focused physical iPhone acceptance of the calibrated labels. Do not merge or send to Independent QA before those gates.
+
+---
+
 ## 22 september 2026 — PR #126 first production Kijktip backend/transport increment
 
 The first production-grade Kijktip vertical-slice implementation keeps editorial enrichment strictly optional and separate from core EPG identity/availability. No visible Kijktip UI is introduced.

@@ -13,6 +13,7 @@ import {
   nowNextFollowingLayoutMode,
   nowNextFollowingSlotHeight,
   nowNextFollowingTargetRects,
+  nowNextKijktipLabelMetrics,
   nowNextMinimumTouchTarget,
   nowNextProgrammePressBackgroundColor,
   nowNextRailSlotPresentation,
@@ -213,6 +214,23 @@ describe('Nu & Straks deterministic channel geometry', () => {
 
 
 describe('Nu & Straks Kijktip production layout', () => {
+  it('freezes the Kijktip-only label outer geometry', () => {
+    expect(nowNextKijktipLabelMetrics(1, 32)).toEqual({
+      paddingX: 6,
+      paddingY: 0,
+      radius: 4,
+      outerHeight: 16,
+      outerWidth: 44,
+    });
+    expect(nowNextKijktipLabelMetrics(1.5, 32)).toEqual({
+      paddingX: 6,
+      paddingY: 0,
+      radius: 4,
+      outerHeight: 24,
+      outerWidth: 44,
+    });
+  });
+
   it.each([
     [1, 2],
     [1.35, 1],
@@ -230,7 +248,7 @@ describe('Nu & Straks Kijktip production layout', () => {
       referenceHeight: 64,
       titleLineCount: 2,
       stackTop: 1,
-      labelLineHeight: 16,
+      labelOuterHeight: 16,
       titleTop: 20,
       titleLineHeight: 22,
     });
@@ -238,7 +256,7 @@ describe('Nu & Straks Kijktip production layout', () => {
       referenceHeight: 64,
       titleLineCount: 1,
       stackTop: 23,
-      labelLineHeight: 16,
+      labelOuterHeight: 16,
       titleTop: 42,
       titleLineHeight: 22,
     });

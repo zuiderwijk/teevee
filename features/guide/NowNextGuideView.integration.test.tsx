@@ -545,11 +545,25 @@ describe('Nu & Straks production interaction boundary', () => {
         'data-accessible',
       ),
     ).toBe('false');
+    const referenceLabel = getByTestId(
+      container,
+      'now-next-reference-kijktip-one-ref',
+    );
     expect(
-      getByTestId(container, 'now-next-reference-kijktip-one-ref').getAttribute(
-        'data-accessibility-elements-hidden',
-      ),
+      referenceLabel.getAttribute('data-accessibility-elements-hidden'),
     ).toBe('true');
+    expect(flattenedStyle(referenceLabel)).toMatchObject({
+      height: 16,
+      paddingHorizontal: 6,
+      paddingVertical: 0,
+      borderRadius: 4,
+      backgroundColor: '#E4ECEE',
+    });
+    expect(
+      flattenedStyle(
+        getByTestId(container, 'now-next-reference-kijktip-text-one-ref'),
+      ).color,
+    ).toBe('#315A63');
     expect(reference.getAttribute('aria-label')).toBe(
       'NPO 1, Referentieprogramma, Kijktip, 20:00 tot 20:30, nu bezig',
     );
@@ -560,7 +574,22 @@ describe('Nu & Straks production interaction boundary', () => {
       expect(label.textContent).toBe('Kijktip');
       expect(label.getAttribute('data-accessible')).toBe('false');
       expect(label.getAttribute('data-accessibility-elements-hidden')).toBe('true');
-      expect(label.getAttribute('data-important-for-accessibility')).toBe('no');
+      expect(label.getAttribute('data-important-for-accessibility')).toBe(
+        'no-hide-descendants',
+      );
+      expect(flattenedStyle(label)).toMatchObject({
+        height: 16,
+        paddingHorizontal: 6,
+        paddingVertical: 0,
+        borderRadius: 4,
+        marginLeft: 8,
+        backgroundColor: '#E4ECEE',
+      });
+      expect(
+        flattenedStyle(
+          getByTestId(container, `now-next-following-kijktip-text-${id}`),
+        ).color,
+      ).toBe('#315A63');
     }
 
     expect(
@@ -615,7 +644,14 @@ describe('Nu & Straks production interaction boundary', () => {
     expect(titleStyle.flex).toBeUndefined();
     expect(titleStyle.flexShrink).toBe(1);
     expect(titleStyle.maxWidth).toBe(154);
-    expect(labelStyle.marginLeft).toBe(8);
+    expect(labelStyle).toMatchObject({
+      marginLeft: 8,
+      paddingHorizontal: 6,
+      paddingVertical: 0,
+      borderRadius: 4,
+      height: 16,
+      backgroundColor: '#E4ECEE',
+    });
   });
 
   it('bounds a long following title by the protected budget while keeping tail ellipsis ownership', async () => {
@@ -652,7 +688,13 @@ describe('Nu & Straks production interaction boundary', () => {
     });
     expect(title.getAttribute('data-number-of-lines')).toBe('1');
     expect(title.getAttribute('data-ellipsize-mode')).toBe('tail');
-    expect(flattenedStyle(label).marginLeft).toBe(8);
+    expect(flattenedStyle(label)).toMatchObject({
+      marginLeft: 8,
+      paddingHorizontal: 6,
+      borderRadius: 4,
+      height: 16,
+      backgroundColor: '#E4ECEE',
+    });
   });
 
   it('keeps the title visible at the exact 48-pt protected boundary', async () => {
@@ -683,7 +725,13 @@ describe('Nu & Straks production interaction boundary', () => {
     expect(title.textContent).toBe('Grens');
     expect(flattenedStyle(title).maxWidth).toBe(48);
     expect(flattenedStyle(title).flexGrow).toBe(0);
-    expect(flattenedStyle(label).marginLeft).toBe(8);
+    expect(flattenedStyle(label)).toMatchObject({
+      marginLeft: 8,
+      paddingHorizontal: 6,
+      borderRadius: 4,
+      height: 16,
+      backgroundColor: '#E4ECEE',
+    });
     expect(label.textContent).toBe('Kijktip');
   });
 
@@ -715,7 +763,13 @@ describe('Nu & Straks production interaction boundary', () => {
     expect(title.textContent).toBe('…');
     expect(flattenedStyle(title).maxWidth).toBe(48);
     expect(flattenedStyle(title).flexGrow).toBe(0);
-    expect(flattenedStyle(label).marginLeft).toBe(8);
+    expect(flattenedStyle(label)).toMatchObject({
+      marginLeft: 8,
+      paddingHorizontal: 6,
+      borderRadius: 4,
+      height: 16,
+      backgroundColor: '#E4ECEE',
+    });
     expect(label.textContent).toBe('Kijktip');
   });
 
@@ -886,12 +940,12 @@ describe('Nu & Straks production interaction boundary', () => {
       flexShrink: 1,
       maxWidth: 154,
     });
-    expect(
-      getByTestId(
-        container,
-        'now-next-following-kijktip-one-follow-1',
-      ).textContent,
-    ).toBe('Kijktip');
+    const largerTextLabel = getByTestId(
+      container,
+      'now-next-following-kijktip-one-follow-1',
+    );
+    expect(largerTextLabel.textContent).toBe('Kijktip');
+    expect(flattenedStyle(largerTextLabel).height).toBeCloseTo(28.8, 6);
   });
 
   it('keeps Kijktip inline with the title in the >2.0/<180 stacked fallback', async () => {

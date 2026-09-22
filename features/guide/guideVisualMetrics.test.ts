@@ -8,7 +8,9 @@ import {
   guideChromeExpandedHeight,
   guidePresentationNavigationMetrics,
   perChannelCurrentKijktipGeometry,
+  perChannelKijktipLabelOuterWidth,
   perChannelKijktipStackGeometry,
+  PER_CHANNEL_VISUAL_METRICS,
 } from './guideVisualMetrics';
 
 describe('shared Guide responsive chrome', () => {
@@ -43,6 +45,10 @@ describe('shared Guide responsive chrome', () => {
     expect(darkTheme.colors.border).toBe('#30302D');
     expect(lightTheme.colors.onCurrentTime).toBe('#0D0D0D');
     expect(darkTheme.colors.onCurrentTime).toBe('#0D0D0D');
+    expect(lightTheme.colors.editorialAccent).toBe('#315A63');
+    expect(darkTheme.colors.editorialAccent).toBe('#A9C9CF');
+    expect(lightTheme.colors.editorialAccentSurface).toBe('#E4ECEE');
+    expect(darkTheme.colors.editorialAccentSurface).toBe('#1C2527');
   });
 });
 
@@ -57,6 +63,15 @@ describe('shared Kijktip editorial typography and Per-zender geometry', () => {
     expect(GUIDE_EDITORIAL_TYPOGRAPHY.kijktip.fontFamily).toMatch(
       /^InstrumentSans_/,
     );
+  });
+
+  it('freezes Per-zender editorial-label padding, radius and intrinsic width formula', () => {
+    expect(PER_CHANNEL_VISUAL_METRICS.kijktipPaddingX).toBe(8);
+    expect(PER_CHANNEL_VISUAL_METRICS.kijktipPaddingY).toBe(0);
+    expect(PER_CHANNEL_VISUAL_METRICS.kijktipRadius).toBe(6);
+    expect(PER_CHANNEL_VISUAL_METRICS.kijktipMinOuterWidth).toBe(56);
+    expect(perChannelKijktipLabelOuterWidth(32, 28)).toBe(56);
+    expect(perChannelKijktipLabelOuterWidth(52, 40)).toBe(68);
   });
 
   it.each([
@@ -75,6 +90,11 @@ describe('shared Kijktip editorial typography and Per-zender geometry', () => {
       );
       expect(geometry.rowHeight).toBe(Math.round(52 * scale));
       expect(geometry.stackHeight).toBeCloseTo(36 * scale + 2, 6);
+      expect(geometry.outerHeight).toBeCloseTo(36 * scale + 2, 6);
+      expect(geometry.minOuterWidth).toBe(56);
+      expect(geometry.paddingX).toBe(8);
+      expect(geometry.paddingY).toBe(0);
+      expect(geometry.radius).toBe(6);
     },
   );
 
@@ -84,12 +104,22 @@ describe('shared Kijktip editorial typography and Per-zender geometry', () => {
       timeLineHeight: 20,
       labelTop: 36,
       labelLineHeight: 16,
+      outerHeight: 38,
+      minOuterWidth: 56,
+      paddingX: 8,
+      paddingY: 0,
+      radius: 6,
     });
     expect(perChannelCurrentKijktipGeometry(1.5)).toEqual({
       timeTop: 14,
       timeLineHeight: 30,
       labelTop: 46,
       labelLineHeight: 24,
+      outerHeight: 56,
+      minOuterWidth: 56,
+      paddingX: 8,
+      paddingY: 0,
+      radius: 6,
     });
   });
 });

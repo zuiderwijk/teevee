@@ -54,6 +54,9 @@ export const NOW_NEXT_VISUAL_METRICS = {
   referenceKijktipGap: 3,
   followingKijktipGap: 8,
   followingKijktipMinimumTitleBudget: 48,
+  kijktipLabelPaddingX: 6,
+  kijktipLabelPaddingY: 0,
+  kijktipLabelRadius: 4,
   baseRowHeightIos: 216,
   baseRowHeightAndroid: 228,
   bottomClearance: 16,
@@ -154,13 +157,31 @@ export function nowNextReferenceBlockHeight(fontScale: number) {
   return Math.max(NOW_NEXT_VISUAL_METRICS.referenceProgrammeMinHeight, contentSafe);
 }
 
+export function nowNextKijktipLabelMetrics(
+  fontScale: number,
+  intrinsicTextWidth = 0,
+) {
+  const scale = normalizedFontScale(fontScale);
+  const textWidth = Number.isFinite(intrinsicTextWidth)
+    ? Math.max(0, intrinsicTextWidth)
+    : 0;
+  return {
+    paddingX: NOW_NEXT_VISUAL_METRICS.kijktipLabelPaddingX,
+    paddingY: NOW_NEXT_VISUAL_METRICS.kijktipLabelPaddingY,
+    radius: NOW_NEXT_VISUAL_METRICS.kijktipLabelRadius,
+    outerHeight: GUIDE_EDITORIAL_TYPOGRAPHY.kijktip.lineHeight * scale,
+    outerWidth:
+      textWidth + NOW_NEXT_VISUAL_METRICS.kijktipLabelPaddingX * 2,
+  } as const;
+}
+
 export function nowNextReferenceKijktipTitleLineCount(fontScale: number) {
   const scale = normalizedFontScale(fontScale);
   const height = nowNextReferenceBlockHeight(scale);
   const availableTitleLines = Math.floor(
     (
       height -
-      GUIDE_EDITORIAL_TYPOGRAPHY.kijktip.lineHeight * scale -
+      nowNextKijktipLabelMetrics(scale).outerHeight -
       NOW_NEXT_VISUAL_METRICS.referenceKijktipGap
     ) /
       (NOW_NEXT_TYPOGRAPHY.referenceTitle.lineHeight * scale),
@@ -178,11 +199,10 @@ export function nowNextReferenceKijktipStackGeometry(
     nowNextReferenceKijktipTitleLineCount(scale),
     Math.max(1, Math.trunc(titleLineCount)),
   );
-  const labelLineHeight =
-    GUIDE_EDITORIAL_TYPOGRAPHY.kijktip.lineHeight * scale;
+  const labelOuterHeight = nowNextKijktipLabelMetrics(scale).outerHeight;
   const titleLineHeight = NOW_NEXT_TYPOGRAPHY.referenceTitle.lineHeight * scale;
   const stackHeight =
-    labelLineHeight +
+    labelOuterHeight +
     NOW_NEXT_VISUAL_METRICS.referenceKijktipGap +
     titleLineHeight * safeTitleLines;
 
@@ -190,7 +210,7 @@ export function nowNextReferenceKijktipStackGeometry(
     referenceHeight,
     titleLineCount: safeTitleLines,
     stackTop: referenceHeight - stackHeight,
-    labelLineHeight,
+    labelOuterHeight,
     titleTop:
       referenceHeight - titleLineHeight * safeTitleLines,
     titleLineHeight,
@@ -199,10 +219,13 @@ export function nowNextReferenceKijktipStackGeometry(
 
 export function nowNextFollowingKijktipTitleBudget(
   titleLaneWidth: number,
-  labelWidth: number,
+  labelOuterWidth: number,
 ) {
   const laneWidth = Math.max(0, normalizedProgrammeWidth(titleLaneWidth));
-  const safeLabelWidth = Math.max(0, normalizedProgrammeWidth(labelWidth));
+  const safeLabelWidth = Math.max(
+    0,
+    normalizedProgrammeWidth(labelOuterWidth),
+  );
   const titleBudget = Math.max(
     0,
     laneWidth -
