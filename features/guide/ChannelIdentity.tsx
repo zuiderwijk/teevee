@@ -43,6 +43,8 @@ export const ChannelIdentity = memo(function ChannelIdentity({
   return (
     <View
       accessible={accessible}
+      accessibilityElementsHidden={!accessible}
+      importantForAccessibility={accessible ? 'auto' : 'no-hide-descendants'}
       accessibilityLabel={accessible ? channel.displayName : undefined}
       style={[
         styles.container,
@@ -69,6 +71,7 @@ export const ChannelIdentity = memo(function ChannelIdentity({
       ) : null}
       {showVisibleName ? (
         <Text
+          accessible={false}
           numberOfLines={totaal ? 2 : 1}
           ellipsizeMode={compactLogoIdentity || detail || showLogo ? 'tail' : 'middle'}
           maxFontSizeMultiplier={
