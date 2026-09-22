@@ -126,9 +126,12 @@ vi.mock('react-native', async () => {
     style,
     onLayout,
   }: HostProps) => {
-    if (onLayout && testID?.includes('kijktip')) {
-      onLayout({ nativeEvent: { layout: { width: 44 } } });
-    }
+    React.useEffect(() => {
+      if (onLayout && testID?.includes('kijktip')) {
+        onLayout({ nativeEvent: { layout: { width: 44 } } });
+      }
+    }, [onLayout, testID]);
+
     return createElement(
       'span',
       {
