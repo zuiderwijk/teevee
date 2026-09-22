@@ -1,5 +1,21 @@
 # Teevee Development Logboek
 
+## 22 september 2026 — PR #127 visible Kijktip Guide presentation increment
+
+PR #126 is merged to `main` as `f5bc682f27848bbe6ca6adaa3116dfc6e60d3f6d` after Lead and Independent QA acceptance, so the server-side editorial ingestion/matching/persistence, typed transport and current/non-current runtime enrichment ownership are now the production foundation.
+
+PR #127 is the focused visible presentation increment and does not reopen that architecture:
+- Per zender derives a memoized set of Kijktip programme IDs exclusively from the selected schedule-window `ProgrammeEditorialSignal[]`; current and non-current day ownership stays with the #126 hook/runtime path and no second request is introduced;
+- standard/current Per-zender rows add only the frozen quiet 12/16 Medium `textSecondary` disclosure in the existing time column; row heights, schedule anchors, pressed ownership and Programme Detail actions remain unchanged;
+- Nu & Straks consumes the shared current-day runtime editorial state through its existing subscription boundary, so editorial-only updates can change presentation without polling, another hosted request or a schedule remount;
+- reference Kijktips use the frozen bottom-aligned 3-pt label→title stack; following Kijktips use the frozen final-line inline 8-pt treatment with protected label width and 48-pt title readability floor;
+- visible Kijktip labels are presentation-only accessibility children; each programme remains one Pressable/focus/action target whose full accessibility label announces Kijktip exactly once;
+- canonical `Programme` remains unchanged and provider/enrichment-independent; Totaal, Programme Detail, backend, Supabase, matching, storage and transport are untouched.
+
+The increment remains subject to exact-head Lead review and focused physical iPhone/accessibility acceptance. **Search remains paused until the full Kijktip vertical slice is accepted.**
+
+---
+
 ## 22 september 2026 — PR #126 first production Kijktip backend/transport increment
 
 The first production-grade Kijktip vertical-slice implementation keeps editorial enrichment strictly optional and separate from core EPG identity/availability. No visible Kijktip UI is introduced.
