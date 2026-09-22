@@ -179,7 +179,7 @@ Superseded examples include earlier Per-zender variants with programme imagery, 
 
 ### Nu & Straks
 Status: **ACCEPTED**
-Owner-approved direction: 2026-09-13; production accessibility/density and shell refinement 2026-09-18; temporal/density refinement 2026-09-21; final physical-composition refinement 2026-09-21
+Owner-approved direction: 2026-09-13; production accessibility/density and shell refinement 2026-09-18; temporal/density refinement 2026-09-21; final physical-composition refinement 2026-09-21; Kijktip refinement + production calibration 2026-09-22
 Detailed manifest: `design/current/guide/NU_EN_STRAKS.md`
 Production specification: `docs/NU_EN_STRAKS_VISUAL_CONVERGENCE.md`
 
@@ -204,6 +204,10 @@ Accepted visual characteristics:
 - each following programme has a real non-overlapping minimum target of 44 pt on iOS / 48 dp on Android;
 - all standalone visible reference-time copy and reference-programme `tot HH:MM` metadata are removed; the reference title is bottom-aligned within its existing block and the dedicated reference→following gap is **0 pt** while touch geometry remains production-safe;
 - active/current `Nu` and return-to-live `Nu` use distinct visual and semantic states;
+- Kijktip uses one shared quiet editorial style: **12/16 Instrument Sans Medium**, semantic `textSecondary`, no badge/icon/accent/interactivity;
+- reference Kijktip sits above the dominant title with a fixed **3-pt** gap and never causes Kijktip-specific reference-height growth;
+- following Kijktip sits inline directly after the visible title with a fixed **8-pt** gap; its intrinsic label width is protected before title truncation, so long titles ellipsize earlier instead of hiding Kijktip;
+- following Kijktip creates no second line/column or target-height change; one/two/three tips repeat independently and the same programme intentionally moves from inline disclosure to above-title disclosure when it becomes reference;
 - at font scale above 1.35, substantive following content uses the accepted inline time+title composition with maximum two visible lines; stacked time-above-title is reserved for the extreme >2.0 / <180-pt width fallback;
 - the three following touch targets remain independent 44/48 minimums; at standard text, visible content uses the canonical progressive target-slack offsets (#1 = 2/3, #2 = 1/3, #3 = 0), while Larger Text remains centred; compact continuation also keeps reference-title bottom alignment and the 0-pt transition;
 - three following slot geometries remain reserved even when programme data is incomplete, preserving vertical channel position across reference-time changes;
@@ -214,7 +218,7 @@ Accepted visual characteristics:
 
 ADR 0008 changes the meaning of the active day around midnight: 00:00–05:59 remains part of the preceding television day. Nu & Straks still has no independent date selector.
 
-The exact 13 September visual remains canonical for composition and hierarchy. The written 18 September production specification plus the owner-approved 21 September refinements supersede it only for the explicit accessibility/density, shared-shell, Dynamic Type, touch-target, safe-area, pressed-state, time-rail and reference-programme presentation rules documented there. The final physical refinements specifically supersede standalone visible reference-time copy, the 88-pt/two-lane Nu & Straks context, generic-border rail-bottom treatment, the 4-pt reference→following spacer, the prior fixed #1/#2/#3 bias and the later all-centred standard-text following rhythm. Current runtime prototype values are not automatically canonical.
+The exact 13 September visual remains canonical for composition and hierarchy. The written 18 September production specification plus the owner-approved 21 September and 22 September refinements supersede it only for the explicit accessibility/density, shared-shell, Dynamic Type, touch-target, safe-area, pressed-state, time-rail, reference-programme and Kijktip presentation rules documented there. The final physical refinements specifically supersede standalone visible reference-time copy, the 88-pt/two-lane Nu & Straks context, generic-border rail-bottom treatment, the 4-pt reference→following spacer, the prior fixed #1/#2/#3 bias and the later all-centred standard-text following rhythm. Current runtime prototype values are not automatically canonical.
 
 ## Programme Detail
 Status: **ACCEPTED DIRECTION**

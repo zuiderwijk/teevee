@@ -2,7 +2,8 @@
 
 Status: **CANONICAL PRODUCTION IMPLEMENTATION SPEC — owner-approved**
 Date: 2026-09-18
-Owner refinements: 2026-09-21 — temporal/density, accessibility, and final physical-composition refinements
+Owner refinements: 2026-09-21 — temporal/density, accessibility, and final physical-composition refinements  
+Kijktip refinement + production calibration: 2026-09-22
 
 This document converts the accepted Nu & Straks direction into a production implementation contract. It is convergence, not redesign. Physical iPhone review of PR #96 exact head `224e7df1d47dbb5c42694cb36469de673496e7d5` accepted dark mode, Larger Text/Dynamic Type composition, vertical channel-position preservation, Nu, Primetime, the 15-minute rail and vertical :00/:15/:30/:45 ticks. The final owner refinement supersedes only three remaining presentation details: visible reference-time copy, the rail-bottom line treatment and reference→following visual rhythm. All other accepted Nu & Straks contracts remain frozen.
 
@@ -313,7 +314,7 @@ The reference programme remains the visual anchor for each channel.
 
 Typography:
 - title: **18/22, Instrument Sans Semibold**;
-- maximum **2 lines**;
+- maximum **2 lines** when the content-safe rule below permits;
 - primary text colour;
 - title block is **bottom-aligned** within the deterministic reference programme height;
 - extra bottom inset: **0 pt**.
@@ -325,6 +326,60 @@ Live/current state and full start/end time remain present in accessibility seman
 The full reference block is one programme button. Any two-line known-gap treatment uses the same bottom anchor so switching between programme/gap states does not reintroduce a large visual void before following content.
 
 Do not add progress, genre, artwork, chevron, repeat metadata or a separate 'Nu bezig' badge.
+
+### 10.1 Reference Kijktip editorial disclosure
+
+When the reference programme has canonical `isKijktip = true`, add exactly one quiet metadata line **above** the reference title.
+
+Frozen typography:
+- literal label **`Kijktip`**;
+- **12/16 Instrument Sans Medium**;
+- semantic **`textSecondary`**;
+- letterSpacing **0**;
+- one line;
+- no pill, icon, badge, accent colour, underline or independent interaction.
+
+Reference Kijktip → title gap: **3 pt**, fixed structural spacing. It does **not** scale with Dynamic Type.
+
+The Kijktip line and title form one bottom-aligned content stack. The reference Pressable, reference-block height helper and channel-row height remain authoritative; Kijktip does **not** introduce a Kijktip-specific height.
+
+Let:
+- `S = max(1, effectiveFontScale)`;
+- `H = nowNextReferenceBlockHeight(S)` from the existing Nu & Straks geometry;
+- Kijktip line-height = `16 × S`;
+- title line-height = `22 × S`;
+- structural gap = `3`.
+
+For a Kijktip reference programme, the maximum title line count is:
+
+`maxReferenceKijktipTitleLines = clamp(1, 2, floor((H - (16 × S) - 3) / (22 × S)))`
+
+The actual title uses the lesser of:
+- the natural title line requirement; and
+- this content-safe maximum.
+
+This rule is deliberate: **reference geometry never grows merely because Kijktip is present**, preserving the frozen vertical channel-position contract. When the label consumes the space that would otherwise hold a second title line, the title ellipsizes earlier instead of changing row geometry.
+
+Representative calibration:
+
+| S | H | Kijktip reference title allowance | Content-stack result |
+| ---: | ---: | ---: | --- |
+| 1.00 | 64 | **2 lines** | one-line title: stack top **23**; two-line title: stack top **1** |
+| 1.35 | 64 | **1 line** | stack top **9.7** |
+| 1.50 | 66 | **1 line** | stack top **6** |
+| 2.00 | 88 | **1 line** | stack top **9** |
+
+At S=1 with a two-line title:
+- Kijktip line box Y **1…17**;
+- gap Y **17…20**;
+- title line boxes Y **20…64**.
+
+At S=1 with a one-line title:
+- Kijktip line box Y **23…39**;
+- gap Y **39…42**;
+- title line box Y **42…64**.
+
+Do not reserve an empty Kijktip line when `isKijktip = false`; the existing non-Kijktip reference presentation remains unchanged.
 
 ## 11. Three following programmes — accepted density/accessibility refinement
 
@@ -365,7 +420,49 @@ The compact continuation is therefore created by:
 
 All visible content remains inside its own Pressable. Touch targets remain adjacent and non-overlapping. No extra separator is added between the three programmes.
 
-### 11.2 Larger/accessibility text layout — fontScale > 1.35
+### 11.2 Following Kijktip inline disclosure
+
+When a following programme has canonical `isKijktip = true`, render `Kijktip` **inline directly after the programme title** inside the existing title lane.
+
+Frozen typography:
+- literal label **`Kijktip`**;
+- **12/16 Instrument Sans Medium**;
+- semantic **`textSecondary`**;
+- letterSpacing **0**;
+- one line;
+- baseline aligned with the programme-title line on which it appears.
+
+Inline title→Kijktip gap: **8 pt**, fixed structural spacing. It does **not** scale with Dynamic Type.
+
+No new column is created. No row height changes. No Kijktip-specific second line is introduced.
+
+#### Width reservation algorithm
+
+The label must remain visible for long following titles. Do not rely on a plain nested Text layout that allows tail truncation to consume the Kijktip label.
+
+For each following programme, define:
+- `W` = width available to the title/Kijktip lane after the existing time column and existing time→title gap;
+- `L` = intrinsic rendered width of the literal `Kijktip` at **12 pt Medium × S**;
+- `G = 8 pt`;
+- protected trailing reserve `R = L + G`;
+- minimum visible final-line title budget = **48 pt**.
+
+The **48-pt minimum is a visual readability floor**, not a touch target and not a new column.
+
+Standard one-line mode:
+1. protect `R` before laying out/truncating the title;
+2. title maximum usable width = `W - R`;
+3. short titles use their intrinsic width and Kijktip starts exactly **8 pt** after the visible title end;
+4. long titles tail-ellipsize inside the protected title width; Kijktip starts **8 pt** after the ellipsis;
+5. if the remaining title budget falls below **48 pt**, reduce the visible title to a single ellipsis `…` rather than hiding/clipping Kijktip.
+
+The reserve is **not** a right-aligned Kijktip column: different title lengths produce different Kijktip X positions.
+
+For a max-two-line title, the first line may use the full title lane. The protected reserve applies to the **final visible title line** so Kijktip can follow that line after the fixed 8-pt gap. Tail ellipsis, when required, belongs to the final title fragment before Kijktip.
+
+Development may implement the final-line reservation with a deterministic native text-layout helper; no new dependency is required. The observable contract is the geometry above, not a particular measurement API.
+
+### 11.3 Larger/accessibility text layout — fontScale > 1.35
 
 The physically approved Larger Text composition remains frozen.
 
@@ -375,7 +472,9 @@ Primary accessibility composition is an **inline time + title flow**:
 - inline time → title separation: **8 pt**;
 - programme content keeps full Dynamic Type scaling;
 - title may wrap so the combined visible programme occupies maximum **2 lines**;
-- full programme title and start/end times remain available to assistive technology;
+- when Kijktip is present, the final visible title line uses the §11.2 protected reserve and Kijktip remains inline after that final title fragment;
+- Kijktip remains substantive/uncapped at **12/16 Medium × S** and adds no vertical line because its 16-pt base line-height fits within the existing 20-pt title-line envelope;
+- full programme title, Kijktip state and start/end times remain available to assistive technology;
 - content block is vertically **centred** within its target; the standard-text progressive offsets do not apply above fontScale 1.35.
 
 Content-safe following target height:
@@ -384,7 +483,7 @@ Content-safe following target height:
 
 The 8-pt term is **4 pt top + 4 pt bottom** content allowance. The time shares the first line with the title and therefore does not reserve a separate vertical line.
 
-### 11.3 Extreme-width fallback
+### 11.4 Extreme-width fallback
 
 Only when **both** conditions apply:
 - effective `fontScale > 2.0`; and
@@ -394,6 +493,8 @@ the target may fall back to stacked time then title:
 - time line first;
 - **3 pt** gap;
 - title maximum 2 lines;
+- when Kijktip is present, title + Kijktip use the same §11.2 final-line reservation inside the now-full programme width beneath the stacked time line;
+- Kijktip adds no extra vertical line and no height term;
 - 6 pt top + 6 pt bottom content padding;
 - stacked content block remains vertically centred.
 
@@ -403,7 +504,7 @@ Fallback height:
 
 This remains a last-resort width fallback, not the default Larger Text mode.
 
-### 11.4 Non-overlap invariant
+### 11.5 Non-overlap invariant
 
 Following-programme targets must never overlap spatially.
 
@@ -419,6 +520,8 @@ Row height must **not** vary based on:
 - programme title length;
 - how many following programmes are currently known;
 - whether a reference programme exists at the selected instant;
+- whether reference or following programmes carry `isKijktip`;
+- how many Kijktips are visible in the channel row;
 - which rail slot/reference instant is selected.
 
 Missing following programmes keep their geometry but render no visible placeholder copy and expose no action.
@@ -462,11 +565,14 @@ Nu & Straks itself no longer needs a Larger Text-specific temporal-context expan
 ### Substantive content — no global cap
 - reference programme title;
 - reference programme time/status in accessibility semantics;
+- reference/following Kijktip editorial metadata;
 - following programme times;
 - following programme titles;
 - channel text fallback.
 
-Above fontScale 1.35, following programmes retain the physically accepted inline two-line accessibility composition from §11.2. Stacked time/title remains reserved only for the extreme-width fallback in §11.3.
+Above fontScale 1.35, following programmes retain the physically accepted inline two-line accessibility composition from §11.3. Kijktip remains inline after the final visible title fragment using the protected width reserve from §11.2. Stacked time/title remains reserved only for the extreme-width fallback in §11.4.
+
+Kijktip has no compact-chrome cap. Its **12/16** typography scales with substantive content while its **3-pt reference gap** and **8-pt following inline gap** remain fixed structural spacings.
 
 Do not solve density by clipping essential copy, reducing substantive font scaling or overlapping interaction areas.
 
@@ -595,15 +701,17 @@ Programme focus order within a channel:
 
 Channel identity does not need to become an extra focus stop between every programme; include the full channel name in programme labels.
 
-Reference programme label includes:
+Reference programme label includes, in order:
 - full channel name;
 - full programme title;
+- literal **Kijktip** once when `isKijktip = true`;
 - start and end time;
 - current/live state when applicable.
 
-Following programme label includes:
+Following programme label includes, in order:
 - full channel name;
 - full programme title;
+- literal **Kijktip** once when `isKijktip = true`;
 - start and end time.
 
 Time slots:
@@ -618,6 +726,9 @@ Nu/Primetime:
 - active/current is never disabled.
 
 State never depends on colour alone.
+
+
+The visible Kijktip Text is presentation-only inside the parent programme action and must not become a second VoiceOver/TalkBack focus stop. Progressive disclosure does not alter semantics: when the same broadcast moves from following to reference, it is still announced as Kijktip exactly once.
 
 ## 22. Deterministic test contract
 
@@ -641,7 +752,7 @@ Development must add coverage for at least:
 16. standard following layout at fontScale <=1.35;
 17. inline two-line following accessibility layout above 1.35;
 18. stacked following fallback only when fontScale >2.0 and programme width <180 pt;
-19. all three following content blocks are vertically centred without changing target geometry;
+19. standard-text following content keeps the canonical progressive target-slack offsets (#1 = 2/3, #2 = 1/3, #3 = 0); above fontScale1.35 content remains vertically centred;
 20. vertical channel position remains stable after reference changes;
 21. rail-originated momentum settle updates state without secondary scrollTo;
 22. no-momentum drag commit;
@@ -666,7 +777,24 @@ Development must add coverage for at least:
 41. Nu & Straks utility context is exactly 52 pt at all font scales;
 42. persistent Nu & Straks functional stack is exactly 104 pt at all font scales;
 43. expanded rest overlay is 204 standard / 220 Larger Text and settled overlay is 104 in both modes;
-44. fixed-native-viewport compensation remains 44 standard / 60 Larger Text while native collapse remains 56.
+44. fixed-native-viewport compensation remains 44 standard / 60 Larger Text while native collapse remains 56;
+45. reference Kijktip typography is exactly 12/16 Instrument Sans Medium, textSecondary, letterSpacing0;
+46. reference Kijktip gap is exactly 3 pt and does not scale;
+47. reference Kijktip never changes reference/channel-row height;
+48. reference Kijktip title-line allowance follows `clamp(1,2,floor((H-16S-3)/(22S)))`, yielding 2 lines at S1 and 1 line at S1.35/S1.5/S2;
+49. reference S1 one-line/two-line stack tops are 23/1 respectively;
+50. following Kijktip typography is exactly 12/16 Instrument Sans Medium, textSecondary, letterSpacing0;
+51. following title→Kijktip inline gap is exactly 8 pt and does not scale;
+52. following width reserve is intrinsic Kijktip width + 8 pt, with a 48-pt minimum final-line title budget;
+53. long following titles ellipsize before the protected Kijktip label; Kijktip never disappears because of title truncation;
+54. one, two and three visible following Kijktips do not change target/row geometry or progressive standard-text content offsets;
+55. reference + following Kijktips may coexist without grouping, numbering or a shared label column;
+56. the same broadcast can move from following inline disclosure to reference overline disclosure without semantic duplication;
+57. above 1.35, Kijktip remains on the final visible title line of the existing max-two-line inline composition and adds no height term;
+58. the >2.0/<180 stacked fallback keeps Kijktip inline with the title beneath the stacked time and adds no height term;
+59. following Kijktip does not change the 44-pt iOS / 48-dp Android target minima or introduce hit overlap;
+60. accessibility announces channel, title, Kijktip, start/end, then current state where applicable, with one programme focus target;
+61. light/dark/system use semantic textSecondary with identical Kijktip geometry and no dedicated Kijktip colour token.
 
 Time-sensitive tests use injected/fixed instants. No wall-clock sleeps.
 
@@ -715,7 +843,7 @@ Renewed physical validation after Development reconciliation should therefore fo
 9. Reference title sits visibly toward the bottom of the reference block.
 10. There is **0 pt** dedicated reference→following spacer.
 11. First following programme reads as a direct compact continuation under the reference programme.
-12. Following #1/#2/#3 visible content is centred inside three separate targets.
+12. Standard-text following #1/#2/#3 preserve the canonical progressive target-slack offsets inside three separate targets; Larger Text remains centred.
 13. All three following programmes remain individually tappable with **44 pt iOS / 48 dp Android** minimum targets and no overlap.
 14. Base channel row remains **216 pt iOS / 228 dp Android**; moving the former 4-pt transition to bottom padding causes no vertical channel-position regression.
 15. Larger Text following composition remains the already accepted inline time+title treatment and does not regress to the rejected automatic stacked mode.
@@ -724,6 +852,32 @@ Renewed physical validation after Development reconciliation should therefore fo
 18. Light/dark/system all preserve the refined geometry.
 
 Physical Android interaction acceptance remains separately open until a physical Android device is available, as recorded in canonical project state.
+
+
+
+### 24.1 Kijktip refinement validation
+
+After Kijktip runtime implementation, physically validate on the exact iPhone implementation head:
+
+1. Reference Kijktip reads as quiet metadata above the title; title remains the dominant visual anchor.
+2. Reference Kijktip uses 12/16 Medium textSecondary with a visually consistent fixed 3-pt gap.
+3. Base 64-pt reference geometry does not grow merely because Kijktip is present.
+4. At S1, a one-line Kijktip reference title remains bottom anchored with the 23-pt stack top; a two-line title uses the full content-safe 63-pt stack without clipping.
+5. At representative Larger Text, Kijktip remains readable and the title ellipsizes to the content-safe line count rather than growing the reference block.
+6. Following Kijktip sits inline immediately after the title with an 8-pt visual gap, never as a right-aligned global column.
+7. A long following title ellipsizes earlier while Kijktip remains fully visible.
+8. The 48-pt final-line title readability floor produces a deliberate ellipsis rather than clipped glyph fragments.
+9. One, two and three following Kijktips remain calm and scan as repeated metadata; they do not create a badge-like rhythm.
+10. Reference and following Kijktips may appear simultaneously without changing the established reference/following hierarchy.
+11. Moving the same programme from following to reference changes only Kijktip placement (inline → above title), not Kijktip semantics or programme interaction.
+12. Above fontScale1.35, following Kijktip remains attached to the final visible title line inside the existing two-line inline composition.
+13. In the >2.0/<180 fallback, time remains stacked first and Kijktip remains inline with the title below it; no Kijktip-only row is introduced.
+14. iOS 44-pt following targets remain independently tappable and non-overlapping with multiple Kijktips.
+15. VoiceOver announces Kijktip exactly once inside the programme action and never lands on the visual Kijktip label as a separate focus stop.
+16. Light, dark and system appearance preserve identical geometry; textSecondary remains quiet but legible in both themes.
+17. Vertical channel position, rail fling/settle, Nu, Primetime and Programme Detail round-trip remain unchanged.
+
+Android physical validation repeats items 6–17 with 48-dp minimum targets when hardware is available.
 
 ## 25. Implementation calibration register
 
@@ -739,14 +893,20 @@ Values frozen by this owner-approved production refinement:
 8. Channel geometry: left20; identity64; gap16; programme X100; right24.
 9. Reference block min64; reference title18/22 Semibold max2, **bottom-aligned with 0 bottom inset**; no visible end-time metadata.
 10. Reference→following dedicated gap = **0 pt**; channel bottom padding = **12 pt**, preserving base row totals.
-11. Following standard targets: min44 iOS /48 Android; 0 interaction gap; time width52; gap8; time13/18 Regular; title15/20 Medium; visible content **centred in all three targets**.
+11. Following standard targets: min44 iOS /48 Android; 0 interaction gap; time width52; gap8; time13/18 Regular; title15/20 Medium; visible content uses progressive slack offsets **#1 2/3 / #2 1/3 / #3 0**; above 1.35 content remains centred.
 12. Above fontScale1.35, following content retains the accepted inline time+title max-two-line composition, height `max(minTarget, ceil(40×fontScale+8))`.
-13. Stacked following fallback remains only for fontScale>2.0 **and** available programme width<180, using §11.3.
+13. Stacked following fallback remains only for fontScale>2.0 **and** available programme width<180, using §11.4.
 14. Base channel row remains **216 iOS /228 Android** at normal font scale.
 15. Three following slot geometries always remain reserved even when programme data is missing.
 16. Programme press = transient semantic surface fill, no permanent card/opacity-first treatment.
 17. No artwork, genres, progressbars, chevrons or repeated 'Daarna' labels.
 18. NowNextGuideView remains behind deferred import.
+19. Kijktip shared programme metadata typography: **12/16 Instrument Sans Medium**, semantic textSecondary, letterSpacing0, substantive/uncapped.
+20. Reference Kijktip: above title; fixed **3-pt** gap; one-line label; bottom-aligned stack; no Kijktip-specific geometry; content-safe title-line formula `clamp(1,2,floor((H-16S-3)/(22S)))`.
+21. Following Kijktip: inline after title; fixed **8-pt** gap; intrinsic-label-width reserve + 8; **48-pt** minimum final-line title budget; long title ellipsizes before Kijktip; no right-aligned label column.
+22. Following Larger Text and extreme fallback retain existing heights; Kijktip occupies the title-line envelope and adds **0 pt** vertical height.
+23. Kijktip never changes 44/48 following targets, reference/following Pressable ownership, channel-row height or stable vertical channel context.
+24. Accessibility order for Kijktip programmes: channel → full title → Kijktip → start/end → current state when applicable; one focus target only.
 
 Development must not choose alternatives locally. A future retune requires new owner-approved evidence and an update to this source of truth.
 
@@ -796,6 +956,11 @@ Do not treat these current/prototype runtime values as canonical:
 - visible `Referentietijd` caption;
 - visible reference-programme `tot HH:MM` metadata;
 - default 72-pt reference block / 8-pt transition calibration;
-- identical visual treatment for active/current `Nu` and return-to-live `Nu`.
+- identical visual treatment for active/current `Nu` and return-to-live `Nu`;
+- Kijktip badge/pill/icon/accent treatments;
+- a separate following Kijktip column or right-aligned label rail;
+- Kijktip-specific reference/following row-height growth;
+- allowing long following titles to ellipsize away the Kijktip label;
+- exposing visible Kijktip text as a separate accessibility focus stop.
 
 The exact canonical visual remains accepted for composition and hierarchy outside the explicit production refinements above.

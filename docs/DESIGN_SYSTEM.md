@@ -160,7 +160,9 @@ Exact Totaal calibration is owner-approved in `docs/TOTAAL_VISUAL_CONVERGENCE.md
 ### Per zender
 Use an open vertical schedule, not a card stack. Keep the sticky horizontal channel-logo strip visually grouped with temporal controls while giving programme content clearer separation: **4 pt rail→utilities** in expanded/rest, then **24 pt utilities→schedule**. Horizontal schedule swipe changes channel; no decorative previous/next arrows are required when gesture behaviour and logo strip make navigation understandable.
 
-Per-zender editorial Kijktip disclosure is deliberately metadata-like rather than badge-like: `Kijktip` sits only in the existing time column, directly below the start time, using **12 pt Instrument Sans Medium** with semantic `textSecondary` and a **2-pt** gap. It does not consume programme-title width, add an icon/pill/accent colour or create a new interaction. Existing row/current geometry and Dynamic Type remain authoritative.
+Guide editorial Kijktip disclosure is deliberately metadata-like rather than badge-like. The shared editorial typography is **12/16 Instrument Sans Medium**, semantic `textSecondary`, letterSpacing0, substantive/uncapped Dynamic Type, with no icon/pill/accent colour or independent interaction.
+
+In Per zender, `Kijktip` sits only in the existing time column directly below the start time with the accepted fixed **2-pt** gap. It does not consume programme-title width; existing row/current geometry remains authoritative.
 
 ### Nu & Straks
 Each channel presents one dominant programme at the selected reference time plus three quieter following programmes. No progress bars, genre chips, artwork, chevrons or `Daarna` labels. The hierarchy itself communicates current/reference versus following content.
@@ -172,6 +174,8 @@ The visible reference programme omits redundant `tot HH:MM` metadata; the next p
 `Nu` has two materially different states: active/current while live, and return-to-live while browsing. These must not share an indistinguishable visual treatment.
 
 At larger text, Nu & Straks keeps programme content substantive and uncapped while adapting programme composition: following programmes use an inline time+title flow with maximum two visible lines. The utility-only Primetime/Nu context remains **52 pt at all font scales** because there is no separate reference-time lane. Shared Guide presentation tabs retain their accepted 64-pt/max-two-line Larger Text state. Interaction geometry stays non-overlapping. Stacked time-above-title is reserved for the extreme >2.0 / <180-pt programme-width fallback.
+
+Nu & Straks applies the same Kijktip editorial semantics role-responsively: reference programmes place `Kijktip` above the dominant title with a fixed **3-pt** gap, while following programmes place it inline after the visible title with a fixed **8-pt** gap and protected label width. Long following titles ellipsize before the label; Kijktip never becomes a separate column/row or changes touch geometry. The same broadcast intentionally changes placement when it moves from following to reference while retaining one accessibility disclosure.
 
 For the three following programmes, interaction and visual rhythm are intentionally separate: independent 44-pt iOS / 48-dp Android targets remain adjacent. At standard text, visible content uses the available target slack progressively: #1 top offset = round(slack × 2/3), #2 = round(slack × 1/3), #3 = 0, with slack defined against the 20-pt one-line content height. This yields about 16-pt visible gaps on iOS and 18–19 dp on Android while keeping every target intact. Above fontScale 1.35 the physically accepted Larger Text composition remains vertically centred. Compact continuity also keeps the bottom-aligned reference title and 0-pt dedicated reference→following spacer; do not shrink or overlap touch targets.
 

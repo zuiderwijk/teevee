@@ -4,6 +4,7 @@ Status: **ACCEPTED**
 Accepted: 2026-09-13
 Production refinement accepted: 2026-09-18
 Owner refinement accepted: 2026-09-21
+Kijktip refinement + production calibration accepted: 2026-09-22
 Production specification: `docs/NU_EN_STRAKS_VISUAL_CONVERGENCE.md`
 
 ## Canonical asset
@@ -51,6 +52,37 @@ Physical iPhone evidence on the production-convergence candidates justified reop
 
 Exact production metrics and acceptance criteria are frozen in `docs/NU_EN_STRAKS_VISUAL_CONVERGENCE.md`.
 
+## Owner-accepted Kijktip refinement — 2026-09-22
+
+Kijktip remains quiet editorial metadata and does not introduce a new interaction/state system.
+
+Shared Kijktip typography:
+- literal **`Kijktip`**;
+- **12/16 Instrument Sans Medium**;
+- semantic **`textSecondary`**;
+- letterSpacing 0;
+- substantive/uncapped Dynamic Type;
+- no pill, icon, badge, accent colour or independent focus/action.
+
+Reference programme:
+- Kijktip sits above the title;
+- fixed **3-pt** Kijktip→title gap;
+- Kijktip + title remain one bottom-aligned stack;
+- the existing deterministic reference height never grows because Kijktip exists;
+- at S1 the reference may still use two title lines; at larger scales title line count reduces when required by the content-safe formula in the production specification.
+
+Following programme:
+- Kijktip sits inline directly after the visible programme title;
+- fixed **8-pt** title→Kijktip gap;
+- label width is protected before title truncation;
+- long titles ellipsize earlier so Kijktip remains visible;
+- no global/right-aligned Kijktip column;
+- no second Kijktip row and no following-target height change.
+
+Progressive disclosure is intentional: the same broadcast may show `Titel  Kijktip` while following and `Kijktip` above `Titel` when it becomes the reference programme. Accessibility still announces Kijktip exactly once.
+
+One, two or three following Kijktips — including a simultaneous reference Kijktip — repeat the same calm metadata treatment independently. The 44-pt iOS / 48-dp Android following targets, standard-text progressive content offsets, Larger Text inline-two-line layout and >2.0/<180 stacked fallback remain otherwise unchanged.
+
 ## Accepted production density/accessibility refinement
 The former compact following-row debt is resolved by the owner-approved production specification:
 
@@ -90,4 +122,8 @@ The following prototype/runtime treatments are also non-canonical:
 - overlapping hitSlop as an accessibility workaround;
 - system-font styling that bypasses Instrument Sans;
 - opacity-heavy programme press feedback as the primary interaction state;
-- any rail-settle path that starts a second `scrollTo()` after native snap.
+- any rail-settle path that starts a second `scrollTo()` after native snap;
+- Kijktip pills/badges/icons/accent colours;
+- a separate or right-aligned following Kijktip column;
+- Kijktip-specific reference/following height growth;
+- long-title truncation that causes the Kijktip label to disappear.
