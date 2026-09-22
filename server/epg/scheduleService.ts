@@ -1,3 +1,4 @@
+import type { ProgrammeEditorialSignal } from '../../data/domain/editorial.ts';
 import type {
   GuideScheduleApi,
   GuideScheduleApiRequest,
@@ -21,7 +22,7 @@ export class RepositoryGuideScheduleApi implements GuideScheduleApi {
     const schedule = await this.repository.getSchedule(request);
     if (!schedule) return { status: 'unavailable' };
 
-    let editorialSignals = [];
+    let editorialSignals: ProgrammeEditorialSignal[] = [];
     if (this.editorialRepository) {
       try {
         editorialSignals =
