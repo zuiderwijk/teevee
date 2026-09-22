@@ -198,7 +198,6 @@ function FollowingKijktipTitle({
         numberOfLines={1}
         ellipsizeMode="tail"
         style={[
-          styles.followingTitle,
           styles.followingKijktipTitleFragment,
           {
             color: titleColor,
@@ -1342,8 +1341,11 @@ const styles = StyleSheet.create({
     minWidth: 0,
   },
   followingKijktipTitleFragment: {
+    ...NOW_NEXT_TYPOGRAPHY.followingTitle,
+    flexGrow: 0,
     flexShrink: 1,
     minWidth: 0,
+    letterSpacing: 0,
   },
   followingKijktipLabel: {
     ...GUIDE_EDITORIAL_TYPOGRAPHY.kijktip,
