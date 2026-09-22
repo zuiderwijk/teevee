@@ -180,7 +180,7 @@ Physical Android interaction acceptance remains OPEN/DEFERRED because no Android
 - physical Android validation.
 
 ## Current next step
-**Finish the PR #126 backend/transport gate, then continue the Kijktip vertical slice with visible Guide wiring in a separate increment.** PR #126 must pass Lead review before merge; it already keeps RSS ingestion/matching/storage/refresh server-side, transports optional `ProgrammeEditorialSignal[]` separately from `GuideSchedule`, and installs that enrichment separately in mobile runtime without rendering it. After this increment merges, wire the signals into the owner-approved Per-zender (PR #122) and Nu & Straks (PR #123) presentations with deterministic coverage and the applicable physical/accessibility acceptance gates. Do not start Search until the complete Kijktip vertical slice is accepted. Tonight remains deferred/provisional.
+**Close PR #127 through the remaining acceptance gates without reopening the accepted Guide UI/runtime or persistence design.** The implementation and persistence corrections are complete; the next sequence is final Lead exact-head review, focused owner physical iPhone recheck, Independent QA and final Lead merge gate. After PR #127 is merged and the Kijktip vertical slice is fully accepted, resume Phase 5 with Search as the first slice. Tonight remains deferred/provisional.
 
 Owner checkout: `~/projects/teevee`.
 
