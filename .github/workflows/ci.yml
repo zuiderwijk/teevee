@@ -57,6 +57,9 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
+      - name: Run TVgids live matching spike probe
+        if: github.event_name == 'pull_request' && github.head_ref == 'spike/tvgids-kijktip-matching-2026-09-22'
+        run: node scripts/spikes/tvgids-kijktip-live-probe.mjs
       - run: npm run typecheck
       - run: npm run lint
       - run: npm test
