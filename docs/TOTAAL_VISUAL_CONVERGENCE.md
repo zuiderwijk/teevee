@@ -216,7 +216,9 @@ Layout:
 - day selector leading;
 - Nu trailing;
 - both vertically centred;
-- no second row at Larger Text.
+- no second row at Larger Text;
+- within the supported compact 1.20 text cap, the day label + chevron and `Nu` keep their intrinsic one-line width when the 52-pt row has sufficient horizontal room;
+- `Nu` must never ellipsize; the day label must not truncate merely because sibling flex allocation shrinks it while unused row width exists.
 
 ### 8.1 Day selector
 
@@ -319,6 +321,8 @@ Geometry:
 `#0D0D0D` is intentional: it keeps the small marker label above 4.5:1 against both accepted currentTime fills (`#D64B42` light and `#F06B61` dark). The generated board's light label is compositional reference, not authority where it misses production contrast.
 
 Behaviour:
+- the Guide clock uses wall-clock phase-aligned refresh scheduling; at the current 30-second cadence ticks target real `:00` and `:30` boundaries so `HH:MM` advances on the actual minute boundary;
+- AppState → active refreshes `Date.now()` immediately and restarts one aligned timer; background/unmount clears the pending timer so drift and duplicate timers do not accumulate;
 - the pointer remains at the exact time coordinate;
 - viewport edge clamping uses the actual outer body width; the body may clamp within the visible programme-axis viewport while the pointer remains exact and must never move with that clamp;
 - marker may visually occlude the local axis label; do not shift the entire axis to avoid it;
@@ -485,22 +489,18 @@ Important:
 
 ### 15.2 Individual microcell presentation
 
-Micro classification remains §15.1: `frameWidth < 48 × S`. Within that class, individual glyph presentation has one additional floor derived from existing typography/geometry rather than an independent magic number:
+Micro classification remains §15.1: `frameWidth < 48 × S`.
 
-`ellipsisFloor = (15 pt programme-title em + 6 pt left micro inset + 6 pt right micro inset) × S = 27 × S pt`.
-
-When a microcell is not represented by an active repeated-title run:
+For **every** individual microcell below that threshold:
 - suppress the programme title fragment completely;
 - suppress secondary start/end copy;
-- when `frameWidth < 27 × S`: render **no visible glyph**;
-- when `frameWidth >= 27 × S` and `frameWidth < 48 × S`: render exactly one centred visible **`…`**;
-- use the existing programme-title typography size/line-height for that `…`;
-- when an individual `…` is shown: non-current = Instrument Sans **Medium**, actual-current = Instrument Sans **Semibold**;
-- colour: semantic primary text;
-- no fill, radius, shadow, badge, icon or additional metadata;
-- regardless of whether a glyph is visible, the exact programme boundary, full Pressable/hit frame, complete accessibility label and Programme Detail action remain present.
+- render **no visible text glyph**: no title fragment and no `…`;
+- keep exact real-duration frame geometry and the existing programme boundary;
+- keep the full Pressable/hit target and pressed semantics;
+- keep the complete accessibility label, including actual-current state;
+- keep the Programme Detail destination.
 
-The microcell clips any visual affordance to its real frame. Do not let an ellipsis overflow into adjacent programme geometry to manufacture readability.
+There is no secondary individual-glyph threshold below `48 × S`. A text label becomes eligible only when there is at least `48 × S` usable presentation width: either because the programme itself is normal-width or because an eligible repeated-title run reaches the shared-title threshold.
 
 ### 15.3 Repeated-title run formation
 
@@ -539,7 +539,7 @@ When that condition is met:
 
 The title may visually span multiple underlying microcells. This is a text-presentation layer only: it does not create a combined programme action or combined duration.
 
-If the visible run intersection drops below `48 × S pt`, remove the shared title and return to the individual microcell presentation from §15.2: ultra-micro members below `27 × S` stay visually empty and eligible members at/above `27 × S` show centred `…`.
+If the visible run intersection drops below `48 × S pt`, remove the shared title. The underlying individual microcells remain visually text-free under §15.2.
 
 ### 15.5 Repeated-title boundaries and actions
 
@@ -581,23 +581,23 @@ For a repeated run:
 - the compact current-time axis marker continues to identify the exact current instant;
 - no run-level current fill, stripe, badge or secondary `tot` copy is added.
 
-When the shared title is not active and an individual microcell is wide enough for the §15.2 `…`, the actual-current microcell uses Semibold while neighbouring eligible microcells remain Medium. An ultra-micro current cell below `27 × S` remains visually empty but keeps full current accessibility semantics.
+When the shared title is not active, every individual microcell remains visually text-free. An actual-current microcell keeps full current accessibility semantics; current state is not reintroduced as an individual glyph.
 
 ### 15.8 Dynamic Type, accessibility and themes
 
 Dynamic Type:
 - micro classification threshold = `48 × S`;
-- individual ellipsis presentation floor = `27 × S`;
+- there is no individual microcell text/glyph threshold below that boundary;
 - shared-title visibility threshold = `48 × S`;
-- title/`…` remain substantive and uncapped;
+- the shared repeated-run title remains substantive and uncapped;
 - the existing minuteWidth/channelWidth/rowHeight formulas remain unchanged;
 - the compact 6-pt inset and programme-boundary metrics are not retuned.
 
 Accessibility:
-- a visually empty ultra-microcell or visual `…` never removes/replaces semantic programme content;
+- a visually empty microcell never removes/replaces semantic programme content;
 - every underlying programme action exposes full channel display name, full title, start, end and actual-current state as already specified;
 - the shared run title is not a separate accessibility element/focus stop;
-- individual visual ellipses are not separately announced;
+- individual microcells expose no visual glyph and therefore add no separate presentation focus stop;
 - screen-reader traversal remains programme-by-programme in chronological order.
 
 Light/Dark/System:
@@ -614,13 +614,15 @@ Preserve the proven EdgeReadabilityOverlay / masking contract.
 
 For normal/non-micro programmes, when horizontal scrolling cuts through a programme:
 - programme geometry remains unchanged;
-- readable title content may re-anchor into the visible remainder;
+- the left-edge mask remains active for any positive partial-left remainder so the underlying offscreen-positioned title cannot leak a one-letter, bare-ellipsis or similar fragment through the viewport edge;
+- sticky title text is a separate presentation decision and appears only when the visible remainder is at least the existing `48 × S` readable-presentation threshold;
+- once that threshold is reached, readable title content may re-anchor into the visible remainder;
 - the duplicated readability layer must not create a second accessibility focus target;
 - when visible remainder <52 pt, secondary time disappears;
 - reverse scrolling must not briefly collapse newly visible text because a stale settled viewport lies beyond the programme;
 - exact programme-boundary switching remains deterministic.
 
-Microcells use §15.2 rather than exposing clipped title fragments. Repeated-title runs use the run-bounded sticky shared-title rule in §15.6. These layers must coexist with EdgeReadabilityOverlay without producing duplicate visible labels or duplicate accessibility targets.
+Microcells use §15.2 and remain text-free rather than exposing clipped title fragments. Repeated-title runs use the run-bounded sticky shared-title rule in §15.6. These layers must coexist with EdgeReadabilityOverlay without producing duplicate visible labels or duplicate accessibility targets.
 
 Do not replace this with cell repositioning or per-frame React layout.
 
@@ -681,7 +683,7 @@ Use semantic theme tokens:
 - axis ticks/baseline: railTick with the opacities in §9;
 - current marker: currentTime;
 - pressed programme: surfaceElevated;
-- micro `…` and repeated-run shared titles: semantic primary text with no dedicated fill/token.
+- repeated-run shared titles: semantic primary text with no dedicated fill/token; individual microcells carry no text glyph.
 
 Do not use programme / programmeCurrent as permanent Totaal fills. Do not delete or globally redefine those tokens because other surfaces may still use them.
 
@@ -873,7 +875,7 @@ Every visible programme action label includes:
 - end time;
 - 'nu bezig' only for the actual current programme.
 
-Visual truncation, ultra-micro glyph suppression, microcell `…` substitution and repeated-title sharing never truncate or merge accessibility semantics. A repeated-title visual run still exposes every underlying broadcast as its own programme action.
+Visual truncation, microcell glyph suppression and repeated-title sharing never truncate or merge accessibility semantics. A repeated-title visual run still exposes every underlying broadcast as its own programme action.
 
 ### 26.2 Channel rail
 
@@ -934,7 +936,7 @@ Development must cover at least:
 8. compact/standard/comfortable thresholds 64/126;
 9. secondary time hides below 52 pt remaining visible width;
 9a. microcell threshold uses full frame width `< 48 × S`, not clipped remainder;
-9b. individual microcell uses the exact presentation floor: `< 27 × S` no visible glyph; `>= 27 × S` and `< 48 × S` one centred `…`; no title fragment/secondary copy;
+9b. every individual microcell `< 48 × S` has no visible text glyph and no secondary copy while boundary/action/accessibility/Detail remain intact;
 9c. repeated-title run requires >=2 directly adjacent microcells with exact title equality after trim/whitespace collapse;
 9d. shared run title appears only when visible run intersection >= `48 × S` and is clipped/sticky within run bounds;
 9e. repeated-title internal boundaries, separate programme actions and hit ownership remain intact;
@@ -1055,13 +1057,13 @@ Physical validation must use the exact implementation head and the exact canonic
 41. Press feedback is visible but does not leave a card state.
 
 ### Edge cases
-42. At base scale, a 15-minute / 45-pt programme uses the accepted microcell `…` treatment unless it participates in an eligible repeated-title run.
+42. At base scale, a 15-minute / 45-pt programme is visually text-free unless an eligible repeated-title run reaches the shared-title threshold.
 43. Sub-15-minute programme does not overlap neighbour touch ownership; each microcell remains a separate Programme Detail action.
 44. Two or more directly adjacent same-title microcells form a stable run, but shared title appears only once visible combined run width reaches `48 × S`.
 45. Four consecutive 5-minute same-title programmes at base scale retain four 15-pt frames/boundaries/actions while showing one run-bounded shared title across the 60-pt run.
-46. Three consecutive 5-minute same-title programmes at base scale total 45 pt and therefore do not qualify for the shared title; each 15-pt ultra-microcell remains visually empty while its boundary/action/accessibility remain intact.
-47. Partial-left/right repeated-title scrolling keeps the shared label within real run bounds and falls back to the §15.2 individual rule below the visible threshold: no glyph below `27 × S`, centred `…` otherwise.
-48. An individual current microcell uses Semibold only when its `…` is eligible; an ultra-micro current cell remains visually empty with full current accessibility semantics; a shared repeated-run title stays Medium even when one underlying broadcast is current.
+46. Three consecutive 5-minute same-title programmes at base scale total 45 pt and therefore show no shared title and no individual text glyphs; each boundary/action/accessibility contract remains intact.
+47. Partial-left/right repeated-title scrolling keeps the shared label within real run bounds and becomes fully text-free below the visible `48 × S` threshold.
+48. An individual current microcell remains visually text-free with full current accessibility semantics; a shared repeated-run title stays Medium even when one underlying broadcast is current.
 49. Very long title truncates gracefully and full title opens in Detail.
 50. Programme crossing left edge remains readable during and after momentum.
 51. Rapid horizontal reversal does not flash missing/stale text.
@@ -1133,7 +1135,7 @@ Owner-approved production values frozen by this specification:
 16. Dynamic minuteWidth = 3+1.2×(S−1); channelWidth = 84+28×(S−1); rowHeight = max(round(76+40×(S−1)), ceil(56×S+13)).
 17. Programme window bucket/overscan remains one viewport /1.5 viewports.
 18. Instrument Sans throughout; substantive programme copy uncapped.
-19. Microcell: full frame width `< 48 × S`; individual presentation `< 27 × S` = no visible glyph, `>= 27 × S` = centred `…`; no secondary copy; boundary/action/accessibility/Detail remain programme-owned.
+19. Microcell: full frame width `< 48 × S`; every individual microcell has no visible text glyph and no secondary copy; boundary/action/accessibility/Detail remain programme-owned.
 20. Repeated-title run: >=2 adjacent microcells, exact title after trim/whitespace collapse, shared label only when visible run width >= `48 × S`; shared title Medium/one-line/6-pt inset and bounded to the run.
 21. Repeated-title runs preserve every internal 1-pt boundary, exact hit frame, accessibility action and Programme Detail action; shared label is pointer-transparent/accessibility-hidden.
 
@@ -1170,7 +1172,7 @@ The owner explicitly accepted the production-calibration package in §32 on 2026
 - compact current-marker geometry;
 - typographic-only current-programme treatment;
 - Dynamic Type formulas;
-- **micro-programme threshold `48 × S`** with the derived **`27 × S`** individual-glyph floor: no glyph below it, centred `…` at/above it;
+- **micro-programme threshold `48 × S`** with no individual text glyph anywhere below that threshold;
 - repeated-title run sharing across >=2 adjacent same-title microcells while preserving boundaries/actions and using the same `48 × S` visible-run threshold.
 
 Merge this documentation/design PR first. Only after the owner-approved specification is canonical on `main` may Development begin Totaal runtime visual convergence.
