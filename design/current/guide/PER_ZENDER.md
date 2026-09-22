@@ -1,7 +1,7 @@
 # Per zender — current accepted visual
 
 Status: **ACCEPTED**
-Accepted: 2026-09-13; day-selector and Primetime behaviour amended 2026-09-15; accepted visual refinement amended 2026-09-17; selected-channel-heading removal, current-programme spacing and compact temporal-context refinement accepted 2026-09-18; Kijktip editorial-disclosure refinement accepted 2026-09-22
+Accepted: 2026-09-13; day-selector and Primetime behaviour amended 2026-09-15; accepted visual refinement amended 2026-09-17; selected-channel-heading removal, current-programme spacing and compact temporal-context refinement accepted 2026-09-18; Kijktip editorial-disclosure refinement + production calibration accepted 2026-09-22
 
 ## Canonical asset
 - Light + dark reference: `/Teevee/TV-gids app in licht en donker thema.png`
@@ -165,11 +165,14 @@ For a Kijktip programme:
 
 ### Typography and colour
 
-- base size: **12 pt**;
+- base typography: **12/16 pt**;
 - Instrument Sans **Medium**;
 - semantic **`textSecondary`**;
+- letterSpacing **0**;
 - monochrome in light/dark/system;
 - no special Kijktip colour token.
+
+The 16-pt line-height is production-frozen. At scale 1.0, the 20-pt time line + fixed 2-pt gap + 16-pt Kijktip line form a 38-pt stack inside the 52-pt row.
 
 The label is intentionally quieter than both programme title and current-programme treatment. Do not use 13 pt, Semibold or a stronger text token without new owner-approved physical evidence.
 
@@ -177,8 +180,9 @@ The label is intentionally quieter than both programme title and current-program
 
 - normal non-Kijktip rows remain exactly unchanged and retain their existing vertically centred time/title composition;
 - a Kijktip row keeps the same **52-pt** base height;
-- within a Kijktip row, the time/title first line is positioned as one aligned top content line with the `Kijktip` label directly below in the time column;
-- do not vertically centre `Kijktip` as an independent label;
+- at scale 1.0, time occupies Y **7…27**, Kijktip Y **29…45**, leaving 7 pt top/bottom breathing room;
+- time and programme-title **first baselines are identical**; use native baseline alignment rather than independently centring the title in a Kijktip row;
+- Kijktip is one line, never a wrap state;
 - do not change programme title typography, line count, separator geometry or pressed state merely because Kijktip is present.
 
 ### Current programme + Kijktip
@@ -187,8 +191,9 @@ The existing current-programme treatment remains dominant and unchanged:
 - current row base height remains **176 pt**;
 - current title/description/progress geometry is unchanged;
 - no extra visible `Nu` label is added;
-- the time column uses the same two-line time + `Kijktip` treatment;
-- `Kijktip` remains **12 pt Medium textSecondary** even when the programme is current; do not strengthen it to compete with the current title.
+- at scale 1.0, current time stays top **14** (Y14…34) and Kijktip sits at Y **36…52**;
+- current title remains top **14**; do not introduce a new current-row baseline-alignment rule that would move accepted current geometry;
+- `Kijktip` remains **12/16 Medium textSecondary** even when the programme is current; do not strengthen it to compete with the current title.
 
 ### Multiple Kijktips
 
@@ -200,15 +205,18 @@ Multiple editorial tips in one evening use the exact same treatment independentl
 - it follows substantive system font scaling and is not capped at 1.20;
 - existing standard/current row Dynamic-Type formulas remain authoritative;
 - **do not add row height solely because `Kijktip` exists**;
-- no Kijktip-specific wrap state is introduced;
-- at supported Larger Text sizes, preserve the same hierarchy: time/title first line, Kijktip directly below time, title column unchanged.
+- the **2-pt time→Kijktip gap stays fixed and does not scale**;
+- standard Kijktip rows vertically centre the scaled time/Kijktip stack inside the existing scaled row; at scales 1.00 / 1.35 / 1.50 / 2.00 the stack tops are **7 / 9.7 / 11 / 15 pt**;
+- above 1.35, when the title may use two lines, its first baseline still aligns with the time baseline;
+- no Kijktip-specific wrap state or font cap is introduced;
+- at supported Larger Text sizes, preserve the same hierarchy and title column.
 
 ### Accessibility
 
 Kijktip is editorial disclosure and must not be visual-only:
 - keep the programme row as the single action/focus target;
-- when `isKijktip = true`, include **`Kijktip`** once in the programme action accessibility label/description;
-- do not expose the visual Kijktip text as a second focusable element;
+- when `isKijktip = true`, announce once in the order **channel, title, Kijktip, start time to end time, current state if applicable**;
+- do not expose the visual Kijktip text as a second focusable element; explicitly suppress the child accessibility node where platform behaviour requires it;
 - full channel, title, start/end time and current-state semantics remain unchanged.
 
 ### Frozen around this refinement
