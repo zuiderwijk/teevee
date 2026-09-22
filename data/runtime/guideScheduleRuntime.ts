@@ -1,8 +1,10 @@
+import type { ProgrammeEditorialSignal } from '../domain/editorial';
 import type { Channel, GuideSchedule, Programme } from '../domain/epg';
 import { guideTelevisionDayStart } from '../domain/guideTime';
 
 type InstalledGuideSchedule = {
   schedule: GuideSchedule;
+  editorialSignals: ProgrammeEditorialSignal[];
   anchorTelevisionDayStartMs: number;
 };
 
@@ -63,11 +65,29 @@ export function guideScheduleContentEqual(left: GuideSchedule, right: GuideSched
  * knowledge; it only scopes the installed schedule to the 06:00 Europe/Amsterdam runtime
  * boundary used by the Guide.
  */
-export function installRuntimeGuideSchedule(schedule: GuideSchedule, anchorMs: number): void {
+export function installRuntimeGuideSchedule(
+  schedule: GuideSchedule,
+  anchorMs: number,
+  editorialSignals: ProgrammeEditorialSignal[] = [],
+): void {
   installed = {
     schedule,
+    editorialSignals,
     anchorTelevisionDayStartMs: guideTelevisionDayStart(anchorMs),
   };
+}
+
+export function installRuntimeProgrammeEditorialSignals(
+  editorialSignals: ProgrammeEditorialSignal[],
+  anchorMs: number,
+): void {
+  if (
+    !installed ||
+    installed.anchorTelevisionDayStartMs !== guideTelevisionDayStart(anchorMs)
+  ) {
+    return;
+  }
+  installed = { ...installed, editorialSignals };
 }
 
 export function runtimeGuideScheduleFor(anchorMs: number): GuideSchedule | null {
@@ -75,6 +95,15 @@ export function runtimeGuideScheduleFor(anchorMs: number): GuideSchedule | null 
   return installed.anchorTelevisionDayStartMs === guideTelevisionDayStart(anchorMs)
     ? installed.schedule
     : null;
+}
+
+export function runtimeProgrammeEditorialSignalsFor(
+  anchorMs: number,
+): ProgrammeEditorialSignal[] {
+  if (!installed) return [];
+  return installed.anchorTelevisionDayStartMs === guideTelevisionDayStart(anchorMs)
+    ? installed.editorialSignals
+    : [];
 }
 
 export function clearRuntimeGuideSchedule(): void {
