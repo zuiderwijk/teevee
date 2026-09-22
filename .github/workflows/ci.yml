@@ -57,6 +57,9 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
+      - name: Run hosted Kijktip transport smoke
+        if: github.event_name == 'pull_request' && github.head_ref == 'feat/kijktip-editorial-enrichment-slice'
+        run: node scripts/spikes/kijktip-hosted-transport-smoke.mjs
       - run: npm run typecheck
       - run: npm run lint
       - run: npm test
