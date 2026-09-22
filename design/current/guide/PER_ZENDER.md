@@ -12,10 +12,11 @@ Accepted: 2026-09-13; day-selector and Primetime behaviour amended 2026-09-15; a
 - Accepted sticky / condensed day-selector behaviour:
   - `/Teevee/Teevee Guide day selector - sticky scroll behavior.png`
   - file id: `file_00000000314481f69f6a34d18ece1c21`
-- Accepted Per-zender Kijktip refinement:
+- Historical Per-zender Kijktip text-only refinement reference:
   - `/Teevee/Per Zender Kijktip refinement - 12pt Medium textSecondary.png`
   - Library file id: `file_00000000dd7c8210a35769aada30424b`
   - stable Library record: `libfile_d161c6bed2a481919a917acdeaeeec41`
+  - **superseded for final Kijktip styling** by the owner-approved shared time+Kijktip editorial label direction below; no final calibrated label asset is canonical yet.
 
 The 2026-09-17 owner-approved refinement in this document supersedes the older visual references only for the explicitly listed refined details below. The 2026-09-18 owner-approved refinements additionally remove duplicate selected-channel text, expand the current-programme treatment and compact the temporal context after physical iPhone validation. The 2026-09-22 owner-approved Kijktip label refinement supersedes the earlier text-only disclosure treatment only for Kijktip presentation: Per zender now uses one compact editorial label in the existing time-column zone containing both start time and `Kijktip`. It does not reopen any row, title-column, chrome, rail, gesture or current-programme metric. Exact label surface, padding and corner calibration remain pending one final Accepted Design Refinement. All other accepted composition remains unchanged.
 
