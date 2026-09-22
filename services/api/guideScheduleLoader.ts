@@ -1,7 +1,14 @@
+import type { ProgrammeEditorialSignal } from '@/data/domain/editorial';
 import type { Channel, GuideSchedule, Programme } from '@/data/domain/epg';
 import { guideTelevisionDayStart } from '@/data/domain/guideTime';
 
 import type { GuideScheduleApi } from './guideScheduleContract';
+import { programmeEditorialSignalIdentity } from './editorialSignalContract';
+
+export type GuideScheduleBundle = {
+  schedule: GuideSchedule;
+  editorialSignals: ProgrammeEditorialSignal[];
+};
 
 function sameChannel(left: Channel, right: Channel): boolean {
   return (
@@ -85,6 +92,81 @@ export function mergeGuideSchedules(schedules: readonly GuideSchedule[]): GuideS
   };
 }
 
+
+function stableEditorialSignalKey(signal: ProgrammeEditorialSignal): string {
+  return [
+    signal.programmeId,
+    signal.type,
+    signal.source,
+    signal.sourceItemId,
+    signal.sourceUrl ?? '',
+    signal.publishedAt ?? '',
+    signal.matchedBy,
+  ].join('\u0000');
+}
+
+export function mergeGuideScheduleBundles(
+  bundles: readonly GuideScheduleBundle[],
+): GuideScheduleBundle {
+  if (bundles.length === 0) throw new Error('At least one schedule bundle is required');
+
+  const schedule = mergeGuideSchedules(bundles.map((bundle) => bundle.schedule));
+  const programmeIds = new Set(schedule.programmes.map(({ id }) => id));
+  const signalsByIdentity = new Map<string, ProgrammeEditorialSignal>();
+
+  for (const bundle of bundles) {
+    for (const signal of bundle.editorialSignals) {
+      if (!programmeIds.has(signal.programmeId)) continue;
+      const identity = programmeEditorialSignalIdentity(signal);
+      const existing = signalsByIdentity.get(identity);
+      if (!existing || stableEditorialSignalKey(signal) < stableEditorialSignalKey(existing)) {
+        signalsByIdentity.set(identity, signal);
+      }
+    }
+  }
+
+  const editorialSignals = [...signalsByIdentity.values()].sort(
+    (left, right) =>
+      left.programmeId.localeCompare(right.programmeId) ||
+      left.type.localeCompare(right.type) ||
+      left.source.localeCompare(right.source) ||
+      left.sourceItemId.localeCompare(right.sourceItemId),
+  );
+
+  return { schedule, editorialSignals };
+}
+
+export async function loadTelevisionDayGuideScheduleBundle(
+  api: GuideScheduleApi,
+  televisionDayAnchorMs: number,
+): Promise<GuideScheduleBundle | null> {
+  const fromMs = guideTelevisionDayStart(televisionDayAnchorMs);
+  const toMs = guideTelevisionDayStart(fromMs, 1);
+  const response = await api.getSchedule({
+    from: new Date(fromMs).toISOString(),
+    to: new Date(toMs).toISOString(),
+  });
+
+  return response.status === 'ok'
+    ? {
+        schedule: response.schedule,
+        editorialSignals: response.editorialSignals ?? [],
+      }
+    : null;
+}
+
+export async function loadTwoTelevisionDayGuideScheduleBundle(
+  api: GuideScheduleApi,
+  anchorMs = Date.now(),
+): Promise<GuideScheduleBundle | null> {
+  const dayStarts = [0, 1].map((offset) => guideTelevisionDayStart(anchorMs, offset));
+  const bundles = await Promise.all(
+    dayStarts.map((dayStartMs) => loadTelevisionDayGuideScheduleBundle(api, dayStartMs)),
+  );
+  if (bundles.some((bundle) => bundle === null)) return null;
+  return mergeGuideScheduleBundles(bundles as GuideScheduleBundle[]);
+}
+
 /**
  * Load exactly one Teevee television day through one bounded public read. The caller
  * supplies a television-day anchor, which is normalized through the shared 06:00
@@ -94,14 +176,11 @@ export async function loadTelevisionDayGuideSchedule(
   api: GuideScheduleApi,
   televisionDayAnchorMs: number,
 ): Promise<GuideSchedule | null> {
-  const fromMs = guideTelevisionDayStart(televisionDayAnchorMs);
-  const toMs = guideTelevisionDayStart(fromMs, 1);
-  const response = await api.getSchedule({
-    from: new Date(fromMs).toISOString(),
-    to: new Date(toMs).toISOString(),
-  });
-
-  return response.status === 'ok' ? response.schedule : null;
+  const bundle = await loadTelevisionDayGuideScheduleBundle(
+    api,
+    televisionDayAnchorMs,
+  );
+  return bundle?.schedule ?? null;
 }
 
 /**
@@ -118,10 +197,6 @@ export async function loadTwoTelevisionDayGuideSchedule(
   api: GuideScheduleApi,
   anchorMs = Date.now(),
 ): Promise<GuideSchedule | null> {
-  const dayStarts = [0, 1].map((offset) => guideTelevisionDayStart(anchorMs, offset));
-  const schedules = await Promise.all(
-    dayStarts.map((dayStartMs) => loadTelevisionDayGuideSchedule(api, dayStartMs)),
-  );
-  if (schedules.some((schedule) => schedule === null)) return null;
-  return mergeGuideSchedules(schedules as GuideSchedule[]);
+  const bundle = await loadTwoTelevisionDayGuideScheduleBundle(api, anchorMs);
+  return bundle?.schedule ?? null;
 }
