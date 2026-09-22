@@ -1,6 +1,6 @@
 # Teevee Programme Data Strategy
 
-Status: **Kijktip enrichment vertical slice is the current data implementation priority before Phase 5 Search**. Phase 3 proved the provider-independent hosted data path and Phase 4 closed the television-day-aware Guide runtime, D-2..D+7 navigation/horizon behaviour and production Guide convergence. Phase 5 Search and Discovery remains the next broader product phase, but Search is paused until the already-researched Kijktip enrichment path is fully implemented and accepted. The Phase 4 cache decision is unchanged: keep the current fixture-first + in-memory runtime fallback and do not introduce persistent mobile schedule caching without new measured evidence. Production provider selection/rights remain a later release gate and release-like offline cold-start/persistent-cache validation remains Phase 9.
+Status: **Kijktip enrichment vertical slice is the current data implementation priority before Phase 5 Search**. Phase 3 proved the provider-independent hosted data path and Phase 4 closed the television-day-aware Guide runtime, D-2..D+7 navigation/horizon behaviour and production Guide convergence. Phase 5 Search and Discovery remains the next broader product phase, but Search is paused until the already-researched Kijktip enrichment path is fully implemented and accepted. The Phase 4 cache decision is unchanged: keep the current fixture-first + in-memory runtime fallback and do not introduce persistent mobile schedule caching without new measured evidence. Production **EPG** provider selection/rights remain a later release gate and release-like offline cold-start/persistent-cache validation remains Phase 9.
 
 ## Goal
 Teevee must support the complete core Guide without coupling the mobile experience to one EPG supplier. Replacing the temporary development source with an authorized Bindinc/TVgids or commercial provider must not require a Guide rewrite.
@@ -33,6 +33,7 @@ Hard invariants:
 
 Source/matching:
 - source is `https://www.tvgids.nl/tips.rss`, decoded from response bytes using its declared charset before XML parsing;
+- rights status: the product owner confirms the intended Teevee Kijktip use of `tips.rss` is rights-cleared; this editorial source is therefore **not a Kijktip release blocker**. The separate production EPG-provider redistribution, channel-logo and programme-artwork rights gates remain unchanged;
 - current source items provide GUID/link/title/`channel_name`/start/end/`pubDate`;
 - Tier A exists only for a future authorized stable broadcast identity and is not active for the current RSS;
 - Tier B = explicit channel mapping + deliberately small normalized-title equality + start within ±5 minutes + exactly one candidate;
