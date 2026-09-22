@@ -87,7 +87,11 @@ vi.mock('react-native', async () => {
     { children, testID }: HostProps,
     _ref,
   ) {
-    return createElement('div', { 'data-testid': testID }, children);
+    return createElement(
+      'div',
+      { 'data-testid': testID },
+      typeof children === 'function' ? children({ pressed: false }) : children,
+    );
   });
 
   return {
