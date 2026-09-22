@@ -47,7 +47,7 @@ function schedule(programmes: Programme[]): GuideSchedule {
 describe('Kijktip title normalization', () => {
   it('only normalizes the approved small surface', () => {
     expect(normalizeEditorialTitle('  “Race – Across   the World!”  ')).toBe(
-      '“race - across the world',
+      'race - across the world',
     );
     expect(normalizeEditorialTitle("John’s Show")).toBe("john's show");
     expect(normalizeEditorialTitle('Serie S02E03')).not.toBe(
