@@ -56,13 +56,21 @@ Semantic categories:
 - current/reference-time indicator;
 - on-current-time foreground (`onCurrentTime`) where text sits inside a current-time marker;
 - programme states;
+- editorial accent foreground for owner-approved editorial metadata;
+- editorial label surface where explicitly accepted;
 - success/warning/error;
 - focus/pressed/disabled.
 
 ### Background direction
 Do not use a visibly creamy/off-white background merely to signal premium. The accepted direction is a near-white neutral canvas in light mode and a calm dark-anthracite canvas in dark mode. Exact token values remain implementation decisions subject to contrast/device validation.
 
+Kijktip editorial labels are an explicit exception where a **small local surface** may separate subtly from the Guide canvas. This is not permission to introduce card treatment across programme rows.
+
 ## Colour
+Guide editorial Kijktip foreground uses the owner-approved Petrol Ink direction, conceptually **`editorialAccent`**: light **#315A63**, dark **#A9C9CF**. This semantic role is editorial, not interactive, current-time, success or advertising state. Runtime token wiring waits for final label calibration.
+
+The Kijktip label surface has a separate theme-relative semantic role, conceptually **`editorialAccentSurface`**. Exact light/dark values and final token naming remain pending physical production calibration. In light mode it should sit subtly darker/more defined than the near-white canvas; in dark mode it should provide perceptually equivalent subtle separation, typically slightly lighter than the dark canvas. Never use a saturated petrol fill as the surface.
+
 Rail positional ticks use the dedicated semantic `railTick` token rather than the generic `border` token when physical legibility requires stronger positional contrast. Accepted Guide calibration: light **#80807A**, dark **#72726B**. Major whole/half-hour ticks use opacity **1.00**; quarter-hour ticks use opacity **0.78**. Tick width remains 1 pt; the selected/current marker remains stronger through the semantic `currentTime` token. In Nu & Straks, the horizontal rail-bottom line uses the same **1-pt `railTick` @0.78** treatment as quarter-hour ticks; do not change the global `border` token or substitute platform hairline width.
 
 Red is an accent, not a structural fill. Use it for meaningful selected/current/primary-action emphasis, not as a large permanent chrome treatment.
@@ -160,9 +168,9 @@ Exact Totaal calibration is owner-approved in `docs/TOTAAL_VISUAL_CONVERGENCE.md
 ### Per zender
 Use an open vertical schedule, not a card stack. Keep the sticky horizontal channel-logo strip visually grouped with temporal controls while giving programme content clearer separation: **4 pt rail→utilities** in expanded/rest, then **24 pt utilities→schedule**. Horizontal schedule swipe changes channel; no decorative previous/next arrows are required when gesture behaviour and logo strip make navigation understandable.
 
-Guide editorial Kijktip disclosure is deliberately metadata-like rather than badge-like. The shared editorial typography is **12/16 Instrument Sans Medium**, semantic `textSecondary`, letterSpacing0, substantive/uncapped Dynamic Type, with no icon/pill/accent colour or independent interaction.
+Guide editorial Kijktip disclosure now uses a restrained **editorial label language** rather than bare text. It remains non-interactive metadata: no icon, no extra programme action and no promotional treatment. The shared Kijktip text input remains **12/16 Instrument Sans Medium**, letterSpacing0, substantive/uncapped Dynamic Type.
 
-In Per zender, `Kijktip` sits only in the existing time column directly below the start time with the accepted fixed **2-pt** gap. It does not consume programme-title width; existing row/current geometry remains authoritative.
+In **Per zender**, the label is one compact, more-square unit in the existing time-column zone containing both **start time + Kijktip**. The title column remains untouched and standard/current row geometry remains authoritative. Exact label surface/padding/radius remains pending final calibration.
 
 ### Nu & Straks
 Each channel presents one dominant programme at the selected reference time plus three quieter following programmes. No progress bars, genre chips, artwork, chevrons or `Daarna` labels. The hierarchy itself communicates current/reference versus following content.
@@ -175,7 +183,7 @@ The visible reference programme omits redundant `tot HH:MM` metadata; the next p
 
 At larger text, Nu & Straks keeps programme content substantive and uncapped while adapting programme composition: following programmes use an inline time+title flow with maximum two visible lines. The utility-only Primetime/Nu context remains **52 pt at all font scales** because there is no separate reference-time lane. Shared Guide presentation tabs retain their accepted 64-pt/max-two-line Larger Text state. Interaction geometry stays non-overlapping. Stacked time-above-title is reserved for the extreme >2.0 / <180-pt programme-width fallback.
 
-Nu & Straks applies the same Kijktip editorial semantics role-responsively: reference programmes place `Kijktip` above the dominant title with a fixed **3-pt** gap, while following programmes place it inline after the visible title with a fixed **8-pt** gap and protected label width. Long following titles ellipsize before the label; Kijktip never becomes a separate column/row or changes touch geometry. The same broadcast intentionally changes placement when it moves from following to reference while retaining one accessibility disclosure.
+Nu & Straks applies the same editorial colour/surface language with a **Kijktip-only compact label**. Reference programmes keep that label above the dominant title with the accepted **3-pt structural relationship**; following programmes keep it inline after the visible title with the accepted **8-pt structural relationship**. Long following titles still ellipsize before the label. Final width reservation is based on the calibrated label outer width, not bare text width. Kijktip never becomes a separate column/row or changes touch geometry. The same broadcast intentionally changes label placement when it moves from following to reference while retaining one accessibility disclosure.
 
 For the three following programmes, interaction and visual rhythm are intentionally separate: independent 44-pt iOS / 48-dp Android targets remain adjacent. At standard text, visible content uses the available target slack progressively: #1 top offset = round(slack × 2/3), #2 = round(slack × 1/3), #3 = 0, with slack defined against the 20-pt one-line content height. This yields about 16-pt visible gaps on iOS and 18–19 dp on Android while keeping every target intact. Above fontScale 1.35 the physically accepted Larger Text composition remains vertically centred. Compact continuity also keeps the bottom-aligned reference title and 0-pt dedicated reference→following spacer; do not shrink or overlap touch targets.
 
