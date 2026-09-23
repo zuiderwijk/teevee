@@ -1,7 +1,7 @@
 # Teevee — Canonical Visual Baseline
 
 Status: **ACTIVE VISUAL SOURCE OF TRUTH**
-Last reconciled: 2026-09-22
+Last reconciled: 2026-09-23
 
 This document answers one question unambiguously: **which visual design is the current accepted Teevee design for each product surface?**
 
@@ -238,13 +238,38 @@ Canonical behavioural/visual rules remain those in `docs/UX.md` and `docs/DESIGN
 If this Library image conflicts with those written rules, the written accepted rules win until a new visual is explicitly approved and this manifest is updated.
 
 ## Tonight / Vanavond
-Status: **PROVISIONAL — NOT FROZEN**
+Status: **ACCEPTED — OWNER-APPROVED PRODUCTION DESIGN**
+Owner-approved production direction: 2026-09-23
+Detailed manifest: `design/current/TONIGHT.md`
+Production specification: `docs/TONIGHT_VISUAL_CONVERGENCE.md`
 
-Current exploration reference:
+Canonical visual asset in the user's Teevee Library:
+- `/Teevee/Vanavond production design - hoofdvariant.png`
+  - Library file id: `file_00000000c6e081f4b4e0ed5e08a9c1fe`
+  - stable Library record: `libfile_a7424f31c0d0819198f62d34ad3ad1d8`
+
+Accepted production visual characteristics:
+- one finite vertical page using the existing Teevee standalone-screen shell and bottom navigation;
+- module order is exactly **Jouw gids → Onze Kijktips → Films vanavond → Series vanavond → Sport vanavond**, then the page ends;
+- Jouw gids is an open chronological list with start time, title, channel and literal current/ended state; it is not a carousel/card stack and has no heading chevron;
+- Onze Kijktips is a horizontal 16:9 broadcast-card carousel with roughly two cards visible at standard iPhone density and no repeated per-card Kijktip label by default;
+- Films uses standing **2:3 poster** cards;
+- Series uses a denser standing **2:3 poster** carousel sized for the measured ~12–17 qualifying broadcasts per evening;
+- Sport uses landscape broadcast cards and disappears completely on zero-item evenings;
+- all carousels communicate continuation through a partial next item; there are no section chevrons, `Alles` destinations, pager dots or arrow controls in v1;
+- artwork is optional enrichment and every media frame has a premium same-geometry channel/text fallback;
+- preferred future Film/Series artwork is language-neutral/no-language poster art; intended TMDB enrichment is a separate central data/rights concern and not a direct mobile dependency;
+- empty discovery/category modules are omitted; Jouw gids always remains with one of its two dedicated empty states;
+- a quiet television-evening date context derives from the active 06:00 television-day start date;
+- light/dark/system and Dynamic Type preserve the same information hierarchy.
+
+The canonical visual is authoritative for composition and density, not for the literal generated schedule, broadcaster logos, poster pixels or exact generated shell glyphs. Shared app-shell components, canonical broadcaster assets and the written production specification win for those details.
+
+Superseded as the production Vanavond reference:
 - `/Teevee/Vanavond: Teevee designvoorstel.png`
   - Library file id: `file_00000000cc4c821099c97384e519c045`
 
-This is direction, not specification. A new design thread may explore its module composition without treating the existing composition as owner-approved final UI. The shared Instrument Sans typeface choice **is** accepted and applies to future Tonight exploration.
+The old exploration is stale for hero content, filter/category chips, date/time-slot browsing, catch-all discovery modules, section chevrons/`Alles` actions and non-poster Film/Series imagery.
 
 ## What counts as a new accepted visual baseline
 
