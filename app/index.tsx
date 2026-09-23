@@ -51,17 +51,17 @@ export default function GuideScreen() {
   }, []);
   const closeDetail = useCallback(() => dispatch({ type: 'close' }), []);
 
-  useEffect(() => {
-    if (!guideNavigationRequest) return;
-
-    // Search-to-Guide navigation is contextual. It must not rewrite the stored
-    // long-term Guide presentation preference merely to complete the handoff.
+  const handleNavigationRequestHandled = useCallback((requestId: number) => {
+    // Search-to-Guide navigation is contextual. Keep Per zender active after the
+    // one-shot handoff is consumed, without rewriting the stored Guide preference.
     requestedPresentationRef.current = 'per-channel';
     setNowNextLoadFailed(false);
     setPresentation('per-channel');
-  }, [guideNavigationRequest]);
+    acknowledgeGuideNavigationRequest(requestId);
+  }, []);
 
-  const showPerChannel = presentation === 'per-channel';
+  const showPerChannel =
+    presentation === 'per-channel' || guideNavigationRequest !== null;
   const showNowNext = presentation === 'now-next' && nowNextComponent !== null;
   const NowNextComponent = nowNextComponent;
 
@@ -145,7 +145,7 @@ export default function GuideScreen() {
         <PerChannelGuideView
           guideDataVersion={guideDataVersion}
           navigationRequest={guideNavigationRequest}
-          onNavigationRequestHandled={acknowledgeGuideNavigationRequest}
+          onNavigationRequestHandled={handleNavigationRequestHandled}
           onSelectProgramme={openDetail}
           presentationNavigation={sharedPresentationNavigation}
         />
