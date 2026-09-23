@@ -8,7 +8,7 @@ const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
 const migration = readFileSync(
   resolve(
     repoRoot,
-    'supabase/migrations/20260923003500_create_guide_search_read_boundary.sql',
+    'supabase/migrations/20260923064120_create_guide_search_read_boundary.sql',
   ),
   'utf8',
 );
