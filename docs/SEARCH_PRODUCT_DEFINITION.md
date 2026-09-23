@@ -270,7 +270,7 @@ Therefore Phase 5A must **not** implement Search by:
 
 Search requires a provider-independent hosted search/read boundary over the canonical Teevee schedule store so every query sees the same D-2…D+7 product horizon without changing the proven Guide loading architecture.
 
-The exact repository/API/SQL shape is an Architecture task, but it must return canonical Teevee result identity and preserve ADR 0007/0008 coverage semantics.
+ADR 0009 defines the repository/API/storage shape: one hosted provider-independent Search boundary over canonical storage, with server-owned D-2…D+7 windows and explicit complete/partial/unavailable programme coverage.
 
 ### Domain integrity
 
@@ -399,17 +399,13 @@ Guide Search may be considered complete when:
 
 ## Immediate next engineering step
 
-Perform a focused **Guide Search Architecture** increment before UI implementation.
+The **Guide Search Architecture** handoff is defined by ADR 0009 and implemented in PR #132.
 
-It must define:
+After merge:
+1. deploy and live-verify the hosted Search migration + Edge Function against canonical Teevee data;
+2. implement the mobile Search runtime/screen against the frozen `GuideSearchApi` boundary;
+3. preserve query/results on Programme Detail round-trip and consume explicit Per-zender navigation intent;
+4. add measured stale-response/debounce handling, loading/no-match/partial/unavailable states, accessibility and Dynamic Type;
+5. complete focused physical iPhone validation and Independent QA before Phase 5A exit.
 
-- provider-independent search request/response types;
-- canonical-store query implementation;
-- full-horizon coverage/partial-availability semantics;
-- normalized lexical matching shared between server tests and contract expectations;
-- bounded result limits;
-- query cancellation/stale-response handling;
-- Search → Programme Detail and Search → Per-zender navigation intent ownership;
-- deterministic fixture/testing strategy.
-
-Do not begin visual refinement or broad discovery work until that architecture handoff is explicit.
+Do not reopen the Guide loading architecture, add broad discovery scope or introduce fuzzy/semantic search while implementing the mobile surface.
