@@ -45,6 +45,18 @@ Recommendation:
 
 Final research verdict: **PASS TO TMDB MATCHING RESEARCH**.
 
+### Production follow-up
+
+Issue #157 / PR #158 implements the minimum production parser/domain-boundary follow-up proven necessary by this research and the completed TMDB matching research (#156):
+
+- `ExternalProgramme.productionDate = { raw, year? }`, where only exact current-provider `YYYY` values receive a numeric year;
+- `ExternalProgramme.credits = { director[], actor[], producer[] }`, preserving source roles and never globally reinterpreting actor as cast;
+- existing categories, episode evidence and classification compatibility remain unchanged;
+- canonical `Programme`, public/mobile schedule payloads and persistence remain unchanged;
+- evidence is transient/server-side in this increment.
+
+PR #152 is referenced only as lifecycle evidence: its controlled D0 recovery returned 512 provider candidates, 319 exact matches/recoveries and 193 unmatched. That result invalidates the earlier assumption below that later provider refetch plus exact retained-broadcast reconciliation is sufficient for every bootstrap/replay case. The next external-identity production increment must explicitly solve replay/bootstrap ownership; this production-evidence foundation does not introduce fuzzy broadcast matching or evidence persistence.
+
 ## 2. Methodology and source snapshot
 
 The research reused the current production development-provider URL and the exact 12 mapped canonical channels from `server/epg/developmentChannelCatalog.ts`.
