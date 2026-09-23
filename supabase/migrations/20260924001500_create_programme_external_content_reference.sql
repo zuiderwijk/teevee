@@ -1,5 +1,5 @@
 create table teevee.programme_external_content_references (
-  programme_id text primary key references teevee.programmes(id) on update cascade on delete cascade,
+  programme_id text primary key,
   source text not null,
   media_type text not null,
   external_content_id text not null,
@@ -17,6 +17,81 @@ create table teevee.programme_external_content_references (
 alter table teevee.programme_external_content_references enable row level security;
 revoke all on teevee.programme_external_content_references from public, anon, authenticated;
 grant select, insert, update, delete on teevee.programme_external_content_references to service_role;
+
+-- ADR 0007 deliberately replaces schedule windows by deleting and reinserting
+-- canonical programme rows. A cascading FK would therefore erase a correct
+-- forward-filled identity during every normal refresh. Keep the sibling private
+-- and enforce programme ownership with triggers that understand that lifecycle.
+create or replace function teevee.assert_programme_external_content_reference_owner()
+returns trigger
+language plpgsql
+security definer
+set search_path = ''
+as $
+begin
+  if not exists (
+    select 1
+    from teevee.programmes p
+    where p.id = new.programme_id
+  ) then
+    raise exception 'External-content reference points to unknown canonical programme %',
+      new.programme_id;
+  end if;
+  return new;
+end;
+$;
+
+create trigger programme_external_content_reference_owner_before_write
+before insert or update of programme_id
+on teevee.programme_external_content_references
+for each row
+execute function teevee.assert_programme_external_content_reference_owner();
+
+-- Defer programme-side cleanup until transaction end. Normal schedule replacement
+-- has reinserted an unchanged concrete broadcast by then, so its identity survives.
+-- A true delete/rekey/correction has no exact old broadcast tuple at commit and the
+-- old reference is removed before the transaction becomes externally visible.
+create or replace function teevee.cleanup_programme_external_content_reference_owner()
+returns trigger
+language plpgsql
+security definer
+set search_path = ''
+as $
+begin
+  if exists (
+    select 1
+    from teevee.programmes p
+    where p.id = old.id
+      and p.channel_id = old.channel_id
+      and p.start_at = old.start_at
+      and p.end_at = old.end_at
+      and p.title = old.title
+  ) then
+    return null;
+  end if;
+
+  delete from teevee.programme_external_content_references existing
+  where existing.programme_id = old.id;
+
+  return null;
+end;
+$;
+
+create constraint trigger programme_external_content_reference_programme_ownership
+after delete or update
+on teevee.programmes
+deferrable initially deferred
+for each row
+execute function teevee.cleanup_programme_external_content_reference_owner();
+
+revoke execute on function teevee.assert_programme_external_content_reference_owner()
+  from public, anon, authenticated;
+revoke execute on function teevee.cleanup_programme_external_content_reference_owner()
+  from public, anon, authenticated;
+grant execute on function teevee.assert_programme_external_content_reference_owner()
+  to service_role;
+grant execute on function teevee.cleanup_programme_external_content_reference_owner()
+  to service_role;
 
 create or replace function teevee.apply_programme_external_content_decisions(
   p_observed_at timestamptz,
