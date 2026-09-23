@@ -683,16 +683,15 @@ export const PerChannelGuideView = memo(function PerChannelGuideView({
       selectDay(targetDayStartMs);
     }
 
-    const frame = requestAnimationFrame(() => {
-      centreSelectedChannel(targetIndex, false);
-      if (!channelChanged && !dayChanged) {
-        pendingTargetTimeRef.current = null;
-        scrollToTimestamp(referenceMs, false);
-      }
-    });
+    // Complete the one-shot handoff before acknowledging it. Avoid scheduling
+    // work that would be cancelled when the parent consumes the transient request.
+    centreSelectedChannel(targetIndex, false);
+    if (!channelChanged && !dayChanged) {
+      pendingTargetTimeRef.current = null;
+      scrollToTimestamp(referenceMs, false);
+    }
 
     onNavigationRequestHandled?.(navigationRequest.id);
-    return () => cancelAnimationFrame(frame);
   }, [
     centreSelectedChannel,
     channels,
