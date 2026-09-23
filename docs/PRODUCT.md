@@ -65,6 +65,52 @@ Dutch television viewers who want a high-quality guide experience. The MVP targe
 
 The working primary navigation baseline is Guide / Tonight / Search. Saved programmes/reminders do not require a permanent primary tab unless testing demonstrates a clear need.
 
+## Provisional default channel order
+
+Owner decision, 23 September 2026. This is the **provisional first-run/default ordering** for Teevee when the user has not yet created a personal channel order. A persisted user order always overrides this default.
+
+The ordering deliberately does not sort every channel mechanically by TVgids.nl pageviews. The top ten preserve the familiar Dutch provider convention where that mental model is strong; below that, observed TVgids.nl usage and coherent channel-family grouping weigh more heavily.
+
+1. NPO 1
+2. NPO 2
+3. NPO 3
+4. RTL 4
+5. RTL 5
+6. SBS6
+7. RTL 7
+8. Veronica
+9. Net5
+10. RTL 8
+11. STAR Channel
+12. SBS9
+13. Paramount Network
+14. Ziggo Sport
+15. Discovery
+16. BBC One
+17. Comedy Central
+18. National Geographic
+19. BBC Two
+20. History
+21. 24Kitchen
+22. Ziggo Sport 2
+23. Ziggo Sport 3
+24. Ziggo Sport 4
+25. Ziggo Sport 5
+26. Ziggo Sport 6
+27. ESPN
+28. ESPN 2
+29. ESPN 3
+30. ESPN 4
+
+Family rules behind this baseline:
+- **RTL 5 remains #5 and SBS6 #6**, despite SBS6 having higher observed TVgids.nl pageviews in the measured period; preserving the established 1–10 mental model is considered more valuable than a pure traffic sort.
+- **Ziggo Sport** is treated as a standalone high-value sports channel and therefore remains high in the general list at #14.
+- **Ziggo Sport 2–6** are kept together as one contiguous extension block lower in the list rather than being scattered individually by pageview rank.
+- **ESPN / ESPN 2–4** are likewise one contiguous family block. The ESPN block is provisionally placed after the Ziggo Sport extension block because the current TVgids.nl evidence set does not provide comparable ESPN usage data; this placement is not a claim that ESPN has lower user value.
+- Remaining long-tail channels beyond this baseline should keep a stable curated order until stronger comparable behavioral evidence exists; do not infer a ranking from missing data.
+
+This order is a product default, not a provider identity contract. Provider channel numbers/IDs remain adapter concerns, and future user-controlled channel ordering/persistence remains authoritative once set.
+
 ## Guide day and horizon
 Teevee uses a television-day model because television evenings routinely continue after midnight.
 
