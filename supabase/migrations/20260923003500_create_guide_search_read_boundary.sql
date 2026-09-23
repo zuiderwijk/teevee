@@ -354,9 +354,11 @@ begin
   from ranked;
 
   return jsonb_build_object(
+    'status', 'ok',
     'programmeCoverage', v_programme_coverage,
     'channelMatches', v_channel_matches,
-    'programmeMatches', v_programme_matches
+    'programmeMatches', v_programme_matches,
+    'editorialSignals', '[]'::jsonb
   );
 end;
 $$;
