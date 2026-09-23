@@ -2,7 +2,7 @@
 
 Last updated: 2026-09-23.
 Status: ACTIVE — **Phase 5 — Vanavond production runtime**.
-Current implementation priority: **PR #149 / issue #148 — first production Vanavond runtime is implemented at Development level on `feat/tonight-production-runtime`; the next product gate is mandatory Acc Design Refinement on the real runtime, followed by Development corrections + physical iPhone convergence before Independent QA/final Lead merge acceptance**
+Current implementation priority: **PR #149 / issue #148 — Acc Design Refinement REQUIRED FIX #5799845708 is implemented as a narrow Sport no-artwork Dynamic Type correction; exact-head CI and focused physical iPhone re-convergence are the next gates before Independent QA/final Lead merge acceptance**
 Current broader product phase: **Phase 5 — Search and Discovery**
 Previous phase: **Phase 4 — Core Guide MVP hardening — CLOSED**
 
@@ -120,9 +120,9 @@ Discovery uses only concrete canonical broadcasts and the deployed provider-inde
 
 `ProgrammePersonalState` is upgraded **in the existing store** from schema v1 to v2 by adding durable `hasUsedSave`. Existing valid saves/reminders are preserved. A retained v1 save proves prior Bewaar usage and migrates to `hasUsedSave=true`; an empty v1 record cannot prove historical usage and conservatively migrates false. Every successful new Bewaar action permanently sets true; later unsave-all and reminder changes never reset it. Corrupt/unsupported records still fail safely. No second personal-state store or storage key/file is introduced.
 
-The runtime deliberately ships with the frozen no-artwork fallbacks only: Kijktip 168×94.5, Film 108×162, Series 96×144 and Sport 220×112 at base scale. No TMDB/artwork provider is present. Development-only refinement controls are hidden behind a long-press on the Vanavond date and operate on real canonical runtime data; they expose primetime, after-midnight, Jouw-gids mixed/empty states, partial/offline, module omission, a ≥12-Series density state and an explicit dev-only Kijktip fallback for physical design convergence. Production behavior is unchanged when `__DEV__` is false.
+The runtime deliberately ships with the frozen no-artwork fallbacks only: Kijktip 168×94.5, Film 108×162, Series 96×144 and Sport 220×112 at base scale. No TMDB/artwork provider is present. Acc Design Refinement comment #5799845708 found one deterministic convergence defect in that baseline: the no-artwork Sport title was hard-capped to two lines even at Larger/Accessibility Text. Development now preserves the standard `fontScale <= 1.35` Sport baseline at fixed 220×112 with the compact two-line title, while `fontScale > 1.35` keeps the existing widened Sport card width but treats its landscape height as a minimum and removes the title line cap so substantive title + metadata can grow vertically without smaller typography. Film 108×162, Series 96×144, Kijktip 168×94.5, module order, native carousel semantics and accessibility ownership are unchanged. Development-only refinement controls remain hidden behind a long-press on the Vanavond date.
 
-**Next gate:** Development handoff → Technical/implementation sanity review as needed → mandatory Acc Design Refinement on physical runtime evidence → Development visual/UX corrections → physical iPhone acceptance → Independent QA → final Technical Lead merge gate. PR #149 must not merge/deploy before those gates.
+**Next gate:** exact-head CI for the focused Sport correction → return the new exact head to Acc Design Refinement / physical iPhone convergence → Development corrections only if new physical evidence requires them → Independent QA → final Technical Lead merge gate. PR #149 must not merge/deploy before those gates.
 
 ## Frozen television-day and Guide-horizon semantics
 ADR 0008 is canonical:
