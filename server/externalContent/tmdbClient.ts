@@ -199,8 +199,26 @@ function text(value: unknown): string {
   return typeof value === 'string' ? value.trim() : '';
 }
 
-function id(value: unknown): string {
-  return Number.isInteger(value) && (value as number) > 0 ? String(value) : '';
+function requiredText(value: unknown, label: string): string {
+  const result = text(value);
+  if (!result) {
+    throw new TmdbRequestError('malformed', `TMDB ${label} payload is invalid`);
+  }
+  return result;
+}
+
+function requiredId(value: unknown, label: string): string {
+  if (!Number.isInteger(value) || (value as number) <= 0) {
+    throw new TmdbRequestError('malformed', `TMDB ${label} payload is invalid`);
+  }
+  return String(value);
+}
+
+function requiredNonNegativeInteger(value: unknown, label: string): number {
+  if (!Number.isInteger(value) || (value as number) < 0) {
+    throw new TmdbRequestError('malformed', `TMDB ${label} payload is invalid`);
+  }
+  return value as number;
 }
 
 function year(value: unknown): number | null {
@@ -209,23 +227,23 @@ function year(value: unknown): number | null {
 }
 
 function names(values: unknown, label: string): string[] {
-  return requiredArray(values, label)
-    .map((value) => text(record(value, 'person').name))
-    .filter(Boolean);
+  return requiredArray(values, label).map((value) =>
+    requiredText(record(value, 'person').name, `${label} person name`),
+  );
 }
 
 function alternativeMovieTitles(value: unknown): string[] {
   const container = record(value, 'movie alternative titles');
-  return requiredArray(container.titles, 'movie alternative titles')
-    .map((item) => text(record(item, 'movie alternative title').title))
-    .filter(Boolean);
+  return requiredArray(container.titles, 'movie alternative titles').map((item) =>
+    requiredText(record(item, 'movie alternative title').title, 'movie alternative title'),
+  );
 }
 
 function alternativeSeriesTitles(value: unknown): string[] {
   const container = record(value, 'series alternative titles');
-  return requiredArray(container.results, 'series alternative titles')
-    .map((item) => text(record(item, 'series alternative title').title))
-    .filter(Boolean);
+  return requiredArray(container.results, 'series alternative titles').map((item) =>
+    requiredText(record(item, 'series alternative title').title, 'series alternative title'),
+  );
 }
 
 export class TmdbRequestSession implements TmdbGateway {
@@ -253,8 +271,9 @@ export class TmdbRequestSession implements TmdbGateway {
       }),
     );
     return requiredArray(record(payload, 'movie search').results, 'movie search results')
-      .map((item) => id(record(item, 'movie search result').id))
-      .filter(Boolean)
+      .map((item) =>
+        requiredId(record(item, 'movie search result').id, 'movie search result id'),
+      )
       .slice(0, SEARCH_RESULT_LIMIT);
   }
 
@@ -272,18 +291,22 @@ export class TmdbRequestSession implements TmdbGateway {
     const movie = record(payload, 'movie');
     const credits = record(movie.credits, 'movie credits');
     const directors = requiredArray(credits.crew, 'movie credits crew')
-      .map((item) => record(item, 'movie crew'))
-      .filter((item) => text(item.job).toLocaleLowerCase('en-US') === 'director')
-      .map((item) => text(item.name))
-      .filter(Boolean);
+      .map((item) => {
+        const crew = record(item, 'movie crew');
+        return {
+          job: requiredText(crew.job, 'movie crew job'),
+          name: requiredText(crew.name, 'movie crew name'),
+        };
+      })
+      .filter(({ job }) => job.toLocaleLowerCase('en-US') === 'director')
+      .map(({ name }) => name);
 
-    const candidateId = id(movie.id);
-    if (!candidateId) throw new TmdbRequestError('malformed', 'TMDB movie id is invalid');
+    const candidateId = requiredId(movie.id, 'movie id');
 
     return {
       id: candidateId,
-      title: text(movie.title),
-      originalTitle: text(movie.original_title),
+      title: requiredText(movie.title, 'movie title'),
+      originalTitle: requiredText(movie.original_title, 'movie original title'),
       alternativeTitles: alternativeMovieTitles(movie.alternative_titles),
       releaseYear: year(movie.release_date),
       directors,
@@ -305,14 +328,19 @@ export class TmdbRequestSession implements TmdbGateway {
 
     const target = normaliseIdentityText(normalizedName);
     const people = requiredArray(record(search, 'person search').results, 'person search results')
-      .map((item) => record(item, 'person search result'))
-      .filter((item) => normaliseIdentityText(text(item.name)) === target)
+      .map((item) => {
+        const person = record(item, 'person search result');
+        return {
+          id: requiredId(person.id, 'person search result id'),
+          name: requiredText(person.name, 'person search result name'),
+        };
+      })
+      .filter((item) => normaliseIdentityText(item.name) === target)
       .slice(0, PERSON_RESULT_LIMIT);
 
     const result = new Map<string, TmdbDirectedMovieCredit>();
     for (const person of people) {
-      const personId = id(person.id);
-      if (!personId) continue;
+      const personId = person.id;
       const creditsPayload = await this.cached(
         `person-movie-credits:${personId}`,
         () => this.client.getJson(
@@ -321,12 +349,11 @@ export class TmdbRequestSession implements TmdbGateway {
         ),
       );
       const credits = record(creditsPayload, 'person movie credits');
-      for (const item of requiredArray(credits.crew, 'person movie credits crew').map(
-        (entry) => record(entry, 'person movie crew'),
-      )) {
-        if (text(item.job).toLocaleLowerCase('en-US') !== 'director') continue;
-        const movieId = id(item.id);
-        if (!movieId) continue;
+      for (const entry of requiredArray(credits.crew, 'person movie credits crew')) {
+        const item = record(entry, 'person movie crew');
+        const job = requiredText(item.job, 'person movie crew job');
+        const movieId = requiredId(item.id, 'person movie crew id');
+        if (job.toLocaleLowerCase('en-US') !== 'director') continue;
         result.set(movieId, {
           id: movieId,
           releaseYear: year(item.release_date),
@@ -349,8 +376,9 @@ export class TmdbRequestSession implements TmdbGateway {
       }),
     );
     return requiredArray(record(payload, 'series search').results, 'series search results')
-      .map((item) => id(record(item, 'series search result').id))
-      .filter(Boolean)
+      .map((item) =>
+        requiredId(record(item, 'series search result').id, 'series search result id'),
+      )
       .slice(0, SEARCH_RESULT_LIMIT);
   }
 
@@ -364,13 +392,12 @@ export class TmdbRequestSession implements TmdbGateway {
     );
     const series = record(payload, 'series');
     const credits = record(series.aggregate_credits, 'series aggregate credits');
-    const candidateId = id(series.id);
-    if (!candidateId) throw new TmdbRequestError('malformed', 'TMDB series id is invalid');
+    const candidateId = requiredId(series.id, 'series id');
 
     return {
       id: candidateId,
-      name: text(series.name),
-      originalName: text(series.original_name),
+      name: requiredText(series.name, 'series name'),
+      originalName: requiredText(series.original_name, 'series original name'),
       alternativeTitles: alternativeSeriesTitles(series.alternative_titles),
       cast: names(credits.cast, 'series aggregate credits cast'),
     };
@@ -401,9 +428,17 @@ export class TmdbRequestSession implements TmdbGateway {
       throw error;
     }
 
-    return requiredArray(record(payload, 'series season').episodes, 'series season episodes').some((item) => {
+    return requiredArray(
+      record(payload, 'series season').episodes,
+      'series season episodes',
+    ).some((item) => {
       const episode = record(item, 'series episode');
-      return episode.episode_number === episodeNumber;
+      return (
+        requiredNonNegativeInteger(
+          episode.episode_number,
+          'series episode number',
+        ) === episodeNumber
+      );
     });
   }
 }

@@ -7,7 +7,11 @@ import { ingestProviderSchedule, type StoredProviderScheduleObservation } from '
 import type { NormalisedProgrammeObservation } from '../epg/normalise.ts';
 import type { EpgProvider } from '../epg/provider.ts';
 import { enrichStoredExternalContent } from './enrichment.ts';
-import { TmdbRequestError } from './tmdbClient.ts';
+import {
+  TmdbApiClient,
+  TmdbRequestError,
+  TmdbRequestSession,
+} from './tmdbClient.ts';
 import type { ProgrammeExternalContentRepository } from './externalContentRepository.ts';
 import type { TmdbGateway } from './tmdbGateway.ts';
 
@@ -201,6 +205,52 @@ describe('external content enrichment lifecycle', () => {
     })).resolves.toMatchObject({
       programmes: [expect.objectContaining({ title: 'Billy Elliot' })],
     });
+  });
+
+  it('treats malformed TMDB array elements as provider failure with no negative persistence write', async () => {
+    const stored: StoredProviderScheduleObservation = {
+      from: '2026-09-24T16:00:00.000Z',
+      to: '2026-09-25T02:00:00.000Z',
+      observedAt: '2026-09-24T10:00:00.000Z',
+      channelIds: [channel.id],
+      programmes: [
+        filmObservation(
+          'programme-1',
+          '2026-09-24T18:00:00.000Z',
+          '2026-09-24T20:00:00.000Z',
+        ),
+      ],
+    };
+    const fetcher = vi.fn(async (url: URL | RequestInfo) => {
+      if (String(url).includes('/search/movie')) {
+        return new Response(JSON.stringify({ results: [{}] }), {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' },
+        });
+      }
+      throw new Error(`unexpected URL ${String(url)}`);
+    });
+    const gateway = new TmdbRequestSession(
+      new TmdbApiClient({ token: 'secret', fetcher, maxRetries: 0 }),
+    );
+    const capture = captureRepository();
+
+    const result = await enrichStoredExternalContent({
+      observations: [stored],
+      gateway,
+      repository: capture.repository,
+    });
+
+    expect(result).toMatchObject({
+      providerFailureCount: 1,
+      resolvedCount: 0,
+      unresolvedCount: 0,
+      ambiguousCount: 0,
+      persistedReferenceCount: 0,
+      clearedReferenceCount: 0,
+    });
+    expect(capture.repository.applyDecisions).not.toHaveBeenCalled();
+    expect(capture.writes).toHaveLength(0);
   });
 
   it('never treats partial provider coverage as an authoritative enrichment observation', async () => {
