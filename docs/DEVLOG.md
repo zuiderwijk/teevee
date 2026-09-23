@@ -1,5 +1,24 @@
 # Teevee Development Logboek
 
+
+## 24 september 2026 — PR #161 TMDB Film/Series external content identity foundation
+
+Issue #159 / PR #161 implements the smallest production server foundation that can bind a concrete canonical broadcast to a high-confidence TMDB Film/Series content identity without changing `Programme`, Guide transport or mobile. Proposed ADR 0011 records the durable boundary.
+
+The same normalisation pass now retains an internal tuple of canonical `Programme`, central `ProgrammeClassification` and transient rich `ExternalProgramme` evidence. Only a successfully stored authoritative schedule observation is eligible for matching. Guide-horizon completes all canonical window writes before TMDB starts, while bounded single-window ingest also commits canonical state first. TMDB/network/persistence failures are caught after that boundary and cannot roll back Guide.
+
+Film and Series matchers encode the final #156 precision rules. Film requires production year ±1 and director overlap; alternative/localized-title-only acceptance adds two actor overlaps, and a bounded director-filmography fallback is available only after direct failure. Series searches the full title first, requires cast support, validates coherent S/E evidence and allows only the strengthened base-title/numbering-disagreement rules proven by research. No Series production-year-to-first-air inference and no episode ID are introduced.
+
+The TMDB client is dependency-free and server-only. It owns a 2.5 s per-attempt timeout, at most one safe retry, bounded 429 `Retry-After`, non-retryable 4xx/malformed JSON, request cancellation, a 20 s per-enrichment budget, request-scope caching and bounded concurrency. The production token is named `TMDB_API_READ_ACCESS_TOKEN` and never enters mobile/public contracts.
+
+A new private `teevee.programme_external_content_references` table is keyed by canonical programme FK with update/delete cascade. It stores only source/media/external ID/high confidence/matcher version/freshness timestamps. The service-role write RPC shares canonical channel advisory locks, requires exact current broadcast fields and same-observation authoritative coverage, and rejects newer coverage/reference state. Repeats may share one TMDB identity; stale/rekeyed/deleted broadcasts cannot retain or receive a dangling reference.
+
+Bootstrap is deliberately forward-only. Current/future identity is filled from authoritative complete observations and then ages into D0 with the broadcast. Existing retained D0 may temporarily lack identity after deployment. PR #152's dormant classification-recovery migration/RPC is not reused; it is explicitly superseded for external-identity bootstrap and can only be retired later by a separate forward cleanup if no caller remains.
+
+This is a High-risk migration/trust-boundary change. No hosted migration, Edge deployment, merge or physical owner acceptance is claimed. Required next gates are exact-head CI, executable PostgreSQL lifecycle smoke, Technical Lead review and Independent QA.
+
+---
+
 ## 23 september 2026 — TMDB commercial licensing gate closed
 
 The product owner confirms the required commercial TMDB licensing for Teevee production API/data/image use is arranged. The independent commercial-use blocker recorded by TMDB matching research #156 is therefore closed.
