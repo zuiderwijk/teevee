@@ -229,7 +229,11 @@ Current direction:
 Do not treat the exact Tonight module composition as frozen yet.
 
 ## Search
-One prominent search field. MVP search targets programmes and channels, prioritising useful upcoming broadcasts and answering when/where something airs.
+Canonical Phase 5A contract: `docs/SEARCH_PRODUCT_DEFINITION.md`.
+
+One prominent search field. Search targets **concrete programme broadcasts and channels**, prioritising useful current/upcoming broadcasts while retaining recent D-2/D-1 history inside the canonical Guide horizon. Every programme result answers what / where / when before tap and opens Programme Detail for that exact canonical broadcast. Channel results open Guide → Per zender on that channel.
+
+Phase 5A intentionally excludes universal streaming, people, genres, articles, recommendations, AI/semantic search and fuzzy/typo correction. Repeats remain separate broadcasts rather than title-only catalogue entities.
 
 ## Channel management
 Users can choose and reorder channels. Provide a sensible default lineup so onboarding can be skipped or completed quickly. Choices persist locally.
