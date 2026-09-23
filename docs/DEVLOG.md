@@ -1,5 +1,19 @@
 # Teevee Development Logboek
 
+## 23 september 2026 — PR #158 EPG identity evidence production foundation
+
+Issue #157 / PR #158 productionizes the minimum server/provider evidence proven useful by source research #154 and TMDB matching research #156, without implementing TMDB or artwork.
+
+`ExternalProgramme` now has two transient server-only evidence shapes: `productionDate: { raw, year? }` and role-preserving `credits: { director[], actor[], producer[] }`. XMLTV `<date>` stays opaque by default; only an exact four-digit current-provider value receives a numeric year, so Series episode-era evidence cannot accidentally become a first-air-date contract. Credit names keep their source role, empty values are dropped and exact normalized duplicates are removed in source order. In particular, factual hosts supplied as `<actor>` remain actor evidence rather than being globally relabelled as cast.
+
+The existing classification contract is intentionally untouched. `hasDirectorCredit` remains a separate compatibility signal and `classifyExternalProgramme` ignores the richer credit/date evidence. Deterministic normalisation coverage proves a broadcast with the richer evidence produces the same canonical `GuideSchedule` and `ProgrammeClassification` as the same broadcast without it. Canonical `Programme`, Guide/Search/Vanavond transport and mobile types contain none of the new provider fields. No database table, migration, external-reference persistence or generic enrichment framework is added.
+
+The lifecycle follow-up is now explicit. PR #152 is evidence only: its controlled D0 classification recovery saw **512 provider candidates / 319 exact matched-recovered / 193 unmatched**. Transient provider evidence is therefore sufficient for matching during the same provider observation/authoritative ingest, but the next external-identity production increment must not assume later refetch + exact-current reconciliation can bootstrap every already-retained broadcast. Replay/bootstrap ownership must be designed before external-reference persistence; this increment adds neither title hacks nor fuzzy broadcast reconciliation.
+
+Project priority is updated to **Premium Artwork & Content Identity enrichment before Phase 6 Personal Features**. Phase 5 remains closed. No hosted deployment is performed by this increment.
+
+---
+
 ## 23 september 2026 — PR #149 final physical acceptance, Independent QA and merge
 
 The first production Vanavond runtime is closed. Exact accepted head `4f1d29e2e1843adec33b2417ef14e312887545fd` received owner **FINAL PHYSICAL REFINEMENT PASS** in PR comment #5801613712 after base/light composition, Jouw-gids states, corrected Kijktip density, Series ≥12, Alle modules, dark mode, maximum iOS Accessibility Text Size, horizontal/vertical/diagonal gesture arbitration, live save/unsave round-trip and VoiceOver had been physically accepted on iPhone.
