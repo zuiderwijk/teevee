@@ -169,6 +169,10 @@ describe('central provider-independent programme classification', () => {
       categories: ['Sporttalkshow', 'Voetbal'],
       description: 'Nabeschouwing van de wedstrijd.',
     });
+    const generalTalk = classify({
+      categories: ['Sporttalkshow'],
+      description: 'Gesprek over het belangrijkste sportnieuws van de dag.',
+    });
     const documentary = classify({
       categories: ['Sport', 'Documentaire', 'Sports'],
       description: 'Historisch sportverhaal.',
@@ -180,11 +184,13 @@ describe('central provider-independent programme classification', () => {
     expect(summary.sportType).toBe('highlights');
     expect(preMatch.sportType).toBe('talk');
     expect(postMatch.sportType).toBe('talk');
+    expect(generalTalk.sportType).toBe('talk');
     expect(documentary.sportType).toBe('magazine-documentary');
 
     expect(isTonightSportClassification(event)).toBe(true);
     expect(isTonightSportClassification(highlights)).toBe(true);
     expect(isTonightSportClassification(preMatch)).toBe(false);
+    expect(isTonightSportClassification(generalTalk)).toBe(false);
     expect(isTonightSportClassification(documentary)).toBe(false);
   });
 
@@ -211,6 +217,16 @@ describe('central provider-independent programme classification', () => {
       liveStatus: 'unknown',
       repeatStatus: 'unknown',
     });
+  });
+
+  it('contains no production title-specific research fixture exceptions', async () => {
+    const { readFile } = await import('node:fs/promises');
+    const source = await readFile(new URL('./classifyProgramme.ts', import.meta.url), 'utf8');
+
+    expect(source).not.toContain('Bluey');
+    expect(source).not.toContain("Marvel's Spidey");
+    expect(source).not.toContain('The Martian');
+    expect(source).not.toContain('The Spencer Sisters');
   });
 
   it('keeps provider vocabulary behind the provider-classification boundary', () => {

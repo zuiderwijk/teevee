@@ -114,4 +114,29 @@ The correct boundary is:
 4. never add raw category arrays to canonical/mobile `Programme`;
 5. keep normal CI deterministic and network-free.
 
+## Disposable persistence execution evidence
+
+The new classification persistence was executed against an isolated PostgreSQL 17 service rather than the hosted Teevee project.
+
+Evidence:
+- workflow: `Tonight classification migration smoke`;
+- run: **#1 / 35855629562**;
+- job: **107163296515 — SUCCESS**;
+- migration under test: `20260923111500_create_programme_classification_foundation.sql`;
+- the smoke loaded the canonical schedule-store migration and public RPC bridge first;
+- the lifecycle assertion block completed with PostgreSQL `DO`;
+- the transaction ended with `ROLLBACK`.
+
+The executable smoke covers:
+- initial classified ingest/read;
+- same-broadcast idempotent upsert;
+- canonical start-time correction / Programme.id rekey;
+- old classification cascade cleanup;
+- corrected classification insert;
+- stale classified write ignored without semantic rollback;
+- bounded provider-independent getter;
+- authoritative programme deletion/empty replacement cascading classification cleanup.
+
+No migration, function or classification row was deployed to the hosted Teevee project by this test.
+
 This document records empirical implementation evidence. The product/classification authority remains `docs/TONIGHT_CLASSIFICATION_RESEARCH_2026-09-23.md`; architecture authority is ADR 0010.

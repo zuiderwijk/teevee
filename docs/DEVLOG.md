@@ -1,5 +1,23 @@
 # Teevee Development Logboek
 
+## 23 september 2026 — PR #144 classification foundation Development-complete
+
+The issue #142 implementation is now complete at Development level and awaits Lead + Independent QA. The accepted Vanavond visual runtime remains untouched; this PR contains no production `app/tonight.tsx` category population.
+
+The central classifier now preserves complete XMLTV categories and structured episode numbers only at the provider boundary, maps them deterministically to provider-independent sibling semantics, persists those semantics atomically with canonical schedule replacement, and exposes a separate bounded semantic read API. Canonical `Programme`, Guide schedule transport and Guide render/runtime remain unchanged.
+
+Required empirical failure modes are covered deterministically: Film first-category false negatives, generic-category scripted series, children scripted exclusion, non-scripted children, Sport event/highlights/talk/documentary/ambiguous cases, tri-state live/repeat and unknown fail-closed semantics. Production classifier source contains no research-title exceptions.
+
+Persistence lifecycle was executed against disposable PostgreSQL 17 in workflow run #1 / `35855629562`, job `107163296515` — SUCCESS. The actual classification migration loaded on top of the canonical schedule-store migrations; the smoke passed idempotent same-broadcast ingest, canonical start correction/rekey, cascade cleanup, stale-write protection, bounded getter and authoritative deletion cleanup, then rolled back.
+
+The live provider-evidence probe remains documented in `docs/TONIGHT_CLASSIFICATION_SOURCE_EVIDENCE_2026-09-23.md`; its temporary network workflow and the temporary PostgreSQL workflow are removed before final exact-head CI so normal CI remains deterministic and network-free beyond the repository's existing gates.
+
+Hosted deployment remains deliberately untouched. After Lead + Independent QA + merge, deployment order is migration → exact merged `epg-refresh` runtime → `programme-classifications` Edge Function → one authoritative `guide-horizon` refresh for backfill → bounded live verification and deployed-byte/schema comparison.
+
+**Next step:** final exact-head CI, then Lead review. Do not merge and do not send to Independent QA before Lead handoff.
+
+---
+
 ## 23 september 2026 — PR #144 starts central Vanavond classification foundation
 
 Issue #142 moves Vanavond Film/Series/Sport classification out of raw canonical `Programme.genre` and into one provider-independent sibling enrichment owned by EPG ingest. Canonical Programme and Guide transport stay unchanged.

@@ -2,7 +2,7 @@
 
 Last updated: 2026-09-23.
 Status: ACTIVE — **Phase 5 — Vanavond classification/enrichment foundation**.
-Current implementation priority: **PR #144 / issue #142 — central provider-independent Film/Series/Sport classification-enrichment foundation is in Development; no production Vanavond category UI/runtime until Lead + Independent QA + hosted deployment gates close**
+Current implementation priority: **PR #144 / issue #142 — central provider-independent Film/Series/Sport classification-enrichment foundation is Development-complete pending exact-head Lead + Independent QA; hosted migration/runtime remain undeployed and production Vanavond category UI remains blocked**
 Current broader product phase: **Phase 5 — Search and Discovery**
 Previous phase: **Phase 4 — Core Guide MVP hardening — CLOSED**
 
@@ -25,7 +25,7 @@ Previous phase: **Phase 4 — Core Guide MVP hardening — CLOSED**
 3. **Phase 2 — App Shell:** complete and physically accepted on iPhone.
 4. **Phase 3 — Real Data Vertical Slice:** complete and physically accepted on iPhone. Real provider -> hosted ingest -> canonical persistence -> public typed read -> mobile canonical datasource is proven, including fixture-first startup, real-data transition, fallback and context retention.
 5. **Phase 4 — Core Guide MVP hardening:** **CLOSED**. The 06:00 television-day foundation, television-day-aware runtime, D-2..D+7 navigation/date context, measured Totaal performance hardening, Per-zender production convergence, Programme Detail production convergence, Nu & Straks production convergence and Totaal production convergence are all merged. Totaal PR #114 completed the final open Guide convergence work: its runtime was owner-accepted on iPhone, independently QA-reviewed, its sole QA accessibility blocker was corrected and re-verified at the final Lead merge gate, exact-head CI #877 passed 72 test files / 538 tests plus iOS/Android/web exports, and merge commit `4cea66eca92b7224ff51940b30de09db11928427` landed on `main`. The cache decision remains **no persistent mobile schedule cache now** absent new measured evidence; true no-network cold start and any persistence technology decision remain a release-like Phase 9 gate. Physical Android interaction acceptance remains deferred until Android hardware is available and does not keep Phase 4 open.
-6. **Phase 5 — Search and Discovery:** **ACTIVE**. Kijktip is fully closed and **Phase 5A — Guide Search is CLOSED**. Vanavond has a canonical product contract in `docs/TONIGHT_PRODUCT_DEFINITION.md`; its empirical classification gate is complete in `docs/TONIGHT_CLASSIFICATION_RESEARCH_2026-09-23.md`; Series scope is frozen as general/mainstream scripted episodic content; and the owner-approved production visual/specification is merged and canonical in `design/current/TONIGHT.md` + `docs/TONIGHT_VISUAL_CONVERGENCE.md` via PR #141. Film, Series and Sport require **central provider-independent classification mapping/enrichment** before production category implementation. PR #144 is implementing that issue #142 foundation as ingest-owned sibling semantics with atomic schedule lifecycle and a bounded separate read boundary; raw Vanavond UI heuristics remain forbidden until the PR is reviewed, merged and deployed.
+6. **Phase 5 — Search and Discovery:** **ACTIVE**. Kijktip is fully closed and **Phase 5A — Guide Search is CLOSED**. Vanavond has a canonical product contract in `docs/TONIGHT_PRODUCT_DEFINITION.md`; its empirical classification gate is complete in `docs/TONIGHT_CLASSIFICATION_RESEARCH_2026-09-23.md`; Series scope is frozen as general/mainstream scripted episodic content; and the owner-approved production visual/specification is merged and canonical in `design/current/TONIGHT.md` + `docs/TONIGHT_VISUAL_CONVERGENCE.md` via PR #141. Film, Series and Sport require **central provider-independent classification mapping/enrichment** before production category implementation. PR #144 implements that issue #142 foundation as ingest-owned sibling semantics with atomic schedule lifecycle and a bounded separate read boundary. Development implementation + disposable PostgreSQL lifecycle evidence are complete; Lead, Independent QA, merge and hosted deployment remain open. Raw Vanavond UI heuristics remain forbidden.
 
 ## Kijktip enrichment vertical slice — merged and deployed
 The inter-phase Kijktip vertical slice is implementation-complete and merged. Do not reopen its accepted product, matching, persistence or Guide-presentation contracts without concrete regression evidence.
@@ -88,7 +88,7 @@ The future classifier/enrichment must be centralized and provider-independent, p
 
 `Series vanavond` product scope is now frozen: **scripted episodic series for a general/mainstream audience**. Programming primarily intended for children, including the researched `Bluey` / `Marvel's Spidey and His Amazing Friends` examples, is excluded from this module in v1. This is a semantic product decision; implementation must not turn raw provider `Kinderen` into the classifier itself.
 
-## Vanavond classification/enrichment foundation — PR #144 in Development
+## Vanavond classification/enrichment foundation — PR #144 Development-complete
 
 Issue #142 implementation lives on `feat/tonight-classification-foundation` and is intentionally foundation-only: no `app/tonight.tsx` production category UI, artwork/TMDB or recommendation runtime is added.
 
@@ -106,7 +106,7 @@ Proposed ADR 0010 freezes the implementation direction pending Lead + Independen
 - Guide schedule transport remains unchanged;
 - future Vanavond reads use a separate bounded `programme-classifications` semantic API rather than raw provider categories or eager Guide-horizon prefetch.
 
-Current-provider evidence for the mapping is recorded in `docs/TONIGHT_CLASSIFICATION_SOURCE_EVIDENCE_2026-09-23.md`. The live probe proves multi-category Film evidence, structured season/episode evidence for researched scripted series, explicit children-audience collisions and Sport subtype evidence; normal CI remains deterministic/network-free.
+Current-provider evidence for the mapping is recorded in `docs/TONIGHT_CLASSIFICATION_SOURCE_EVIDENCE_2026-09-23.md`. The live probe proves multi-category Film evidence, structured season/episode evidence for researched scripted series, explicit children-audience collisions and Sport subtype evidence; normal CI remains deterministic/network-free. Disposable PostgreSQL 17 smoke run #1 / `35855629562`, job `107163296515`, executed the real base schedule migrations plus the new classification migration and passed the lifecycle assertion block before `ROLLBACK`.
 
 Hosted deployment is deliberately pending review. After merge, the exact migration and updated `epg-refresh` runtime must be deployed, `programme-classifications` deployed, then one authoritative `guide-horizon` refresh must backfill retained broadcasts from full provider evidence. No SQL backfill may guess from historical first-category `Programme.genre`.
 
