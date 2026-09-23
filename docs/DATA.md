@@ -1,6 +1,6 @@
 # Teevee Programme Data Strategy
 
-Status: **Phase 5 — Vanavond classification foundation is merged, deployed and live-verified; production Vanavond runtime is next.** Phase 3 proved the provider-independent hosted data path, Phase 4 closed the television-day-aware Guide runtime and D-2..D+7 navigation/horizon behaviour, Kijktip is merged/deployed/physically verified, Phase 5A Guide Search is closed, and PR #144 / issue #142 established the provider-independent Film/Series/Sport classification sibling without changing Guide loading. The Phase 4 cache decision is unchanged: keep the current fixture-first + in-memory runtime fallback and do not introduce persistent mobile schedule caching without new measured evidence. Production **EPG** provider selection/rights remain a later release gate and release-like offline cold-start/persistent-cache validation remains Phase 9.
+Status: **Phase 5 data/runtime foundations are merged; first production Vanavond runtime is merged and physically/independently accepted.** Phase 3 proved the provider-independent hosted data path, Phase 4 closed the television-day-aware Guide runtime and D-2..D+7 navigation/horizon behaviour, Kijktip is merged/deployed/physically verified, Phase 5A Guide Search is closed, PR #144 / issue #142 established the provider-independent Film/Series/Sport classification sibling, and PR #149 consumes those deployed lanes without changing Guide loading or adding a new hosted data dependency. The Phase 4 cache decision is unchanged: keep the current fixture-first + in-memory runtime fallback and do not introduce persistent mobile schedule caching without new measured evidence. Production **EPG** provider selection/rights remain a later release gate and release-like offline cold-start/persistent-cache validation remains Phase 9.
 
 ## Goal
 Teevee must support the complete core Guide without coupling the mobile experience to one EPG supplier. Replacing the temporary development source with an authorized Bindinc/TVgids or commercial provider must not require a Guide rewrite.
@@ -9,7 +9,7 @@ Teevee must support the complete core Guide without coupling the mobile experien
 The mobile client never consumes an external EPG feed directly.
 
 ## Kijktip enrichment deployment state
-The Kijktip vertical slice is merged, deployed and physically verified end-to-end. Its post-deployment historical iPhone browse-back is PASS and Phase 5A Guide Search is active.
+The Kijktip vertical slice is merged, deployed and physically verified end-to-end. Its post-deployment historical iPhone browse-back is PASS; Phase 5A Guide Search and the first production Vanavond runtime are also closed.
 
 - **PR #120** completed empirical matching research and is canonical in `docs/TVGIDS_EDITORIAL_FEED_MATCHING_2026-09-22.md`: `tips.rss` is ingested server-side; matching is deterministic/fail-closed against canonical Teevee programmes; unresolved or ambiguous items do not create a Kijktip signal; the core `Programme` provider identity remains unchanged.
 - **PR #126** provides production server-side RSS parsing/matching, private signal persistence, an independent protected refresh, optional typed hosted transport and separate mobile runtime signal state.
