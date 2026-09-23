@@ -25,6 +25,6 @@ Guide:
 
 Other surfaces:
 - `PROGRAMME_DETAIL.md`
-- `TONIGHT.md` — explicitly provisional, not frozen.
+- `TONIGHT.md` — accepted owner-approved Vanavond production visual design; exact implementation metrics/states live in `docs/TONIGHT_VISUAL_CONVERGENCE.md`.
 
 The exact approved visual pixels are currently stored in the user's persistent `/Teevee` Library; their stable file ids are recorded in these manifests and in `docs/VISUAL_BASELINE.md`.
