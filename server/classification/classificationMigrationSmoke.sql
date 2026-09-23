@@ -219,6 +219,53 @@ begin
     raise exception 'unclassified recovery seed was not stored: %', v_result;
   end if;
 
+  -- Even a trusted service-role caller cannot bypass identity ambiguity by
+  -- sending overlapping recovery candidates directly to the persistence RPC.
+  begin
+    perform public.teevee_recover_programme_classifications(
+      '2099-01-02T18:00:00Z',
+      '2099-01-02T21:00:00Z',
+      '2099-01-02T10:04:00Z',
+      array['channel-1'],
+      jsonb_build_array(
+        jsonb_build_object(
+          'id','overlap-a','channelId','channel-1',
+          'startAt','2099-01-02T18:00:00Z','endAt','2099-01-02T19:00:00Z',
+          'title','Overlap A'
+        ),
+        jsonb_build_object(
+          'id','overlap-b','channelId','channel-1',
+          'startAt','2099-01-02T18:30:00Z','endAt','2099-01-02T19:30:00Z',
+          'title','Overlap B'
+        )
+      ),
+      jsonb_build_array(
+        jsonb_build_object(
+          'programmeId','overlap-a','contentType','film',
+          'seriesType','unknown','audience','unknown','sportType','unknown',
+          'liveStatus','unknown','repeatStatus','unknown','confidence','high'
+        ),
+        jsonb_build_object(
+          'programmeId','overlap-b','contentType','film',
+          'seriesType','unknown','audience','unknown','sportType','unknown',
+          'liveStatus','unknown','repeatStatus','unknown','confidence','high'
+        )
+      )
+    );
+    raise exception 'overlapping recovery payload unexpectedly accepted';
+  exception
+    when others then
+      if sqlerrm = 'overlapping recovery payload unexpectedly accepted' then
+        raise;
+      end if;
+      if sqlerrm <> 'Recovery payload contains overlapping programme candidates' then
+        raise exception 'unexpected overlap rejection error: %', sqlerrm;
+      end if;
+  end;
+  if (select count(*) from teevee.programme_classifications) <> 0 then
+    raise exception 'rejected overlapping recovery payload mutated classifications';
+  end if;
+
   v_result := public.teevee_recover_programme_classifications(
     '2099-01-02T18:00:00Z',
     '2099-01-02T21:00:00Z',
