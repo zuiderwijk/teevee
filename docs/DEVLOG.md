@@ -1,5 +1,21 @@
 # Teevee Development Logboek
 
+## 23 september 2026 — Phase 5A mobile Guide Search implementation candidate
+
+PR #134 implements the mobile half of Phase 5A against the already deployed/live-verified `GuideSearchApi` boundary. The former placeholder becomes one prominent Search field with concrete channel and programme-broadcast results. The runtime keeps query/result continuity only in process memory, uses a 220 ms candidate debounce plus AbortController and request-version ownership, bounds input to the frozen Search contract, retries availability failures, distinguishes complete no-match from partial/unavailable programme coverage and refreshes a retained result when the 06:00 Europe/Amsterdam television day rolls over.
+
+Programme results expose title, actual civil date/time and canonical channel before tap, retain optional Kijktip as non-ranking sibling metadata and reuse the existing exact-broadcast Programme Detail modal so closing Detail preserves the Search context. Channel results publish one transient channel/reference-time intent to Guide → Per zender. The Guide consumes that intent without persisting a presentation preference; the handoff waits for canonical channel identity and positions Per zender at the requested current-time context.
+
+Development self-review corrected three candidate defects before handoff: the first implementation synchronously changed Guide state inside an effect and failed lint; Per-zender acknowledgement could cancel its own scheduled positioning work; and an overlong normalized query could fall through to the generic availability state. Regression coverage now protects those cases, stale/out-of-order responses, abort propagation, 06:00 horizon rollover, result date/current semantics, accessibility content and Search-screen navigation/state semantics.
+
+No product scope was broadened: no eager D-2..D+7 mobile Guide prefetch, title-only catalogue identity, recent-search history, raw-query logging, fuzzy/semantic/AI search, artwork dependency or new external state/cache dependency.
+
+**Verification:** final exact-head runtime-ui CI is still required after this documentation update. No physical-device acceptance is claimed. The 220 ms debounce remains a candidate calibration until physical iPhone evaluation.
+
+**Next step:** exact-head Lead review after green CI, then focused physical iPhone Search validation; Independent QA only after physical PASS.
+
+---
+
 ## 23 september 2026 — Guide Search hosted boundary merged, deployed and live-verified
 
 PR #132 exact accepted head `8bdc679f28289a7ccf5b8445aa7f2c42e13b35df` passed exact-head CI #984, Independent QA (#5787177734) and final Lead merge gate (#5787185229), then merged to `main` as `3c7ebcf906ff64bb2b6b71c04d177a20519eb2a0`. Exact-main CI #985 subsequently passed strict TypeScript, lint, 89 test files / 670 tests, iOS/Android/web exports and the full-ABI Android build.
