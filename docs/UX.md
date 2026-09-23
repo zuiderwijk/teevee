@@ -211,31 +211,60 @@ Rules:
 - short detail pages where the original actions never leave the viewport never show the sticky bar;
 - swipe-to-dismiss behaviour must remain usable without turning the action bar into a gesture trap.
 
-## Tonight / Vanavond — product contract frozen, visual design open
+## Tonight / Vanavond — product + production visual frozen
 
 Canonical product authority: `docs/TONIGHT_PRODUCT_DEFINITION.md`.
+Canonical production visual/specification: `design/current/TONIGHT.md` + `docs/TONIGHT_VISUAL_CONVERGENCE.md`.
 
-Vanavond is a finite decision-support surface for the active television evening. It remains rooted in concrete canonical linear-TV broadcasts and may be more visual than Guide, but it must not become an endless feed, streaming catalogue or news/article surface.
+Vanavond is a finite decision-support surface for the active television evening, rooted in concrete canonical linear-TV broadcasts. It is more visual than Guide where that improves discovery, but it is not an endless feed, streaming catalogue or news/article surface.
 
-First-release product hierarchy:
-1. `Jouw gids` — explicit broadcast-level saves for the active evening;
-2. `Onze Kijktips` — existing canonical editorial Kijktips;
+First-release hierarchy is fixed:
+1. `Jouw gids` — explicit broadcast-level saves;
+2. `Onze Kijktips` — canonical editorial Kijktips;
 3. `Films vanavond`;
 4. `Series vanavond`;
 5. `Sport vanavond`.
 
-Film/Series/Sport are individually blocked on empirical canonical-data validation before implementation. `Voor jou` is a separate future learned-personalisation concept and has no first-release placeholder.
+Then the page ends.
 
-Product semantics already frozen in the definition include:
-- active television-day ownership remains 06:00 Europe/Amsterdam -> 06:00 next day;
-- Jouw gids uses explicit saved broadcasts and remains distinct from recommendations;
-- Kijktips start at 18:00; category modules start at 19:00;
-- Jouw gids keeps ended saved items visible until the 06:00 rollover; discovery modules remove ended items;
-- no generic highlighted item, catch-all `Verder vanavond` list, invented ranking or global time-chip selector is required;
-- artwork is optional enrichment and the page must remain complete without it;
-- empty Jouw gids remains visible with personal empty-state behaviour, while empty discovery/category modules are omitted.
+### Jouw gids
+- always present;
+- open chronological list, not cards/carousel;
+- visible start time, title and channel;
+- literal `Nu` for a current saved broadcast;
+- ended saves remain quietly visible with `Afgelopen` until the 06:00 rollover;
+- overlapping or same-title saves remain independent;
+- row tap opens exact-broadcast Programme Detail when canonical resolution exists;
+- stale unresolved local snapshots remain visible but never fabricate a Detail destination;
+- no section chevron or separate Jouw-gids screen in v1.
 
-Exact layout, card composition, save feedback treatment, carousel affordances, Larger Text behaviour and light/dark visual convergence are intentionally left to a dedicated Design/UX increment.
+Two empty states remain distinct:
+- never used Bewaar: explanatory onboarding + `Bekijk de gids`;
+- used Bewaar before but no items for the active evening: quiet no-items message + route to Guide.
+
+After a successful active-evening save from Programme Detail, confirmation explicitly says `Bewaard in Jouw gids`; the persistent action may remain `Bewaard`. Future-evening saves use date-aware feedback and do not claim current-evening placement.
+
+### Discovery/category carousels
+- Onze Kijktips, Films, Series and Sport are native horizontal carousels embedded in the vertical page;
+- no section chevrons, `Alles` destinations, pager dots or arrow controls;
+- continuation is communicated by a partially visible next item;
+- one programme action per card;
+- ended discovery items disappear after their real `endAt`;
+- current cards expose textual `Nu`.
+
+Onze Kijktips uses a 16:9 card family and does not need a repeated visible Kijktip label per card because the section establishes editorial context.
+
+Films and Series use standing 2:3 poster geometry. Series is intentionally denser than Films because measured real volume is ~12–17 qualifying general/mainstream scripted broadcasts per evening. No ranking/deduplication is introduced.
+
+Sport uses landscape broadcast cards and its module is fully omitted when empty.
+
+Artwork is optional enrichment. Missing/failed art retains the same media geometry with a premium channel/text fallback; no fake posters are created. Preferred future Film/Series art is language-neutral/no-language 2:3 poster art. The owner's intended TMDB source remains a central enrichment/data-rights concern, never a direct mobile UI dependency.
+
+Vanavond has no date selector. A quiet date context derives from the active 06:00 television-day start date so 00:00–05:59 remains visibly associated with the preceding evening.
+
+Light/dark/system and substantive Dynamic Type preserve the same hierarchy. Larger Text adapts Jouw-gids rows and carousel widths/density rather than shrinking or clipping essential content.
+
+Film/Series/Sport population remains blocked on the central provider-independent classification/enrichment contract identified by the empirical research. The accepted visual must never be populated through raw-provider genre heuristics in presentation code.
 
 ## Search
 Canonical Phase 5A contract: `docs/SEARCH_PRODUCT_DEFINITION.md`.
