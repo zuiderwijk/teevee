@@ -126,7 +126,7 @@ describe('editorial signal persistence migration', () => {
     expect(smokeSql).toContain('stale refresh was not ignored');
     expect(smokeSql).toContain('historical getter did not return retained started signal');
     expect(smokeSql).toContain('owner-observed historical recovery expected exactly 1 row');
-    expect(smokeSql.match(/20260923003000_preserve_started_editorial_signals\.sql/g)).toHaveLength(2);
+    expect(smokeSql.match(/20260922235737_preserve_started_editorial_signals\.sql/g)).toHaveLength(2);
   });
 
   it('exposes service-role-only RPCs and a refresh cadence independent from EPG refresh', () => {
