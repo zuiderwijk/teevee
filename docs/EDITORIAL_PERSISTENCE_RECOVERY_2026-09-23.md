@@ -1,6 +1,6 @@
 # PR #127 Editorial Persistence Recovery Evidence — 2026-09-23
 
-Status: **MERGED AND DEPLOYED.** PR #127 merged as `6b11ee2fe4a5cbdf4012a680c2558b11b762d999`; the forward migration is applied to the hosted Teevee project and the historical recovery is verified live at the database boundary. The remaining historical iPhone browse-back is a device-only operational smoke, not an implementation blocker.
+Status: **CLOSED — MERGED, DEPLOYED AND PHYSICALLY VERIFIED.** PR #127 merged as `6b11ee2fe4a5cbdf4012a680c2558b11b762d999`; the forward migration is applied to the hosted Teevee project, the historical recovery is verified live at the database boundary, and the recovered Kijktip was subsequently confirmed visible on a physical iPhone.
 
 ## Scope
 
@@ -140,12 +140,14 @@ Live read-only verification immediately after deployment confirmed:
 
 No production programme identity or Guide contract was changed by deployment.
 
-## Remaining operational verification
+## Post-deployment physical verification
 
-The visible Guide runtime was already physically accepted on iPhone before merge. One post-deployment device-only smoke remains:
+**PASS — 2026-09-23.**
 
-1. browse to NPO 1 / 22 September / `De slimste mens`;
-2. confirm the recovered Kijktip label is visible from the hosted signal;
-3. no design or persistence change is implied if this passes.
+On a physical iPhone, NPO 1 / 22 September / `De slimste mens` visibly shows the recovered `Kijktip` label from hosted data.
 
-Backend recovery itself is already verified live and is not pending this device smoke.
+This closes the complete evidence chain:
+
+`direct tips.rss evidence -> deterministic canonical match -> migration recovery -> hosted persistence -> public/runtime enrichment path -> physical Guide presentation`.
+
+No further Kijktip implementation, migration or device gate remains open from PR #127.
