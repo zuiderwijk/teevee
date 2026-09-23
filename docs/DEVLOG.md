@@ -1,5 +1,19 @@
 # Teevee Development Logboek
 
+## 23 september 2026 — Kijktip post-deployment iPhone PASS; Phase 5A Guide Search activated
+
+The final post-deployment Kijktip smoke is **PASS** on a physical iPhone: NPO 1 / 22 September / `De slimste mens` visibly shows the recovered `Kijktip` label from hosted data. This closes PR #127 end-to-end beyond database verification and proves the historical recovery through the public/runtime Guide presentation path.
+
+The Kijktip vertical slice is therefore fully closed. Phase 5 — Search and Discovery is formally active with **Phase 5A — Guide Search** as the first slice.
+
+Canonical Search product authority is now `docs/SEARCH_PRODUCT_DEFINITION.md`. It freezes Search as direct programme-broadcast/channel retrieval across the D-2..D+7 television-day horizon, explicitly excludes universal streaming/people/genre/article/AI/fuzzy search, keeps repeats as concrete canonical broadcasts, and requires exact-broadcast Programme Detail plus channel → Per-zender navigation.
+
+Current runtime inspection found that mobile Guide intentionally owns only current/selected bounded windows and a small visited-window session cache. Search therefore must not be implemented by eager ten-day mobile prefetch or by indexing only visited Guide days. The next engineering increment is a provider-independent hosted Search read boundary over the canonical schedule store, preserving ADR 0007/0008 availability and horizon semantics.
+
+**Next step:** define the Guide Search architecture contract, then implement Search UI/runtime against it. Tonight remains deferred/provisional.
+
+---
+
 ## 23 september 2026 — PR #127 merged; editorial lifecycle migration deployed and live recovery verified
 
 PR #127 exact accepted head `b9867105fdf331dcd6a920c71d0f5e637e3b232c` passed the Lead exact-head gate, owner physical iPhone validation and Independent QA on the same SHA, then merged to `main` as `6b11ee2fe4a5cbdf4012a680c2558b11b762d999`.

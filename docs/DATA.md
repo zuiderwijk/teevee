@@ -1,6 +1,6 @@
 # Teevee Programme Data Strategy
 
-Status: **Kijktip enrichment is merged and deployed; one post-deployment historical iPhone smoke remains before Phase 5 Search is formally activated.** Phase 3 proved the provider-independent hosted data path and Phase 4 closed the television-day-aware Guide runtime, D-2..D+7 navigation/horizon behaviour and production Guide convergence. The Kijktip path is now production-backed end-to-end at the backend boundary, including deterministic matching, private lifecycle persistence, typed hosted transport and Guide presentation wiring. The Phase 4 cache decision is unchanged: keep the current fixture-first + in-memory runtime fallback and do not introduce persistent mobile schedule caching without new measured evidence. Production **EPG** provider selection/rights remain a later release gate and release-like offline cold-start/persistent-cache validation remains Phase 9.
+Status: **Phase 5A Guide Search is active.** Phase 3 proved the provider-independent hosted data path, Phase 4 closed the television-day-aware Guide runtime and D-2..D+7 navigation/horizon behaviour, and the Kijktip enrichment path is merged, deployed and physically verified end-to-end. Search now becomes the active data/API increment. The Phase 4 cache decision is unchanged: keep the current fixture-first + in-memory runtime fallback and do not introduce persistent mobile schedule caching without new measured evidence. Production **EPG** provider selection/rights remain a later release gate and release-like offline cold-start/persistent-cache validation remains Phase 9.
 
 ## Goal
 Teevee must support the complete core Guide without coupling the mobile experience to one EPG supplier. Replacing the temporary development source with an authorized Bindinc/TVgids or commercial provider must not require a Guide rewrite.
@@ -65,6 +65,27 @@ External data flows through:
 `EpgProvider -> explicit channel mapping -> normalisation/diagnostics -> canonical ScheduleRepository -> GuideScheduleApi -> hosted transport -> mobile runtime source/cache -> Guide`
 
 Provider-specific IDs, raw XMLTV, credentials and storage details stop at the server boundary.
+
+## Phase 5A Guide Search data boundary
+
+Canonical product contract: `docs/SEARCH_PRODUCT_DEFINITION.md`.
+
+Search operates on existing canonical `Channel` and concrete canonical `Programme` broadcasts. It does not introduce a new generic programme/title/series entity.
+
+The mobile Guide runtime intentionally does not hold D-2..D+7 simultaneously: current/selected windows are loaded independently and only visited windows are retained in a small session cache. Search therefore requires a hosted provider-independent read boundary over canonical storage rather than a full-horizon mobile prefetch.
+
+Required data semantics:
+- search scope = the exact current D-2..D+7 television-day horizon from shared `guideTime` primitives;
+- result display timestamps = real Europe/Amsterdam civil broadcast times;
+- authoritative complete canonical windows may contribute programme results;
+- missing/partial coverage must remain distinguishable from zero matches;
+- programme title and canonical channel-name fields are the Phase 5A query corpus;
+- exact/prefix/substring lexical matching only; no fuzzy/semantic/provider-specific matching;
+- repeats remain separate canonical broadcasts;
+- Kijktip remains optional sibling metadata and never changes Search ranking;
+- corrected-start canonical identities supersede stale identities naturally through current canonical storage.
+
+Do not solve Search by adding SQLite/TanStack Query, by extending AppPreferences into schedule storage, or by downloading the entire ten-day schedule to mobile.
 
 ## Deterministic fixtures remain mandatory
 Synthetic fixture data remains required for:

@@ -1,9 +1,9 @@
 # Teevee — Canonical Project State
 
 Last updated: 2026-09-23.
-Status: ACTIVE — **Kijktip deployment closeout before Phase 5 Search**.
-Current implementation priority: **post-deployment historical Kijktip iPhone verification**
-Next broader product phase: **Phase 5 — Search and Discovery**
+Status: ACTIVE — **Phase 5A — Guide Search**.
+Current implementation priority: **Guide Search architecture before UI/runtime implementation**
+Current broader product phase: **Phase 5 — Search and Discovery**
 Previous phase: **Phase 4 — Core Guide MVP hardening — CLOSED**
 
 > Mandatory start point for every development-agent session. Read `AGENTS.md` and this file before changing the repository. Historical implementation detail belongs in Git history, `DEVLOG.md`, accepted PRs/issues and timestamped evidence documents; this file stays focused on current canonical state and the single next step.
@@ -25,7 +25,7 @@ Previous phase: **Phase 4 — Core Guide MVP hardening — CLOSED**
 3. **Phase 2 — App Shell:** complete and physically accepted on iPhone.
 4. **Phase 3 — Real Data Vertical Slice:** complete and physically accepted on iPhone. Real provider -> hosted ingest -> canonical persistence -> public typed read -> mobile canonical datasource is proven, including fixture-first startup, real-data transition, fallback and context retention.
 5. **Phase 4 — Core Guide MVP hardening:** **CLOSED**. The 06:00 television-day foundation, television-day-aware runtime, D-2..D+7 navigation/date context, measured Totaal performance hardening, Per-zender production convergence, Programme Detail production convergence, Nu & Straks production convergence and Totaal production convergence are all merged. Totaal PR #114 completed the final open Guide convergence work: its runtime was owner-accepted on iPhone, independently QA-reviewed, its sole QA accessibility blocker was corrected and re-verified at the final Lead merge gate, exact-head CI #877 passed 72 test files / 538 tests plus iOS/Android/web exports, and merge commit `4cea66eca92b7224ff51940b30de09db11928427` landed on `main`. The cache decision remains **no persistent mobile schedule cache now** absent new measured evidence; true no-network cold start and any persistence technology decision remain a release-like Phase 9 gate. Physical Android interaction acceptance remains deferred until Android hardware is available and does not keep Phase 4 open.
-6. **Phase 5 — Search and Discovery:** **NEXT broader product phase**. The Kijktip implementation is merged, deployed and backend-verified; one post-deployment historical iPhone browse-back smoke remains before Phase 5 is formally activated. Search remains the first Phase 5 slice. Tonight remains later and provisional until its value and data requirements are clear.
+6. **Phase 5 — Search and Discovery:** **ACTIVE**. Kijktip is fully closed, including the post-deployment historical iPhone browse-back. **Phase 5A — Guide Search** is the current slice. Canonical product contract: `docs/SEARCH_PRODUCT_DEFINITION.md`. Tonight remains later and provisional until its value and data requirements are clear.
 
 ## Kijktip enrichment vertical slice — merged and deployed
 The inter-phase Kijktip vertical slice is implementation-complete and merged. Do not reopen its accepted product, matching, persistence or Guide-presentation contracts without concrete regression evidence.
@@ -43,7 +43,23 @@ Persistence is deployed. The exact reviewed migration blob `c41b059f627406d12c68
 
 Rights status for this vertical slice is closed: the product owner confirms the intended Teevee Kijktip use of TVgids `tips.rss` is rights-cleared. That source is **not a Kijktip release blocker**. This does not change the separate Phase 8 production EPG-provider redistribution-rights gate or independent licensing/provenance requirements for channel logos and programme artwork.
 
-One operational gate remains before formally activating Phase 5: on a physical iPhone, browse to NPO 1 / 22 September / `De slimste mens` and confirm the newly recovered hosted Kijktip label is visible. The backend recovery itself is already live and verified; this final check validates the post-deployment end-to-end device path only.
+Post-deployment physical iPhone verification is **PASS**: NPO 1 / 22 September / `De slimste mens` visibly shows the recovered `Kijktip` label from hosted data. The Kijktip vertical slice is therefore fully closed.
+
+## Phase 5A — Guide Search
+Canonical product contract: `docs/SEARCH_PRODUCT_DEFINITION.md`.
+
+Frozen first-slice boundaries:
+- direct retrieval of canonical programme broadcasts and channels;
+- programme Search covers the exact D-2..D+7 television-day horizon;
+- programme result answers what/where/when and opens exact-broadcast Programme Detail;
+- channel result opens Guide → Per zender on that canonical channel;
+- no universal streaming, people, genre, article, semantic/AI or fuzzy search in Phase 5A;
+- repeats remain concrete broadcasts; do not create title-only catalogue identity;
+- Kijktip may be shown as sibling metadata but is not a ranking signal;
+- raw query text is not logged by default;
+- full-horizon Search must not change the accepted Guide loading architecture by eagerly prefetching ten mobile schedule days.
+
+Current architecture evidence: the mobile Guide runtime owns current/selected bounded windows and only caches visited day windows. Therefore the next engineering increment is a provider-independent hosted Search read boundary over the canonical schedule store, with authoritative horizon/availability semantics and explicit Search navigation intents. Do not start broad UI refinement before that architecture is documented and testable.
 
 ## Frozen television-day and Guide-horizon semantics
 ADR 0008 is canonical:
@@ -183,9 +199,9 @@ Physical Android interaction acceptance remains OPEN/DEFERRED because no Android
 - physical Android validation.
 
 ## Current next step
-**Run the single post-deployment historical Kijktip iPhone smoke.** Browse to NPO 1 / 22 September / `De slimste mens` and confirm the recovered Kijktip label is visible from hosted data. Backend migration/history/function/recovery state is already verified live. After this device PASS, formally activate Phase 5 with Search as the first slice; define the Guide Search product/data/navigation contract before runtime implementation. Tonight remains deferred/provisional.
+**Define and implement the Phase 5A Guide Search architecture boundary before Search UI convergence.** Use `docs/SEARCH_PRODUCT_DEFINITION.md` as product authority. The architecture increment must establish the provider-independent full-horizon search contract, canonical-store query semantics, bounded result model, availability semantics, stale-response ownership and Search → Programme Detail / Per-zender navigation intents without eager D-2..D+7 mobile prefetch. Then proceed to Search UI/runtime implementation and physical acceptance. Tonight remains deferred/provisional.
 
 Owner checkout: `~/projects/teevee`.
 
 ## Resume instruction
-> Read `AGENTS.md`, this file, `docs/TVGIDS_EDITORIAL_FEED_MATCHING_2026-09-22.md`, `docs/EDITORIAL_PERSISTENCE_RECOVERY_2026-09-23.md`, the accepted Per-zender/Nu & Straks Kijktip production specifications, `docs/PRODUCT.md`, `docs/UX.md`, `docs/ARCHITECTURE.md`, `docs/DATA.md`, `docs/ENGINEERING_QUALITY_POLICY.md` and `docs/BUILD_SPEC.md` before changing the repository. Phase 4 is CLOSED. Kijktip implementation is merged and deployed; only the post-deployment historical iPhone browse-back smoke remains before Phase 5 Search is formally activated. Do not reopen accepted Guide/Kijktip metrics, matching or persistence semantics without concrete regression evidence. Tonight remains deferred/provisional. Physical Android interaction validation remains deferred until Android hardware is available.
+> Read `AGENTS.md`, this file, `docs/SEARCH_PRODUCT_DEFINITION.md`, `docs/PRODUCT.md`, `docs/UX.md`, `docs/ARCHITECTURE.md`, `docs/DATA.md`, `docs/ENGINEERING_QUALITY_POLICY.md` and `docs/BUILD_SPEC.md` before changing the repository. Phase 4 is CLOSED and the Kijktip vertical slice is CLOSED. Phase 5A Guide Search is active. Preserve the provider-independent canonical programme/channel domain, D-2..D+7 television-day semantics and accepted Guide loading/performance architecture. Do not introduce eager full-horizon mobile schedule prefetch, title-only catalogue identity, universal streaming search or broad discovery scope. Tonight remains deferred/provisional. Physical Android interaction validation remains deferred until Android hardware is available.
