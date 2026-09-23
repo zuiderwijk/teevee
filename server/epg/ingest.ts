@@ -1,8 +1,13 @@
 import type { Channel, GuideSchedule } from '@/data/domain/epg';
+import type { ProgrammeClassification } from '@/data/domain/programmeClassification';
 
 import type { DataQualityDiagnostic } from './diagnostics';
 import { normaliseProviderSchedule } from './normalise.ts';
-import type { ChannelMapping, EpgProvider } from './provider';
+import type {
+  ChannelMapping,
+  EpgProvider,
+  ProviderScheduleBatch,
+} from './provider';
 import type { ScheduleRepository, ScheduleWindowWriteResult } from './scheduleRepository';
 
 type StoredWindowResult = Extract<ScheduleWindowWriteResult, { status: 'stored' }>;
@@ -34,15 +39,31 @@ export type IngestProviderScheduleResult = {
   write: IngestWriteResult;
 };
 
-export type IngestProviderScheduleInput = {
+export type ObserveProviderScheduleInput = {
   provider: EpgProvider;
-  repository: ScheduleRepository;
   canonicalChannels: Channel[];
   channelMappings: ChannelMapping[];
   providerChannelIds: string[];
   from: Date;
   to: Date;
   clock?: () => Date;
+};
+
+export type ProviderScheduleObservation = {
+  from: string;
+  to: string;
+  observedAt: string;
+  coverage: ProviderScheduleBatch['coverage'];
+  schedule: GuideSchedule;
+  classifications: ProgrammeClassification[];
+  diagnostics: DataQualityDiagnostic[];
+  requestedCanonicalChannelIds: Channel['id'][];
+  safeChannelIds: Channel['id'][];
+  hasUnattributedProviderRecord: boolean;
+};
+
+export type IngestProviderScheduleInput = ObserveProviderScheduleInput & {
+  repository: ScheduleRepository;
 };
 
 function validDate(value: Date, label: string): number {
@@ -62,13 +83,15 @@ function requestedProviderChannels(channelIds: string[]): string[] {
 }
 
 /**
- * Fetches one provider window, normalises it, and replaces only canonical channel
- * scopes that are safe to treat as authoritative. Provider/network errors propagate;
- * the repository is not mutated until normalisation and write-scope checks finish.
+ * Fetches and normalises one provider observation without mutating canonical storage.
+ *
+ * Coverage remains descriptive here. Callers decide whether the observation is
+ * authoritative enough for destructive schedule replacement or only suitable for
+ * an exact-match sibling recovery.
  */
-export async function ingestProviderSchedule(
-  input: IngestProviderScheduleInput,
-): Promise<IngestProviderScheduleResult> {
+export async function observeProviderSchedule(
+  input: ObserveProviderScheduleInput,
+): Promise<ProviderScheduleObservation> {
   const fromMs = validDate(input.from, 'from');
   const toMs = validDate(input.to, 'to');
   if (toMs <= fromMs) throw new Error('to must be after from');
@@ -119,38 +142,62 @@ export async function ingestProviderSchedule(
     (channelId) => !blockedChannelIds.has(channelId),
   );
 
-  if (batch.coverage === 'partial') {
+  return {
+    from: new Date(fromMs).toISOString(),
+    to: new Date(toMs).toISOString(),
+    observedAt: observedAt.toISOString(),
+    coverage: batch.coverage,
+    schedule: normalised.schedule,
+    classifications: normalised.classifications,
+    diagnostics: normalised.diagnostics,
+    requestedCanonicalChannelIds,
+    safeChannelIds,
+    hasUnattributedProviderRecord: normalised.diagnostics.some(
+      (diagnostic) =>
+        diagnostic.code === 'unmapped-provider-channel' &&
+        diagnostic.providerChannelId === undefined,
+    ),
+  };
+}
+
+/**
+ * Fetches one provider window, normalises it, and replaces only canonical channel
+ * scopes that are safe to treat as authoritative. Provider/network errors propagate;
+ * the repository is not mutated until normalisation and write-scope checks finish.
+ */
+export async function ingestProviderSchedule(
+  input: IngestProviderScheduleInput,
+): Promise<IngestProviderScheduleResult> {
+  const observation = await observeProviderSchedule(input);
+
+  if (observation.coverage === 'partial') {
     return {
-      schedule: normalised.schedule,
-      diagnostics: normalised.diagnostics,
+      schedule: observation.schedule,
+      diagnostics: observation.diagnostics,
       write: {
         status: 'skipped',
-        channelIds: safeChannelIds,
+        channelIds: observation.safeChannelIds,
         reason: 'partial-provider-coverage',
       },
     };
   }
 
-  const hasUnattributedProviderRecord = normalised.diagnostics.some(
-    (diagnostic) =>
-      diagnostic.code === 'unmapped-provider-channel' && diagnostic.providerChannelId === undefined,
-  );
-  if (hasUnattributedProviderRecord) {
+  if (observation.hasUnattributedProviderRecord) {
     return {
-      schedule: normalised.schedule,
-      diagnostics: normalised.diagnostics,
+      schedule: observation.schedule,
+      diagnostics: observation.diagnostics,
       write: {
         status: 'skipped',
-        channelIds: safeChannelIds,
+        channelIds: observation.safeChannelIds,
         reason: 'unattributed-provider-record',
       },
     };
   }
 
-  if (safeChannelIds.length === 0) {
+  if (observation.safeChannelIds.length === 0) {
     return {
-      schedule: normalised.schedule,
-      diagnostics: normalised.diagnostics,
+      schedule: observation.schedule,
+      diagnostics: observation.diagnostics,
       write: {
         status: 'skipped',
         channelIds: [],
@@ -160,24 +207,28 @@ export async function ingestProviderSchedule(
   }
 
   const result = await input.repository.replaceWindow({
-    from: new Date(fromMs).toISOString(),
-    to: new Date(toMs).toISOString(),
-    channelIds: safeChannelIds,
-    schedule: normalised.schedule,
-    classifications: normalised.classifications,
+    from: observation.from,
+    to: observation.to,
+    channelIds: observation.safeChannelIds,
+    schedule: observation.schedule,
+    classifications: observation.classifications,
   });
 
   if (result.status === 'ignored-stale') {
     return {
-      schedule: normalised.schedule,
-      diagnostics: normalised.diagnostics,
-      write: { status: 'ignored-stale', channelIds: safeChannelIds, result },
+      schedule: observation.schedule,
+      diagnostics: observation.diagnostics,
+      write: {
+        status: 'ignored-stale',
+        channelIds: observation.safeChannelIds,
+        result,
+      },
     };
   }
 
   return {
-    schedule: normalised.schedule,
-    diagnostics: normalised.diagnostics,
-    write: { status: 'stored', channelIds: safeChannelIds, result },
+    schedule: observation.schedule,
+    diagnostics: observation.diagnostics,
+    write: { status: 'stored', channelIds: observation.safeChannelIds, result },
   };
 }
