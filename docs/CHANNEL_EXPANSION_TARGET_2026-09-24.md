@@ -68,6 +68,7 @@ The next expansion iteration targets exactly these **49 channels**, in this defa
 - Search and other channel-selection surfaces should consume the same canonical channel catalog rather than maintaining a separate ordering table.
 - This decision fixes inclusion and order. It does **not** fix provider IDs, feed URLs, logo source, entitlement/package availability or production redistribution rights.
 - Do not re-rank this list from raw pageviews or provider channel numbers during implementation without a new owner-level product decision.
+- Vanavond category-discovery modules intentionally use a narrower curated subset of this catalog. That scope is canonical in `docs/TONIGHT_PRODUCT_DEFINITION.md`; it does not change the Guide default order or channel availability.
 
 ## Source evidence and mapping constraints
 
