@@ -2,7 +2,7 @@
 
 Last updated: 2026-09-23.
 Status: ACTIVE — **Phase 5A — Guide Search**.
-Current implementation priority: **Guide Search architecture before UI/runtime implementation**
+Current implementation priority: **deploy and live-verify the Guide Search hosted boundary; then implement Search mobile UI/runtime**
 Current broader product phase: **Phase 5 — Search and Discovery**
 Previous phase: **Phase 4 — Core Guide MVP hardening — CLOSED**
 
@@ -17,7 +17,7 @@ Previous phase: **Phase 4 — Core Guide MVP hardening — CLOSED**
 - Deterministic fixtures remain mandatory after real data is introduced.
 - Core Guide cannot depend on artwork/enrichment.
 - `docs/VISUAL_BASELINE.md` plus `design/current/` select the accepted visual references. New visual exploration is not canonical until explicitly approved and merged.
-- Relevant durable architecture contracts are ADR 0001 through ADR 0008.
+- Relevant durable architecture contracts are ADR 0001 through ADR 0009.
 
 ## Phase status
 1. **Phase 1A — Totaal interaction/technical baseline:** complete and physically accepted on iPhone. Totaal production visual design, implementation-ready specification and runtime production convergence are merged, owner-accepted and canonical.
@@ -59,7 +59,9 @@ Frozen first-slice boundaries:
 - raw query text is not logged by default;
 - full-horizon Search must not change the accepted Guide loading architecture by eagerly prefetching ten mobile schedule days.
 
-Current architecture evidence: the mobile Guide runtime owns current/selected bounded windows and only caches visited day windows. Therefore the next engineering increment is a provider-independent hosted Search read boundary over the canonical schedule store, with authoritative horizon/availability semantics and explicit Search navigation intents. Do not start broad UI refinement before that architecture is documented and testable.
+Guide Search architecture is now defined by ADR 0009 and implemented in PR #132. The mobile Guide runtime remains unchanged: Search uses a dedicated hosted `GuideSearchApi` / `GuideSearchRepository` boundary, server-owned D-2..D+7 windows, one bounded canonical-store Search RPC, explicit `complete | partial | unavailable` programme coverage, bounded canonical broadcast/channel results, optional Kijktip enrichment and transient Programme Detail / Per-zender navigation intents. No full-horizon mobile prefetch or title-only catalogue identity is introduced.
+
+The architecture PR deliberately does not deploy the migration/Edge Function before merge. After merge, deploy and live-verify the hosted Search boundary against canonical data; only then wire the mobile Search surface to it.
 
 ## Frozen television-day and Guide-horizon semantics
 ADR 0008 is canonical:

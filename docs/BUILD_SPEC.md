@@ -130,8 +130,8 @@ Do not reintroduce card-heavy programme presentation, redundant metadata or low-
 **ACTIVE.** The Kijktip pre-Search vertical slice is closed. Phase 5 starts with **Phase 5A — Guide Search** using `docs/SEARCH_PRODUCT_DEFINITION.md` as canonical product authority.
 
 Build sequence:
-1. Guide Search architecture boundary over the canonical hosted schedule store;
-2. Search UI/runtime for concrete programme broadcasts + channels;
+1. **DONE in PR #132** — Guide Search architecture boundary over the canonical hosted schedule store;
+2. **NEXT** — deploy/live-verify that hosted boundary, then wire Search UI/runtime for concrete programme broadcasts + channels;
 3. focused physical iPhone validation and Independent QA;
 4. only then evaluate the next Phase 5 slice.
 

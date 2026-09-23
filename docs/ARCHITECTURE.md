@@ -35,29 +35,29 @@ The two lanes meet only on canonical `Programme.id`. Editorial source identity n
 
 Phase 3 proved this complete boundary on a physical iPhone: the Guide renders deterministic fixture data immediately, then replaces it with canonical hosted data when a complete hosted schedule is available. Unavailable/network-failed hosted reads keep the Guide usable rather than clearing the current state.
 
-## Phase 5A Guide Search architecture constraints
+## Phase 5A Guide Search architecture
 
-Search must operate over the same canonical Teevee schedule store and D-2..D+7 television-day semantics as Guide, but it must not change the accepted mobile Guide loading architecture.
+ADR 0009 is canonical for the hosted Search read boundary.
 
-Current runtime evidence:
-- mobile Guide keeps current/selected bounded windows, not the full ten-day horizon;
-- selected-day loading is on demand and a small session cache retains only visited windows;
-- public `guide-schedule` reads are deliberately bounded to one television day.
+Search operates over the same canonical Teevee schedule store and D-2..D+7 television-day semantics as Guide **without changing the accepted mobile Guide loading architecture**.
 
-Therefore Phase 5A requires a **provider-independent hosted Search read boundary** over canonical storage rather than eager full-horizon mobile schedule prefetch.
+Implemented boundary:
+- mobile sends only the validated Search query to the public `guide-search` endpoint;
+- the server derives the exact ten ADR 0008 television-day windows from the current instant;
+- `GuideSearchRepository` receives those windows and returns bounded canonical matches rather than full schedules;
+- the Supabase implementation performs one service-role-only canonical-store RPC, `teevee_search_guide`;
+- authoritative programme scope is evaluated per active channel × television-day window;
+- `complete | partial | unavailable` remains distinct from result count;
+- channel Search remains available independently from programme-window coverage;
+- programme results are concrete `Programme` + `Channel` broadcasts; no generic title/series identity exists;
+- lexical matching is deterministic exact/prefix/substring after the frozen normalization rules;
+- programme/channel result counts are bounded at 24 each;
+- optional Kijktip enrichment is loaded only for returned programme IDs and fails open;
+- explicit transient navigation intents own Search → Programme Detail and Search → Per-zender handoff.
 
-Architecture requirements:
-- request/response types must expose canonical Teevee channel/programme identity only;
-- Search horizon derives from ADR 0008's current D-2..D+7 television-day windows;
-- only authoritative covered canonical data may contribute programme results;
-- partial/unavailable horizon state remains distinguishable from a true zero-result query;
-- lexical normalization/ranking is deterministic and testable;
-- results remain bounded and stale/out-of-order requests cannot replace newer-query state;
-- no generic title/series identity is added to `Programme`;
-- Search ranking/presentation fields remain outside canonical `Programme`;
-- Search → Programme Detail and Search → Per-zender use explicit navigation intent rather than implementation shortcuts that mutate unrelated preferences.
+The hosted implementation keeps the private `teevee` schema inaccessible to clients, exposes only a service-role RPC bridge to the Edge Function, and installs `unaccent` in the `extensions` schema. Mobile never receives provider/database identity or privileged credentials.
 
-The exact Search repository/API/SQL shape is the next architecture increment. UI implementation should consume that boundary rather than coupling directly to Supabase tables or the development provider.
+Search UI/runtime must consume this boundary. It must not reintroduce eager ten-day mobile prefetch, direct Supabase-table access, fuzzy/semantic/AI search, or preference mutation as a navigation shortcut.
 
 ## Provider boundary
 `EpgProvider` returns neutral external channel/programme records and schedule batches classified as:
@@ -99,7 +99,7 @@ Programme timestamps remain real UTC instants. Guide grouping/navigation derives
 - Totaal and Per zender must expose at least D-2 through D+7, ten complete television days;
 - Nu & Straks remains a single active-television-day presentation.
 
-Phase 4 must implement this without shifting stored programme timestamps and without retuning the physically accepted Guide gesture model. PR #62 established the shared 06:00/horizon primitives and PR #64 migrated the current mobile hosted runtime to D + D+1 television-day loading/anchoring with a 06:00 rollover. User-facing D-2..D+7 selection/navigation remains the next boundary.
+Phase 4 implemented this without shifting stored programme timestamps or retuning the physically accepted Guide gesture model. PR #62 established the shared 06:00/horizon primitives, PR #64 migrated current-runtime loading to television-day semantics, and PR #66 completed user-facing D-2..D+7 selection/navigation for Totaal and Per zender.
 
 ## Hosted backend
 Teevee has a dedicated Supabase project:
@@ -170,7 +170,7 @@ The mobile app currently uses:
 - request-version protection so late older hosted responses cannot replace newer state;
 - deterministic fixture preservation when hosted data is unavailable, invalid, empty in the wrong way or the network fails.
 
-PR #64 replaced the former strict calendar today+tomorrow/midnight semantics. Its exact reviewed head was automation-proven and physically accepted on iPhone for fixture-first -> hosted replacement and same-television-day background/resume context retention. The next runtime/UI boundary is selected-day D-2..D+7 access for Totaal and Per zender; Nu & Straks remains single-active-day.
+PR #64 replaced the former strict calendar today+tomorrow/midnight semantics and was automation-proven plus physically accepted on iPhone for fixture-first -> hosted replacement and same-television-day background/resume context retention. PR #66 subsequently completed bounded selected-day D-2..D+7 access for Totaal and Per zender; Nu & Straks remains single-active-day.
 
 ## Caching/offline
 Persistent mobile schedule caching was **not selected at Phase 4 closeout**. The current robust fallback is deterministic fixture-first + preservation of usable runtime state across failed refreshes.
@@ -179,16 +179,17 @@ Phase 4 measurement showed the dominant cold Guide bottleneck was React/render +
 
 A true no-network cold start cannot be validated through Expo Go after force-quit because Expo Go itself needs Metro/network to load the development bundle. The product-level local caching/graceful-offline requirement remains for release, but release-like offline cold-start validation and any concrete persistent-cache technology decision are deferred to Phase 9 when a standalone/dev build is available.
 
-## Phase 4 architecture increment
-The architecture sequence follows `PROJECT_STATE.md` exactly:
-1. **DONE** — create shared 06:00 `Europe/Amsterdam` television-day primitives and D-2..D+7 horizon semantics (PR #62);
-2. **DONE for current runtime boundary** — migrate hosted runtime anchoring/loading away from strict calendar-day assumptions to D + D+1 television-day semantics (PR #64);
-3. **NEXT** — wire the accepted compact date context/day selector into Totaal and Per zender, with functional D-2..D+7 selection backed by bounded per-day reads while preserving frozen gesture mechanics;
-4. keep Nu & Straks deferred and single-active-day;
-5. retain deterministic fixtures and controlled hosted fallback;
-6. evaluate realistic full-horizon payload/render performance before introducing persistent caching or eager ten-day rendering.
+## Phase 4 architecture record — CLOSED
+Phase 4 is closed in `PROJECT_STATE.md`; this section is historical architecture record, not active sequencing.
 
-Because television-day/date/horizon code is high risk under `ENGINEERING_QUALITY_POLICY.md`, the implementation requires deterministic boundary/DST/selection tests and independent QA before merge. Physical iPhone evidence is required when user-facing Guide day navigation/scroll context changes.
+1. **DONE — PR #62:** shared 06:00 `Europe/Amsterdam` television-day primitives and D-2..D+7 horizon semantics.
+2. **DONE — PR #64:** hosted current-runtime anchoring/loading migrated from strict calendar-day assumptions to bounded television-day reads.
+3. **DONE — PR #66:** Totaal and Per zender gained functional D-2..D+7 selection backed by bounded selected-day reads while preserving frozen Guide mechanics.
+4. **DONE:** Nu & Straks preserved its single-active-television-day contract and later completed production convergence.
+5. **RETAINED:** deterministic fixtures and controlled hosted fallback remain part of the accepted runtime.
+6. **CLOSED DECISION:** measured Guide performance work did not justify persistent mobile schedule caching or eager ten-day rendering; that decision remains deferred unless new evidence appears.
+
+The high-risk television-day/date/horizon work received deterministic boundary/DST/selection coverage, independent review and the required physical iPhone acceptance during Phase 4.
 
 ## Data refresh invariants
 - corrections replace only explicit refreshed channel/time scope;
