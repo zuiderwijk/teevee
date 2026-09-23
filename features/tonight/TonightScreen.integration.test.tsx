@@ -31,6 +31,9 @@ const personal = vi.hoisted(() => ({
 const clock = vi.hoisted(() => ({
   nowMs: Date.parse('2026-09-23T20:30:00+02:00'),
 }));
+const dimensions = vi.hoisted(() => ({
+  fontScale: 1,
+}));
 
 vi.mock('expo-router', async () => {
   const React = await import('react');
@@ -100,7 +103,12 @@ vi.mock('react-native', async () => {
     accessibilityLabel?: string;
     accessibilityHint?: string;
     accessibilityLiveRegion?: string;
+    accessibilityElementsHidden?: boolean;
+    importantForAccessibility?: string;
     accessible?: boolean;
+    horizontal?: boolean;
+    numberOfLines?: number;
+    style?: unknown;
     onPress?: () => void;
     onLongPress?: () => void;
   };
@@ -108,41 +116,80 @@ vi.mock('react-native', async () => {
   const childrenFor = (children: HostProps['children']) =>
     typeof children === 'function' ? children({ pressed: false }) : children;
 
+  const flattenStyle = (style: unknown): Record<string, unknown> => {
+    if (Array.isArray(style)) {
+      return Object.assign({}, ...style.map((entry) => flattenStyle(entry)));
+    }
+    return style && typeof style === 'object'
+      ? (style as Record<string, unknown>)
+      : {};
+  };
+
   const View = ({
     children,
     testID,
     accessibilityLabel,
+    accessibilityElementsHidden,
+    importantForAccessibility,
     accessible,
     accessibilityLiveRegion,
-  }: HostProps) =>
-    createElement(
+    style,
+  }: HostProps) => {
+    const flatStyle = flattenStyle(style);
+    return createElement(
       'div',
       {
         'data-testid': testID,
         'aria-label': accessibilityLabel,
-        'aria-hidden': accessible === false ? true : undefined,
+        'aria-hidden':
+          accessible === false ||
+          accessibilityElementsHidden === true ||
+          importantForAccessibility === 'no-hide-descendants'
+            ? true
+            : undefined,
         'aria-live':
           accessibilityLiveRegion === 'polite' ? 'polite' : undefined,
+        'data-style-height':
+          typeof flatStyle.height === 'number' ? String(flatStyle.height) : undefined,
+        'data-style-min-height':
+          typeof flatStyle.minHeight === 'number'
+            ? String(flatStyle.minHeight)
+            : undefined,
       },
       childrenFor(children),
     );
+  };
 
   const Text = ({
     children,
     testID,
     accessibilityRole,
     accessibilityLabel,
+    numberOfLines,
+    style,
     onLongPress,
-  }: HostProps) =>
-    createElement(
+  }: HostProps) => {
+    const flatStyle = flattenStyle(style);
+    return createElement(
       accessibilityRole === 'header' ? 'h2' : 'span',
       {
         'data-testid': testID,
         'aria-label': accessibilityLabel,
+        'data-number-of-lines':
+          typeof numberOfLines === 'number' ? String(numberOfLines) : undefined,
+        'data-font-size':
+          typeof flatStyle.fontSize === 'number'
+            ? String(flatStyle.fontSize)
+            : undefined,
+        'data-line-height':
+          typeof flatStyle.lineHeight === 'number'
+            ? String(flatStyle.lineHeight)
+            : undefined,
         onDoubleClick: onLongPress,
       },
       childrenFor(children),
     );
+  };
 
   const Pressable = ({
     children,
@@ -162,8 +209,15 @@ vi.mock('react-native', async () => {
       childrenFor(children),
     );
 
-  const ScrollView = ({ children, testID }: HostProps) =>
-    createElement('div', { 'data-testid': testID }, childrenFor(children));
+  const ScrollView = ({ children, testID, horizontal }: HostProps) =>
+    createElement(
+      'div',
+      {
+        'data-testid': testID,
+        'data-horizontal': horizontal === true ? 'true' : undefined,
+      },
+      childrenFor(children),
+    );
 
   return {
     AppState: {
@@ -180,7 +234,7 @@ vi.mock('react-native', async () => {
       width: 390,
       height: 844,
       scale: 3,
-      fontScale: 1,
+      fontScale: dimensions.fontScale,
     }),
     View,
   };
@@ -313,6 +367,7 @@ beforeEach(() => {
   vi.stubGlobal('IS_REACT_ACT_ENVIRONMENT', true);
   vi.clearAllMocks();
   clock.nowMs = Date.parse('2026-09-23T20:30:00+02:00');
+  dimensions.fontScale = 1;
   runtimeState.snapshot = readySnapshot();
   personal.state = withProgrammeSaved(
     EMPTY_PROGRAMME_PERSONAL_STATE,
@@ -374,6 +429,101 @@ describe('TonightScreen production runtime surface', () => {
     expect(getByTestId('tonight-film-film-future')).toBeDefined();
     expect(getByTestId('tonight-series-series-future')).toBeDefined();
     expect(getByTestId('tonight-sport-sport-future')).toBeDefined();
+  });
+
+  it('keeps the standard Sport fallback fixed at 220x112 with a compact two-line title', async () => {
+    await renderScreen();
+
+    const fallback = getByTestId('tonight-sport-fallback-sport-future');
+    const title = getByTestId('tonight-sport-title-sport-future');
+    const metadata = getByTestId('tonight-sport-metadata-sport-future');
+    const card = getByTestId('tonight-sport-sport-future');
+    const carousel = getByTestId('tonight-sport-carousel');
+
+    expect(fallback.getAttribute('data-style-height')).toBe('112');
+    expect(fallback.getAttribute('data-style-min-height')).toBeNull();
+    expect(title.getAttribute('data-number-of-lines')).toBe('2');
+    expect(title.getAttribute('data-font-size')).toBe('15');
+    expect(title.getAttribute('data-line-height')).toBe('19');
+    expect(metadata.textContent).toContain('NPO 1 · 23:00');
+    expect(card.tagName).toBe('BUTTON');
+    expect(fallback.getAttribute('aria-hidden')).toBe('true');
+    expect(card.querySelectorAll('button')).toHaveLength(0);
+    expect(carousel.getAttribute('data-horizontal')).toBe('true');
+  });
+
+  it('lets a long Sport fallback grow vertically at Larger Text without shrinking title or metadata', async () => {
+    dimensions.fontScale = 2;
+    const longSport = {
+      ...programmes[4],
+      startAt: '2026-09-23T20:00:00+02:00',
+      endAt: '2026-09-23T22:00:00+02:00',
+      title:
+        'Live internationale atletiekfinale met uitgebreide voorbeschouwing en meerdere Nederlandse deelnemers',
+    };
+    const snapshot = readySnapshot();
+    runtimeState.snapshot = {
+      ...snapshot,
+      data: snapshot.data
+        ? {
+            ...snapshot.data,
+            schedule: {
+              ...snapshot.data.schedule,
+              programmes: snapshot.data.schedule.programmes.map((programme) =>
+                programme.id === longSport.id ? longSport : programme,
+              ),
+            },
+          }
+        : null,
+    };
+
+    await renderScreen();
+
+    const fallback = getByTestId('tonight-sport-fallback-sport-future');
+    const title = getByTestId('tonight-sport-title-sport-future');
+    const metadata = getByTestId('tonight-sport-metadata-sport-future');
+    const card = getByTestId('tonight-sport-sport-future');
+
+    expect(fallback.getAttribute('data-style-height')).toBeNull();
+    expect(Number(fallback.getAttribute('data-style-min-height'))).toBeGreaterThan(
+      112,
+    );
+    expect(title.getAttribute('data-number-of-lines')).toBeNull();
+    expect(title.getAttribute('data-font-size')).toBe('15');
+    expect(title.getAttribute('data-line-height')).toBe('19');
+    expect(title.textContent).toBe(longSport.title);
+    expect(metadata.textContent).toContain('Nu · NPO 1');
+    expect(metadata.getAttribute('data-font-size')).toBe('13');
+    expect(metadata.getAttribute('data-line-height')).toBe('18');
+    expect(card.tagName).toBe('BUTTON');
+    expect(fallback.getAttribute('aria-hidden')).toBe('true');
+    expect(card.querySelectorAll('button')).toHaveLength(0);
+  });
+
+  it('omits an empty Sport module while preserving the native Film/Series carousels', async () => {
+    const snapshot = readySnapshot();
+    runtimeState.snapshot = {
+      ...snapshot,
+      data: snapshot.data
+        ? {
+            ...snapshot.data,
+            classifications: snapshot.data.classifications.filter(
+              ({ programmeId }) => programmeId !== 'sport-future',
+            ),
+          }
+        : null,
+    };
+
+    await renderScreen();
+
+    expect(container.querySelector('[data-testid="tonight-sport-carousel"]')).toBeNull();
+    expect(getByTestId('tonight-film-carousel').getAttribute('data-horizontal')).toBe(
+      'true',
+    );
+    expect(
+      getByTestId('tonight-series-carousel').getAttribute('data-horizontal'),
+    ).toBe('true');
+    expect(text()).not.toContain('Sport vanavond');
   });
 
   it('opens exact resolved broadcasts and leaves an unresolved local snapshot non-actionable', async () => {
