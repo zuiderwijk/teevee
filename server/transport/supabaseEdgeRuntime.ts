@@ -4,19 +4,28 @@ export const TEEVEE_EDGE_CORS_HEADERS = {
   'Access-Control-Allow-Methods': 'POST, OPTIONS',
 } as const;
 
+type EdgeGlobal = typeof globalThis & {
+  Deno?: {
+    env: {
+      get(name: string): string | undefined;
+    };
+  };
+};
+
 export function edgeJson(data: unknown, init: ResponseInit = {}): Response {
+  const headers = new Headers(TEEVEE_EDGE_CORS_HEADERS);
+  headers.set('Cache-Control', 'no-store');
+  new Headers(init.headers).forEach((value, key) => headers.set(key, value));
+
   return Response.json(data, {
     ...init,
-    headers: {
-      ...TEEVEE_EDGE_CORS_HEADERS,
-      'Cache-Control': 'no-store',
-      ...(init.headers ?? {}),
-    },
+    headers,
   });
 }
 
 export function defaultSupabaseSecretKey(): string {
-  const raw = Deno.env.get('SUPABASE_SECRET_KEYS');
+  const edgeGlobal = globalThis as EdgeGlobal;
+  const raw = edgeGlobal.Deno?.env.get('SUPABASE_SECRET_KEYS');
   if (!raw) throw new Error('SUPABASE_SECRET_KEYS is unavailable');
 
   const keys = JSON.parse(raw) as unknown;
@@ -35,8 +44,12 @@ export async function parseBoundedJsonBody(
   req: Request,
   maxBodyBytes: number,
 ): Promise<unknown> {
+  if (!Number.isInteger(maxBodyBytes) || maxBodyBytes <= 0) {
+    throw new RangeError('maxBodyBytes must be a positive integer');
+  }
+
   const text = await req.text();
-  if (text.length > maxBodyBytes) {
+  if (new TextEncoder().encode(text).byteLength > maxBodyBytes) {
     throw new Error('Request body is too large');
   }
   if (!text.trim()) throw new Error('Request body is required');
