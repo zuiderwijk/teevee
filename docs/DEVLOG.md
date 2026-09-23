@@ -1,5 +1,16 @@
 # Teevee Development Logboek
 
+## 23 september 2026 — TMDB commercial licensing gate closed
+
+The product owner confirms the required commercial TMDB licensing for Teevee production API/data/image use is arranged. The independent commercial-use blocker recorded by TMDB matching research #156 is therefore closed.
+
+This changes the next enrichment increment from “contingent on licensing” to an engineering/design problem: production credentials and secret ownership, rate-limit/retry/timeout/cache behavior, contract-compliant attribution/branding where applicable, external-reference persistence and bootstrap/replay lifecycle still need explicit design and implementation. Confidential commercial terms and credentials remain outside the repository.
+
+The separate production EPG-provider redistribution-rights gate, channel-logo provenance requirements and rights for any non-TMDB artwork source remain unchanged.
+
+---
+
+
 ## 23 september 2026 — PR #158 EPG identity evidence production foundation
 
 Issue #157 / PR #158 productionizes the minimum server/provider evidence proven useful by source research #154 and TMDB matching research #156, without implementing TMDB or artwork.
