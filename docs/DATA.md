@@ -248,6 +248,7 @@ This source is development-only. Public availability is not proof of commercial 
 Observed real-feed evidence on 2026-09-14 via temporary unmerged inspection:
 - 30,237,192 bytes;
 - 184 channels;
+- full live-source channel inventory: `docs/RAW_EPG_CHANNEL_INVENTORY_2026-09-24.md` (184 unique provider channel IDs, 40,282 programme rows observed 2026-09-24);
 - 33,117 programme records;
 - observed range `20260913000600 +0000` through `20260919235500 +0000`;
 - verified IDs including NPO1/2/3, RTL4/5/7/8/Z, SBS6/9, Net5 and VeronicaDisneyXD.
