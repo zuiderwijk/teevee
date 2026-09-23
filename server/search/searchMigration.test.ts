@@ -45,7 +45,7 @@ describe('Guide Search migration contract', () => {
   it('executes the real migration in the disposable PostgreSQL smoke', () => {
     expect(
       smoke.match(
-        /20260923003500_create_guide_search_read_boundary\.sql/g,
+        /20260923064120_create_guide_search_read_boundary\.sql/g,
       ),
     ).toHaveLength(1);
     expect(smoke).toMatch(/\brollback\b/i);
