@@ -1,5 +1,23 @@
 # Teevee Development Logboek
 
+## 23 september 2026 — Guide Search hosted boundary merged, deployed and live-verified
+
+PR #132 exact accepted head `8bdc679f28289a7ccf5b8445aa7f2c42e13b35df` passed exact-head CI #984, Independent QA (#5787177734) and final Lead merge gate (#5787185229), then merged to `main` as `3c7ebcf906ff64bb2b6b71c04d177a20519eb2a0`. Exact-main CI #985 subsequently passed strict TypeScript, lint, 89 test files / 670 tests, iOS/Android/web exports and the full-ABI Android build.
+
+The reviewed Guide Search migration blob `d232eacbf3b809d23ae9c4eeb9a15ea2ffc20380` was applied to hosted project `eokszvpityhtysbwdduy`. Supabase recorded remote version `20260923064120_create_guide_search_read_boundary`; the deployment-closeout PR aligns the repository filename to that remote version without changing SQL bytes. Live verification confirmed `unaccent` in `extensions`, SECURITY INVOKER + empty search_path, EXECUTE denied to anon/authenticated and granted to service_role.
+
+`guide-search` deployed as ACTIVE version 1 with `verify_jwt=false`; all 12 deployed files matched merge commit `3c7ebcf...` byte-for-byte. The existing `guide-schedule` public read was redeployed as ACTIVE version 7 for the shared hardened Edge runtime refactor; all 10 deployed files also matched the merge commit.
+
+Because the local shell had no outbound DNS and the Supabase SQL connector is read-only for `pg_net`, the final public HTTP proof ran as a temporary network-enabled GitHub Actions job. CI #986 / run `35828454528`, job `107075306874`, POSTed to the real production `guide-search` endpoint and passed both: `NPO` returned canonical `nl-npo-1`; `Goedemorgen Nederland` returned a concrete canonical NPO 1 broadcast. The temporary CI job was removed immediately after the proof.
+
+The hosted Search boundary is therefore complete end-to-end. The next active Phase 5A increment is the mobile Search UI/runtime against the frozen `GuideSearchApi` contract, including debounce/cancellation, stale-response protection, explicit loading/no-match/partial/unavailable states, exact Programme Detail / Per-zender navigation, accessibility, Dynamic Type, measured performance and physical iPhone validation.
+
+Evidence: `docs/GUIDE_SEARCH_DEPLOYMENT_2026-09-23.md`.
+
+**Next step:** implement the mobile Guide Search runtime/screen; do not reopen the hosted Search/Guide-loading architecture without concrete evidence.
+
+---
+
 ## 23 september 2026 — Phase 5A Guide Search architecture established
 
 PR #132 establishes the provider-independent hosted Search boundary required by `docs/SEARCH_PRODUCT_DEFINITION.md` and freezes the durable decision as ADR 0009. Search does not reuse mobile Guide window loading: the server owns the exact ADR 0008 D-2..D+7 windows and makes one bounded canonical-store Search call that returns only canonical programme/channel matches plus `complete | partial | unavailable` programme coverage.

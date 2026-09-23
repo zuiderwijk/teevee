@@ -87,13 +87,16 @@ Data semantics:
 - Kijktip remains optional sibling metadata, queried only for returned programme IDs, and never changes Search ranking;
 - corrected-start canonical identities supersede stale identities naturally because Search reads current canonical storage.
 
-Current Supabase repository implementation (deployed only after the architecture PR is merged):
+Current Supabase repository implementation is deployed and live-verified:
 - `teevee.search_guide` reads private canonical storage;
 - `public.teevee_search_guide` is a service-role-only PostgREST bridge;
 - both use SECURITY INVOKER with empty `search_path`;
 - `anon` / `authenticated` execute is revoked;
 - `unaccent` lives in the `extensions` schema;
 - public `guide-search` Edge transport holds the secret and returns only the typed canonical contract.
+- hosted migration version: `20260923064120_create_guide_search_read_boundary`, exact reviewed SQL blob `d232eacbf3b809d23ae9c4eeb9a15ea2ffc20380`;
+- `guide-search` v1 is ACTIVE and production endpoint smoke CI #986 proved canonical NPO channel retrieval plus a concrete NPO 1 broadcast result;
+- deployment evidence: `docs/GUIDE_SEARCH_DEPLOYMENT_2026-09-23.md`.
 
 Do not solve Search by adding SQLite/TanStack Query, extending AppPreferences into schedule storage, direct mobile Supabase-table access, or eager full-horizon Guide prefetch.
 
