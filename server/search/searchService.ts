@@ -162,23 +162,12 @@ export class RepositoryGuideSearchApi implements GuideSearchApi {
       }
     }
 
-    if (schedules.length === 0) {
-      if (failedReadCount > 0) {
-        throw new Error('Guide Search canonical schedule reads failed');
-      }
-      return {
-        status: 'ok',
-        programmeCoverage: 'unavailable',
-        channelMatches: [],
-        programmeMatches: [],
-        editorialSignals: [],
-      };
-    }
-
     const programmeCoverage =
-      schedules.length === windows.length && failedReadCount === 0
-        ? 'complete'
-        : 'partial';
+      schedules.length === 0
+        ? 'unavailable'
+        : schedules.length === windows.length && failedReadCount === 0
+          ? 'complete'
+          : 'partial';
 
     const merged = mergeCanonicalSchedules(schedules);
     const channelsById = new Map<string, Channel>();
@@ -194,6 +183,10 @@ export class RepositoryGuideSearchApi implements GuideSearchApi {
         left.sortOrder - right.sortOrder || left.id.localeCompare(right.id),
     );
     const programmes = merged.programmes;
+    if (schedules.length === 0 && failedReadCount > 0 && channels.length === 0) {
+      throw new Error('Guide Search canonical reads failed');
+    }
+
     const channelOrder = new Map(channels.map((channel) => [channel.id, channel.sortOrder]));
     const channelById = new Map(channels.map((channel) => [channel.id, channel]));
 
