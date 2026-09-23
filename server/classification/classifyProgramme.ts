@@ -337,13 +337,7 @@ function developmentXmltvClassification(
     };
   }
 
-  if (
-    categories.length > 0 &&
-    (
-      hasChildrenAudience ||
-      hasAny(POSITIVE_OTHER_CONTENT_CATEGORIES, categories)
-    )
-  ) {
+  if (hasAny(POSITIVE_OTHER_CONTENT_CATEGORIES, categories)) {
     return {
       ...base,
       contentType: 'other',
@@ -351,6 +345,13 @@ function developmentXmltvClassification(
         ? 'primarily-children'
         : 'unknown',
       confidence: 'high',
+    };
+  }
+
+  if (hasChildrenAudience) {
+    return {
+      ...base,
+      audience: 'primarily-children',
     };
   }
 

@@ -188,6 +188,32 @@ describe('central provider-independent programme classification', () => {
     expect(isTonightSeriesClassification(documentaryMiniseries)).toBe(false);
   });
 
+  it('keeps children audience evidence independent from content-type certainty', () => {
+    const ambiguous = classify({
+      categories: ['Kinderen', 'Komedie'],
+      episodeNumbers: [{ value: 'S1 E3' }],
+    });
+    const news = classify({
+      categories: ['Kinderen', 'Nieuws'],
+    });
+
+    expect(ambiguous).toMatchObject({
+      contentType: 'unknown',
+      seriesType: 'unknown',
+      audience: 'primarily-children',
+      confidence: 'unknown',
+    });
+    expect(isTonightSeriesClassification(ambiguous)).toBe(false);
+
+    expect(news).toMatchObject({
+      contentType: 'other',
+      seriesType: 'unknown',
+      audience: 'primarily-children',
+      confidence: 'high',
+    });
+    expect(isTonightSeriesClassification(news)).toBe(false);
+  });
+
   it('classifies researched children scripted examples as series but excludes them from Series vanavond', () => {
     for (const title of [
       'Bluey',
@@ -206,6 +232,33 @@ describe('central provider-independent programme classification', () => {
       });
       expect(isTonightSeriesClassification(classification)).toBe(false);
     }
+  });
+
+  it('keeps explicit scripted children as semantic Series unless strong non-scripted form conflicts', () => {
+    const scripted = classify({
+      categories: ['Kinderen', 'Dramaseries'],
+      episodeNumbers: [{ value: 'S2 E4' }],
+    });
+    const conflict = classify({
+      categories: ['Kinderen', 'Dramaseries', 'Reality'],
+      episodeNumbers: [{ value: 'S2 E4' }],
+    });
+
+    expect(scripted).toMatchObject({
+      contentType: 'series',
+      seriesType: 'scripted-episodic',
+      audience: 'primarily-children',
+      confidence: 'high',
+    });
+    expect(isTonightSeriesClassification(scripted)).toBe(false);
+
+    expect(conflict).toMatchObject({
+      contentType: 'other',
+      seriesType: 'unknown',
+      audience: 'primarily-children',
+      confidence: 'high',
+    });
+    expect(isTonightSeriesClassification(conflict)).toBe(false);
   });
 
   it('does not turn episode notation alone or non-scripted children programming into a series', () => {
@@ -227,6 +280,7 @@ describe('central provider-independent programme classification', () => {
     expect(jeugdjournaal).toMatchObject({
       contentType: 'other',
       audience: 'primarily-children',
+      confidence: 'high',
     });
     expect(unknownAudience).toMatchObject({
       contentType: 'unknown',
