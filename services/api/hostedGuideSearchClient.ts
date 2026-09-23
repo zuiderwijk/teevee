@@ -37,7 +37,7 @@ export class HostedGuideSearchClient implements GuideSearchApi {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify(parsedRequest),
-      signal: options.signal,
+      ...(options.signal ? { signal: options.signal } : {}),
     });
 
     let payload: unknown;
