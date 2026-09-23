@@ -34,7 +34,7 @@ Phase 5 remains **CLOSED**. This is not a Phase 5 reopen and does not change acc
 Canonical research:
 - PR #154 / `docs/PROGRAMME_EXTERNAL_IDENTITY_SOURCE_RESEARCH_2026-09-23.md` proves the current XMLTV source contains useful production year, episode and role-preserving credit evidence;
 - PR #156 / `docs/TMDB_MATCHING_RESEARCH_2026-09-23.md` proves a narrow fail-closed matcher can resolve **44/45 Film** and **49/50 Series** reviewed broadcasts at high confidence, with zero known false-positive external IDs in the reviewed accepted tier;
-- production TMDB use still has an independent commercial-licensing/credential/rate-limit gate.
+- the product owner confirms the required commercial TMDB licensing for Teevee production use is arranged; the licensing gate is **CLOSED**. Production credential ownership, rate-limit/retry/caching design and compliance with the agreed TMDB contract terms remain implementation requirements.
 
 Issue #157 / PR #158 is the first production foundation increment. It adds only typed transient server/provider evidence:
 - opaque raw production-date evidence with optional exact-YYYY `year`;
@@ -283,7 +283,7 @@ Physical Android interaction acceptance remains OPEN/DEFERRED because no Android
 - physical Android validation.
 
 ## Current next step
-**Complete issue #157 / PR #158 — EPG identity evidence production foundation — then design the narrow server-side external-content identity increment before Phase 6 Personal Features.** The follow-up must use the empirically reviewed high-confidence Film/Series rules, keep Guide/mobile independent from raw provider/TMDB vocabulary, solve bootstrap/replay ownership for already-retained broadcasts, and respect the separate TMDB commercial-use gate. Do not add artwork UI, fuzzy broadcast reconciliation, a generic content catalogue or a second enrichment framework in this foundation.
+**Complete issue #157 / PR #158 — EPG identity evidence production foundation — then design the narrow server-side external-content identity increment before Phase 6 Personal Features.** The follow-up must use the empirically reviewed high-confidence Film/Series rules, keep Guide/mobile independent from raw provider/TMDB vocabulary, solve bootstrap/replay ownership for already-retained broadcasts, and implement against the now-cleared TMDB commercial-use basis without storing contractual terms or credentials in the repository. Do not add artwork UI, fuzzy broadcast reconciliation, a generic content catalogue or a second enrichment framework in this foundation.
 
 Owner checkout: `~/projects/teevee`.
 
