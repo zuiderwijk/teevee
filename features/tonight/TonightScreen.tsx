@@ -20,9 +20,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { AppScreenHeader } from '@/components/AppScreenHeader';
 import { SettingsButton } from '@/components/SettingsButton';
-import type { Channel, Programme } from '@/data/domain/epg';
 import { guideTelevisionDayStart } from '@/data/domain/guideTime';
-import type { ProgrammeClassification } from '@/data/domain/programmeClassification';
 import {
   detailReducer,
   initialDetailState,

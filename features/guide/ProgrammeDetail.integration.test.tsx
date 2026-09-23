@@ -573,6 +573,10 @@ describe('programme detail production actions', () => {
     await click('programme-detail-save');
     expect(getByTestId('programme-detail-save').textContent).toBe('Bewaard');
     expect(readProgrammePersonalState().saved['saved-detail']).toBeDefined();
+    expect(readProgrammePersonalState().hasUsedSave).toBe(true);
+    expect(getByTestId('programme-detail-sheet').textContent).toContain(
+      'Bewaard in Jouw gids',
+    );
 
     await act(async () =>
       root.render(
