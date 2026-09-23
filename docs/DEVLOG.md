@@ -1,5 +1,23 @@
 # Teevee Development Logboek
 
+## 23 september 2026 — PR #149 first production Vanavond runtime Development-complete candidate
+
+Issue #148 replaces the placeholder with the first real user-facing Vanavond runtime while preserving the proven Guide architecture. Vanavond owns its own process-local request state and performs one bounded active 06:00→06:00 canonical `guide-schedule` read. Kijktips are consumed from that response's existing editorial-signal sibling. Only current/future programmes starting in the frozen [19:00,06:00) classification window are sent to the separate bounded `programme-classifications` API; missing/ambiguous semantics fail closed. No Guide runtime state is installed or mutated, no D-2..D+7 prefetch occurs, and no card owns async/network work.
+
+The finite surface is now Jouw gids → Onze Kijktips → Films vanavond → Series vanavond → Sport vanavond, then ends. Jouw gids reads the existing `ProgrammePersonalState.saved` concrete-broadcast snapshots, intersects [18:00,06:00), sorts chronologically, resolves Programme Detail only on exact canonical `Programme.id`, keeps unresolved snapshots visible/non-actionable and retains ended saves through 06:00 with literal `Afgelopen`. Discovery removes broadcasts after real `endAt`, while the shared clock updates current/upcoming state and exact 06:00 rollover triggers a new owned request; request version + television-day identity prevents an in-flight previous-day response from overwriting the new evening.
+
+The local personal-state schema moves in place from v1 to v2 with durable `hasUsedSave`; there is no second store and native/web storage locations are unchanged. Valid v1 saves/reminders are preserved. Existing retained saves imply prior usage, while an empty v1 record remains conservatively false because old storage cannot prove a previously removed save. Every successful Bewaar action permanently sets true; unsave-all and reminder mutations keep that history. Programme Detail now reports `Bewaard in Jouw gids` for the active evening and date-aware/neutral feedback outside it.
+
+The implementation intentionally contains no TMDB or artwork provider. Frozen base fallback frames remain Kijktip **168×94.5**, Film **108×162**, Series **96×144** and Sport **220×112**, with Dynamic Type expansion above the base composition. Horizontal carousels are native nested scroll views with no arrows/dots; the parent page remains native vertical scrolling. Card/row memo boundaries prevent 30-second clock ticks from rerendering unchanged children, and selection transforms are bounded to the evening subset of the single active-day response.
+
+Deterministic coverage now includes 18:00/19:00 boundaries, 00:00–05:59 ownership, exact 06:00 rollover, DST 23/25-hour days, current/ended transitions, Jouw-gids migration/overlap/same-title/stale snapshots, Kijktip exact signals and start window, Film/Series/Sport semantic eligibility including children/talk/magazine/unknown exclusions, unavailable/partial/retry, 256-ID fail-closed behavior, stale-response suppression, explicit no-Guide-runtime mutation, 12-channel/120-broadcast density, >=12 Series, no-artwork geometry, Larger Text and screen-level module/detail/empty/error states.
+
+For Acc Design Refinement, dev-only controls are hidden behind a long-press on the Vanavond date. They operate on real canonical runtime data and expose Live, Primetime 20:30, Jouw-gids mixed/never-used/used-empty, Kijktip fallback, partial, offline, no-Sport, no-discovery and after-midnight 00:30 states. The fallback Kijktip signal exists only in `__DEV__` and is attached to a concrete canonical broadcast; production never fabricates category data.
+
+**Next gate:** exact-head CI → Development handoff → Technical/implementation sanity review as needed → mandatory Acc Design Refinement → Development visual/UX corrections → physical iPhone acceptance → Independent QA → final Technical Lead merge gate. Do not merge or deploy PR #149 before those gates.
+
+---
+
 ## 23 september 2026 — PR #144 merged, deployed and live-verified
 
 PR #144 / issue #142 completed the central provider-independent Vanavond classification/enrichment foundation. The final exact QA/Lead head `c04088479e8026966db54eba47f07603c4b87ee6` merged as `ca738e3c80d714ad6f95833554c6319674647fdb`. Post-merge CI #1072 / run `35873133619` passed **100 test files / 727 tests**, strict TypeScript, lint, iOS/Android/web exports and the main/release full-ABI Android debug build.
