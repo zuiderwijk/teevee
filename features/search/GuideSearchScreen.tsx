@@ -30,6 +30,7 @@ import { ProgrammeDetail } from '@/features/guide/ProgrammeDetail';
 import { useGuideClock } from '@/features/guide/useGuideClock';
 import { TEEVEE_FONT_FAMILIES } from '@/theme/typography';
 import { useTeeveeTheme } from '@/theme/useTeeveeTheme';
+import { GUIDE_SEARCH_MAX_QUERY_LENGTH } from '@/services/api/guideSearchContract';
 
 import {
   guideSearchBroadcastContext,
@@ -335,6 +336,7 @@ export function GuideSearchScreen() {
             autoCorrect={false}
             autoFocus
             clearButtonMode="never"
+            maxLength={GUIDE_SEARCH_MAX_QUERY_LENGTH}
             placeholder="Programma of zender"
             placeholderTextColor={theme.colors.textMuted}
             returnKeyType="search"
