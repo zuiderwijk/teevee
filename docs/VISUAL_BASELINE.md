@@ -265,6 +265,8 @@ Accepted production visual characteristics:
 
 The canonical visual is authoritative for composition and density, not for the literal generated schedule, broadcaster logos, poster pixels or exact generated shell glyphs. Shared app-shell components, canonical broadcaster assets and the written production specification win for those details.
 
+The accepted **written** 2:3 Film/Series geometry is authoritative over the generated raster's exact thumbnail proportions: Series is **96 × 144 pt** at base density even if the board makes a Series image appear wider. The written Vanavond shell/date-context rules likewise supersede generated-board omissions.
+
 Superseded as the production Vanavond reference:
 - `/Teevee/Vanavond: Teevee designvoorstel.png`
   - Library file id: `file_00000000cc4c821099c97384e519c045`
