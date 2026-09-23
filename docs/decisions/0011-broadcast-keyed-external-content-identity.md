@@ -120,7 +120,7 @@ Missing identity is acceptable. Wrong identity is not.
 
 ### Persistence and stale ownership
 
-`teevee.programme_external_content_references` has one row per concrete canonical `programme_id` and an FK with update/delete cascade.
+`teevee.programme_external_content_references` has one row per concrete canonical `programme_id`. It deliberately does **not** use a cascading FK to `teevee.programmes`: ADR 0007 replaces schedule windows by deleting and reinserting programme rows, so a cascade would erase a correct forward-filled identity during an otherwise unchanged refresh.
 
 The protected write RPC:
 - accepts at most 256 decisions;
@@ -132,13 +132,16 @@ The protected write RPC:
 - upserts only resolved/high-confidence references;
 - a current unresolved/ambiguous deterministic decision may clear an older reference for that exact current broadcast.
 
-Consequences:
-- corrected/rekeyed Programme deletes the old reference by FK ownership;
-- deleted Programme cannot leave a dangling reference;
-- a late result cannot land on a replacement broadcast;
-- repeated resolution is idempotent;
-- many broadcasts may share one TMDB identity;
+Database ownership is enforced without coupling the Guide write function to TMDB:
+- a private before-write trigger rejects any reference whose canonical `programme_id` does not exist;
+- a deferred constraint trigger runs after programme delete/update and compares the old concrete broadcast tuple (`id + channel + start + end + title`) with the transaction-final canonical row;
+- a normal ADR-0007 delete/reinsert of that exact tuple preserves the reference;
+- a corrected/rekeyed/deleted broadcast has no exact old tuple at transaction end, so the old reference is deleted before commit;
+- a late result cannot land on a replacement broadcast because the protected RPC additionally requires the exact current tuple and same-observation schedule coverage;
+- repeated resolution is idempotent and many broadcasts may share one TMDB identity;
 - the RPC cannot be used as a fuzzy historical attachment API because same-observation authoritative coverage is mandatory.
+
+This trigger-based ownership is intentional rather than a missing FK. It preserves core Guide independence from TMDB/API availability while satisfying ADR-0007 replacement semantics and preventing committed dangling external references.
 
 The advisory lock is necessary here because identity resolution is asynchronous with schedule replacement; without sharing the canonical channel lock, an exact-row check could race a concurrent correction/delete.
 
@@ -146,7 +149,7 @@ The advisory lock is necessary here because identity resolution is asynchronous 
 
 There is **no historical D0 bootstrap** in this increment.
 
-Identity is forward-filled only from authoritative complete observations for current/future broadcasts. The sibling then remains associated with that concrete broadcast as it ages into D0 until canonical schedule ownership replaces/deletes it.
+Identity is forward-filled only from authoritative complete observations for current/future broadcasts. Normal authoritative refreshes preserve the sibling when the exact concrete broadcast tuple is reinserted, so it remains associated as that broadcast ages into D0; a true canonical correction/rekey/delete removes it transactionally.
 
 After deployment, retained broadcasts that were never processed by this path may temporarily lack identity. That explicit warm-up gap is preferred over fuzzy/refetched historical reconciliation.
 
