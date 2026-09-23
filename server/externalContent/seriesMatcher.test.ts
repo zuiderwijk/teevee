@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 
+import type { ExternalProgramme } from '../epg/provider.ts';
 import { matchSeriesIdentity } from './seriesMatcher.ts';
 import type {
   TmdbGateway,
@@ -48,7 +49,7 @@ function gateway(input: {
   };
 }
 
-function programme(actors: string[], episode = 'S4 E3') {
+function programme(actors: string[], episode = 'S4 E3'): ExternalProgramme {
   return {
     credits: { director: [], actor: actors, producer: [] },
     episodeNumbers: [{ value: episode }],
