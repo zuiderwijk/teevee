@@ -92,7 +92,6 @@ describe('normaliseProviderSchedule', () => {
       description: 'Feature film.',
       genre: 'Drama',
       categories: ['Drama', 'Film'],
-      episodeNumbers: [{ value: 'S1 E3' }],
       hasDirectorCredit: true,
     };
     const rich: ExternalProgramme = {
