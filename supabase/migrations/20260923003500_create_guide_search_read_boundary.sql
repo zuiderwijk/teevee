@@ -18,7 +18,7 @@ as $$
     pg_catalog.regexp_replace(
       pg_catalog.translate(
         pg_catalog.replace(
-          pg_catalog.lower(extensions.unaccent(pg_catalog.coalesce(p_value, ''))),
+          pg_catalog.lower(extensions.unaccent(coalesce(p_value, ''))),
           '&',
           ' en '
         ),
@@ -127,12 +127,12 @@ begin
     select
       pair.channel_id,
       pair.ordinality,
-      pg_catalog.coalesce(
+      coalesce(
         sum(
           extract(
             epoch from (
-              pg_catalog.least(stored.to_at, pair.to_at)
-              - pg_catalog.greatest(stored.from_at, pair.from_at)
+              least(stored.to_at, pair.to_at)
+              - greatest(stored.from_at, pair.from_at)
             )
           )
         ) filter (where stored.id is not null),
@@ -180,7 +180,7 @@ begin
     order by match_info.rank, c.sort_order, c.id
     limit p_channel_limit
   )
-  select pg_catalog.coalesce(
+  select coalesce(
     jsonb_agg(
       jsonb_strip_nulls(
         jsonb_build_object(
@@ -223,12 +223,12 @@ begin
       pair.ordinality,
       pair.from_at,
       pair.to_at,
-      pg_catalog.coalesce(
+      coalesce(
         sum(
           extract(
             epoch from (
-              pg_catalog.least(stored.to_at, pair.to_at)
-              - pg_catalog.greatest(stored.from_at, pair.from_at)
+              least(stored.to_at, pair.to_at)
+              - greatest(stored.from_at, pair.from_at)
             )
           )
         ) filter (where stored.id is not null),
@@ -308,7 +308,7 @@ begin
       id
     limit p_programme_limit
   )
-  select pg_catalog.coalesce(
+  select coalesce(
     jsonb_agg(
       jsonb_build_object(
         'programme',
