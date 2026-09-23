@@ -124,16 +124,22 @@ function savedItems(
   );
 
   return Object.values(state.saved)
-    .filter((snapshot) =>
-      programmeIntersectsWindow(
+    .map((snapshot) => {
+      const programme = programmes.get(snapshot.programmeId) ?? null;
+      return {
         snapshot,
+        programme,
+        source: programme ?? snapshot,
+      };
+    })
+    .filter(({ source }) =>
+      programmeIntersectsWindow(
+        source,
         window.eveningStartMs,
         window.eveningEndMs,
       ),
     )
-    .map((snapshot) => {
-      const programme = programmes.get(snapshot.programmeId) ?? null;
-      const source = programme ?? snapshot;
+    .map(({ snapshot, programme, source }) => {
       const channel =
         channels.get(programme?.channelId ?? snapshot.channelId) ?? null;
       return {
