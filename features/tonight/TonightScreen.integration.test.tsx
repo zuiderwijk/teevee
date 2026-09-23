@@ -420,6 +420,8 @@ describe('TonightScreen production runtime surface', () => {
       ...EMPTY_PROGRAMME_PERSONAL_STATE,
       hasUsedSave: true,
     };
+    await act(async () => root.unmount());
+    root = createRoot(container);
     await renderScreen();
     expect(text()).toContain('Je hebt voor vanavond nog niets bewaard.');
 
