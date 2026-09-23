@@ -141,7 +141,7 @@ Database ownership is enforced without coupling the Guide write function to TMDB
 - repeated resolution is idempotent and many broadcasts may share one TMDB identity;
 - the RPC cannot be used as a fuzzy historical attachment API because same-observation authoritative coverage is mandatory.
 
-This trigger-based ownership is intentional rather than a missing FK. It preserves core Guide independence from TMDB/API availability while satisfying ADR-0007 replacement semantics and preventing committed dangling external references.
+This trigger-based ownership is intentional rather than a missing FK. Both private ownership helpers are `SECURITY INVOKER` with an empty `search_path`, and execution is revoked from public/anon/authenticated roles. It preserves core Guide independence from TMDB/API availability while satisfying ADR-0007 replacement semantics and preventing committed dangling external references.
 
 The advisory lock is necessary here because identity resolution is asynchronous with schedule replacement; without sharing the canonical channel lock, an exact-row check could race a concurrent correction/delete.
 
