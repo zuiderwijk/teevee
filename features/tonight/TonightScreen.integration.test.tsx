@@ -13,6 +13,14 @@ import {
 } from '@/features/guide/programmePersonalState';
 import type { TonightRuntimeSnapshot } from './tonightRuntime';
 
+vi.hoisted(() => {
+  Object.defineProperty(globalThis, '__DEV__', {
+    value: true,
+    writable: true,
+    configurable: true,
+  });
+});
+
 const router = vi.hoisted(() => ({ push: vi.fn() }));
 const runtimeActions = vi.hoisted(() => ({
   refresh: vi.fn(),
@@ -108,6 +116,7 @@ vi.mock('react-native', async () => {
     accessible?: boolean;
     horizontal?: boolean;
     numberOfLines?: number;
+    ellipsizeMode?: string;
     style?: unknown;
     onPress?: () => void;
     onLongPress?: () => void;
@@ -166,6 +175,7 @@ vi.mock('react-native', async () => {
     accessibilityRole,
     accessibilityLabel,
     numberOfLines,
+    ellipsizeMode,
     style,
     onLongPress,
   }: HostProps) => {
@@ -177,6 +187,7 @@ vi.mock('react-native', async () => {
         'aria-label': accessibilityLabel,
         'data-number-of-lines':
           typeof numberOfLines === 'number' ? String(numberOfLines) : undefined,
+        'data-ellipsize-mode': ellipsizeMode,
         'data-font-size':
           typeof flatStyle.fontSize === 'number'
             ? String(flatStyle.fontSize)
@@ -404,6 +415,20 @@ function text(): string {
   return container.textContent ?? '';
 }
 
+async function selectDevelopmentScenario(
+  scenario: 'series-density' | 'discovery-mix',
+) {
+  await act(async () => {
+    getByTestId('tonight-evening-date').dispatchEvent(
+      new MouseEvent('dblclick', { bubbles: true }),
+    );
+  });
+  await act(async () => {
+    getByTestId(`tonight-development-${scenario}`).click();
+    await Promise.resolve();
+  });
+}
+
 describe('TonightScreen production runtime surface', () => {
   it('renders the finite module order from local intent + canonical discovery', async () => {
     await renderScreen();
@@ -429,6 +454,80 @@ describe('TonightScreen production runtime surface', () => {
     expect(getByTestId('tonight-film-film-future')).toBeDefined();
     expect(getByTestId('tonight-series-series-future')).toBeDefined();
     expect(getByTestId('tonight-sport-sport-future')).toBeDefined();
+  });
+
+  it('caps the base Kijktip title to two lines with tail truncation and keeps metadata/action intact', async () => {
+    const snapshot = readySnapshot();
+    const longTip = {
+      ...programmes[1],
+      title: 'Zoals het komt: 100 dagen in de gehandicaptenzorg',
+    };
+    runtimeState.snapshot = {
+      ...snapshot,
+      data: snapshot.data
+        ? {
+            ...snapshot.data,
+            schedule: {
+              ...snapshot.data.schedule,
+              programmes: snapshot.data.schedule.programmes.map((programme) =>
+                programme.id === longTip.id ? longTip : programme,
+              ),
+            },
+          }
+        : null,
+    };
+
+    await renderScreen();
+
+    const title = getByTestId('tonight-kijktip-title-tip-current');
+    const metadata = getByTestId('tonight-kijktip-metadata-tip-current');
+    const fallback = getByTestId('tonight-kijktip-fallback-tip-current');
+    const card = getByTestId('tonight-kijktip-tip-current');
+
+    expect(title.textContent).toBe(longTip.title);
+    expect(title.getAttribute('data-number-of-lines')).toBe('2');
+    expect(title.getAttribute('data-ellipsize-mode')).toBe('tail');
+    expect(title.getAttribute('data-font-size')).toBe('15');
+    expect(title.getAttribute('data-line-height')).toBe('19');
+    expect(metadata.textContent).toContain('Nu · RTL 4');
+    expect(metadata.getAttribute('data-font-size')).toBe('14');
+    expect(metadata.getAttribute('data-line-height')).toBe('18');
+    expect(fallback.getAttribute('data-style-height')).toBe('94.5');
+    expect(card.tagName).toBe('BUTTON');
+    expect(card.querySelectorAll('button')).toHaveLength(0);
+  });
+
+  it('keeps Kijktip titles uncapped above the base-density Dynamic Type branch', async () => {
+    dimensions.fontScale = 1.5;
+    const snapshot = readySnapshot();
+    const longTip = {
+      ...programmes[1],
+      title: 'Zoals het komt: 100 dagen in de gehandicaptenzorg',
+    };
+    runtimeState.snapshot = {
+      ...snapshot,
+      data: snapshot.data
+        ? {
+            ...snapshot.data,
+            schedule: {
+              ...snapshot.data.schedule,
+              programmes: snapshot.data.schedule.programmes.map((programme) =>
+                programme.id === longTip.id ? longTip : programme,
+              ),
+            },
+          }
+        : null,
+    };
+
+    await renderScreen();
+
+    const title = getByTestId('tonight-kijktip-title-tip-current');
+    const metadata = getByTestId('tonight-kijktip-metadata-tip-current');
+
+    expect(title.getAttribute('data-number-of-lines')).toBeNull();
+    expect(title.getAttribute('data-ellipsize-mode')).toBeNull();
+    expect(title.getAttribute('data-font-size')).toBe('15');
+    expect(metadata.textContent).toContain('Nu · RTL 4');
   });
 
   it('keeps the standard Sport fallback fixed at 220x112 with a compact two-line title', async () => {
@@ -524,6 +623,85 @@ describe('TonightScreen production runtime surface', () => {
       getByTestId('tonight-series-carousel').getAttribute('data-horizontal'),
     ).toBe('true');
     expect(text()).not.toContain('Sport vanavond');
+  });
+
+  it('renders Series >=12 from zero production classifications through the normal Series card/detail path', async () => {
+    const snapshot = readySnapshot();
+    runtimeState.snapshot = {
+      ...snapshot,
+      data: snapshot.data
+        ? {
+            ...snapshot.data,
+            editorialSignals: [],
+            classifications: [],
+          }
+        : null,
+    };
+
+    await renderScreen();
+    await selectDevelopmentScenario('series-density');
+
+    const seriesCards = container.querySelectorAll(
+      'button[data-testid^="tonight-series-"]',
+    );
+    expect(seriesCards.length).toBeGreaterThanOrEqual(12);
+    expect(text()).toContain('Series vanavond');
+
+    const firstCard = seriesCards[0] as HTMLElement;
+    const exactProgrammeId = firstCard.getAttribute('data-testid')?.replace(
+      'tonight-series-',
+      '',
+    );
+    expect(schedule.programmes.some(({ id }) => id === exactProgrammeId)).toBe(
+      true,
+    );
+
+    await act(async () => firstCard.click());
+    expect(getByTestId('tonight-detail-open').textContent).toBe(
+      exactProgrammeId,
+    );
+  });
+
+  it('renders deterministic Kijktip, Film, Series and Sport modules from concrete broadcasts in canonical order', async () => {
+    const snapshot = readySnapshot();
+    runtimeState.snapshot = {
+      ...snapshot,
+      data: snapshot.data
+        ? {
+            ...snapshot.data,
+            editorialSignals: [],
+            classifications: [],
+          }
+        : null,
+    };
+
+    await renderScreen();
+    await selectDevelopmentScenario('discovery-mix');
+
+    const content = text();
+    const headings = [
+      'Jouw gids',
+      'Onze Kijktips',
+      'Films vanavond',
+      'Series vanavond',
+      'Sport vanavond',
+    ];
+    const positions = headings.map((heading) => content.indexOf(heading));
+    expect(positions.every((position) => position >= 0)).toBe(true);
+    expect(positions).toEqual([...positions].sort((left, right) => left - right));
+
+    const expectedCards = [
+      'tonight-kijktip-saved-current',
+      'tonight-film-saved-current',
+      'tonight-series-tip-current',
+      'tonight-sport-film-future',
+    ];
+    for (const testID of expectedCards) {
+      expect(getByTestId(testID).tagName).toBe('BUTTON');
+    }
+
+    await act(async () => getByTestId('tonight-sport-film-future').click());
+    expect(getByTestId('tonight-detail-open').textContent).toBe('film-future');
   });
 
   it('opens exact resolved broadcasts and leaves an unresolved local snapshot non-actionable', async () => {
