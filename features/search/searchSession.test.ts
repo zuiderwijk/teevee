@@ -72,6 +72,22 @@ describe('GuideSearchSession', () => {
     expect(search).not.toHaveBeenCalled();
   });
 
+  it('keeps an overlong query out of transport instead of reporting availability failure', async () => {
+    const search = vi.fn<GuideSearchApi['search']>();
+    const session = new GuideSearchSession({ search });
+
+    session.setQuery('a'.repeat(81));
+
+    expect(session.getSnapshot()).toEqual({
+      query: 'a'.repeat(81),
+      phase: 'idle',
+      response: null,
+    });
+
+    await vi.advanceTimersByTimeAsync(GUIDE_SEARCH_DEBOUNCE_MS * 2);
+    expect(search).not.toHaveBeenCalled();
+  });
+
   it('debounces a meaningful query and publishes the bounded response', async () => {
     const search = vi.fn<GuideSearchApi['search']>().mockResolvedValue(okResponse());
     const session = new GuideSearchSession({ search });
