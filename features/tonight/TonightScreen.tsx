@@ -48,6 +48,7 @@ import {
 import {
   buildTonightViewModel,
   tonightCardMetrics,
+  tonightKijktipTitleLayout,
   tonightProgrammeAccessibilityLabel,
   tonightProgrammeTimeLabel,
   tonightSportFallbackLayout,
@@ -296,6 +297,9 @@ const DiscoveryCard = memo(function DiscoveryCard({
   const selection = useMemo(() => ({ programme, channel }), [programme, channel]);
   const kijktip = kind === 'kijktip';
   const sport = kind === 'sport';
+  const kijktipTitleLayout = kijktip
+    ? tonightKijktipTitleLayout(fontScale)
+    : null;
   const sportFallbackLayout = sport
     ? tonightSportFallbackLayout(fontScale)
     : null;
@@ -405,6 +409,20 @@ const DiscoveryCard = memo(function DiscoveryCard({
           ]}
         >
           <Text
+            {...(kijktip
+              ? {
+                  testID: `tonight-kijktip-title-${programme.id}`,
+                  ...(kijktipTitleLayout?.titleNumberOfLines
+                    ? {
+                        numberOfLines:
+                          kijktipTitleLayout.titleNumberOfLines,
+                      }
+                    : {}),
+                  ...(kijktipTitleLayout?.ellipsizeMode
+                    ? { ellipsizeMode: kijktipTitleLayout.ellipsizeMode }
+                    : {}),
+                }
+              : {})}
             style={[
               kind === 'series'
                 ? styles.seriesCardTitle
@@ -418,6 +436,9 @@ const DiscoveryCard = memo(function DiscoveryCard({
             {programme.title}
           </Text>
           <Text
+            {...(kijktip
+              ? { testID: `tonight-kijktip-metadata-${programme.id}` }
+              : {})}
             style={[
               kind === 'series'
                 ? styles.seriesCardMetadata
@@ -773,6 +794,7 @@ export function TonightScreen() {
                 {TONIGHT_DEVELOPMENT_SCENARIOS.map((scenario) => (
                   <Pressable
                     key={scenario.id}
+                    testID={`tonight-development-${scenario.id}`}
                     accessibilityRole="button"
                     onPress={() => {
                       setDevelopmentScenario(scenario.id);
