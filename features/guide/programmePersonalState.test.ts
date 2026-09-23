@@ -20,42 +20,100 @@ const programme: Programme = {
 };
 
 describe('programme personal state', () => {
-  it('persists saved state as a provider-independent programme snapshot', () => {
-    const saved = withProgrammeSaved(EMPTY_PROGRAMME_PERSONAL_STATE, programme, true);
+  it('persists saved state and durable save usage in the existing provider-independent record', () => {
+    const saved = withProgrammeSaved(
+      EMPTY_PROGRAMME_PERSONAL_STATE,
+      programme,
+      true,
+    );
     expect(saved.saved[programme.id]).toEqual(programmeSnapshot(programme));
+    expect(saved.hasUsedSave).toBe(true);
+
+    const removed = withProgrammeSaved(saved, programme, false);
+    expect(removed.saved).toEqual({});
+    expect(removed.hasUsedSave).toBe(true);
 
     const restored = parseSerializedProgrammePersonalState(
-      serializeProgrammePersonalState(saved),
+      serializeProgrammePersonalState(removed),
     );
-    expect(restored).toEqual(saved);
+    expect(restored).toEqual(removed);
   });
 
-  it('persists and removes reminder records by canonical programme id', () => {
+  it('migrates v1 conservatively while preserving valid saves and reminders', () => {
     const reminder = {
       ...programmeSnapshot(programme),
       notificationId: 'notification-1',
       fireAtMs: Date.parse(programme.startAt) - 5 * 60 * 1000,
       programmeStartAt: programme.startAt,
     };
+
+    expect(
+      parseSerializedProgrammePersonalState(
+        JSON.stringify({
+          version: 1,
+          saved: { [programme.id]: programmeSnapshot(programme) },
+          reminders: { [programme.id]: reminder },
+        }),
+      ),
+    ).toEqual({
+      version: 2,
+      hasUsedSave: true,
+      saved: { [programme.id]: programmeSnapshot(programme) },
+      reminders: { [programme.id]: reminder },
+    });
+
+    expect(
+      parseSerializedProgrammePersonalState(
+        JSON.stringify({ version: 1, saved: {}, reminders: {} }),
+      ),
+    ).toEqual(EMPTY_PROGRAMME_PERSONAL_STATE);
+  });
+
+  it('persists and removes reminder records without changing save-history state', () => {
+    const reminder = {
+      ...programmeSnapshot(programme),
+      notificationId: 'notification-1',
+      fireAtMs: Date.parse(programme.startAt) - 5 * 60 * 1000,
+      programmeStartAt: programme.startAt,
+    };
+    const previouslyUsed = { ...EMPTY_PROGRAMME_PERSONAL_STATE, hasUsedSave: true };
     const withReminder = withProgrammeReminder(
-      EMPTY_PROGRAMME_PERSONAL_STATE,
+      previouslyUsed,
       programme,
       reminder,
     );
     expect(withReminder.reminders[programme.id]).toEqual(reminder);
-    expect(withProgrammeReminder(withReminder, programme, null).reminders).toEqual({});
+    expect(withReminder.hasUsedSave).toBe(true);
+    expect(
+      withProgrammeReminder(withReminder, programme, null).reminders,
+    ).toEqual({});
   });
 
-  it('fails closed for corrupt or mismatched records', () => {
+  it('fails safely for corrupt, unknown, mismatched or invalid-time records', () => {
     expect(parseSerializedProgrammePersonalState('{')).toEqual(
       EMPTY_PROGRAMME_PERSONAL_STATE,
     );
     expect(
       parseSerializedProgrammePersonalState(
         JSON.stringify({
-          version: 1,
+          version: 99,
+          saved: {},
+          reminders: {},
+        }),
+      ),
+    ).toEqual(EMPTY_PROGRAMME_PERSONAL_STATE);
+    expect(
+      parseSerializedProgrammePersonalState(
+        JSON.stringify({
+          version: 2,
+          hasUsedSave: false,
           saved: {
             wrong: { ...programmeSnapshot(programme), programmeId: programme.id },
+            badTime: {
+              ...programmeSnapshot(programme),
+              programmeId: 'badTime',
+              startAt: 'not-a-date',
+            },
           },
           reminders: {},
         }),

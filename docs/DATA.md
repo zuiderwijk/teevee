@@ -132,6 +132,27 @@ Hosted deployment is complete and canonical:
 
 Deployment evidence: `docs/TONIGHT_CLASSIFICATION_DEPLOYMENT_2026-09-23.md`.
 
+## Vanavond mobile runtime boundary — issue #148 / PR #149
+
+The first production Vanavond runtime consumes, but does not modify, the deployed schedule/editorial/classification lanes:
+
+`one active 06:00→06:00 guide-schedule read -> editorialSignals + bounded relevant programme IDs -> programme-classifications -> mobile Tonight presentation`
+
+Ownership rules:
+- Vanavond has its own process-local loading/request-version state;
+- it never installs its read into the shared Guide runtime or makes Guide startup/render wait for classification;
+- only the active television day is fetched; no D-2..D+7 prefetch and no persistent Tonight schedule cache;
+- Kijktip comes exclusively from the sibling editorial signals returned with the canonical schedule bundle;
+- classification requests are restricted to current/future concrete broadcasts starting in [19:00,06:00), are bounded by the existing 256-ID contract, and fail closed instead of widening/chunking beyond that contract;
+- selection/transformation work is bounded to the evening subset [18:00,06:00) of the one-day response;
+- Film/Series/Sport eligibility uses only the provider-independent `ProgrammeClassification` helpers; no raw genre/category/provider rule exists in mobile Tonight code;
+- current/ended presentation is recomputed from real canonical `startAt/endAt`; late old-day responses are rejected after the 06:00 television-day rollover;
+- discovery failure never substitutes deterministic Guide fixtures as fake production categories.
+
+Jouw gids remains local-first in the existing `ProgrammePersonalState` store. PR #149 upgrades the serialized schema from v1 to v2 by adding durable `hasUsedSave` without changing the native file/web key. Valid legacy saves/reminders survive parsing; retained v1 saves prove usage, empty legacy state remains conservatively false, and every successful new save makes usage permanently true. Exact canonical programme IDs may resolve to Programme Detail; unresolved snapshots remain visible but never trigger title-only reconciliation or fabricated details.
+
+No programme-artwork source is introduced. The runtime is intentionally production-usable with its frozen no-artwork fallback media geometry; artwork/TMDB remains a later independent, rights-cleared enrichment.
+
 ## Phase 5A Guide Search data boundary
 
 Canonical product contract: `docs/SEARCH_PRODUCT_DEFINITION.md`. Durable architecture authority: ADR 0009.

@@ -1,5 +1,51 @@
 # Teevee Development Logboek
 
+## 23 september 2026 — PR #149 Kijktip density + deterministic discovery acceptance states
+
+Acc Design Refinement physical comments #5800174670 and #5800351843 identified two remaining convergence/testability blockers on exact head `01dd40ee5715fae52aa3bf929f8d4b741de225c9`.
+
+First, Kijktip base-density title treatment now matches the written contract exactly. At `fontScale <= 1.35`, the 168×94.5 no-artwork Kijktip card keeps its existing 15/19 title and 14/18 metadata but limits the visible title to two lines with normal tail truncation. Above 1.35 that compact cap is removed, preserving the canonical Larger Text rule that substantive programme text may wrap further as card width/density adapts.
+
+Second, the physical acceptance harness no longer depends on live classification luck. The development-only **Series ≥12** and new **Alle modules** states inject only typed provider-independent semantic/editorial overlays on concrete broadcasts from the current active-day schedule, before the normal production `buildTonightViewModel` eligibility/render path. Series ≥12 therefore works even when the production Series result is zero; if fewer than 12 concrete Series cards result, the existing concrete items are repeated deterministically only for density inspection. Alle modules guarantees at least one concrete Kijktip, Film, Series and Sport under a normal realistic schedule, with the same exact-broadcast Programme Detail actions. Source runtime arrays are not mutated, and Live/default production state is untouched. Zonder Sport and Geen discovery remain authoritative omission controls.
+
+The previous Sport Dynamic Type correction remains intact: <=1.35 fixed 220×112/two-line title; >1.35 uncapped/content-safe minimum height. Frozen base geometry remains Kijktip 168×94.5, Film 108×162, Series 96×144 and Sport 220×112. No production classifier/runtime/network/backend logic, artwork/TMDB, ranking, dedupe, paging or filters changed.
+
+Code-head CI before this documentation update passed typecheck, lint, **106 test files / 770 tests**, including TonightScreen **12**, tonightPresentation **8** and the new tonightDevelopmentState **4** tests, plus iOS/Android/web exports; Android native was correctly skipped by the repository classifier.
+
+**Next gate:** final exact-head CI including docs, then return the exact PR head to Acc Design Refinement for focused physical iPhone convergence. Do not merge, deploy or send to Independent QA before physical acceptance.
+
+---
+
+## 23 september 2026 — PR #149 Sport Larger/Accessibility Text convergence correction
+
+Acc Design Refinement comment #5799845708 found one narrow deterministic mismatch on the Development-complete Vanavond runtime: the no-artwork Sport title used an unconditional two-line cap, so substantive programme text could still clip at Larger/Accessibility Text despite the existing wider Dynamic Type card metrics.
+
+Development changes only that fallback boundary. Standard text through `fontScale <= 1.35` remains the frozen compact Sport baseline: width 220, fixed media height 112 and maximum two visible title lines. Above 1.35 the existing Sport width scaling is retained, the landscape height becomes a minimum rather than a fixed ceiling, and the title no longer receives `numberOfLines=2`. The existing 15/19 Sport-title typography, 13/18 channel/time/`Nu` metadata, one-action card accessibility semantics and decorative/non-focusable media ownership remain unchanged. Film 108×162, Series 96×144 and Kijktip 168×94.5 are untouched; no artwork/TMDB work, ranking, filtering, module hierarchy or carousel interaction changed.
+
+Targeted deterministic coverage now proves the standard fixed/two-line baseline, uncapped Larger/Accessibility title wrapping, vertically growable minimum-height fallback, unchanged title/metadata typography, visible `Nu`/channel metadata, one programme action without duplicate fallback focus, frozen Film/Series geometry, Sport omission and horizontal Film/Series carousel semantics.
+
+**Next gate:** exact-head CI, then return the resulting PR head to Acc Design Refinement for the remaining physical iPhone matrix. Do not merge, deploy or send to Independent QA before physical convergence.
+
+---
+
+## 23 september 2026 — PR #149 first production Vanavond runtime Development-complete candidate
+
+Issue #148 replaces the placeholder with the first real user-facing Vanavond runtime while preserving the proven Guide architecture. Vanavond owns its own process-local request state and performs one bounded active 06:00→06:00 canonical `guide-schedule` read. Kijktips are consumed from that response's existing editorial-signal sibling. Only current/future programmes starting in the frozen [19:00,06:00) classification window are sent to the separate bounded `programme-classifications` API; missing/ambiguous semantics fail closed. No Guide runtime state is installed or mutated, no D-2..D+7 prefetch occurs, and no card owns async/network work.
+
+The finite surface is now Jouw gids → Onze Kijktips → Films vanavond → Series vanavond → Sport vanavond, then ends. Jouw gids reads the existing `ProgrammePersonalState.saved` concrete-broadcast snapshots, intersects [18:00,06:00), sorts chronologically, resolves Programme Detail only on exact canonical `Programme.id`, keeps unresolved snapshots visible/non-actionable and retains ended saves through 06:00 with literal `Afgelopen`. Discovery removes broadcasts after real `endAt`, while the shared clock updates current/upcoming state and exact 06:00 rollover triggers a new owned request; request version + television-day identity prevents an in-flight previous-day response from overwriting the new evening.
+
+The local personal-state schema moves in place from v1 to v2 with durable `hasUsedSave`; there is no second store and native/web storage locations are unchanged. Valid v1 saves/reminders are preserved. Existing retained saves imply prior usage, while an empty v1 record remains conservatively false because old storage cannot prove a previously removed save. Every successful Bewaar action permanently sets true; unsave-all and reminder mutations keep that history. Programme Detail now reports `Bewaard in Jouw gids` for the active evening and date-aware/neutral feedback outside it.
+
+The implementation intentionally contains no TMDB or artwork provider. Frozen base fallback frames remain Kijktip **168×94.5**, Film **108×162**, Series **96×144** and Sport **220×112**, with Dynamic Type expansion above the base composition. Horizontal carousels are native nested scroll views with no arrows/dots; the parent page remains native vertical scrolling. Card/row memo boundaries prevent 30-second clock ticks from rerendering unchanged children, and selection transforms are bounded to the evening subset of the single active-day response.
+
+Deterministic coverage now includes 18:00/19:00 boundaries, 00:00–05:59 ownership, exact 06:00 rollover, DST 23/25-hour days, current/ended transitions, Jouw-gids migration/overlap/same-title/stale snapshots, Kijktip exact signals and start window, Film/Series/Sport semantic eligibility including children/talk/magazine/unknown exclusions, unavailable/partial/retry, 256-ID fail-closed behavior, stale-response suppression, explicit no-Guide-runtime mutation, 12-channel/120-broadcast density, >=12 Series, no-artwork geometry, Larger Text and screen-level module/detail/empty/error states.
+
+For Acc Design Refinement, dev-only controls are hidden behind a long-press on the Vanavond date. They operate on real canonical runtime data and expose Live, Primetime 20:30, Jouw-gids mixed/never-used/used-empty, Kijktip fallback, partial, offline, no-Sport, ≥12-Series density, no-discovery and after-midnight 00:30 states. The fallback Kijktip signal exists only in `__DEV__` and is attached to a concrete canonical broadcast; production never fabricates category data.
+
+**Next gate:** exact-head CI → Development handoff → Technical/implementation sanity review as needed → mandatory Acc Design Refinement → Development visual/UX corrections → physical iPhone acceptance → Independent QA → final Technical Lead merge gate. Do not merge or deploy PR #149 before those gates.
+
+---
+
 ## 23 september 2026 — PR #144 merged, deployed and live-verified
 
 PR #144 / issue #142 completed the central provider-independent Vanavond classification/enrichment foundation. The final exact QA/Lead head `c04088479e8026966db54eba47f07603c4b87ee6` merged as `ca738e3c80d714ad6f95833554c6319674647fdb`. Post-merge CI #1072 / run `35873133619` passed **100 test files / 727 tests**, strict TypeScript, lint, iOS/Android/web exports and the main/release full-ABI Android debug build.

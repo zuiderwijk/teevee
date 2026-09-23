@@ -138,9 +138,23 @@ Build sequence:
 6. **DONE — Product scope frozen** — `Series vanavond` means scripted episodic series for a general/mainstream audience; programming primarily intended for children is excluded from this module in v1, without using provider `Kinderen` as the raw implementation rule;
 7. **DONE in PR #141** — owner-approved Vanavond production design/spec merged and canonical in `design/current/TONIGHT.md` + `docs/TONIGHT_VISUAL_CONVERGENCE.md`, including Jouw gids states, carousel semantics, 2:3 Film/Series poster direction, no-artwork fallbacks, Larger Text and light/dark behaviour;
 8. **DONE in PR #144 / issue #142** — central provider-independent Film/Series/Sport classification/enrichment foundation: classification-relevant provider evidence (full categories, episode numbers and minimal director-credit presence) stays server-side, deterministic fail-closed mapping is live-validated, ingest-owned sibling persistence/lifecycle is PostgreSQL-proven, and a separate bounded semantic read boundary keeps Guide loading unchanged. Both Lead blockers and Independent QA are closed; merge commit `ca738e3c80d714ad6f95833554c6319674647fdb` is deployed and live-verified. Hosted evidence: `docs/TONIGHT_CLASSIFICATION_DEPLOYMENT_2026-09-23.md`;
-9. **NEXT** — implement the first production Vanavond runtime against the accepted visual/product/classification contracts. After a real runtime exists, mandatory Acc Design Refinement + Development corrections + physical iPhone convergence/acceptance precede Independent QA and the final Lead merge gate. Artwork enrichment remains optional and must stay provider-independent/rights-cleared.
+9. **IMPLEMENTED AT DEVELOPMENT LEVEL in PR #149 / issue #148** — the first production Vanavond runtime now owns one bounded active television-day schedule read plus one bounded relevant-classification read without touching Guide runtime state. It renders the finite Jouw gids / Kijktip / Film / Series / Sport sequence, exact 18:00/19:00→06:00 discovery semantics, local-first saved intent, fail-closed classifications, no-artwork fallbacks, Dynamic Type/accessibility behavior and deterministic 06:00 stale-response ownership. **Mandatory Acc Design Refinement + Development corrections + physical iPhone convergence/acceptance are now the next gates**; Independent QA and the final Lead merge gate remain blocked until that convergence. TMDB/artwork enrichment remains outside this PR.
 
 Do not implement Search by eager D-2..D+7 mobile Guide prefetch or a title-only programme catalogue identity. Do not implement Vanavond Film/Series/Sport with naive genre matching. Vanavond remains finite linear-TV evening decision support, not an editorial/news dependency or infinite engagement feed.
+
+### ProgrammePersonalState v1 → v2 migration for Vanavond
+
+PR #149 extends the existing local `ProgrammePersonalState` record with one durable `hasUsedSave` boolean. This is an in-place schema migration, not a new feature store:
+- existing native storage file and web storage key remain unchanged;
+- parser accepts v1 and v2;
+- valid v1 saves/reminders are retained;
+- any retained v1 saved broadcast proves prior Bewaar usage and migrates `hasUsedSave=true`;
+- an empty legacy v1 record migrates conservatively to false because the old schema cannot prove previously removed saves;
+- every successful v2 save sets `hasUsedSave=true` permanently;
+- unsave-all and reminder mutations never reset it;
+- corrupt/unsupported records still fail safely to the empty v2 state.
+
+This field exists only to distinguish the two frozen Jouw-gids empty states. It does not introduce account identity, sync, a second persistence layer or title-based saved-programme reconciliation.
 
 ## Phase 6 — Personal Features
 Deliver saved programmes/favourites, reminders and refined channel preferences. Keep identity optional unless cross-device requirements justify an account decision.

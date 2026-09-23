@@ -38,6 +38,7 @@ import {
   type ProgrammePersonalState,
   type ProgrammeReminderRecord,
 } from '@/features/guide/programmePersonalState';
+import { programmeSaveFeedback } from '@/features/guide/programmeSaveFeedback';
 import {
   cancelProgrammeReminder,
   reconcileProgrammeReminder,
@@ -464,13 +465,14 @@ export function ProgrammeDetail({ state, onClose }: ProgrammeDetailProps) {
   const toggleSaved = useCallback(() => {
     if (!programme) return;
     const current = readProgrammePersonalState();
-    const next = withProgrammeSaved(current, programme, !Boolean(current.saved[programme.id]));
+    const nextSaved = !Boolean(current.saved[programme.id]);
+    const next = withProgrammeSaved(current, programme, nextSaved);
     if (!writeProgrammePersonalState(next)) {
       setActionMessage('Het programma kon niet worden bewaard. Probeer het opnieuw.');
       return;
     }
     setPersonalState(next);
-    setActionMessage(null);
+    setActionMessage(programmeSaveFeedback(programme, nextSaved));
   }, [programme]);
 
   const toggleReminder = useCallback(async () => {
