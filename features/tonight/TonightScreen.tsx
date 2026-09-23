@@ -50,6 +50,7 @@ import {
   tonightCardMetrics,
   tonightProgrammeAccessibilityLabel,
   tonightProgrammeTimeLabel,
+  tonightSportFallbackLayout,
   tonightSavedAccessibilityLabel,
   type TonightDiscoveryItem,
   type TonightDiscoveryKind,
@@ -280,12 +281,14 @@ const DiscoveryCard = memo(function DiscoveryCard({
   item,
   width,
   mediaHeight,
+  fontScale,
   onSelect,
 }: {
   kind: TonightDiscoveryKind;
   item: TonightDiscoveryItem;
   width: number;
   mediaHeight: number;
+  fontScale: number;
   onSelect: (selection: ProgrammeSelection) => void;
 }) {
   const theme = useTeeveeTheme();
@@ -293,6 +296,9 @@ const DiscoveryCard = memo(function DiscoveryCard({
   const selection = useMemo(() => ({ programme, channel }), [programme, channel]);
   const kijktip = kind === 'kijktip';
   const sport = kind === 'sport';
+  const sportFallbackLayout = sport
+    ? tonightSportFallbackLayout(fontScale)
+    : null;
   const metadata = current
     ? `Nu · ${channel.displayName}`
     : kind === 'kijktip'
@@ -317,6 +323,9 @@ const DiscoveryCard = memo(function DiscoveryCard({
       ]}
     >
       <View
+        {...(sport
+          ? { testID: `tonight-sport-fallback-${programme.id}` }
+          : {})}
         accessible={false}
         accessibilityElementsHidden
         importantForAccessibility="no-hide-descendants"
@@ -324,7 +333,9 @@ const DiscoveryCard = memo(function DiscoveryCard({
           styles.mediaFallback,
           {
             width,
-            height: mediaHeight,
+            ...(sportFallbackLayout?.mediaHeightMode === 'minimum'
+              ? { minHeight: mediaHeight }
+              : { height: mediaHeight }),
             borderRadius: kijktip || sport ? 10 : 8,
             backgroundColor:
               kijktip
@@ -345,7 +356,10 @@ const DiscoveryCard = memo(function DiscoveryCard({
         {sport ? (
           <View style={styles.sportTextBlock}>
             <Text
-              numberOfLines={2}
+              testID={`tonight-sport-title-${programme.id}`}
+              {...(sportFallbackLayout?.titleNumberOfLines
+                ? { numberOfLines: sportFallbackLayout.titleNumberOfLines }
+                : {})}
               style={[
                 styles.sportFallbackTitle,
                 {
@@ -357,6 +371,7 @@ const DiscoveryCard = memo(function DiscoveryCard({
               {programme.title}
             </Text>
             <Text
+              testID={`tonight-sport-metadata-${programme.id}`}
               style={[
                 styles.sportFallbackMetadata,
                 {
@@ -432,6 +447,7 @@ const DiscoveryCard = memo(function DiscoveryCard({
   previous.item.current === next.item.current &&
   previous.width === next.width &&
   previous.mediaHeight === next.mediaHeight &&
+  previous.fontScale === next.fontScale &&
   previous.onSelect === next.onSelect,
 );
 
@@ -475,6 +491,7 @@ function DiscoveryModule({
             item={item}
             width={metrics.width}
             mediaHeight={metrics.mediaHeight}
+            fontScale={fontScale}
             onSelect={onSelect}
           />
         ))}
