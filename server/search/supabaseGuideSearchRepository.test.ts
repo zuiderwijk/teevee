@@ -19,7 +19,7 @@ const request: GuideSearchRepositoryRequest = {
     { from: '2026-09-30T04:00:00.000Z', to: '2026-10-01T04:00:00.000Z' },
   ],
   programmeLimit: 24,
-  channelLimit: 12,
+  channelLimit: 24,
 };
 
 const channel = {
@@ -63,7 +63,7 @@ describe('SupabaseGuideSearchRepository', () => {
       p_now: request.now,
       p_windows: request.windows,
       p_programme_limit: 24,
-      p_channel_limit: 12,
+      p_channel_limit: 24,
     });
   });
 
