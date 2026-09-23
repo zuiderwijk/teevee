@@ -121,7 +121,7 @@ describe('temporary raw IPTV-EPG NL richness capture', () => {
         if (iconSrc) {
           iconUrls.set(iconSrc, (iconUrls.get(iconSrc) ?? 0) + 1);
           try {
-            const host = new URL(iconSrc).host || '(no-host)';
+            const host = new globalThis.URL(iconSrc).host || '(no-host)';
             iconDomains.set(host, (iconDomains.get(host) ?? 0) + 1);
           } catch {
             iconDomains.set('(invalid-url)', (iconDomains.get('(invalid-url)') ?? 0) + 1);
