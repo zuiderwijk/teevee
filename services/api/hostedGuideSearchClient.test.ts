@@ -34,7 +34,24 @@ describe('HostedGuideSearchClient', () => {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({ query: 'NPO 1' }),
+      signal: undefined,
     });
+  });
+
+  it('forwards AbortSignal so a newer live query can cancel transport work', async () => {
+    const fetcher = vi.fn(async () => jsonResponse(okPayload));
+    const client = new HostedGuideSearchClient({
+      endpoint: 'https://api.test/guide-search',
+      fetcher,
+    });
+    const controller = new AbortController();
+
+    await client.search({ query: 'NPO' }, { signal: controller.signal });
+
+    expect(fetcher).toHaveBeenCalledWith(
+      'https://api.test/guide-search',
+      expect.objectContaining({ signal: controller.signal }),
+    );
   });
 
   it('maps the hosted 503 availability contract without hiding other HTTP failures', async () => {
