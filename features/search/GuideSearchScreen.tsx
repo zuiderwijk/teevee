@@ -307,7 +307,7 @@ export function GuideSearchScreen() {
 
   const openChannel = (channel: Channel) => {
     Keyboard.dismiss();
-    publishGuideNavigationIntent(guideSearchPerChannelIntent(channel, Date.now()));
+    publishGuideNavigationIntent(guideSearchPerChannelIntent(channel, nowMs));
     router.push('/');
   };
 
@@ -419,8 +419,8 @@ export function GuideSearchScreen() {
 
           {response?.programmeCoverage === 'partial' ? (
             <AvailabilityNotice retry={guideSearchSession.retry}>
-              Niet alle gidsdagen zijn beschikbaar. De resultaten hieronder komen
-              uit het deel van de gids dat wel compleet is.
+              Niet alle gidsdagen zijn beschikbaar. Programmaresultaten hieronder
+              komen uit het deel van de gids dat wel compleet is.
             </AvailabilityNotice>
           ) : null}
 
