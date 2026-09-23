@@ -3,6 +3,10 @@ import { type ComponentType, type ReactNode, useCallback, useEffect, useMemo, us
 import { detailReducer, initialDetailState, type ProgrammeSelection } from '@/features/guide/detailState';
 import { GuidePresentationSelector } from '@/features/guide/GuidePresentationSelector';
 import {
+  acknowledgeGuideNavigationRequest,
+  useGuideNavigationRequest,
+} from '@/features/guide/guideNavigationIntent';
+import {
   DEFAULT_GUIDE_PRESENTATION,
   type GuidePresentation,
 } from '@/features/guide/guidePresentation';
@@ -39,12 +43,23 @@ export default function GuideScreen() {
   const [nowNextLoading, setNowNextLoading] = useState(false);
   const [nowNextLoadFailed, setNowNextLoadFailed] = useState(false);
   const [detail, dispatch] = useReducer(detailReducer, initialDetailState);
+  const guideNavigationRequest = useGuideNavigationRequest();
 
   // Stable props are essential: selecting a programme must not rebuild the Guide.
   const openDetail = useCallback((selection: ProgrammeSelection) => {
     dispatch({ type: 'open', selection });
   }, []);
   const closeDetail = useCallback(() => dispatch({ type: 'close' }), []);
+
+  useEffect(() => {
+    if (!guideNavigationRequest) return;
+
+    // Search-to-Guide navigation is contextual. It must not rewrite the stored
+    // long-term Guide presentation preference merely to complete the handoff.
+    requestedPresentationRef.current = 'per-channel';
+    setNowNextLoadFailed(false);
+    setPresentation('per-channel');
+  }, [guideNavigationRequest]);
 
   const showPerChannel = presentation === 'per-channel';
   const showNowNext = presentation === 'now-next' && nowNextComponent !== null;
@@ -129,6 +144,8 @@ export default function GuideScreen() {
       ) : showPerChannel ? (
         <PerChannelGuideView
           guideDataVersion={guideDataVersion}
+          navigationRequest={guideNavigationRequest}
+          onNavigationRequestHandled={acknowledgeGuideNavigationRequest}
           onSelectProgramme={openDetail}
           presentationNavigation={sharedPresentationNavigation}
         />
