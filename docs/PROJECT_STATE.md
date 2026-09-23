@@ -1,6 +1,6 @@
 # Teevee — Canonical Project State
 
-Last updated: 2026-09-23.
+Last updated: 2026-09-24.
 Status: ACTIVE — **Inter-phase Premium Artwork & Content Identity enrichment**.
 Current implementation priority: **Build the minimum provider-independent external-content/artwork enrichment foundation before starting Phase 6 Personal Features; keep canonical Programme and core Guide independent from enrichment**
 Current broader product phase: **Phase 6 — Personal Features, intentionally deferred behind the owner-priority inter-phase enrichment**
@@ -18,6 +18,7 @@ Previous phase: **Phase 5 — Search and Discovery — CLOSED**
 - Core Guide cannot depend on artwork/enrichment.
 - `docs/VISUAL_BASELINE.md` plus `design/current/` select the accepted visual references. New visual exploration is not canonical until explicitly approved and merged.
 - Relevant durable architecture contracts are ADR 0001 through ADR 0010; ADR 0010 is canonical for the classification sibling boundary.
+- **Queued owner-approved next iteration:** expand the canonical channel catalog to the exact 49-channel set/order in `docs/CHANNEL_EXPANSION_TARGET_2026-09-24.md`. This is not the current implementation priority and must not interrupt the active external-content/artwork foundation.
 
 ## Phase status
 1. **Phase 1A — Totaal interaction/technical baseline:** complete and physically accepted on iPhone. Totaal production visual design, implementation-ready specification and runtime production convergence are merged, owner-accepted and canonical.
