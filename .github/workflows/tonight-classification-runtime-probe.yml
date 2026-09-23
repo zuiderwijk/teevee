@@ -1,0 +1,149 @@
+name: Tonight classification runtime probe
+
+on:
+  pull_request:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  live-classifier:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Create disposable live classifier probe
+        shell: bash
+        run: |
+          cat > server/classification/__classificationLiveProbe.test.ts <<'EOF'
+          import { describe, expect, it } from 'vitest';
+
+          import {
+            isTonightFilmClassification,
+            isTonightSeriesClassification,
+            isTonightSportClassification,
+          } from '../../data/domain/programmeClassification.ts';
+          import { IPTV_EPG_NL_PROVIDER_CHANNEL_IDS } from '../epg/developmentChannelCatalog.ts';
+          import { DEFAULT_DEVELOPMENT_XMLTV_URL, parseXmltvDocument } from '../epg/xmltvProvider.ts';
+          import { classifyExternalProgramme } from './classifyProgramme.ts';
+
+          function amsterdamHour(value: string): number {
+            return Number(
+              new Intl.DateTimeFormat('en-GB', {
+                timeZone: 'Europe/Amsterdam',
+                hour: '2-digit',
+                hour12: false,
+              }).format(new Date(value)),
+            );
+          }
+
+          function isTonight(value: string): boolean {
+            const hour = amsterdamHour(value);
+            return hour >= 19 || hour < 6;
+          }
+
+          describe('disposable live programme classification probe', () => {
+            it('summarises actual classifier output on current mapped XMLTV rows', async () => {
+              const response = await fetch(DEFAULT_DEVELOPMENT_XMLTV_URL);
+              expect(response.ok).toBe(true);
+              const xml = await response.text();
+              const document = parseXmltvDocument(xml);
+              const mapped = new Set(IPTV_EPG_NL_PROVIDER_CHANNEL_IDS);
+
+              const rows = document.programmes
+                .map(({ programme }) => programme)
+                .filter((programme) => programme.channelId && mapped.has(programme.channelId))
+                .filter((programme) => programme.startAt && isTonight(programme.startAt))
+                .map((programme, index) => ({
+                  programme,
+                  classification: classifyExternalProgramme({
+                    providerKey: 'development-xmltv',
+                    programmeId: `probe-${index}`,
+                    programme,
+                  }),
+                }));
+
+              const summary = rows.reduce(
+                (result, row) => {
+                  result.total += 1;
+                  const type = row.classification.contentType;
+                  result.contentType[type] = (result.contentType[type] ?? 0) + 1;
+                  if (isTonightFilmClassification(row.classification)) result.filmEligible += 1;
+                  if (isTonightSeriesClassification(row.classification)) result.seriesEligible += 1;
+                  if (isTonightSportClassification(row.classification)) result.sportEligible += 1;
+                  if (row.classification.contentType === 'sport') {
+                    const subtype = row.classification.sportType;
+                    result.sportType[subtype] = (result.sportType[subtype] ?? 0) + 1;
+                  }
+                  return result;
+                },
+                {
+                  total: 0,
+                  filmEligible: 0,
+                  seriesEligible: 0,
+                  sportEligible: 0,
+                  contentType: {} as Record<string, number>,
+                  sportType: {} as Record<string, number>,
+                },
+              );
+
+              const genericSeries = rows
+                .filter(({ classification, programme }) =>
+                  isTonightSeriesClassification(classification) &&
+                  !['Dramaseries', 'Misdaaddrama', 'Sitcoms', 'Soap', 'Miniseries'].includes(
+                    programme.categories?.[0] ?? '',
+                  ),
+                )
+                .map(({ programme }) => ({
+                  title: programme.title,
+                  categories: programme.categories,
+                  episodeNumbers: programme.episodeNumbers,
+                }));
+
+              const uniqueGenericSeries = [
+                ...new Map(
+                  genericSeries.map((item) => [
+                    `${item.title}\u0000${JSON.stringify(item.categories)}`,
+                    item,
+                  ]),
+                ).values(),
+              ].slice(0, 120);
+
+              const sportRows = rows
+                .filter(({ classification }) => classification.contentType === 'sport')
+                .map(({ programme, classification }) => ({
+                  title: programme.title,
+                  categories: programme.categories,
+                  sportType: classification.sportType,
+                  confidence: classification.confidence,
+                  description: programme.description?.slice(0, 180),
+                }));
+
+              const uniqueSportRows = [
+                ...new Map(
+                  sportRows.map((item) => [
+                    `${item.title}\u0000${item.sportType}\u0000${JSON.stringify(item.categories)}`,
+                    item,
+                  ]),
+                ).values(),
+              ].slice(0, 160);
+
+              console.log('LIVE_CLASSIFIER_SOURCE_BYTES', xml.length);
+              console.log('LIVE_CLASSIFIER_SUMMARY', JSON.stringify(summary));
+              console.log('LIVE_CLASSIFIER_GENERIC_SERIES', JSON.stringify(uniqueGenericSeries));
+              console.log('LIVE_CLASSIFIER_SPORT', JSON.stringify(uniqueSportRows));
+
+              expect(summary.total).toBeGreaterThan(0);
+              expect(summary.filmEligible).toBeGreaterThan(0);
+              expect(summary.seriesEligible).toBeGreaterThan(0);
+            }, 30_000);
+          });
+          EOF
+      - name: Run exact implementation against live source
+        run: npx vitest run server/classification/__classificationLiveProbe.test.ts --reporter=verbose
