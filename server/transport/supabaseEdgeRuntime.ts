@@ -29,15 +29,15 @@ export function defaultSupabaseSecretKey(): string {
   if (!raw) throw new Error('SUPABASE_SECRET_KEYS is unavailable');
 
   const keys = JSON.parse(raw) as unknown;
-  if (
-    typeof keys !== 'object' ||
-    keys === null ||
-    typeof (keys as Record<string, unknown>).default !== 'string' ||
-    !(keys as Record<string, string>).default
-  ) {
+  if (typeof keys !== 'object' || keys === null) {
     throw new Error('Default Supabase secret key is unavailable');
   }
-  return (keys as Record<string, string>).default;
+
+  const defaultKey = (keys as Record<string, unknown>).default;
+  if (typeof defaultKey !== 'string' || !defaultKey) {
+    throw new Error('Default Supabase secret key is unavailable');
+  }
+  return defaultKey;
 }
 
 export async function parseBoundedJsonBody(
