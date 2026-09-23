@@ -108,22 +108,20 @@ function savedItems(
   nowMs: number,
 ): TonightSavedItem[] {
   const window = tonightWindow(nowMs);
+  const savedSnapshots = Object.values(state.saved);
+  const savedIds = new Set(
+    savedSnapshots.map((snapshot) => snapshot.programmeId),
+  );
   const programmes = new Map(
     schedule?.programmes
-      .filter((programme) =>
-        programmeIntersectsWindow(
-          programme,
-          window.eveningStartMs,
-          window.eveningEndMs,
-        ),
-      )
+      .filter((programme) => savedIds.has(programme.id))
       .map((programme) => [programme.id, programme]) ?? [],
   );
   const channels = new Map(
     schedule?.channels.map((channel) => [channel.id, channel]) ?? [],
   );
 
-  return Object.values(state.saved)
+  return savedSnapshots
     .map((snapshot) => {
       const programme = programmes.get(snapshot.programmeId) ?? null;
       return {
