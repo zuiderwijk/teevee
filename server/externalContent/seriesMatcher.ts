@@ -59,7 +59,7 @@ function parseSeasonEpisode(
 
   const unique = new Map(
     parsed.map((item) => [
-      `${item.seasonNumber}:\${item.episodeNumber}`,
+      `${item.seasonNumber}:${item.episodeNumber}`,
       item,
     ]),
   );
