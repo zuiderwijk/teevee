@@ -353,6 +353,36 @@ describe('TmdbRequestSession', () => {
     });
   });
 
+  it('requires director-specific movie crew fields only after the Director role is established', async () => {
+    const nonDirector = requestSession({ '/movie/100': {
+      id: 100, title: 'Billy Elliot', original_title: 'Billy Elliot', release_date: '2000-09-29',
+      credits: { crew: [{ job: 'Writer' }], cast: [] }, alternative_titles: { titles: [] },
+    } });
+    await expect(nonDirector.getMovie('100')).resolves.toMatchObject({ directors: [] });
+
+    const malformedDirector = requestSession({ '/movie/100': {
+      id: 100, title: 'Billy Elliot', original_title: 'Billy Elliot', release_date: '2000-09-29',
+      credits: { crew: [{ job: 'Director' }], cast: [] }, alternative_titles: { titles: [] },
+    } });
+    await expect(malformedDirector.getMovie('100')).rejects.toMatchObject({ kind: 'malformed' });
+  });
+
+  it('requires a directed-movie id only after the Director role is established', async () => {
+    const nonDirector = requestSession({
+      '/search/person': { results: [{ id: 10, name: 'Stephen Daldry' }] },
+      '/person/10/movie_credits': { crew: [{ job: 'Writer' }] },
+    });
+    await expect(nonDirector.getDirectedMovieCredits('Stephen Daldry')).resolves.toEqual([]);
+
+    const malformedDirector = requestSession({
+      '/search/person': { results: [{ id: 10, name: 'Stephen Daldry' }] },
+      '/person/10/movie_credits': { crew: [{ job: 'Director' }] },
+    });
+    await expect(malformedDirector.getDirectedMovieCredits('Stephen Daldry')).rejects.toMatchObject({
+      kind: 'malformed',
+    });
+  });
+
   it('accepts legitimate empty required arrays as valid empty evidence', async () => {
     const session = requestSession({
       '/search/movie': { results: [] },

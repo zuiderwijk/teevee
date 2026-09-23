@@ -290,16 +290,13 @@ export class TmdbRequestSession implements TmdbGateway {
     );
     const movie = record(payload, 'movie');
     const credits = record(movie.credits, 'movie credits');
-    const directors = requiredArray(credits.crew, 'movie credits crew')
-      .map((item) => {
-        const crew = record(item, 'movie crew');
-        return {
-          job: requiredText(crew.job, 'movie crew job'),
-          name: requiredText(crew.name, 'movie crew name'),
-        };
-      })
-      .filter(({ job }) => job.toLocaleLowerCase('en-US') === 'director')
-      .map(({ name }) => name);
+    const directors: string[] = [];
+    for (const item of requiredArray(credits.crew, 'movie credits crew')) {
+      const crew = record(item, 'movie crew');
+      const job = requiredText(crew.job, 'movie crew job');
+      if (job.toLocaleLowerCase('en-US') !== 'director') continue;
+      directors.push(requiredText(crew.name, 'movie director name'));
+    }
 
     const candidateId = requiredId(movie.id, 'movie id');
 
@@ -352,8 +349,8 @@ export class TmdbRequestSession implements TmdbGateway {
       for (const entry of requiredArray(credits.crew, 'person movie credits crew')) {
         const item = record(entry, 'person movie crew');
         const job = requiredText(item.job, 'person movie crew job');
-        const movieId = requiredId(item.id, 'person movie crew id');
         if (job.toLocaleLowerCase('en-US') !== 'director') continue;
+        const movieId = requiredId(item.id, 'person directed movie id');
         result.set(movieId, {
           id: movieId,
           releaseYear: year(item.release_date),
