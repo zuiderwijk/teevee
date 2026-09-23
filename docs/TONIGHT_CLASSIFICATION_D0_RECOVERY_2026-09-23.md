@@ -113,7 +113,13 @@ The smoke covers:
 - stale recovery not rolling back newer classification;
 - zero orphan classifications.
 
-The disposable workflow is removed before final PR handoff. Its run/job is recorded in the PR handoff.
+Disposable PostgreSQL 17 smoke evidence:
+- workflow: `Classification recovery PostgreSQL smoke`;
+- run: `35916280678`;
+- job: `107368458307`;
+- result: **SUCCESS**;
+- SQL lifecycle: `BEGIN → DO → ROLLBACK`;
+- the temporary workflow is removed from the final PR diff.
 
 ## Production deployment/recovery plan — NOT EXECUTED
 
