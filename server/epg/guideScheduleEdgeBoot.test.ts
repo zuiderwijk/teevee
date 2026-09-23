@@ -6,10 +6,10 @@ import * as ts from 'typescript';
 import { describe, expect, it } from 'vitest';
 
 const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
-const edgeEntrypoint = resolve(
-  repoRoot,
+const edgeEntrypoints = [
   'supabase/functions/guide-schedule/index.mjs',
-);
+  'supabase/functions/guide-search/index.mjs',
+].map((path) => resolve(repoRoot, path));
 const localExtensions = ['.ts', '.tsx', '.mjs', '.js'];
 
 function isRuntimeImport(statement: ts.ImportDeclaration): boolean {
@@ -58,9 +58,9 @@ function resolveLocalImport(importer: string, specifier: string): string | null 
   return null;
 }
 
-describe('guide-schedule Edge runtime module graph', () => {
-  it('keeps the public read deployable after optional editorial composition', () => {
-    const pending = [edgeEntrypoint];
+describe('public Guide Edge runtime module graphs', () => {
+  it('keeps schedule and Search reads deployable with explicit runtime imports', () => {
+    const pending = [...edgeEntrypoints];
     const visited = new Set<string>();
     const violations: string[] = [];
 
