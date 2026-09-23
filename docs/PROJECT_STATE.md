@@ -1,8 +1,8 @@
 # Teevee — Canonical Project State
 
-Last updated: 2026-09-23.
+Last updated: 2026-09-24.
 Status: ACTIVE — **Inter-phase Premium Artwork & Content Identity enrichment**.
-Current implementation priority: **Build the minimum provider-independent external-content/artwork enrichment foundation before starting Phase 6 Personal Features; keep canonical Programme and core Guide independent from enrichment**
+Current implementation priority: **Complete Technical Lead + Independent QA review of issue #159 / PR #161, the minimum TMDB Film/Series external-content identity production foundation; no hosted deployment or artwork UI yet**
 Current broader product phase: **Phase 6 — Personal Features, intentionally deferred behind the owner-priority inter-phase enrichment**
 Previous phase: **Phase 5 — Search and Discovery — CLOSED**
 
@@ -17,7 +17,7 @@ Previous phase: **Phase 5 — Search and Discovery — CLOSED**
 - Deterministic fixtures remain mandatory after real data is introduced.
 - Core Guide cannot depend on artwork/enrichment.
 - `docs/VISUAL_BASELINE.md` plus `design/current/` select the accepted visual references. New visual exploration is not canonical until explicitly approved and merged.
-- Relevant durable architecture contracts are ADR 0001 through ADR 0010; ADR 0010 is canonical for the classification sibling boundary.
+- Relevant durable architecture contracts are ADR 0001 through ADR 0011; ADR 0010 is canonical for the classification sibling boundary and proposed ADR 0011 records the broadcast-keyed external-content identity lifecycle pending review.
 
 ## Phase status
 1. **Phase 1A — Totaal interaction/technical baseline:** complete and physically accepted on iPhone. Totaal production visual design, implementation-ready specification and runtime production convergence are merged, owner-accepted and canonical.
@@ -36,15 +36,17 @@ Canonical research:
 - PR #156 / `docs/TMDB_MATCHING_RESEARCH_2026-09-23.md` proves a narrow fail-closed matcher can resolve **44/45 Film** and **49/50 Series** reviewed broadcasts at high confidence, with zero known false-positive external IDs in the reviewed accepted tier;
 - the product owner confirms the required commercial TMDB licensing for Teevee production use is arranged; the licensing gate is **CLOSED**. Production credential ownership, rate-limit/retry/caching design and compliance with the agreed TMDB contract terms remain implementation requirements.
 
-Issue #157 / PR #158 is the first production foundation increment. It adds only typed transient server/provider evidence:
-- opaque raw production-date evidence with optional exact-YYYY `year`;
-- source-role-preserving `director[]`, `actor[]`, `producer[]`;
-- existing categories/episode/description/live/repeat evidence unchanged.
+PR #158 is merged on canonical main and supplies the minimum typed transient provider evidence needed by external matching without changing canonical `Programme`, Guide transport or mobile.
 
-Canonical `Programme`, Guide schedule transport and mobile contracts remain unchanged. The existing classification algorithm keeps using only its reviewed evidence, including the separate `hasDirectorCredit` compatibility signal; richer credit names do not change Film/Series/Sport semantics.
+Issue #159 / PR #161 is the active production increment. Its proposed ADR 0011 keeps content identity as a private broadcast-keyed sibling instead of changing `Programme.id` or introducing a generic catalogue. Matching uses the same provider observation that creates the canonical broadcast/classification and runs only after an authoritative schedule write. Guide-horizon canonical writes finish before TMDB work starts; timeout, 429/5xx, network, malformed payload or external-reference persistence failure therefore cannot roll back the Guide.
 
-Evidence remains transient in this increment. PR #152 is **not** a foundation dependency and remains owner-blocked; its recovery execution is used only as lifecycle evidence. Its observed **512 candidates / 319 exact matched / 193 unmatched** proves that future external-identity bootstrap for already-retained broadcasts cannot rely solely on later provider refetch plus exact-current broadcast reconciliation. The next external-identity production increment must explicitly solve bootstrap/replay ownership without title hacks, canonical-genre authority, mobile heuristics or a premature generic enrichment framework.
+The proposed private `teevee.programme_external_content_references` row stores only canonical programme ownership, `tmdb`, Film/Series media type, high-confidence external content ID, matcher version and freshness timestamps. The write RPC shares canonical channel advisory locking, requires exact current broadcast fields and same-observation authoritative coverage, and rejects newer schedule/reference state. Rekey/delete ownership stays with canonical Programme/FK lifecycle; repeated broadcasts may share one TMDB content identity.
 
+Matching remains precision-first: Film requires year ±1 + director overlap and stronger people evidence for alternative/localized-title-only acceptance; Series uses full title first, cast support and coherent S/E when available, with only the empirically-proven stronger base-title/numbering-disagreement fallbacks. No TMDB episode ID is produced.
+
+There is deliberately **no D0 historical bootstrap**. External identity forward-fills from authoritative complete current/future windows and remains attached as a broadcast ages into D0. Existing retained broadcasts may therefore have a temporary post-deploy warm-up gap. PR #152 remains owner-blocked evidence only: its dormant recovery migration/RPC is superseded for external-identity bootstrap and is not called by PR #161. Because that migration already exists in hosted migration history, any eventual retirement must be a separate forward cleanup after caller verification.
+
+PR #161 is High risk because it adds a migration/trust-boundary path. It must not be merged or deployed before Technical Lead review and Independent QA. There is no physical owner-test gate for this increment because it adds no user-visible artwork/UI.
 
 ## Kijktip enrichment vertical slice — merged and deployed
 The inter-phase Kijktip vertical slice is implementation-complete and merged. Do not reopen its accepted product, matching, persistence or Guide-presentation contracts without concrete regression evidence.
