@@ -1,6 +1,6 @@
 # Teevee Programme Data Strategy
 
-Status: **Phase 5 data/runtime foundations are merged; first production Vanavond runtime is merged and physically/independently accepted.** Phase 3 proved the provider-independent hosted data path, Phase 4 closed the television-day-aware Guide runtime and D-2..D+7 navigation/horizon behaviour, Kijktip is merged/deployed/physically verified, Phase 5A Guide Search is closed, PR #144 / issue #142 established the provider-independent Film/Series/Sport classification sibling, and PR #149 consumes those deployed lanes without changing Guide loading or adding a new hosted data dependency. The Phase 4 cache decision is unchanged: keep the current fixture-first + in-memory runtime fallback and do not introduce persistent mobile schedule caching without new measured evidence. Production **EPG** provider selection/rights remain a later release gate and release-like offline cold-start/persistent-cache validation remains Phase 9.
+Status: **Phase 5 data/runtime foundations are merged; owner-priority inter-phase Premium Artwork & Content Identity enrichment is now active before Phase 6 Personal Features.** Phase 3 proved the provider-independent hosted data path, Phase 4 closed the television-day-aware Guide runtime and D-2..D+7 navigation/horizon behaviour, Kijktip is merged/deployed/physically verified, Phase 5A Guide Search is closed, PR #144 / issue #142 established the provider-independent Film/Series/Sport classification sibling, and PR #149 consumes those deployed lanes without changing Guide loading. Issue #157 / PR #158 adds only the typed server-side provider evidence required by the already-completed external-identity research; Phase 5 remains closed. The Phase 4 cache decision is unchanged: keep the current fixture-first + in-memory runtime fallback and do not introduce persistent mobile schedule caching without new measured evidence. Production **EPG** provider selection/rights remain a later release gate and release-like offline cold-start/persistent-cache validation remains Phase 9.
 
 ## Goal
 Teevee must support the complete core Guide without coupling the mobile experience to one EPG supplier. Replacing the temporary development source with an authorized Bindinc/TVgids or commercial provider must not require a Guide rewrite.
@@ -66,6 +66,45 @@ External data flows through:
 
 Provider-specific IDs, raw XMLTV, credentials and storage details stop at the server boundary.
 
+## TMDB commercial-use status
+
+Owner confirmation on 2026-09-23: the required commercial TMDB licensing for Teevee production API/data/image use is arranged. The TMDB commercial-use gate is **closed** for the Premium Artwork & Content Identity track.
+
+Confidential contract terms, commercial details and credentials are not stored in the repository. Production code must still implement credential ownership, rate-limit/retry/timeout/caching policy and any applicable attribution/branding obligations from the agreed contract. This does not alter the separate production EPG-provider redistribution-rights gate, channel-logo provenance requirements or rights for any non-TMDB artwork source.
+
+## EPG identity evidence production boundary — issue #157 / PR #158
+
+The external-identity source research (#154) and TMDB matching research (#156) proved that the current XMLTV source contains a small evidence bundle that materially improves high-confidence Film/Series identity resolution without broadening canonical `Programme`.
+
+The production provider boundary therefore retains this evidence **transiently and server-side only** on `ExternalProgramme`:
+
+```ts
+type ExternalProductionDate = {
+  raw: string;
+  year?: number;
+};
+
+type ExternalProgrammeCredits = {
+  director: string[];
+  actor: string[];
+  producer: string[];
+};
+```
+
+Rules:
+- raw XMLTV `<date>` text is kept as opaque provider evidence; the current adapter exposes `year` only for an exact four-digit `YYYY` value and does **not** parse arbitrary provider values as universal full dates;
+- Film year and Series year retain different semantics: Film year is strong identity evidence, while Series year is episode-era/context evidence and must never be assumed to equal Series first-air year;
+- credit roles are preserved exactly as `director`, `actor` and `producer`; the provider boundary does not rename `actor` to cast because the source also encodes factual hosts/presenters as actors;
+- empty names are dropped and exact normalized duplicates are collapsed deterministically while preserving source order;
+- complete categories, structured episode-number values, description and live/repeat evidence keep their existing contracts;
+- the existing `hasDirectorCredit` boolean remains the only credit-derived input consumed by the current classification algorithm, so richer evidence does not alter classification semantics;
+- canonical `Programme`, `GuideSchedule`, Guide/Search/Vanavond transport and mobile runtime receive none of these richer provider fields;
+- no identity-evidence persistence/table is introduced by this foundation.
+
+Current replay limitation is explicit. The provider can be re-fetched within its available horizon, but PR #152's controlled D0 recovery observed **512 provider candidates / 319 exact matches / 193 unmatched**. Therefore later external-identity bootstrap for already-retained broadcasts must not assume that a future provider refetch will still exactly match every canonical broadcast. The next external-identity production increment must own that bootstrap/replay lifecycle explicitly; this foundation does not add fuzzy broadcast reconciliation or a generic enrichment framework.
+
+Source evidence: `docs/PROGRAMME_EXTERNAL_IDENTITY_SOURCE_RESEARCH_2026-09-23.md`. Matching evidence: `docs/TMDB_MATCHING_RESEARCH_2026-09-23.md`.
+
 ## Vanavond programme classification sibling — issue #142 / ADR 0010
 
 The classification lane is derived from the same provider record that creates a canonical broadcast:
@@ -75,7 +114,7 @@ The classification lane is derived from the same provider record that creates a 
 Provider evidence kept **only server-side before canonicalization**:
 - all XMLTV categories, not just the first category retained in `Programme.genre`;
 - structured `episode-num` values;
-- minimal `hasDirectorCredit` presence when the provider supplies a credits block; credit names/cast are not propagated;
+- minimal `hasDirectorCredit` presence remains the only credit-derived classification input; richer role-preserving credit names may coexist on `ExternalProgramme` for server-side external identity but are ignored by the classifier;
 - explicit provider live/repeat booleans when present;
 - description only for narrow deterministic Sport subtype phrases after structured Sport evidence already exists.
 
@@ -240,7 +279,9 @@ Raw required values may be malformed or absent at this boundary. Adapters preser
 ## XMLTV adapter rules
 The development adapter:
 - parses channel IDs/display names and optional icons;
-- parses programme title, subtitle, description, category, live/repeat flags;
+- parses programme title, subtitle, description, complete categories, structured episode-number evidence and live/repeat flags;
+- preserves raw `<date>` text and exposes a numeric production year only for exact `YYYY` values;
+- preserves `director[]`, `actor[]` and `producer[]` names by source role, with deterministic empty/duplicate filtering;
 - requires an explicit numeric timezone offset in XMLTV timestamps;
 - normalises valid timestamps to UTC ISO;
 - leaves malformed timestamps representable for downstream diagnostics;

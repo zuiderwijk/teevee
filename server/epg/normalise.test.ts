@@ -83,6 +83,48 @@ describe('normaliseProviderSchedule', () => {
     expect(JSON.stringify(result.schedule)).not.toContain('categories');
   });
 
+  it('keeps richer identity evidence server-only and leaves canonical/classification output unchanged', () => {
+    const base: ExternalProgramme = {
+      channelId: 'provider-one',
+      startAt: '2026-09-14T20:00:00+02:00',
+      endAt: '2026-09-14T22:00:00+02:00',
+      title: 'Billy Elliot',
+      description: 'Feature film.',
+      genre: 'Drama',
+      categories: ['Drama', 'Film'],
+      hasDirectorCredit: true,
+    };
+    const rich: ExternalProgramme = {
+      ...base,
+      productionDate: { raw: '2000', year: 2000 },
+      credits: {
+        director: ['Stephen Daldry'],
+        actor: ['Julie Walters', 'Jamie Bell'],
+        producer: ['Jon Finn'],
+      },
+    };
+
+    const baseline = normalise([base]);
+    const enriched = normalise([rich]);
+
+    expect(enriched.schedule).toEqual(baseline.schedule);
+    expect(enriched.classifications).toEqual(baseline.classifications);
+    expect(enriched.classifications[0]).toMatchObject({
+      contentType: 'film',
+      confidence: 'high',
+    });
+
+    const publicSchedule = JSON.stringify(enriched.schedule);
+    expect(publicSchedule).not.toContain('productionDate');
+    expect(publicSchedule).not.toContain('productionYear');
+    expect(publicSchedule).not.toContain('credits');
+    expect(publicSchedule).not.toContain('director');
+    expect(publicSchedule).not.toContain('actor');
+    expect(publicSchedule).not.toContain('producer');
+    expect(publicSchedule).not.toContain('categories');
+    expect(publicSchedule).not.toContain('episodeNumbers');
+  });
+
   it('keeps canonical ids deterministic when provider ids and broadcast starts are stable', () => {
     const programme: ExternalProgramme = {
       id: 'stable-provider-id',

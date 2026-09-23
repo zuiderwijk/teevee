@@ -542,22 +542,16 @@ Artwork selection remains a separate increment after external identity productio
 
 ## 18. TMDB commercial-use gate
 
-TMDB's current developer FAQ says its developer API is free for non-commercial use with attribution, and that projects whose primary purpose is revenue-generating are commercial and require contacting TMDB for commercial API/data/image licensing.
+TMDB's public developer documentation distinguishes non-commercial developer API use from commercial use. Teevee is a paid commercial product, so the research correctly treated production API/data/image use as an independent commercial-use gate.
 
-Teevee is a paid commercial product.
+**Owner update — 2026-09-23:** the product owner confirms the required TMDB commercial licensing for Teevee production use is arranged. This licensing gate is therefore **CLOSED**.
 
-Therefore:
+The repository intentionally does not store confidential contract terms, commercial details or credentials. Production implementation must still comply with the agreed TMDB contract, including any applicable attribution/branding obligations, and must separately define credential ownership, rate-limit, retry, timeout and caching behavior.
 
-> **Production use of TMDB API/data/images has an independent commercial-licensing gate.**
-
-The research token proves technical access only. It is not evidence of production rights.
-
-Official references:
+Official public references used by the research:
 
 - https://developer.themoviedb.org/docs/faq
 - https://developer.themoviedb.org/docs/authentication-application
-
-This licensing gate is separate from matching correctness and must be resolved before commercial production use.
 
 ## 19. Production architecture recommendation
 
@@ -644,7 +638,7 @@ Learnings:
 
 Matching research is complete, but production implementation still requires a separate increment covering:
 
-1. TMDB commercial licensing / data-image usage permission for Teevee;
+1. **CLOSED — owner confirms TMDB commercial licensing / production API-data-image usage permission is arranged;**
 2. production credential ownership and secret management;
 3. API rate-limit, retry, timeout and caching strategy;
 4. the smallest persistence/reference contract and migration lifecycle;
@@ -672,6 +666,10 @@ Observed final sample:
 - **known false-positive external IDs in reviewed high-confidence tier: 0**;
 - **repeat identity conflicts: 0**.
 
-The next engineering step is the smallest server-side external-identity production design, contingent on the separate TMDB commercial-use gate.
+The next engineering step is the smallest server-side external-identity production design. The previously separate TMDB commercial-use gate is now closed by owner confirmation; credential, rate-limit/cache and contract-compliance requirements remain part of production design.
+
+Issue #157 / PR #158 is the prerequisite parser/evidence foundation for that design. It productionizes only the transient typed provider evidence that this research materially used: Film production year/director/actor evidence and Series actor/episode evidence, while also retaining producer names by source role for the proven provider boundary. It does not implement TMDB calls, matching, persistence or artwork.
+
+The #152 D0 recovery result also tightens production-readiness gate #5: bounded replay for already-retained broadcasts may not assume later provider refetch still exactly reconciles every canonical broadcast. External-identity production design must explicitly own bootstrap/replay semantics before persistence/deployment.
 
 No artwork UI/runtime implementation is authorized by this report.

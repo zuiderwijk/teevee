@@ -3,6 +3,8 @@ import type {
   ExternalChannel,
   ExternalEpisodeNumber,
   ExternalProgramme,
+  ExternalProgrammeCredits,
+  ExternalProductionDate,
   ProviderScheduleBatch,
   ProviderScheduleQuery,
 } from './provider';
@@ -67,6 +69,47 @@ function elementTexts(block: string, name: string): string[] {
       decodeXml(match[1] ?? '').replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').trim(),
     )
     .filter(Boolean);
+}
+
+function uniqueText(values: readonly string[]): string[] {
+  const seen = new Set<string>();
+  const result: string[] = [];
+  for (const value of values) {
+    if (seen.has(value)) continue;
+    seen.add(value);
+    result.push(value);
+  }
+  return result;
+}
+
+function productionDateEvidence(block: string): ExternalProductionDate | undefined {
+  const raw = elementText(block, 'date');
+  if (!raw) return undefined;
+
+  if (/^\d{4}$/.test(raw)) {
+    const year = Number(raw);
+    if (year >= 1000 && year <= 9999) {
+      return { raw, year };
+    }
+  }
+
+  return { raw };
+}
+
+function programmeCredits(block: string): ExternalProgrammeCredits | undefined {
+  const creditBlocks = [...block.matchAll(/<credits\b[^>]*>[\s\S]*?<\/credits>/gi)].map(
+    (match) => match[0],
+  );
+  if (creditBlocks.length === 0) return undefined;
+
+  const namesFor = (role: 'director' | 'actor' | 'producer') =>
+    uniqueText(creditBlocks.flatMap((credits) => elementTexts(credits, role)));
+
+  return {
+    director: namesFor('director'),
+    actor: namesFor('actor'),
+    producer: namesFor('producer'),
+  };
 }
 
 function episodeNumbers(block: string): ExternalEpisodeNumber[] {
@@ -143,6 +186,8 @@ function parseProgramme(block: string): ParsedProgramme {
   const categories = elementTexts(block, 'category');
   const genre = categories[0];
   const parsedEpisodeNumbers = episodeNumbers(block);
+  const productionDate = productionDateEvidence(block);
+  const credits = programmeCredits(block);
   const hasDirectorCredit = directorCreditEvidence(block);
   const isLive = /<live\b[^>]*\/>/i.test(block) ? true : undefined;
   const isRepeat = /<previously-shown\b[^>]*\/?\s*>/i.test(block) ? true : undefined;
@@ -158,6 +203,8 @@ function parseProgramme(block: string): ParsedProgramme {
       ...(genre ? { genre } : {}),
       ...(categories.length > 0 ? { categories } : {}),
       ...(parsedEpisodeNumbers.length > 0 ? { episodeNumbers: parsedEpisodeNumbers } : {}),
+      ...(productionDate ? { productionDate } : {}),
+      ...(credits ? { credits } : {}),
       ...(hasDirectorCredit !== undefined ? { hasDirectorCredit } : {}),
       ...(isLive !== undefined ? { isLive } : {}),
       ...(isRepeat !== undefined ? { isRepeat } : {}),
