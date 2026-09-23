@@ -1,8 +1,8 @@
 # Teevee — Canonical Project State
 
 Last updated: 2026-09-23.
-Status: ACTIVE — **Phase 5A — Guide Search**.
-Current implementation priority: **gate the PR #134 mobile Guide Search implementation candidate: Lead exact-head review -> focused physical iPhone validation -> Independent QA**
+Status: ACTIVE — **Phase 5 — Vanavond product/data validation**.
+Current implementation priority: **execute issue #135 — empirical Film / Series / Sport classification research against real canonical hosted schedule data; do not start Vanavond production UI before the data gate and Design/UX acceptance**
 Current broader product phase: **Phase 5 — Search and Discovery**
 Previous phase: **Phase 4 — Core Guide MVP hardening — CLOSED**
 
@@ -25,7 +25,7 @@ Previous phase: **Phase 4 — Core Guide MVP hardening — CLOSED**
 3. **Phase 2 — App Shell:** complete and physically accepted on iPhone.
 4. **Phase 3 — Real Data Vertical Slice:** complete and physically accepted on iPhone. Real provider -> hosted ingest -> canonical persistence -> public typed read -> mobile canonical datasource is proven, including fixture-first startup, real-data transition, fallback and context retention.
 5. **Phase 4 — Core Guide MVP hardening:** **CLOSED**. The 06:00 television-day foundation, television-day-aware runtime, D-2..D+7 navigation/date context, measured Totaal performance hardening, Per-zender production convergence, Programme Detail production convergence, Nu & Straks production convergence and Totaal production convergence are all merged. Totaal PR #114 completed the final open Guide convergence work: its runtime was owner-accepted on iPhone, independently QA-reviewed, its sole QA accessibility blocker was corrected and re-verified at the final Lead merge gate, exact-head CI #877 passed 72 test files / 538 tests plus iOS/Android/web exports, and merge commit `4cea66eca92b7224ff51940b30de09db11928427` landed on `main`. The cache decision remains **no persistent mobile schedule cache now** absent new measured evidence; true no-network cold start and any persistence technology decision remain a release-like Phase 9 gate. Physical Android interaction acceptance remains deferred until Android hardware is available and does not keep Phase 4 open.
-6. **Phase 5 — Search and Discovery:** **ACTIVE**. Kijktip is fully closed, including the post-deployment historical iPhone browse-back. **Phase 5A — Guide Search** is the current slice. Canonical product contract: `docs/SEARCH_PRODUCT_DEFINITION.md`. Tonight remains later and provisional until its value and data requirements are clear.
+6. **Phase 5 — Search and Discovery:** **ACTIVE**. Kijktip is fully closed. **Phase 5A — Guide Search is CLOSED** after hosted deployment, production mobile implementation, owner physical iPhone acceptance, Independent QA and exact-main CI. Vanavond now has a canonical product contract in `docs/TONIGHT_PRODUCT_DEFINITION.md`; the next active increment is issue #135, the mandatory empirical Film / Series / Sport classification research before Design/UX and production implementation.
 
 ## Kijktip enrichment vertical slice — merged and deployed
 The inter-phase Kijktip vertical slice is implementation-complete and merged. Do not reopen its accepted product, matching, persistence or Guide-presentation contracts without concrete regression evidence.
@@ -45,7 +45,7 @@ Rights status for this vertical slice is closed: the product owner confirms the 
 
 Post-deployment physical iPhone verification is **PASS**: NPO 1 / 22 September / `De slimste mens` visibly shows the recovered `Kijktip` label from hosted data. The Kijktip vertical slice is therefore fully closed.
 
-## Phase 5A — Guide Search
+## Phase 5A — Guide Search — CLOSED
 Canonical product contract: `docs/SEARCH_PRODUCT_DEFINITION.md`.
 
 Frozen first-slice boundaries:
@@ -63,7 +63,16 @@ Guide Search architecture is defined by ADR 0009 and merged in PR #132 as `3c7eb
 
 The hosted boundary is **DEPLOYED AND LIVE VERIFIED**. Supabase recorded migration `20260923064120_create_guide_search_read_boundary` using the exact reviewed SQL blob `d232eacbf3b809d23ae9c4eeb9a15ea2ffc20380`. `guide-search` v1 and the shared-runtime `guide-schedule` v7 are ACTIVE and their deployed bundles match merge commit `3c7ebcf...` byte-for-byte. Production endpoint smoke CI #986 proved canonical channel Search (`NPO` → `nl-npo-1`) and concrete programme Search (`Goedemorgen Nederland` on NPO 1). Evidence: `docs/GUIDE_SEARCH_DEPLOYMENT_2026-09-23.md`.
 
-PR #134 is the current **mobile implementation candidate** and is not yet accepted/merged. It replaces the placeholder Search tab with one bounded live-query surface over the deployed `GuideSearchApi`: 220 ms candidate debounce, AbortController + request-version stale-response ownership, explicit loading/partial/unavailable/complete-no-match semantics, concrete channel/broadcast results, quiet Kijktip sibling metadata, exact-broadcast Programme Detail reuse, process-local query/result continuity, 06:00 television-day rollover refresh and a one-shot Search → Per-zender handoff that does not rewrite the persisted Guide presentation. The candidate adds no full-horizon Guide prefetch, Search history, raw-query logging, fuzzy/semantic search, artwork dependency or new external state/cache dependency.
+Phase 5A is **CLOSED**. PR #134 implemented the mobile Search runtime and merged to `main` as `cbdf97ba09f59dd4ae4e019b2e60e51dc03bedde`. The accepted runtime uses one bounded live-query surface over the deployed `GuideSearchApi`: 220 ms debounce, AbortController + request-version stale-response ownership, explicit loading/partial/unavailable/complete-no-match semantics, concrete channel/broadcast results, quiet Kijktip sibling metadata, exact-broadcast Programme Detail reuse, process-local query/result continuity, 06:00 television-day rollover ownership and a one-shot Search → Per-zender handoff without rewriting the persisted Guide presentation.
+
+Final acceptance evidence:
+- owner physical iPhone PASS on the user-facing Search flows;
+- Independent QA PASS on runtime head `0fe40bf96313903378d152a028136777b26d5d15`, including closure of the in-flight 06:00 rollover race;
+- parallel Vanavond product-definition PR #136 was reconciled without any Search runtime/test delta;
+- final reconciled PR head `742ed07ac156ae641560a08d62e99e4aaf3c996d` passed CI #1023 with **93 test files / 692 tests**, strict TypeScript, lint and iOS/Android/web exports;
+- merge commit `cbdf97ba09f59dd4ae4e019b2e60e51dc03bedde` passed exact-main CI #1024 with the same **93 / 692** automated suite plus exports.
+
+Search adds no full-horizon Guide prefetch, Search history, raw-query logging, fuzzy/semantic search, artwork dependency or new external state/cache dependency. Physical Android interaction validation remains deferred to Android hardware.
 
 ## Frozen television-day and Guide-horizon semantics
 ADR 0008 is canonical:
@@ -203,9 +212,9 @@ Physical Android interaction acceptance remains OPEN/DEFERRED because no Android
 - physical Android validation.
 
 ## Current next step
-**Gate PR #134 on its exact final head.** First perform Lead exact-head review against `docs/SEARCH_PRODUCT_DEFINITION.md`, ADR 0009 and the Engineering Quality Policy. If Lead passes, run focused physical iPhone validation of keyboard/input responsiveness, result density, live/partial/unavailable states, Programme Detail round-trip, Search → Per-zender channel/time handoff, light/dark/system appearance, representative Larger Text/Dynamic Type, VoiceOver semantics and perceived debounce/performance. Only after physical PASS send the same exact runtime head to Independent QA. Do not merge before those gates pass. Tonight remains deferred/provisional.
+**Execute issue #135 — Vanavond Film / Series / Sport classification research.** Use real canonical hosted Teevee schedule data and the research contract in `docs/TONIGHT_PRODUCT_DEFINITION.md`. Determine per module whether current data is GO, GO WITH CENTRAL CLASSIFICATION MAPPING/ENRICHMENT, or POSTPONE. Do not build production Vanavond UI/runtime from naive genre matching. After the data gate, hand the canonical product contract + research outcome to a dedicated Design/UX increment before production implementation.
 
 Owner checkout: `~/projects/teevee`.
 
 ## Resume instruction
-> Read `AGENTS.md`, this file, `docs/SEARCH_PRODUCT_DEFINITION.md`, `docs/PRODUCT.md`, `docs/UX.md`, `docs/ARCHITECTURE.md`, `docs/DATA.md`, `docs/ENGINEERING_QUALITY_POLICY.md` and `docs/BUILD_SPEC.md` before changing the repository. Phase 4 is CLOSED and the Kijktip vertical slice is CLOSED. Phase 5A Guide Search is active. Preserve the provider-independent canonical programme/channel domain, D-2..D+7 television-day semantics and accepted Guide loading/performance architecture. Do not introduce eager full-horizon mobile schedule prefetch, title-only catalogue identity, universal streaming search or broad discovery scope. Tonight remains deferred/provisional. Physical Android interaction validation remains deferred until Android hardware is available.
+> Read `AGENTS.md`, this file, `docs/TONIGHT_PRODUCT_DEFINITION.md`, `docs/SEARCH_PRODUCT_DEFINITION.md`, `docs/PRODUCT.md`, `docs/UX.md`, `docs/ARCHITECTURE.md`, `docs/DATA.md`, `docs/ENGINEERING_QUALITY_POLICY.md` and `docs/BUILD_SPEC.md` before changing the repository. Phase 4, Kijktip and Phase 5A Guide Search are CLOSED. Vanavond's product contract is canonical; issue #135 is the active empirical data gate. Preserve the provider-independent canonical programme/channel domain, 06:00 television-day semantics and accepted Guide/Search loading architecture. Do not start production Film/Series/Sport modules before the classification gate and Design/UX acceptance. Physical Android interaction validation remains deferred until Android hardware is available.

@@ -1,5 +1,21 @@
 # Teevee Development Logboek
 
+## 23 september 2026 — Phase 5A Guide Search closed
+
+PR #134 completed the mobile half of Guide Search against the already deployed/live-verified `GuideSearchApi` boundary. The accepted runtime provides bounded live programme/channel retrieval, 220 ms debounce, AbortController plus request-version stale-response ownership, explicit complete/partial/unavailable semantics, exact-broadcast Programme Detail, transient channel → Per-zender navigation, process-local Search continuity and safe 06:00 Europe/Amsterdam television-day rollover ownership.
+
+Independent QA first found one in-flight 06:00 rollover race on head `43c6ca1894b533e411a387e0845973793fdd05bc`. Development corrected it without changing the API or Guide-loading architecture: an active loading request is now aborted and superseded when the television day changes, and a deterministic regression test proves that a late old response cannot regain ownership. Independent QA then passed exact runtime head `0fe40bf96313903378d152a028136777b26d5d15`.
+
+Parallel Vanavond product-definition PR #136 moved `main` while #134 was in final review. The Search branch was reconciled as `742ed07ac156ae641560a08d62e99e4aaf3c996d`; independent diff inspection confirmed the only post-QA delta was the already-canonical Vanavond documentation, with no Search runtime/test change. Reconciled-head CI #1023 passed strict TypeScript, lint, **93 test files / 692 tests** and iOS/Android/web exports.
+
+PR #134 then merged as `cbdf97ba09f59dd4ae4e019b2e60e51dc03bedde`. Exact-main CI #1024 / run `35844172324` passed strict TypeScript, lint, **93 test files / 692 tests** and iOS/Android/web exports. Owner physical iPhone Search validation is PASS; physical Android interaction validation remains deferred until Android hardware is available.
+
+**Phase 5A — Guide Search is CLOSED.**
+
+The next active Phase 5 increment is issue #135: empirical Film / Series / Sport classification research for Vanavond against real canonical hosted schedule data. Production Vanavond UI must wait for that data gate and subsequent Design/UX acceptance.
+
+---
+
 ## 2026-09-23 — Vanavond product definition
 - Defined the first canonical product-contract candidate for `Vanavond` in `docs/TONIGHT_PRODUCT_DEFINITION.md`: finite linear-TV decision support with `Jouw gids`, `Onze Kijktips`, and empirically gated Film/Series/Sport modules.
 - Froze the distinction between explicit broadcast-level `Jouw gids` saves and future learned `Voor jou` recommendations, active 06:00 television-day ownership, evening windows, chronological selection, per-module repeat principles and empty-module behaviour.

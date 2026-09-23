@@ -127,16 +127,18 @@ Phase 4 exit requires physical validation of the D-2..D+7 horizon and television
 Do not reintroduce card-heavy programme presentation, redundant metadata or low-value controls merely to fill visual space. The accepted design target is premium utility with restrained chrome.
 
 ## Phase 5 — Search and Discovery
-**ACTIVE.** The Kijktip pre-Search vertical slice is closed. Phase 5 starts with **Phase 5A — Guide Search** using `docs/SEARCH_PRODUCT_DEFINITION.md` as canonical product authority.
+**ACTIVE.** The Kijktip vertical slice is closed and **Phase 5A — Guide Search is CLOSED**. Search product authority remains `docs/SEARCH_PRODUCT_DEFINITION.md`. Vanavond product authority is now `docs/TONIGHT_PRODUCT_DEFINITION.md`.
 
 Build sequence:
 1. **DONE in PR #132** — Guide Search architecture boundary over the canonical hosted schedule store;
 2. **DONE** — hosted Search migration + Edge Function deployed and live-verified; evidence: `docs/GUIDE_SEARCH_DEPLOYMENT_2026-09-23.md`;
-3. **IMPLEMENTED IN PR #134 / ACCEPTANCE PENDING** — mobile Search UI/runtime for concrete programme broadcasts + channels against the frozen `GuideSearchApi` boundary;
-4. focused physical iPhone validation and Independent QA;
-5. only then evaluate the next Phase 5 slice.
+3. **DONE in PR #134** — mobile Search UI/runtime for concrete programme broadcasts + channels against the frozen `GuideSearchApi` boundary;
+4. **DONE** — owner physical iPhone validation, Independent QA, merge and exact-main CI;
+5. **NEXT — issue #135** — empirical Vanavond Film / Series / Sport classification research against real canonical hosted schedule data;
+6. after the data gate, complete dedicated Vanavond Design/UX acceptance;
+7. only then begin the production Vanavond implementation sequence defined in `docs/TONIGHT_PRODUCT_DEFINITION.md`.
 
-Do not implement Search by eager D-2..D+7 mobile Guide prefetch or a title-only programme catalogue identity. Tonight remains deferred until its value and data requirements are clear; it may use more imagery than Guide but must not become an editorial/news dependency or infinite engagement feed.
+Do not implement Search by eager D-2..D+7 mobile Guide prefetch or a title-only programme catalogue identity. Do not implement Vanavond Film/Series/Sport with naive genre matching. Vanavond remains finite linear-TV evening decision support, not an editorial/news dependency or infinite engagement feed.
 
 ## Phase 6 — Personal Features
 Deliver saved programmes/favourites, reminders and refined channel preferences. Keep identity optional unless cross-device requirements justify an account decision.
