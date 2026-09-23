@@ -43,6 +43,13 @@ describe('external content reference migration contract', () => {
     expect(migration).toContain('p.start_at = old.start_at');
     expect(migration).toContain('p.end_at = old.end_at');
     expect(migration).toContain('p.title = old.title');
+    expect(migration).toMatch(
+      /assert_programme_external_content_reference_owner\(\)[\s\S]*?security invoker[\s\S]*?as \$owner_assert\$/,
+    );
+    expect(migration).toMatch(
+      /cleanup_programme_external_content_reference_owner\(\)[\s\S]*?security invoker[\s\S]*?as \$owner_cleanup\$/,
+    );
+    expect(migration).not.toContain('security definer');
   });
 
   it('persists only high-confidence TMDB Film/Series IDs and no provider evidence or artwork', () => {

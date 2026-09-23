@@ -25,7 +25,7 @@ grant select, insert, update, delete on teevee.programme_external_content_refere
 create or replace function teevee.assert_programme_external_content_reference_owner()
 returns trigger
 language plpgsql
-security definer
+security invoker
 set search_path = ''
 as $owner_assert$
 begin
@@ -54,7 +54,7 @@ execute function teevee.assert_programme_external_content_reference_owner();
 create or replace function teevee.cleanup_programme_external_content_reference_owner()
 returns trigger
 language plpgsql
-security definer
+security invoker
 set search_path = ''
 as $owner_cleanup$
 begin
