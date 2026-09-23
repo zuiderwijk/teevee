@@ -30,6 +30,7 @@ export const TONIGHT_DEVELOPMENT_SCENARIOS = [
   { id: 'partial', label: 'Partial' },
   { id: 'offline', label: 'Offline' },
   { id: 'no-sport', label: 'Zonder Sport' },
+  { id: 'series-density', label: 'Series ≥12' },
   { id: 'no-discovery', label: 'Geen discovery' },
   { id: 'after-midnight', label: 'Na middernacht' },
 ] as const;
@@ -202,6 +203,19 @@ export function applyTonightDevelopmentModuleState(
   model: TonightViewModel,
 ): TonightViewModel {
   if (scenario === 'no-sport') return { ...model, sport: [] };
+  if (
+    scenario === 'series-density' &&
+    model.series.length > 0 &&
+    model.series.length < 12
+  ) {
+    return {
+      ...model,
+      series: Array.from(
+        { length: 12 },
+        (_, index) => model.series[index % model.series.length]!,
+      ),
+    };
+  }
   if (scenario === 'no-discovery') {
     return {
       ...model,
