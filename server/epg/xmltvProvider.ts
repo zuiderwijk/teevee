@@ -1,6 +1,7 @@
 import type {
   EpgProvider,
   ExternalChannel,
+  ExternalEpisodeNumber,
   ExternalProgramme,
   ProviderScheduleBatch,
   ProviderScheduleQuery,
@@ -57,6 +58,33 @@ function elementText(block: string, name: string): string | undefined {
   return value || undefined;
 }
 
+function elementTexts(block: string, name: string): string[] {
+  const escapedName = name.replace(/[.*+?^${}()|[\]\\]/g, '\\function openingTag(block: string): string {');
+  return [...block.matchAll(
+    new RegExp(`<${escapedName}(?:\\s[^>]*)?>([\\s\\S]*?)<\\/${escapedName}>`, 'gi'),
+  )]
+    .map((match) =>
+      decodeXml(match[1] ?? '').replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').trim(),
+    )
+    .filter(Boolean);
+}
+
+function episodeNumbers(block: string): ExternalEpisodeNumber[] {
+  return [...block.matchAll(/<episode-num\b[^>]*>[\s\S]*?<\/episode-num>/gi)]
+    .map((match) => {
+      const value = decodeXml(
+        match[0]
+          .replace(/^<episode-num\b[^>]*>/i, '')
+          .replace(/<\/episode-num>$/i, ''),
+      )
+        .replace(/<[^>]+>/g, '')
+        .replace(/\s+/g, ' ')
+        .trim();
+      const system = attribute(openingTag(match[0]), 'system');
+      return value ? { ...(system ? { system } : {}), value } : null;
+    })
+    .filter((item): item is ExternalEpisodeNumber => item !== null);
+}
 function openingTag(block: string): string {
   const end = block.indexOf('>');
   return end >= 0 ? block.slice(0, end + 1) : block;
@@ -106,7 +134,9 @@ function parseProgramme(block: string): ParsedProgramme {
   const title = elementText(block, 'title');
   const subtitle = elementText(block, 'sub-title');
   const description = elementText(block, 'desc');
-  const genre = elementText(block, 'category');
+  const categories = elementTexts(block, 'category');
+  const genre = categories[0];
+  const parsedEpisodeNumbers = episodeNumbers(block);
   const isLive = /<live\b[^>]*\/>/i.test(block) ? true : undefined;
   const isRepeat = /<previously-shown\b[^>]*\/?\s*>/i.test(block) ? true : undefined;
 
@@ -119,6 +149,8 @@ function parseProgramme(block: string): ParsedProgramme {
       ...(subtitle ? { subtitle } : {}),
       ...(description ? { description } : {}),
       ...(genre ? { genre } : {}),
+      ...(categories.length > 0 ? { categories } : {}),
+      ...(parsedEpisodeNumbers.length > 0 ? { episodeNumbers: parsedEpisodeNumbers } : {}),
       ...(isLive !== undefined ? { isLive } : {}),
       ...(isRepeat !== undefined ? { isRepeat } : {}),
     },

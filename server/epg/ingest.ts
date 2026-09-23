@@ -164,6 +164,7 @@ export async function ingestProviderSchedule(
     to: new Date(toMs).toISOString(),
     channelIds: safeChannelIds,
     schedule: normalised.schedule,
+    classifications: normalised.classifications,
   });
 
   if (result.status === 'ignored-stale') {

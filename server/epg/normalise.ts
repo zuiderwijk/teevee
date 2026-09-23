@@ -1,5 +1,7 @@
 import type { Channel, GuideSchedule, Programme } from '@/data/domain/epg';
+import type { ProgrammeClassification } from '@/data/domain/programmeClassification';
 
+import { classifyExternalProgramme } from '../classification/classifyProgramme.ts';
 import { resolveChannelMappings } from './channelMapping.ts';
 import { dataQualityDiagnostic, type DataQualityDiagnostic } from './diagnostics.ts';
 import type { ChannelMapping, ExternalProgramme } from './provider';
@@ -14,6 +16,7 @@ export type NormaliseProviderScheduleInput = {
 
 export type NormaliseProviderScheduleResult = {
   schedule: GuideSchedule;
+  classifications: ProgrammeClassification[];
   diagnostics: DataQualityDiagnostic[];
   resolvedChannelMappings: ChannelMapping[];
 };
@@ -138,6 +141,7 @@ export function normaliseProviderSchedule(
 
   const seenProviderProgrammes = new Set<string>();
   const programmes: Programme[] = [];
+  const classificationsByProgrammeId = new Map<Programme['id'], ProgrammeClassification>();
 
   for (const external of input.programmes) {
     const providerChannelId = nonEmptyText(external.channelId) ?? '';
@@ -234,7 +238,23 @@ export function normaliseProviderSchedule(
     }
     seenProviderProgrammes.add(duplicateKey);
 
-    programmes.push(canonicalProgramme(providerKey, channelId, external, startMs, endMs, title));
+    const programme = canonicalProgramme(
+      providerKey,
+      channelId,
+      external,
+      startMs,
+      endMs,
+      title,
+    );
+    programmes.push(programme);
+    classificationsByProgrammeId.set(
+      programme.id,
+      classifyExternalProgramme({
+        providerKey,
+        programmeId: programme.id,
+        programme: external,
+      }),
+    );
   }
 
   programmes.sort((left, right) => {
@@ -254,6 +274,13 @@ export function normaliseProviderSchedule(
       channels: [...input.canonicalChannels].sort((left, right) => left.sortOrder - right.sortOrder),
       programmes,
     },
+    classifications: programmes.map((programme) => {
+      const classification = classificationsByProgrammeId.get(programme.id);
+      if (!classification) {
+        throw new Error(`Missing programme classification for ${programme.id}`);
+      }
+      return classification;
+    }),
     diagnostics,
     resolvedChannelMappings: mappingResolution.mappings,
   };

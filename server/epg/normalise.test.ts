@@ -49,6 +49,7 @@ describe('normaliseProviderSchedule', () => {
         subtitle: '  Aflevering 1  ',
         description: '  Beschrijving  ',
         genre: '  Amusement  ',
+        categories: ['Amusement', 'Film'],
         isLive: false,
         isRepeat: true,
       },
@@ -70,6 +71,16 @@ describe('normaliseProviderSchedule', () => {
       isRepeat: true,
     });
     expect(result.schedule.programmes[0]?.id).toMatch(/^programme-[a-z0-9]+$/);
+    expect(result.classifications).toEqual([
+      expect.objectContaining({
+        programmeId: result.schedule.programmes[0]?.id,
+        contentType: 'film',
+        liveStatus: 'false',
+        repeatStatus: 'true',
+        confidence: 'high',
+      }),
+    ]);
+    expect(JSON.stringify(result.schedule)).not.toContain('categories');
   });
 
   it('keeps canonical ids deterministic when provider ids and broadcast starts are stable', () => {

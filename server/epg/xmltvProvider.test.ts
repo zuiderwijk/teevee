@@ -14,6 +14,8 @@ const xml = `<?xml version="1.0" encoding="UTF-8"?>
     <sub-title>Avond</sub-title>
     <desc><![CDATA[Het laatste nieuws.]]></desc>
     <category>Nieuws</category>
+    <category>Actualiteit</category>
+    <episode-num system="onscreen">S2 E3</episode-num>
     <live />
   </programme>
   <programme start="20260914190000 +0200" stop="20260914200000 +0200" channel="npo1.nl">
@@ -65,6 +67,8 @@ describe('parseXmltvDocument', () => {
       subtitle: 'Avond',
       description: 'Het laatste nieuws.',
       genre: 'Nieuws',
+      categories: ['Nieuws', 'Actualiteit'],
+      episodeNumbers: [{ system: 'onscreen', value: 'S2 E3' }],
       isLive: true,
     });
     expect(parsed.programmes[1]?.programme.isRepeat).toBe(true);

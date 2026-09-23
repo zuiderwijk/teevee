@@ -1,8 +1,20 @@
 import { describe, expect, it } from 'vitest';
 
 import type { GuideSchedule } from '@/data/domain/epg';
+import type { ProgrammeClassification } from '@/data/domain/programmeClassification';
 
 import { SupabaseScheduleRepository, type ScheduleRpcClient } from './supabaseScheduleRepository';
+
+const classification: ProgrammeClassification = {
+  programmeId: 'programme-1',
+  contentType: 'other',
+  seriesType: 'unknown',
+  audience: 'unknown',
+  sportType: 'unknown',
+  liveStatus: 'unknown',
+  repeatStatus: 'unknown',
+  confidence: 'high',
+};
 
 const schedule: GuideSchedule = {
   generatedAt: '2026-09-14T17:55:00.000Z',
@@ -79,6 +91,41 @@ describe('SupabaseScheduleRepository', () => {
         },
       },
     ]);
+  });
+
+  it('uses the atomic classified replacement RPC when ingest supplies classifications', async () => {
+    const client = new FakeRpcClient([
+      {
+        data: {
+          status: 'stored',
+          removedProgrammeCount: 0,
+          storedProgrammeCount: 1,
+        },
+        error: null,
+      },
+    ]);
+    const repository = new SupabaseScheduleRepository(client);
+
+    await repository.replaceWindow({
+      from: '2026-09-14T18:00:00.000Z',
+      to: '2026-09-14T20:00:00.000Z',
+      channelIds: ['channel-1'],
+      schedule,
+      classifications: [classification],
+    });
+
+    expect(client.calls[0]).toEqual({
+      functionName: 'teevee_replace_schedule_window_classified',
+      args: {
+        p_from: '2026-09-14T18:00:00.000Z',
+        p_to: '2026-09-14T20:00:00.000Z',
+        p_generated_at: schedule.generatedAt,
+        p_channel_ids: ['channel-1'],
+        p_channels: schedule.channels,
+        p_programmes: schedule.programmes,
+        p_classifications: [classification],
+      },
+    });
   });
 
   it('preserves ignored-stale without inventing mutations', async () => {

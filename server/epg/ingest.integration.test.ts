@@ -36,7 +36,7 @@ const to = new Date('2026-09-14T20:00:00Z');
 const clock = () => new Date('2026-09-14T17:55:00Z');
 
 class TestProvider implements EpgProvider {
-  readonly key = 'fixture-provider';
+  readonly key = 'development-xmltv';
 
   constructor(private readonly batch: ProviderScheduleBatch) {}
 
@@ -102,8 +102,12 @@ describe('provider -> normalisation -> repository -> schedule API', () => {
     const ingestion = await ingest(repository, {
       coverage: 'complete',
       programmes: [
-        programme('provider-1', 'raw-one', 'Nieuws'),
-        programme('provider-2', 'raw-two', 'Sport', '2026-09-14T18:30:00Z', '2026-09-14T19:30:00Z'),
+        { ...programme('provider-1', 'raw-one', 'Nieuws'), categories: ['Nieuws'] },
+        {
+          ...programme('provider-2', 'raw-two', 'Sport', '2026-09-14T18:30:00Z', '2026-09-14T19:30:00Z'),
+          categories: ['Sport', 'Voetbal', 'Sports'],
+          description: 'Verslag van de wedstrijd.',
+        },
       ],
     });
 
@@ -129,6 +133,14 @@ describe('provider -> normalisation -> repository -> schedule API', () => {
     ]);
     expect(JSON.stringify(response)).not.toContain('raw-one');
     expect(JSON.stringify(response)).not.toContain('provider-1');
+    const classifications = await repository.getClassificationsForProgrammeIds(
+      response.schedule.programmes.map(({ id }) => id),
+    );
+    expect(classifications.map(({ contentType, sportType }) => ({ contentType, sportType }))).toEqual([
+      { contentType: 'other', sportType: 'unknown' },
+      { contentType: 'sport', sportType: 'event' },
+    ]);
+    expect(JSON.stringify(response)).not.toContain('contentType');
   });
 
   it('does not replace stored canonical data with a partial provider batch', async () => {
