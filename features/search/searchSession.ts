@@ -1,5 +1,6 @@
 import { useSyncExternalStore } from 'react';
 
+import { guideTelevisionDayStart } from '@/data/domain/guideTime';
 import { normalizeGuideSearchText } from '@/data/domain/search';
 import {
   GUIDE_SEARCH_MAX_QUERY_LENGTH,
@@ -53,6 +54,7 @@ export class GuideSearchSession {
   private timer: ReturnType<typeof setTimeout> | null = null;
   private controller: AbortController | null = null;
   private requestVersion = 0;
+  private requestedTelevisionDayStartMs: number | null = null;
 
   constructor(
     private readonly api: GuideSearchApi,
@@ -90,9 +92,32 @@ export class GuideSearchSession {
     void this.execute(query, this.requestVersion);
   };
 
+  readonly refreshForTelevisionDay = (nowMs: number): void => {
+    if (
+      this.snapshot.phase !== 'ready' &&
+      this.snapshot.phase !== 'unavailable'
+    ) {
+      return;
+    }
+    if (!searchableQuery(this.snapshot.query)) return;
+
+    const dayStartMs = guideTelevisionDayStart(nowMs);
+    if (dayStartMs === this.requestedTelevisionDayStartMs) return;
+
+    this.requestVersion += 1;
+    this.cancelTransport();
+    this.publish({
+      query: this.snapshot.query,
+      phase: 'loading',
+      response: null,
+    });
+    void this.execute(this.snapshot.query, this.requestVersion, dayStartMs);
+  };
+
   readonly clear = (): void => {
     this.requestVersion += 1;
     this.cancelTransport();
+    this.requestedTelevisionDayStartMs = null;
     this.publish({ query: '', phase: 'idle', response: null });
   };
 
@@ -127,9 +152,14 @@ export class GuideSearchSession {
     }, delayMs);
   }
 
-  private async execute(query: string, version: number): Promise<void> {
+  private async execute(
+    query: string,
+    version: number,
+    televisionDayStartMs = guideTelevisionDayStart(Date.now()),
+  ): Promise<void> {
     const controller = new AbortController();
     this.controller = controller;
+    this.requestedTelevisionDayStartMs = televisionDayStartMs;
 
     try {
       const response = await this.api.search(
