@@ -42,7 +42,7 @@ create table teevee.schedule_coverage (
   ) stored
 );
 
-\ir ../../supabase/migrations/20260923003500_create_guide_search_read_boundary.sql
+\ir ../../supabase/migrations/20260923064120_create_guide_search_read_boundary.sql
 
 insert into teevee.channels(
   id, name, display_name, sort_order, is_active, short_name
