@@ -131,9 +131,10 @@ Do not reintroduce card-heavy programme presentation, redundant metadata or low-
 
 Build sequence:
 1. **DONE in PR #132** — Guide Search architecture boundary over the canonical hosted schedule store;
-2. **NEXT** — deploy/live-verify that hosted boundary, then wire Search UI/runtime for concrete programme broadcasts + channels;
-3. focused physical iPhone validation and Independent QA;
-4. only then evaluate the next Phase 5 slice.
+2. **DONE** — hosted Search migration + Edge Function deployed and live-verified; evidence: `docs/GUIDE_SEARCH_DEPLOYMENT_2026-09-23.md`;
+3. **NEXT** — wire mobile Search UI/runtime for concrete programme broadcasts + channels against the frozen `GuideSearchApi` boundary;
+4. focused physical iPhone validation and Independent QA;
+5. only then evaluate the next Phase 5 slice.
 
 Do not implement Search by eager D-2..D+7 mobile Guide prefetch or a title-only programme catalogue identity. Tonight remains deferred until its value and data requirements are clear; it may use more imagery than Guide but must not become an editorial/news dependency or infinite engagement feed.
 
