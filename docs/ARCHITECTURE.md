@@ -99,7 +99,7 @@ Programme timestamps remain real UTC instants. Guide grouping/navigation derives
 - Totaal and Per zender must expose at least D-2 through D+7, ten complete television days;
 - Nu & Straks remains a single active-television-day presentation.
 
-Phase 4 must implement this without shifting stored programme timestamps and without retuning the physically accepted Guide gesture model. PR #62 established the shared 06:00/horizon primitives and PR #64 migrated the current mobile hosted runtime to D + D+1 television-day loading/anchoring with a 06:00 rollover. User-facing D-2..D+7 selection/navigation remains the next boundary.
+Phase 4 implemented this without shifting stored programme timestamps or retuning the physically accepted Guide gesture model. PR #62 established the shared 06:00/horizon primitives, PR #64 migrated current-runtime loading to television-day semantics, and PR #66 completed user-facing D-2..D+7 selection/navigation for Totaal and Per zender.
 
 ## Hosted backend
 Teevee has a dedicated Supabase project:
@@ -170,7 +170,7 @@ The mobile app currently uses:
 - request-version protection so late older hosted responses cannot replace newer state;
 - deterministic fixture preservation when hosted data is unavailable, invalid, empty in the wrong way or the network fails.
 
-PR #64 replaced the former strict calendar today+tomorrow/midnight semantics. Its exact reviewed head was automation-proven and physically accepted on iPhone for fixture-first -> hosted replacement and same-television-day background/resume context retention. The next runtime/UI boundary is selected-day D-2..D+7 access for Totaal and Per zender; Nu & Straks remains single-active-day.
+PR #64 replaced the former strict calendar today+tomorrow/midnight semantics and was automation-proven plus physically accepted on iPhone for fixture-first -> hosted replacement and same-television-day background/resume context retention. PR #66 subsequently completed bounded selected-day D-2..D+7 access for Totaal and Per zender; Nu & Straks remains single-active-day.
 
 ## Caching/offline
 Persistent mobile schedule caching was **not selected at Phase 4 closeout**. The current robust fallback is deterministic fixture-first + preservation of usable runtime state across failed refreshes.
