@@ -477,6 +477,7 @@ function DiscoveryModule({
         <SectionHeading title={title} {...(support ? { support } : {})} />
       </View>
       <ScrollView
+        testID={`tonight-${kind}-carousel`}
         horizontal
         nestedScrollEnabled
         directionalLockEnabled
