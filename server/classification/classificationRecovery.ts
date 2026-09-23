@@ -1,7 +1,4 @@
-import type { Programme } from '@/data/domain/epg';
-import {
-  programmeIntersectsWindow,
-} from '@/data/domain/tonight';
+import type { Programme } from '../../data/domain/epg.ts';
 
 import {
   observeProviderSchedule,
@@ -33,9 +30,17 @@ function programmeInRecoveryScope(
   fromMs: number,
   toMs: number,
 ): boolean {
+  const startMs = Date.parse(programme.startAt);
+  const endMs = Date.parse(programme.endAt);
+  if (!Number.isFinite(startMs) || !Number.isFinite(endMs)) {
+    throw new Error(
+      `Recovery candidate ${programme.id} has invalid canonical timestamps`,
+    );
+  }
   return (
     channelIds.has(programme.channelId) &&
-    programmeIntersectsWindow(programme, fromMs, toMs)
+    startMs < toMs &&
+    endMs > fromMs
   );
 }
 
