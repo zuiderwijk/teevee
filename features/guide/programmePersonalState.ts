@@ -17,13 +17,15 @@ export type ProgrammeReminderRecord = ProgrammeSnapshot & {
 };
 
 export type ProgrammePersonalState = {
-  version: 1;
+  version: 2;
+  hasUsedSave: boolean;
   saved: Record<string, SavedProgrammeRecord>;
   reminders: Record<string, ProgrammeReminderRecord>;
 };
 
 export const EMPTY_PROGRAMME_PERSONAL_STATE: ProgrammePersonalState = {
-  version: 1,
+  version: 2,
+  hasUsedSave: false,
   saved: {},
   reminders: {},
 };
@@ -66,7 +68,9 @@ export function parseSerializedProgrammePersonalState(raw: string | null): Progr
     const parsed = JSON.parse(raw) as unknown;
     if (!parsed || typeof parsed !== 'object') return EMPTY_PROGRAMME_PERSONAL_STATE;
     const source = parsed as Record<string, unknown>;
-    if (source.version !== 1) return EMPTY_PROGRAMME_PERSONAL_STATE;
+    if (source.version !== 1 && source.version !== 2) {
+      return EMPTY_PROGRAMME_PERSONAL_STATE;
+    }
 
     const saved: Record<string, SavedProgrammeRecord> = {};
     if (source.saved && typeof source.saved === 'object') {
@@ -82,7 +86,12 @@ export function parseSerializedProgrammePersonalState(raw: string | null): Progr
       }
     }
 
-    return { version: 1, saved, reminders };
+    const hasUsedSave =
+      source.version === 1
+        ? Object.keys(saved).length > 0
+        : source.hasUsedSave === true || Object.keys(saved).length > 0;
+
+    return { version: 2, hasUsedSave, saved, reminders };
   } catch {
     return EMPTY_PROGRAMME_PERSONAL_STATE;
   }
@@ -100,7 +109,11 @@ export function withProgrammeSaved(
   const nextSaved = { ...state.saved };
   if (saved) nextSaved[programme.id] = programmeSnapshot(programme);
   else delete nextSaved[programme.id];
-  return { ...state, saved: nextSaved };
+  return {
+    ...state,
+    hasUsedSave: state.hasUsedSave || saved,
+    saved: nextSaved,
+  };
 }
 
 export function withProgrammeReminder(
