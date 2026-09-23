@@ -1,6 +1,6 @@
 # Teevee Programme Data Strategy
 
-Status: **Phase 5 data/runtime foundations are merged; owner-priority inter-phase Premium Artwork & Content Identity enrichment is now active before Phase 6 Personal Features.** Phase 3 proved the provider-independent hosted data path, Phase 4 closed the television-day-aware Guide runtime and D-2..D+7 navigation/horizon behaviour, Kijktip is merged/deployed/physically verified, Phase 5A Guide Search is closed, PR #144 / issue #142 established the provider-independent Film/Series/Sport classification sibling, and PR #149 consumes those deployed lanes without changing Guide loading. Issue #157 / PR #158 adds only the typed server-side provider evidence required by the already-completed external-identity research; Phase 5 remains closed. The Phase 4 cache decision is unchanged: keep the current fixture-first + in-memory runtime fallback and do not introduce persistent mobile schedule caching without new measured evidence. Production **EPG** provider selection/rights remain a later release gate and release-like offline cold-start/persistent-cache validation remains Phase 9.
+Status: **Phase 5 data/runtime foundations are merged; owner-priority inter-phase Premium Artwork & Content Identity enrichment is active before Phase 6 Personal Features. PR #158 provider evidence is merged; issue #159 / PR #161 is the current TMDB Film/Series identity foundation review candidate.** Phase 3 proved the provider-independent hosted data path, Phase 4 closed the television-day-aware Guide runtime and D-2..D+7 navigation/horizon behaviour, Kijktip is merged/deployed/physically verified, Phase 5A Guide Search is closed, PR #144 / issue #142 established the provider-independent Film/Series/Sport classification sibling, and PR #149 consumes those deployed lanes without changing Guide loading. Issue #157 / PR #158 adds only the typed server-side provider evidence required by the already-completed external-identity research; Phase 5 remains closed. The Phase 4 cache decision is unchanged: keep the current fixture-first + in-memory runtime fallback and do not introduce persistent mobile schedule caching without new measured evidence. Production **EPG** provider selection/rights remain a later release gate and release-like offline cold-start/persistent-cache validation remains Phase 9.
 
 ## Goal
 Teevee must support the complete core Guide without coupling the mobile experience to one EPG supplier. Replacing the temporary development source with an authorized Bindinc/TVgids or commercial provider must not require a Guide rewrite.
@@ -104,6 +104,75 @@ Rules:
 Current replay limitation is explicit. The provider can be re-fetched within its available horizon, but PR #152's controlled D0 recovery observed **512 provider candidates / 319 exact matches / 193 unmatched**. Therefore later external-identity bootstrap for already-retained broadcasts must not assume that a future provider refetch will still exactly match every canonical broadcast. The next external-identity production increment must own that bootstrap/replay lifecycle explicitly; this foundation does not add fuzzy broadcast reconciliation or a generic enrichment framework.
 
 Source evidence: `docs/PROGRAMME_EXTERNAL_IDENTITY_SOURCE_RESEARCH_2026-09-23.md`. Matching evidence: `docs/TMDB_MATCHING_RESEARCH_2026-09-23.md`.
+
+## TMDB Film/Series external content identity foundation — issue #159 / PR #161
+
+Proposed durable architecture authority: `docs/decisions/0011-broadcast-keyed-external-content-identity.md`.
+
+Production flow:
+
+`same provider observation -> canonical Programme + ProgrammeClassification -> authoritative schedule write -> fail-open TMDB Film/Series matching -> private programme_external_content_references sibling`
+
+Hard boundaries:
+- canonical `Programme`, `GuideSchedule`, Search/Vanavond transport and mobile types remain unchanged;
+- mobile never calls TMDB, receives `TMDB_API_READ_ACCESS_TOKEN` or receives raw production-date/credit/provider evidence;
+- entry gates use only central provider-independent high-confidence classification helpers; canonical `Programme.genre` is never semantic authority;
+- no Sport, TMDB episode ID, artwork URL, poster/backdrop, image proxy/cache, recommendation or generic Teevee catalogue is introduced.
+
+Film matching:
+- exact current-provider production year is required;
+- year must be within TMDB release year ±1;
+- at least one director overlap is required;
+- direct primary/original-title identity may resolve only when exactly one candidate qualifies;
+- alternative/localized-title-only identity additionally requires at least two actor overlaps;
+- direct ambiguity fails closed;
+- only after zero direct qualifying candidates may the bounded director-filmography fallback inspect at most two directors and three year-compatible Film IDs, then apply the same acceptance rules.
+
+Series matching:
+- full provider title first;
+- conservative title identity, including the researched leading-article variation;
+- actor overlap is required;
+- coherent explicit S/E evidence is validated when present;
+- only after full-title failure may a clear base-title fallback run;
+- coherent base-title fallback requires at least two actor overlaps;
+- the researched numbering-disagreement fallback requires at least four actor overlaps and resolves only Series identity;
+- provider production year is not treated as TMDB first-air year;
+- no episode ID is produced.
+
+TMDB request policy:
+- server/Edge secret only: `TMDB_API_READ_ACCESS_TOKEN`;
+- 2.5 s per-attempt timeout;
+- at most one retry for safe retryable network/timeout, 5xx or bounded 429 failures;
+- 429 `Retry-After` is honored only inside a 1 s retry budget;
+- 4xx and malformed JSON are non-retryable;
+- one enrichment run is owner-cancelled and capped at a 20 s budget;
+- request-scope search/detail/credits/alternative-title/season caching;
+- identical work deduplication;
+- maximum three identity work items concurrently;
+- no persistent TMDB catalogue/cache in this increment.
+
+Persistence:
+- private/service-role-only `teevee.programme_external_content_references`;
+- one row per canonical broadcast, FK update/delete cascade;
+- many broadcasts may share one TMDB ID;
+- only `tmdb`, `film|series`, positive content ID, `high`, matcher version, evidence observation timestamp and resolution timestamp are persisted;
+- no provider people/date/category evidence and no artwork are stored;
+- write RPC is bounded to 256 decisions, shares the canonical per-channel advisory lock, revalidates exact broadcast fields and requires schedule coverage generated by the **same provider observation**;
+- newer coverage/reference state wins; late results are ignored;
+- current deterministic unresolved/ambiguous decisions clear an older exact-broadcast reference;
+- provider/TMDB operational failures create no negative decision.
+
+Lifecycle/bootstrap:
+- only a successfully stored authoritative schedule observation is enrichment-eligible;
+- partial/unattributed/no-safe/stale schedule observations cannot attach identity;
+- guide-horizon writes all canonical windows before any TMDB request, so TMDB cannot transactionally block Guide ingest;
+- current/future broadcasts are forward-filled; the sibling stays with that concrete broadcast as it becomes D0 until canonical replacement/delete owns its lifecycle;
+- there is no fuzzy/title-only historical D0 attachment;
+- post-deployment retained broadcasts may temporarily lack identity until forward-fill/warm-up reaches them.
+
+PR #152's dormant `20260923201300_recover_programme_classification_siblings.sql` / `teevee_recover_programme_classifications` remains classification-recovery history only. It is **superseded for external-content bootstrap** and PR #161 does not call it. Do not rewrite/remove applied migration history; any retirement is a future forward cleanup after verifying no remaining caller.
+
+This foundation intentionally exposes no public/mobile external-content read contract. Artwork selection, language-neutral poster provenance, TMDB attribution/branding presentation and any image delivery/cache remain follow-up increments.
 
 ## Vanavond programme classification sibling — issue #142 / ADR 0010
 
