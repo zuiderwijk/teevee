@@ -4,6 +4,7 @@ import {
   useEffect,
   useMemo,
   useReducer,
+  useRef,
   useState,
 } from 'react';
 import { useFocusEffect, useRouter } from 'expo-router';
@@ -241,7 +242,15 @@ const SavedRow = memo(function SavedRow({
       {contents}
     </Pressable>
   );
-});
+}, (previous, next) =>
+  previous.item.snapshot === next.item.snapshot &&
+  previous.item.programme === next.item.programme &&
+  previous.item.channel === next.item.channel &&
+  previous.item.channelLabel === next.item.channelLabel &&
+  previous.item.temporalState === next.item.temporalState &&
+  previous.largeText === next.largeText &&
+  previous.onSelect === next.onSelect,
+);
 
 function NowCapsule({ colors }: { colors: TeeveeTheme['colors'] }) {
   return (
@@ -419,7 +428,15 @@ const DiscoveryCard = memo(function DiscoveryCard({
       ) : null}
     </Pressable>
   );
-});
+}, (previous, next) =>
+  previous.kind === next.kind &&
+  previous.item.programme === next.item.programme &&
+  previous.item.channel === next.item.channel &&
+  previous.item.current === next.item.current &&
+  previous.width === next.width &&
+  previous.mediaHeight === next.mediaHeight &&
+  previous.onSelect === next.onSelect,
+);
 
 function DiscoveryModule({
   kind,
@@ -545,6 +562,9 @@ export function TonightScreen() {
   const [developmentMenuVisible, setDevelopmentMenuVisible] = useState(false);
   const [detail, dispatchDetail] = useReducer(detailReducer, initialDetailState);
   const televisionDayStartMs = guideTelevisionDayStart(liveNowMs);
+  const previousTelevisionDayRef = useRef(televisionDayStartMs);
+  const previousDevelopmentScenarioRef =
+    useRef<TonightDevelopmentScenario>(developmentScenario);
   const contentWidth = Math.max(0, windowWidth - PAGE_INSET * 2);
 
   const refreshForMode = useCallback(
@@ -572,6 +592,16 @@ export function TonightScreen() {
   );
 
   useEffect(() => {
+    const televisionDayChanged =
+      previousTelevisionDayRef.current !== televisionDayStartMs;
+    const developmentScenarioChanged =
+      previousDevelopmentScenarioRef.current !== developmentScenario;
+
+    previousTelevisionDayRef.current = televisionDayStartMs;
+    previousDevelopmentScenarioRef.current = developmentScenario;
+
+    if (!televisionDayChanged && !developmentScenarioChanged) return;
+
     if (
       DEVELOPMENT_CONTROLS_ENABLED &&
       developmentScenario !== 'live'
@@ -583,6 +613,11 @@ export function TonightScreen() {
       if (developmentAnchor !== null) {
         void tonightRuntime.refresh(developmentAnchor);
       }
+      return;
+    }
+
+    if (developmentScenarioChanged) {
+      void tonightRuntime.refresh(Date.now());
       return;
     }
     tonightRuntime.ensureTelevisionDay(televisionDayStartMs);
@@ -637,6 +672,10 @@ export function TonightScreen() {
         : baseModel,
     [baseModel, developmentScenario],
   );
+
+  const retryTonight = useCallback(() => {
+    refreshForMode(Date.now());
+  }, [refreshForMode]);
 
   const openProgramme = useCallback((selection: ProgrammeSelection) => {
     dispatchDetail({ type: 'open', selection });
@@ -814,13 +853,13 @@ export function TonightScreen() {
           </View>
 
           {developmentState.runtime.phase === 'loading' ? (
-            <AvailabilityNotice kind="loading" onRetry={tonightRuntime.retry} />
+            <AvailabilityNotice kind="loading" onRetry={retryTonight} />
           ) : developmentState.runtime.phase === 'partial' ? (
-            <AvailabilityNotice kind="partial" onRetry={tonightRuntime.retry} />
+            <AvailabilityNotice kind="partial" onRetry={retryTonight} />
           ) : developmentState.runtime.phase === 'unavailable' ? (
             <AvailabilityNotice
               kind="unavailable"
-              onRetry={tonightRuntime.retry}
+              onRetry={retryTonight}
             />
           ) : null}
 
