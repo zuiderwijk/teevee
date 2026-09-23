@@ -233,8 +233,8 @@ declare
 begin
   if p_programme_ids is null
      or cardinality(p_programme_ids) = 0
-     or cardinality(p_programme_ids) > 128 then
-    raise exception 'programmeIds must contain 1..128 values';
+     or cardinality(p_programme_ids) > 256 then
+    raise exception 'programmeIds must contain 1..256 values';
   end if;
   if exists (
     select 1

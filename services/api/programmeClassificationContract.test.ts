@@ -26,12 +26,12 @@ describe('Programme classification API contract', () => {
 
     expect(() =>
       parseProgrammeClassificationApiRequest({ programmeIds: [] }),
-    ).toThrow('1..128');
+    ).toThrow('1..256');
     expect(() =>
       parseProgrammeClassificationApiRequest({
-        programmeIds: Array.from({ length: 129 }, (_, index) => `p-${index}`),
+        programmeIds: Array.from({ length: 257 }, (_, index) => `p-${index}`),
       }),
-    ).toThrow('1..128');
+    ).toThrow('1..256');
   });
 
   it('accepts only provider-independent Teevee semantics', () => {

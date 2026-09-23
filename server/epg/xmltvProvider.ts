@@ -59,7 +59,7 @@ function elementText(block: string, name: string): string | undefined {
 }
 
 function elementTexts(block: string, name: string): string[] {
-  const escapedName = name.replace(/[.*+?^${}()|[\]\\]/g, '\\function openingTag(block: string): string {');
+  const escapedName = name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
   return [...block.matchAll(
     new RegExp(`<${escapedName}(?:\\s[^>]*)?>([\\s\\S]*?)<\\/${escapedName}>`, 'gi'),
   )]

@@ -8,7 +8,7 @@ import type {
   ProgrammeTriState,
 } from '../../data/domain/programmeClassification.ts';
 
-export const PROGRAMME_CLASSIFICATION_MAX_IDS = 128;
+export const PROGRAMME_CLASSIFICATION_MAX_IDS = 256;
 
 export type ProgrammeClassificationApiRequest = {
   programmeIds: string[];
