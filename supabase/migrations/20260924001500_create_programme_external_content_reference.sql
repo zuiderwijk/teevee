@@ -27,7 +27,7 @@ returns trigger
 language plpgsql
 security definer
 set search_path = ''
-as $
+as $owner_assert$
 begin
   if not exists (
     select 1
@@ -39,7 +39,7 @@ begin
   end if;
   return new;
 end;
-$;
+$owner_assert$;
 
 create trigger programme_external_content_reference_owner_before_write
 before insert or update of programme_id
@@ -56,7 +56,7 @@ returns trigger
 language plpgsql
 security definer
 set search_path = ''
-as $
+as $owner_cleanup$
 begin
   if exists (
     select 1
@@ -75,7 +75,7 @@ begin
 
   return null;
 end;
-$;
+$owner_cleanup$;
 
 create constraint trigger programme_external_content_reference_programme_ownership
 after delete or update
