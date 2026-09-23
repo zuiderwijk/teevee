@@ -9,7 +9,7 @@ Teevee must support the complete core Guide without coupling the mobile experien
 The mobile client never consumes an external EPG feed directly.
 
 ## Kijktip enrichment deployment state
-The Kijktip vertical slice is merged. Its backend migration is deployed and live-verified; only the post-deployment historical iPhone browse-back remains as an operational device smoke before Phase 5 Search is formally activated.
+The Kijktip vertical slice is merged, deployed and physically verified end-to-end. Its post-deployment historical iPhone browse-back is PASS and Phase 5A Guide Search is active.
 
 - **PR #120** completed empirical matching research and is canonical in `docs/TVGIDS_EDITORIAL_FEED_MATCHING_2026-09-22.md`: `tips.rss` is ingested server-side; matching is deterministic/fail-closed against canonical Teevee programmes; unresolved or ambiguous items do not create a Kijktip signal; the core `Programme` provider identity remains unchanged.
 - **PR #126** provides production server-side RSS parsing/matching, private signal persistence, an independent protected refresh, optional typed hosted transport and separate mobile runtime signal state.
@@ -68,24 +68,34 @@ Provider-specific IDs, raw XMLTV, credentials and storage details stop at the se
 
 ## Phase 5A Guide Search data boundary
 
-Canonical product contract: `docs/SEARCH_PRODUCT_DEFINITION.md`.
+Canonical product contract: `docs/SEARCH_PRODUCT_DEFINITION.md`. Durable architecture authority: ADR 0009.
 
-Search operates on existing canonical `Channel` and concrete canonical `Programme` broadcasts. It does not introduce a new generic programme/title/series entity.
+Search operates on existing canonical `Channel` and concrete canonical `Programme` broadcasts. It does not introduce a generic programme/title/series entity.
 
-The mobile Guide runtime intentionally does not hold D-2..D+7 simultaneously: current/selected windows are loaded independently and only visited windows are retained in a small session cache. Search therefore requires a hosted provider-independent read boundary over canonical storage rather than a full-horizon mobile prefetch.
+The mobile Guide runtime intentionally does not hold D-2..D+7 simultaneously. The accepted Search boundary therefore uses one provider-independent hosted request and one canonical-store repository/RPC call instead of downloading ten Guide schedules to mobile or the Edge layer.
 
-Required data semantics:
-- search scope = the exact current D-2..D+7 television-day horizon from shared `guideTime` primitives;
-- result display timestamps = real Europe/Amsterdam civil broadcast times;
-- authoritative complete canonical windows may contribute programme results;
-- missing/partial coverage must remain distinguishable from zero matches;
+Data semantics:
+- the server derives the exact current D-2..D+7 television-day windows from shared `guideTime` primitives;
+- authoritative coverage is evaluated per active canonical channel × television-day window;
+- only programmes intersecting a fully covered pair may contribute results;
+- aggregate programme scope reports `complete | partial | unavailable` independently from result count;
+- canonical channel identity remains searchable even when programme coverage is unavailable;
 - programme title and canonical channel-name fields are the Phase 5A query corpus;
-- exact/prefix/substring lexical matching only; no fuzzy/semantic/provider-specific matching;
+- lexical normalization/ranking is exact → prefix → substring; no fuzzy/semantic/provider-specific matching;
 - repeats remain separate canonical broadcasts;
-- Kijktip remains optional sibling metadata and never changes Search ranking;
-- corrected-start canonical identities supersede stale identities naturally through current canonical storage.
+- result limits are 24 programmes and 24 channels;
+- Kijktip remains optional sibling metadata, queried only for returned programme IDs, and never changes Search ranking;
+- corrected-start canonical identities supersede stale identities naturally because Search reads current canonical storage.
 
-Do not solve Search by adding SQLite/TanStack Query, by extending AppPreferences into schedule storage, or by downloading the entire ten-day schedule to mobile.
+Current Supabase implementation:
+- `teevee.search_guide` reads private canonical storage;
+- `public.teevee_search_guide` is a service-role-only PostgREST bridge;
+- both use SECURITY INVOKER with empty `search_path`;
+- `anon` / `authenticated` execute is revoked;
+- `unaccent` lives in the `extensions` schema;
+- public `guide-search` Edge transport holds the secret and returns only the typed canonical contract.
+
+Do not solve Search by adding SQLite/TanStack Query, extending AppPreferences into schedule storage, direct mobile Supabase-table access, or eager full-horizon Guide prefetch.
 
 ## Deterministic fixtures remain mandatory
 Synthetic fixture data remains required for:
