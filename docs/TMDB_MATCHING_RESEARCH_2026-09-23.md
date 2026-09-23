@@ -673,3 +673,18 @@ Issue #157 / PR #158 is the prerequisite parser/evidence foundation for that des
 The #152 D0 recovery result also tightens production-readiness gate #5: bounded replay for already-retained broadcasts may not assume later provider refetch still exactly reconciles every canonical broadcast. External-identity production design must explicitly own bootstrap/replay semantics before persistence/deployment.
 
 No artwork UI/runtime implementation is authorized by this report.
+
+
+## Production implementation follow-up — issue #159 / PR #161
+
+The final research rules in this document are productionized by issue #159 / PR #161 and proposed ADR 0011 (`docs/decisions/0011-broadcast-keyed-external-content-identity.md`).
+
+The implementation keeps the research boundary intact:
+- same-observation transient provider evidence is used before it is discarded;
+- central high-confidence Film/Series classification remains the entry gate;
+- Film year/director and strengthened alternative-title rules are fail-closed;
+- Series full-title/S-E/cast/base-title/numbering-disagreement rules remain series-identity-only and never create episode IDs;
+- unresolved/ambiguous cases create no external identity;
+- canonical `Programme` and public/mobile Guide remain unchanged.
+
+Production lifecycle intentionally does **not** use later exact retained-broadcast refetch as a universal replay/bootstrap. #152/Cold Pursuit evidence superseded that assumption. Identity forward-fills from authoritative complete current/future observations and is stored as a private broadcast-keyed sibling; retained historical D0 may have a temporary warm-up gap rather than receiving fuzzy attachment.
