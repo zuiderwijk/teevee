@@ -222,6 +222,7 @@ vi.mock('@/features/guide/NowNextGuideView', async () => {
 
 import GuideScreen from '@/app/index';
 import {
+  getGuideNavigationRequest,
   publishGuideNavigationIntent,
   resetGuideNavigationRequestForTests,
 } from '@/features/guide/guideNavigationIntent';
