@@ -46,16 +46,6 @@ jobs:
             node scripts/ci/ci-scope.mjs "$PUSH_BASE_SHA" "$PUSH_HEAD_SHA" --diff-mode=push
           fi
 
-  raw-epg-channel-inventory:
-    if: github.event_name == 'pull_request' && github.head_ref == 'research/raw-epg-channel-inventory-2026-09-24'
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v7
-      - uses: actions/setup-node@v7
-        with:
-          node-version: 22
-      - name: Inventory live raw Dutch EPG channels
-        run: node scripts/spikes/raw-epg-channel-inventory.mjs
 
   quality:
     needs: classify
