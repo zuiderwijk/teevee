@@ -1,5 +1,24 @@
 # Teevee Development Logboek
 
+## 23 september 2026 — Vanavond classification data gate complete
+
+PR #137 completed issue #135 against the real hosted canonical Teevee `guide-schedule` boundary. The research captured D-2 through D+5 as authoritative across all 12 active canonical channels; D+6/D+7 were correctly `unavailable`. The usable population contained 3,932 returned canonical rows and 1,114 unique broadcasts starting in the [19:00,06:00) Vanavond category window.
+
+Independent Lead review reproduced the live capture aggregates and verified the current XMLTV/canonical semantics: only the first XMLTV category survives into `Programme.genre`; `<live/>` and `<previously-shown>` currently provide positive-only signals; the public canonical transport preserves explicit false if supplied. In the researched 1,114 evening broadcasts both `isLive` and `isRepeat` were 100% undefined.
+
+Final module decisions:
+- Film — **GO WITH CENTRAL CLASSIFICATION MAPPING/ENRICHMENT**;
+- Serie — **GO WITH CENTRAL CLASSIFICATION MAPPING/ENRICHMENT**;
+- Sport — **GO WITH CENTRAL CLASSIFICATION MAPPING/ENRICHMENT**.
+
+Key evidence includes 100% reviewed precision but 78.0% bounded recall for exact `Film` due proven `Drama` films; 100% / 92.9% focused adult-scripted precision/recall for the conservative Series mapping but only 50.2% recall when the 96 reviewed scripted `Kinderen` broadcasts are included; and 50% precision for exact `Sport` under the intended event + same-day-highlights interpretation because historical `Andere Tijden Sport` broadcasts share the same genre. Independent authoritative sources also corroborated the `De pupil` feature-film boundary case and the researched `Andere Tijden Sport` rerun status.
+
+PR #137 exact head `d19cf8b8204269612d4530bf14eca133b4024c3b` passed docs-only CI #1030 and final Lead review, then merged as `bb1115e2e44584abb25feacf85aded0beb4c0140`. Exact-main CI #1031 / run `35846674470` passed the expected docs-only gate.
+
+**Next Product gate:** explicitly decide whether `Series vanavond` includes children's scripted series or is a narrower adult/mainstream scripted-series module. After that decision, dedicated Vanavond Design/UX convergence is next. Production Film/Series/Sport remain blocked on central provider-independent classification enrichment.
+
+---
+
 ## 23 september 2026 — Phase 5A Guide Search closed
 
 PR #134 completed the mobile half of Guide Search against the already deployed/live-verified `GuideSearchApi` boundary. The accepted runtime provides bounded live programme/channel retrieval, 220 ms debounce, AbortController plus request-version stale-response ownership, explicit complete/partial/unavailable semantics, exact-broadcast Programme Detail, transient channel → Per-zender navigation, process-local Search continuity and safe 06:00 Europe/Amsterdam television-day rollover ownership.

@@ -134,9 +134,10 @@ Build sequence:
 2. **DONE** — hosted Search migration + Edge Function deployed and live-verified; evidence: `docs/GUIDE_SEARCH_DEPLOYMENT_2026-09-23.md`;
 3. **DONE in PR #134** — mobile Search UI/runtime for concrete programme broadcasts + channels against the frozen `GuideSearchApi` boundary;
 4. **DONE** — owner physical iPhone validation, Independent QA, merge and exact-main CI;
-5. **NEXT — issue #135** — empirical Vanavond Film / Series / Sport classification research against real canonical hosted schedule data;
-6. after the data gate, complete dedicated Vanavond Design/UX acceptance;
-7. only then begin the production Vanavond implementation sequence defined in `docs/TONIGHT_PRODUCT_DEFINITION.md`.
+5. **DONE in PR #137 / issue #135** — empirical Vanavond Film / Series / Sport classification research against real canonical hosted schedule data; all three modules require central provider-independent classification mapping/enrichment;
+6. **NEXT PRODUCT GATE** — explicitly define whether `Series vanavond` includes children's scripted series or intentionally uses a narrower adult/mainstream scope;
+7. after that Product decision, complete dedicated Vanavond Design/UX acceptance using the product definition plus classification research;
+8. only then begin the production Vanavond implementation sequence defined in `docs/TONIGHT_PRODUCT_DEFINITION.md`, including the central classification/enrichment contract before category modules are enabled.
 
 Do not implement Search by eager D-2..D+7 mobile Guide prefetch or a title-only programme catalogue identity. Do not implement Vanavond Film/Series/Sport with naive genre matching. Vanavond remains finite linear-TV evening decision support, not an editorial/news dependency or infinite engagement feed.
 
