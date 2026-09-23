@@ -2,7 +2,7 @@
 
 Last updated: 2026-09-23.
 Status: ACTIVE — **Phase 5 — Vanavond classification/enrichment foundation**.
-Current implementation priority: **execute issue #142 — implement the central provider-independent Film/Series/Sport classification-enrichment foundation; production category runtime must not compensate with raw-provider heuristics**
+Current implementation priority: **PR #144 / issue #142 — second Technical Lead blocker #5795818040 (children audience certainty ≠ content-type certainty) is corrected in Development with exact-classifier live revalidation; previous blocker #5794926935 remains closed; exact-head Lead re-review is next; Independent QA, merge and hosted deployment remain blocked until that PASS; production Vanavond category UI remains blocked**
 Current broader product phase: **Phase 5 — Search and Discovery**
 Previous phase: **Phase 4 — Core Guide MVP hardening — CLOSED**
 
@@ -17,7 +17,7 @@ Previous phase: **Phase 4 — Core Guide MVP hardening — CLOSED**
 - Deterministic fixtures remain mandatory after real data is introduced.
 - Core Guide cannot depend on artwork/enrichment.
 - `docs/VISUAL_BASELINE.md` plus `design/current/` select the accepted visual references. New visual exploration is not canonical until explicitly approved and merged.
-- Relevant durable architecture contracts are ADR 0001 through ADR 0009.
+- Relevant durable architecture contracts are ADR 0001 through ADR 0009; ADR 0010 is proposed by PR #144 for the classification sibling boundary.
 
 ## Phase status
 1. **Phase 1A — Totaal interaction/technical baseline:** complete and physically accepted on iPhone. Totaal production visual design, implementation-ready specification and runtime production convergence are merged, owner-accepted and canonical.
@@ -25,7 +25,7 @@ Previous phase: **Phase 4 — Core Guide MVP hardening — CLOSED**
 3. **Phase 2 — App Shell:** complete and physically accepted on iPhone.
 4. **Phase 3 — Real Data Vertical Slice:** complete and physically accepted on iPhone. Real provider -> hosted ingest -> canonical persistence -> public typed read -> mobile canonical datasource is proven, including fixture-first startup, real-data transition, fallback and context retention.
 5. **Phase 4 — Core Guide MVP hardening:** **CLOSED**. The 06:00 television-day foundation, television-day-aware runtime, D-2..D+7 navigation/date context, measured Totaal performance hardening, Per-zender production convergence, Programme Detail production convergence, Nu & Straks production convergence and Totaal production convergence are all merged. Totaal PR #114 completed the final open Guide convergence work: its runtime was owner-accepted on iPhone, independently QA-reviewed, its sole QA accessibility blocker was corrected and re-verified at the final Lead merge gate, exact-head CI #877 passed 72 test files / 538 tests plus iOS/Android/web exports, and merge commit `4cea66eca92b7224ff51940b30de09db11928427` landed on `main`. The cache decision remains **no persistent mobile schedule cache now** absent new measured evidence; true no-network cold start and any persistence technology decision remain a release-like Phase 9 gate. Physical Android interaction acceptance remains deferred until Android hardware is available and does not keep Phase 4 open.
-6. **Phase 5 — Search and Discovery:** **ACTIVE**. Kijktip is fully closed and **Phase 5A — Guide Search is CLOSED**. Vanavond has a canonical product contract in `docs/TONIGHT_PRODUCT_DEFINITION.md`; its empirical classification gate is complete in `docs/TONIGHT_CLASSIFICATION_RESEARCH_2026-09-23.md`; Series scope is frozen as general/mainstream scripted episodic content; and the owner-approved production visual/specification is merged and canonical in `design/current/TONIGHT.md` + `docs/TONIGHT_VISUAL_CONVERGENCE.md` via PR #141. Film, Series and Sport still require **central provider-independent classification mapping/enrichment** before production category implementation. Issue #142 is the active engineering gate; raw Vanavond UI heuristics remain forbidden.
+6. **Phase 5 — Search and Discovery:** **ACTIVE**. Kijktip is fully closed and **Phase 5A — Guide Search is CLOSED**. Vanavond has a canonical product contract in `docs/TONIGHT_PRODUCT_DEFINITION.md`; its empirical classification gate is complete in `docs/TONIGHT_CLASSIFICATION_RESEARCH_2026-09-23.md`; Series scope is frozen as general/mainstream scripted episodic content; and the owner-approved production visual/specification is merged and canonical in `design/current/TONIGHT.md` + `docs/TONIGHT_VISUAL_CONVERGENCE.md` via PR #141. Film, Series and Sport require **central provider-independent classification mapping/enrichment** before production category implementation. PR #144 implements that issue #142 foundation as ingest-owned sibling semantics with atomic schedule lifecycle and a bounded separate read boundary. Development implementation + disposable PostgreSQL lifecycle evidence are complete. Lead blocker #5794926935 remains closed. Second Lead blocker #5795818040 has now separated children-audience evidence from content-type certainty and has exact-classifier live revalidation; exact-head Lead re-review, Independent QA, merge and hosted deployment remain open. Raw Vanavond UI heuristics remain forbidden.
 
 ## Kijktip enrichment vertical slice — merged and deployed
 The inter-phase Kijktip vertical slice is implementation-complete and merged. Do not reopen its accepted product, matching, persistence or Guide-presentation contracts without concrete regression evidence.
@@ -87,6 +87,30 @@ The evidence establishes that current raw canonical fields are not a sufficient 
 The future classifier/enrichment must be centralized and provider-independent, prefer structured source evidence such as the full category set, preserve tri-state live/repeat semantics, and fail closed on unknown classification. No production category module may implement current provider vocabulary directly in UI code.
 
 `Series vanavond` product scope is now frozen: **scripted episodic series for a general/mainstream audience**. Programming primarily intended for children, including the researched `Bluey` / `Marvel's Spidey and His Amazing Friends` examples, is excluded from this module in v1. This is a semantic product decision; implementation must not turn raw provider `Kinderen` into the classifier itself.
+
+## Vanavond classification/enrichment foundation — PR #144 Development-complete
+
+Issue #142 implementation lives on `feat/tonight-classification-foundation` and is intentionally foundation-only: no `app/tonight.tsx` production category UI, artwork/TMDB or recommendation runtime is added.
+
+Proposed ADR 0010 freezes the implementation direction pending Lead + Independent QA:
+- canonical `Programme` remains unchanged;
+- server-only `ExternalProgramme` preserves the complete provider category set, structured episode-number evidence and only minimal director-credit presence before canonicalization;
+- one central provider-specific evidence interpreter produces provider-independent `ProgrammeClassification` semantics;
+- unknown/ambiguous classification fails closed;
+- Film eligibility requires high-confidence film semantics;
+- Series eligibility requires high-confidence scripted episodic + general/mainstream audience;
+- Sport eligibility requires high-confidence event/highlights subtype;
+- live/repeat are explicit tri-state `true | false | unknown`;
+- private `teevee.programme_classifications` is keyed to concrete canonical `programme_id` with cascade lifecycle;
+- classified replacement wraps the existing ADR-0007 schedule transaction so re-ingest, start-time correction/rekey, deletion and stale-write ownership stay atomic;
+- Guide schedule transport remains unchanged;
+- future Vanavond reads use a separate bounded `programme-classifications` semantic API rather than raw provider categories or eager Guide-horizon prefetch.
+
+Current-provider evidence for the mapping is recorded in `docs/TONIGHT_CLASSIFICATION_SOURCE_EVIDENCE_2026-09-23.md`. Independent raw capture run `35856096847` proved 60.47% of 3,372 mapped rows carry multiple categories and 69.25% carry episode metadata, while live/repeat/new/premiere evidence remained absent. The first exact-classifier live run exposed an over-broad generic-Series inference; Lead review #5794926935 then caught a second confidence bug where broad inference blockers were reused as positive `other/high` evidence. That blocker remains closed. Lead review #5795818040 then caught one remaining orthogonal-certainty bug: children-audience evidence itself still promoted unresolved content to `other/high`.
+
+The second correction keeps `Kinderen` / `Kids En Familie` as audience evidence only. Exact-live run #1 / `35868756695`, job `107206994998`, keeps Film 36 / general-mainstream Series 99 / semantic Series 182 / Sport 3 unchanged and moves exactly one further evening row from `other/high` to `unknown/unknown` (other 620, unknown 118). Of 91 children-audience rows, 83 are semantic Series/high, 7 are other/high from independent strong non-scripted evidence, and 1 is unknown/unknown. Bluey and a Spidey row with explicit S/E remain semantic children Series; NOS Jeugdjournaal remains children + `other/high` because `Nieuws` proves the non-scripted family. The researched `Spencer Sisters`, `Best Medicine`, `Missie Aarde`, `Poirot` and `Aspe` boundaries remain Series-eligible; `Sluipschutters` remains unknown. Normal CI remains deterministic/network-free after disposable probe removal. Disposable PostgreSQL 17 smoke run #1 / `35855629562`, job `107163296515`, executed the real base schedule migrations plus the new classification migration and passed the lifecycle assertion block before `ROLLBACK`.
+
+Hosted deployment is deliberately pending review. After merge, the exact migration and updated `epg-refresh` runtime must be deployed, `programme-classifications` deployed, then one authoritative `guide-horizon` refresh must backfill retained broadcasts from full provider evidence. No SQL backfill may guess from historical first-category `Programme.genre`.
 
 ## Frozen television-day and Guide-horizon semantics
 ADR 0008 is canonical:

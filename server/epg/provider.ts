@@ -17,6 +17,11 @@ export type ExternalChannel = {
  * Required Teevee fields are optional here on purpose: malformed external records must
  * remain representable so the normalisation boundary can diagnose and reject them.
  */
+export type ExternalEpisodeNumber = {
+  system?: string;
+  value: string;
+};
+
 export type ExternalProgramme = {
   id?: string;
   channelId?: string;
@@ -25,7 +30,16 @@ export type ExternalProgramme = {
   title?: string;
   subtitle?: string;
   description?: string;
+  /** Compatibility first category used only for canonical Programme.genre. */
   genre?: string;
+  /** Complete provider vocabulary, server-side only. */
+  categories?: string[];
+  episodeNumbers?: ExternalEpisodeNumber[];
+  /**
+   * Structured credit evidence only. Undefined means the provider supplied no
+   * credits block; false means credits were present without a director credit.
+   */
+  hasDirectorCredit?: boolean;
   isLive?: boolean;
   isRepeat?: boolean;
 };

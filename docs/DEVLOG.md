@@ -1,5 +1,92 @@
 # Teevee Development Logboek
 
+## 23 september 2026 — PR #144 children audience/content-type certainty corrected
+
+Technical Lead exact-head review #5795818040 found a second, narrowly scoped certainty conflation after blocker #5794926935 had been closed: `Kinderen` / `Kids En Familie` audience evidence still caused unresolved programme families to become `contentType: other / confidence: high`.
+
+Development now keeps audience and content-type certainty independent:
+- children-audience evidence alone yields `audience: primarily-children` without proving a content family;
+- when no target family or strong positive non-scripted format is proven, content type/confidence fail closed to `unknown/unknown`;
+- `Kinderen + Nieuws` remains `other/high + primarily-children` because `Nieuws` proves the non-scripted family;
+- `Kinderen + Animatie + Sx Ey` and explicit scripted-form + children evidence remain semantic scripted Series/high and are excluded from `Series vanavond` by audience;
+- strong scripted-vs-non-scripted conflict precedence, the previous broad-context fix, Film, Sport and live/repeat semantics are unchanged.
+
+Deterministic tests add the ambiguous `Kinderen + Komedie + S1 E3` boundary, positive children+Nieuws evidence, explicit scripted children and a `Dramaseries + Reality` strong-conflict case while retaining the existing animated-children and previous Lead regressions.
+
+Disposable exact-classifier live revalidation run #1 / `35868756695`, job `107206994998`, passed over the same 36,597,644-byte mapped source and 965 evening rows. Film/general-Series/semantic-Series/Sport remain **36 / 99 / 182 / 3**. Exactly one row moves from `other/high` to `unknown/unknown`: other **621→620**, unknown **117→118**. The 91 children-audience rows now split into 83 series/high, 7 other/high with independent positive non-scripted evidence, and 1 unknown/unknown. Bluey and an explicit-S/E Spidey row remain semantic children Series; NOS Jeugdjournaal remains children + other/high. The sole current children ambiguity is another Spidey broadcast with only `S3`, which now preserves its known children audience while content type fails closed.
+
+Classifier blob under the successful live probe is `763b844db21c806415c7a3d877e709e4635842cd`. The classification migration remains untouched at `f39e728b2098806f31b237319396436fc0a4e618`; no new PostgreSQL execution is required. The temporary network workflow is removed from the final branch before exact-head CI.
+
+**Next gate:** final exact-head CI on the no-probe head, then Technical Lead exact-head re-review. Do not merge, deploy or send to Independent QA before Lead PASS.
+
+---
+
+## 23 september 2026 — PR #144 Lead Series-confidence blocker corrected
+
+Technical Lead review #5794926935 found a semantic certainty bug after the initial classification handoff: `GENERIC_SERIES_BLOCKER_CATEGORIES` correctly prevented unsafe generic scripted-Series inference, but the same broad set was also reused as positive `other/high` evidence. That violated ADR 0010's fail-closed contract because “Series not proven” does not imply “other proven”.
+
+Development corrected only this Series confidence boundary:
+- strong non-scripted format evidence remains eligible for `contentType: other / confidence: high`;
+- broad context/subject categories remain generic-Series inference blockers only;
+- ambiguous rows now stay `unknown/unknown`;
+- strong explicit scripted categories still survive broad subject/context labels unless a strong non-scripted format conflict exists;
+- Film, Sport, child-Series semantics, persistence, API boundaries and Guide isolation are unchanged;
+- no title whitelist/blacklist was introduced.
+
+Deterministic regression coverage now proves:
+- a `Komedie + Entertainment + S5 E3` ambiguity is neither Series-eligible nor `other/high`;
+- `Reality`, `Documentaire`, `Nieuws` and `Talkshow` remain positive `other/high` evidence;
+- `Sitcoms + Politiek` and `Misdaaddrama + Entertainment` remain scripted/high.
+
+Disposable exact-implementation live revalidation run #1 / `35862210491`, job `107184911263`, passed against the current mapped 12-channel XMLTV source. On 965 evening rows, Film eligible remains 36, general/mainstream Series 99, semantic Series 182 and Sport eligible 3. The confidence fix moves 112 row instances from `other/high` to `unknown/unknown`: other 733→621 and unknown 5→117. The five researched Series boundary examples remain eligible; `Sluipschutters`, `The Yorkshire Vet`, `LUBACH`, `Beste Kijkers` and `Top Gear` are now explicitly ambiguous rather than overclaimed as `other/high`.
+
+The classification migration is untouched and remains the PostgreSQL-smoke-proven blob `f39e728b2098806f31b237319396436fc0a4e618`. The disposable network workflow has been removed from the final diff. Hosted production remains untouched.
+
+**Next gate:** full exact-head CI on the no-probe head, then Technical Lead exact-head re-review. Do not send to Independent QA before Lead PASS.
+
+---
+
+## 23 september 2026 — PR #144 classification foundation Development-complete
+
+The issue #142 implementation is now complete at Development level and awaits Lead + Independent QA. The accepted Vanavond visual runtime remains untouched; this PR contains no production `app/tonight.tsx` category population.
+
+The central classifier now preserves complete XMLTV categories, structured episode numbers and minimal director-credit presence only at the provider boundary, maps them deterministically to provider-independent sibling semantics, persists those semantics atomically with canonical schedule replacement, and exposes a separate bounded semantic read API. Canonical `Programme`, Guide schedule transport and Guide render/runtime remain unchanged.
+
+Required empirical failure modes are covered deterministically: Film first-category false negatives, generic-category scripted series, children scripted exclusion, non-scripted children, Sport event/highlights/talk/documentary/ambiguous cases, tri-state live/repeat and unknown fail-closed semantics. Production classifier source contains no research-title exceptions.
+
+A disposable exact-implementation live probe then found an important defect before review: the first generic Series rule also admitted rows whose structured evidence was insufficient to prove Vanavond Series (`The Yorkshire Vet`, `Sluipschutters`, `LUBACH`, `Beste Kijkers`, `Het Interventie Team`, `Top Gear`). That probe did not establish that every one of those rows was high-confidence non-scripted; later Lead review #5794926935 explicitly corrected that certainty distinction. Raw-source evidence showed why actor/cast presence cannot solve generic scripted inference: presenters are frequently encoded as actors. The provider boundary was tightened to carry only minimal director-credit presence and the classifier now gives category-format conflicts precedence. Final live probe run #4 / `35857949057` passed over 965 evening rows: 36 Film, 99 general/mainstream Series and 3 Sport inclusions. Its only generic adult-Series recoveries were exactly `The Spencer Sisters`, `Best Medicine`, `Missie Aarde`, `Agatha Christie's Poirot` and `Aspe`; Sport resolved to 2 events + 1 highlights, with talk/documentary excluded.
+
+Independent raw-source PR #145 evidence also measured 3,372 mapped rows: 60.47% multi-category, 69.25% with episode-number metadata, 83.13% with a credits block and 23.10% with director metadata, while live/repeat/new/premiere signals were absent. Teevee does not persist credit names/cast for classification.
+
+Persistence lifecycle was executed against disposable PostgreSQL 17 in workflow run #1 / `35855629562`, job `107163296515` — SUCCESS. The actual classification migration loaded on top of the canonical schedule-store migrations; the smoke passed idempotent same-broadcast ingest, canonical start correction/rekey, cascade cleanup, stale-write protection, bounded getter and authoritative deletion cleanup, then rolled back.
+
+The live provider-evidence probe remains documented in `docs/TONIGHT_CLASSIFICATION_SOURCE_EVIDENCE_2026-09-23.md`; its temporary network workflow and the temporary PostgreSQL workflow are removed before final exact-head CI so normal CI remains deterministic and network-free beyond the repository's existing gates.
+
+Hosted deployment remains deliberately untouched. After Lead + Independent QA + merge, deployment order is migration → exact merged `epg-refresh` runtime → `programme-classifications` Edge Function → one authoritative `guide-horizon` refresh for backfill → bounded live verification and deployed-byte/schema comparison.
+
+**Next step:** final exact-head CI, then Lead review. Do not merge and do not send to Independent QA before Lead handoff.
+
+---
+
+## 23 september 2026 — PR #144 starts central Vanavond classification foundation
+
+Issue #142 moves Vanavond Film/Series/Sport classification out of raw canonical `Programme.genre` and into one provider-independent sibling enrichment owned by EPG ingest. Canonical Programme and Guide transport stay unchanged.
+
+A temporary live source-evidence probe (workflow run #9 / `35855124285`, job `107161659875`) inspected the current 36,654,822-byte XMLTV feed. It directly confirmed the research failure modes: e.g. `The Martian` is `Drama + Film`; `Best Medicine` and `The Spencer Sisters` have generic scripted categories plus structured S/E evidence; `Bluey` and `Spidey` combine `Kinderen + Animatie` with S/E evidence; `Andere Tijden Sport` adds `Documentaire`; `NOS Voetbal` adds `Sporttalkshow`; event/highlight broadcasts expose narrow description evidence. Evidence is retained in `docs/TONIGHT_CLASSIFICATION_SOURCE_EVIDENCE_2026-09-23.md`; the temporary network workflow will be removed before final handoff.
+
+Implementation direction is recorded in proposed ADR 0010:
+- preserve all XMLTV categories and episode numbers only in server-side `ExternalProgramme`;
+- classify once during normalisation through the central provider mapping;
+- output only Teevee semantics (film/series/sport; scripted/audience; sport subtype; tri-state live/repeat; high/unknown confidence);
+- fail closed on ambiguity and never inspect programme titles in production classification;
+- persist one classification row per canonical broadcast using FK cascade and an atomic wrapper around ADR-0007 schedule replacement;
+- expose a separate 1..256 programme-ID classification API so Guide loading/payload remains untouched;
+- after reviewed deployment, backfill retained broadcasts by one authoritative provider `guide-horizon` refresh rather than guessing from old first-category genre.
+
+No production Vanavond UI, artwork/TMDB, recommendation engine or Guide redesign is included.
+
+---
+
 ## 23 september 2026 — Vanavond production design accepted and merged
 
 Owner approved the final Vanavond production design. PR #141 promoted the accepted visual and deterministic implementation specification to canonical authority.

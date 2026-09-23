@@ -1,4 +1,5 @@
 import type { Channel, GuideSchedule, GuideScheduleQuery } from '@/data/domain/epg';
+import type { ProgrammeClassification } from '@/data/domain/programmeClassification';
 
 /**
  * Canonical replacement write for one refreshed time window.
@@ -9,6 +10,8 @@ export type ScheduleWindowWrite = {
   to: string;
   channelIds: Channel['id'][];
   schedule: GuideSchedule;
+  /** Production provider ingestion supplies one semantic sibling per stored programme. */
+  classifications?: ProgrammeClassification[];
 };
 
 export type ScheduleWindowWriteResult =

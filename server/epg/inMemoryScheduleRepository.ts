@@ -4,6 +4,8 @@ import type {
   GuideScheduleQuery,
   Programme,
 } from '@/data/domain/epg';
+import type { ProgrammeClassification } from '@/data/domain/programmeClassification';
+import type { ProgrammeClassificationRepository } from '../classification/classificationRepository.ts';
 
 import type {
   ScheduleRepository,
@@ -150,9 +152,12 @@ function coveredFreshness(
  * Deterministic reference implementation for repository semantics and tests.
  * It is intentionally not a production persistence choice.
  */
-export class InMemoryScheduleRepository implements ScheduleRepository {
+export class InMemoryScheduleRepository
+  implements ScheduleRepository, ProgrammeClassificationRepository
+{
   private readonly channels = new Map<Channel['id'], Channel>();
   private readonly programmes = new Map<Programme['id'], Programme>();
+  private readonly classifications = new Map<Programme['id'], ProgrammeClassification>();
   private readonly coverageByChannel = new Map<Channel['id'], CoverageSegment[]>();
 
   async replaceWindow(input: ScheduleWindowWrite): Promise<ScheduleWindowWriteResult> {
@@ -183,6 +188,29 @@ export class InMemoryScheduleRepository implements ScheduleRepository {
       }
     }
 
+    let classificationsByProgrammeId:
+      | Map<Programme['id'], ProgrammeClassification>
+      | undefined;
+    if (input.classifications) {
+      classificationsByProgrammeId = new Map(
+        input.classifications.map((classification) => [
+          classification.programmeId,
+          classification,
+        ]),
+      );
+      if (classificationsByProgrammeId.size !== input.classifications.length) {
+        throw new Error('Duplicate programme classification programmeId');
+      }
+      for (const programme of validated.programmesById.values()) {
+        if (!replacementChannelIds.has(programme.channelId)) continue;
+        const [startMs, endMs] = programmeBounds(programme);
+        if (!intersects(startMs, endMs, fromMs, toMs)) continue;
+        if (!classificationsByProgrammeId.has(programme.id)) {
+          throw new Error(`Missing programme classification for ${programme.id}`);
+        }
+      }
+    }
+
     for (const channelId of replacementChannelIds) {
       const channel = validated.channelsById.get(channelId);
       if (channel) this.channels.set(channel.id, { ...channel });
@@ -194,6 +222,7 @@ export class InMemoryScheduleRepository implements ScheduleRepository {
       const [startMs, endMs] = programmeBounds(programme);
       if (!intersects(startMs, endMs, fromMs, toMs)) continue;
       this.programmes.delete(programmeId);
+      this.classifications.delete(programmeId);
       removedProgrammeCount += 1;
     }
 
@@ -203,6 +232,12 @@ export class InMemoryScheduleRepository implements ScheduleRepository {
       const [startMs, endMs] = programmeBounds(programme);
       if (!intersects(startMs, endMs, fromMs, toMs)) continue;
       this.programmes.set(programme.id, { ...programme });
+      if (classificationsByProgrammeId) {
+        this.classifications.set(
+          programme.id,
+          { ...classificationsByProgrammeId.get(programme.id)! },
+        );
+      }
       storedProgrammeCount += 1;
     }
 
@@ -219,6 +254,18 @@ export class InMemoryScheduleRepository implements ScheduleRepository {
     }
 
     return { status: 'stored', removedProgrammeCount, storedProgrammeCount };
+  }
+
+  async getClassificationsForProgrammeIds(
+    programmeIds: readonly Programme['id'][],
+  ): Promise<ProgrammeClassification[]> {
+    return [...new Set(programmeIds)]
+      .map((programmeId) => this.classifications.get(programmeId))
+      .filter(
+        (classification): classification is ProgrammeClassification =>
+          classification !== undefined,
+      )
+      .map((classification) => ({ ...classification }));
   }
 
   async getSchedule(query: GuideScheduleQuery): Promise<GuideSchedule | null> {

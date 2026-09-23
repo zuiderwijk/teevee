@@ -80,14 +80,21 @@ export class SupabaseScheduleRepository implements ScheduleRepository {
   constructor(private readonly client: ScheduleRpcClient) {}
 
   async replaceWindow(input: ScheduleWindowWrite): Promise<ScheduleWindowWriteResult> {
-    const response = await this.client.rpc<unknown>('teevee_replace_schedule_window', {
-      p_from: input.from,
-      p_to: input.to,
-      p_generated_at: input.schedule.generatedAt,
-      p_channel_ids: input.channelIds,
-      p_channels: input.schedule.channels,
-      p_programmes: input.schedule.programmes,
-    });
+    const classified = input.classifications !== undefined;
+    const response = await this.client.rpc<unknown>(
+      classified
+        ? 'teevee_replace_schedule_window_classified'
+        : 'teevee_replace_schedule_window',
+      {
+        p_from: input.from,
+        p_to: input.to,
+        p_generated_at: input.schedule.generatedAt,
+        p_channel_ids: input.channelIds,
+        p_channels: input.schedule.channels,
+        p_programmes: input.schedule.programmes,
+        ...(classified ? { p_classifications: input.classifications } : {}),
+      },
+    );
 
     if (response.error) throw rpcError('replace_schedule_window', response.error);
     return parseWriteResult(response.data);

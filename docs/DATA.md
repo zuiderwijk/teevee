@@ -1,6 +1,6 @@
 # Teevee Programme Data Strategy
 
-Status: **Phase 5A Guide Search is active.** Phase 3 proved the provider-independent hosted data path, Phase 4 closed the television-day-aware Guide runtime and D-2..D+7 navigation/horizon behaviour, and the Kijktip enrichment path is merged, deployed and physically verified end-to-end. Search now becomes the active data/API increment. The Phase 4 cache decision is unchanged: keep the current fixture-first + in-memory runtime fallback and do not introduce persistent mobile schedule caching without new measured evidence. Production **EPG** provider selection/rights remain a later release gate and release-like offline cold-start/persistent-cache validation remains Phase 9.
+Status: **Phase 5 — Vanavond classification foundation is active in PR #144.** Phase 3 proved the provider-independent hosted data path, Phase 4 closed the television-day-aware Guide runtime and D-2..D+7 navigation/horizon behaviour, Kijktip is merged/deployed/physically verified, and Phase 5A Guide Search is closed. Issue #142 now adds provider-independent broadcast classification without changing Guide loading. The Phase 4 cache decision is unchanged: keep the current fixture-first + in-memory runtime fallback and do not introduce persistent mobile schedule caching without new measured evidence. Production **EPG** provider selection/rights remain a later release gate and release-like offline cold-start/persistent-cache validation remains Phase 9.
 
 ## Goal
 Teevee must support the complete core Guide without coupling the mobile experience to one EPG supplier. Replacing the temporary development source with an authorized Bindinc/TVgids or commercial provider must not require a Guide rewrite.
@@ -65,6 +65,62 @@ External data flows through:
 `EpgProvider -> explicit channel mapping -> normalisation/diagnostics -> canonical ScheduleRepository -> GuideScheduleApi -> hosted transport -> mobile runtime source/cache -> Guide`
 
 Provider-specific IDs, raw XMLTV, credentials and storage details stop at the server boundary.
+
+## Vanavond programme classification sibling — issue #142 / ADR 0010
+
+The classification lane is derived from the same provider record that creates a canonical broadcast:
+
+`ExternalProgramme full structured evidence -> canonical normalisation + central provider mapping -> ProgrammeClassification sibling -> atomic classified ScheduleRepository write`
+
+Provider evidence kept **only server-side before canonicalization**:
+- all XMLTV categories, not just the first category retained in `Programme.genre`;
+- structured `episode-num` values;
+- minimal `hasDirectorCredit` presence when the provider supplies a credits block; credit names/cast are not propagated;
+- explicit provider live/repeat booleans when present;
+- description only for narrow deterministic Sport subtype phrases after structured Sport evidence already exists.
+
+Persisted/public semantics contain no provider vocabulary:
+- content type: `film | series | sport | other | unknown`;
+- series type: `scripted-episodic | non-scripted | unknown`;
+- audience: `general-mainstream | primarily-children | unknown`;
+- sport type: `event | highlights | talk | magazine-documentary | other | unknown`;
+- live/repeat: `true | false | unknown`;
+- confidence: `high | unknown`.
+
+Eligibility is deliberately fail-closed. A future Vanavond module does not inspect `Programme.genre`: it consumes only high-confidence Teevee semantics.
+
+Series precision is deliberately stricter than “S/E + a genre”: strong scripted-form categories survive broad subject labels unless a strong non-scripted format conflicts; generic recovery rejects broad context/subject categories and requires S/E plus either multiple compatible scripted categories or one compatible category with explicit director-credit evidence. **A generic-Series blocker is not positive `other` evidence.** Only strong structured non-scripted/other categories can produce `other/high`; broad context blockers that merely make scripted inference unsafe keep content type/confidence unknown unless another positive rule applies.
+
+Audience certainty is orthogonal to content-type certainty. `Kinderen` / `Kids En Familie` may establish `audience: primarily-children` while `contentType` remains `unknown`; they never prove `other/high` by themselves. Semantic children's Series remains possible through the existing scripted evidence rules and is then excluded from `Series vanavond` by audience. Post-#5795818040 exact-live revalidation kept Film/general-Series/semantic-Series/Sport at 36/99/182/3 and moved one additional current evening row from `other/high` to `unknown/unknown` (other 620, unknown 118).
+
+Persistence:
+- private `teevee.programme_classifications` is one row per canonical broadcast;
+- FK `programme_id -> teevee.programmes(id)` uses cascade lifecycle;
+- `teevee.replace_schedule_window_classified` validates classification completeness, delegates the existing ADR-0007 authoritative schedule replacement, returns immediately on `ignored-stale`, then stores semantics in the same transaction;
+- a canonical start correction naturally deletes/cascades the old programme/classification and writes the newly keyed pair;
+- an authoritative empty/deleted programme cannot leave an orphan classification;
+- repeated same-broadcast ingest is idempotent;
+- no raw category set is persisted in the classification table.
+
+Backfill/recovery:
+- existing retained rows cannot be safely reconstructed from first-category `Programme.genre`;
+- after reviewed migration/runtime deployment, one authoritative `epg-refresh` `guide-horizon` run re-fetches D-3..D+8 and rebuilds classifications from full provider evidence;
+- stale classifications are cleaned by the normal schedule replacement/cascade lifecycle rather than a separate cleanup cron.
+
+Read/transport:
+- Guide `guide-schedule` payload remains unchanged;
+- private `teevee.get_programme_classifications` + service-role bridge support a bounded **1..256** programme-ID read;
+- public `programme-classifications` Edge transport returns only typed Teevee semantics;
+- later Vanavond can read one bounded evening schedule and request those programme classifications; it must not eagerly preload D-2..D+7 or classify in a mobile render path.
+
+Performance:
+- category/episode/credit-role parsing happens once per fetched XMLTV document; `XmltvEpgProvider` already memoizes that document within one refresh invocation;
+- classification is O(number of categories + episode-number evidence) per normalized programme, with one precomputed director-presence boolean and description normalization only after structured Sport evidence;
+- persistence adds one compact sibling row per retained programme inside the existing replacement transaction;
+- classification reads are primary-key bounded and are not called by Guide;
+- Guide startup/render payload/cost is therefore unchanged.
+
+Empirical provider evidence: `docs/TONIGHT_CLASSIFICATION_SOURCE_EVIDENCE_2026-09-23.md`. Durable decision: ADR 0010.
 
 ## Phase 5A Guide Search data boundary
 
