@@ -64,28 +64,6 @@ jobs:
         if: needs.classify.outputs.run_expo_export == 'true'
         run: npx expo export --platform all
 
-  guide-search-migration-smoke:
-    if: github.event_name == 'pull_request' && github.head_ref == 'feat/guide-search-architecture'
-    runs-on: ubuntu-latest
-    services:
-      postgres:
-        image: postgres:17
-        env:
-          POSTGRES_PASSWORD: postgres
-        ports:
-          - 5432:5432
-        options: >-
-          --health-cmd "pg_isready -U postgres"
-          --health-interval 5s
-          --health-timeout 5s
-          --health-retries 10
-    steps:
-      - uses: actions/checkout@v7
-      - name: Execute Guide Search migration smoke
-        env:
-          PGPASSWORD: postgres
-        run: psql -h localhost -U postgres -d postgres -v ON_ERROR_STOP=1 -f server/search/searchMigrationSmoke.sql
-
   android-native:
     needs: classify
     if: needs.classify.outputs.run_native == 'true'
