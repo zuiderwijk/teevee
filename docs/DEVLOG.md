@@ -1,5 +1,19 @@
 # Teevee Development Logboek
 
+## 23 september 2026 — PR #149 final physical acceptance, Independent QA and merge
+
+The first production Vanavond runtime is closed. Exact accepted head `4f1d29e2e1843adec33b2417ef14e312887545fd` received owner **FINAL PHYSICAL REFINEMENT PASS** in PR comment #5801613712 after base/light composition, Jouw-gids states, corrected Kijktip density, Series ≥12, Alle modules, dark mode, maximum iOS Accessibility Text Size, horizontal/vertical/diagonal gesture arbitration, live save/unsave round-trip and VoiceOver had been physically accepted on iPhone.
+
+Independent QA then passed the same exact head in #5801947266. The final Technical Lead gate #5801975189 re-verified mergeability, 0 behind main, 0 unresolved review threads and exact-head CI #1125 / run `35902439903`: **106 test files / 770 tests PASS**, strict TypeScript, lint and iOS/Android/web exports; Android native was correctly skipped for the runtime-ui change class.
+
+PR #149 merged to `main` as squash commit `f8df570b2dbf1c4fe35b35e02d9663252bb288b8`. No hosted/backend deployment is required: the mobile runtime consumes the already-deployed `guide-schedule`, editorial-signal and `programme-classifications` boundaries. Physical Android interaction acceptance remains deferred under the existing hardware gate and is not claimed from iPhone/CI evidence.
+
+Post-merge exact-main CI #1126 / run `35912892341` is the remaining merge-closeout evidence; this documentation closeout does not merge until that run is green.
+
+With Kijktip, Guide Search and first-production Vanavond now complete, **Phase 5 — Search and Discovery is closed**. The next step is Phase 6 definition: reconcile Personal Features with the already-existing `ProgrammePersonalState` save/reminder authority before implementing any new favourites/channel-preference behavior.
+
+---
+
 ## 23 september 2026 — PR #149 Kijktip density + deterministic discovery acceptance states
 
 Acc Design Refinement physical comments #5800174670 and #5800351843 identified two remaining convergence/testability blockers on exact head `01dd40ee5715fae52aa3bf929f8d4b741de225c9`.
