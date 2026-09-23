@@ -25,14 +25,14 @@ export type GuideSearchNavigationIntent =
 
 export function guideSearchProgrammeDetailIntent(
   match: GuideSearchProgrammeMatch,
-): GuideSearchNavigationIntent {
+): Extract<GuideSearchNavigationIntent, { type: 'programme-detail' }> {
   return { type: 'programme-detail', match };
 }
 
 export function guideSearchPerChannelIntent(
   channel: Channel,
   referenceMs: number,
-): GuideSearchNavigationIntent {
+): Extract<GuideSearchNavigationIntent, { type: 'per-channel' }> {
   if (!Number.isFinite(referenceMs)) {
     throw new RangeError('Guide Search channel navigation requires a valid reference instant');
   }
