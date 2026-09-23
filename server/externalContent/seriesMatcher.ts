@@ -138,7 +138,10 @@ export async function matchSeriesIdentity(
   const baseQualifying: TmdbSeriesIdentityCandidate[] = [];
 
   for (const candidate of baseCandidates) {
-    if (!conservativeTitleIdentity(baseTitle, seriesTitles(candidate))) continue;
+    const baseTitleMatches =
+      conservativeTitleIdentity(baseTitle, seriesTitles(candidate)) ||
+      leadingArticleTitleIdentity(baseTitle, seriesTitles(candidate));
+    if (!baseTitleMatches) continue;
 
     const overlap = peopleOverlap(actors, candidate.cast);
     const coherent = await gateway.seriesHasEpisode(
