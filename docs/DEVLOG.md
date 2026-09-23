@@ -1,5 +1,19 @@
 # Teevee Development Logboek
 
+## 23 september 2026 — Phase 5A Guide Search architecture established
+
+PR #132 establishes the provider-independent hosted Search boundary required by `docs/SEARCH_PRODUCT_DEFINITION.md` and freezes the durable decision as ADR 0009. Search does not reuse mobile Guide window loading: the server owns the exact ADR 0008 D-2..D+7 windows and makes one bounded canonical-store Search call that returns only canonical programme/channel matches plus `complete | partial | unavailable` programme coverage.
+
+The Supabase implementation remains behind that boundary: private `teevee.search_guide`, service-role-only `public.teevee_search_guide`, SECURITY INVOKER + empty `search_path`, `unaccent` in `extensions`, and a public `guide-search` Edge Function that keeps privileged credentials server-side. Programme availability is evaluated per active channel × television-day pair, so covered pairs can produce useful results without treating uncovered scope as a trustworthy no-match. Channel Search remains independently available. Results are bounded to 24 programmes / 24 channels; matching remains exact → prefix → substring and concrete repeats are never collapsed into title-only identity.
+
+The first executable PostgreSQL-17 smoke caught an invalid schema-qualification of PostgreSQL conditional expressions before merge. Strict TypeScript separately caught an unsafe Edge secret-key narrowing, and the next test run caught a case-sensitive smoke-test assertion. All three defects were corrected rather than bypassed. Intermediate exact-head run #972 on `2fdfd812c9a7fb45b39f14fa7363039c12a9210a` then passed the real PostgreSQL migration smoke plus strict TypeScript, lint, 89 test files / 670 tests and iOS/Android/web export; its Android job was superseded by the documentation/final-head update. The temporary PR-only PostgreSQL CI job is removed again before the final review head while the reusable smoke SQL remains in-repo.
+
+No hosted production migration or Edge deployment occurs before merge. After merge, deploy and live-verify the hosted Search boundary, then implement the mobile Search screen/runtime against the frozen `GuideSearchApi` contract. No physical-device gate is required for the architecture-only PR itself because it changes no user-facing layout/gesture/runtime presentation; Independent QA remains required because this is high-risk trust-boundary/migration work.
+
+**Next step:** final exact-head CI + Independent QA for PR #132; after merge, deploy/live-verify the hosted Search boundary before mobile Search UI/runtime.
+
+---
+
 ## 23 september 2026 — Kijktip post-deployment iPhone PASS; Phase 5A Guide Search activated
 
 The final post-deployment Kijktip smoke is **PASS** on a physical iPhone: NPO 1 / 22 September / `De slimste mens` visibly shows the recovered `Kijktip` label from hosted data. This closes PR #127 end-to-end beyond database verification and proves the historical recovery through the public/runtime Guide presentation path.
