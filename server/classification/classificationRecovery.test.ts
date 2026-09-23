@@ -423,6 +423,131 @@ describe('non-destructive programme classification recovery', () => {
     );
   });
 
+  it('deduplicates equivalent provider rows before recovery instead of writing duplicate siblings', async () => {
+    const repository = new InMemoryScheduleRepository();
+    const row = programme(
+      'raw-one',
+      'Duplicate film',
+      '2026-09-23T18:00:00.000Z',
+      '2026-09-23T19:00:00.000Z',
+      { categories: ['Film'] },
+    );
+    const seeded = await seedUnclassified(repository, [row]);
+
+    const result = await recover(repository, {
+      coverage: 'partial',
+      programmes: [row, { ...row }],
+    });
+
+    expect(result.candidateProgrammeCount).toBe(1);
+    expect(result.diagnostics.map(({ code }) => code)).toContain(
+      'duplicate-provider-programme',
+    );
+    expect(result.recovery).toMatchObject({
+      candidateProgrammeCount: 1,
+      matchedProgrammeCount: 1,
+      recoveredClassificationCount: 1,
+    });
+    await expect(
+      repository.getClassificationsForProgrammeIds([
+        seeded.programmes[0]!.id,
+      ]),
+    ).resolves.toHaveLength(1);
+  });
+
+  it('fails closed for overlapping provider broadcasts while still recovering an unambiguous broadcast on the same channel', async () => {
+    const repository = new InMemoryScheduleRepository();
+    const first = programme(
+      'raw-one',
+      'Overlap A',
+      '2026-09-23T18:00:00.000Z',
+      '2026-09-23T19:00:00.000Z',
+      { categories: ['Film'] },
+    );
+    const second = programme(
+      'raw-one',
+      'Overlap B',
+      '2026-09-23T18:30:00.000Z',
+      '2026-09-23T19:30:00.000Z',
+      { categories: ['Film'] },
+    );
+    const safe = programme(
+      'raw-one',
+      'Unambiguous film',
+      '2026-09-23T20:00:00.000Z',
+      '2026-09-23T21:00:00.000Z',
+      { categories: ['Film'] },
+    );
+    const seeded = await seedUnclassified(repository, [first, second, safe]);
+
+    const result = await recover(repository, {
+      coverage: 'partial',
+      programmes: [first, second, safe],
+    });
+
+    expect(result.diagnostics.map(({ code }) => code)).toContain(
+      'overlapping-programmes',
+    );
+    expect(result.candidateProgrammeCount).toBe(1);
+    expect(result.recovery).toMatchObject({
+      candidateProgrammeCount: 1,
+      matchedProgrammeCount: 1,
+      recoveredClassificationCount: 1,
+    });
+
+    const classifications =
+      await repository.getClassificationsForProgrammeIds(
+        seeded.programmes.map(({ id }) => id),
+      );
+    expect(classifications).toHaveLength(1);
+    expect(classifications[0]!.programmeId).toBe(
+      seeded.programmes.find(
+        ({ title }) => title === 'Unambiguous film',
+      )!.id,
+    );
+  });
+
+  it('does not recover a channel when normalisation reports an error for that channel', async () => {
+    const repository = new InMemoryScheduleRepository();
+    const valid = programme(
+      'raw-one',
+      'Otherwise valid film',
+      '2026-09-23T18:00:00.000Z',
+      '2026-09-23T19:00:00.000Z',
+      { categories: ['Film'] },
+    );
+    const seeded = await seedUnclassified(repository, [valid]);
+
+    const result = await recover(repository, {
+      coverage: 'partial',
+      programmes: [
+        valid,
+        {
+          channelId: 'raw-one',
+          startAt: '2026-09-23T19:00:00.000Z',
+          endAt: '2026-09-23T20:00:00.000Z',
+        },
+      ],
+    });
+
+    expect(result.diagnostics).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          severity: 'error',
+          code: 'missing-title',
+          channelId: 'channel-1',
+        }),
+      ]),
+    );
+    expect(result.candidateProgrammeCount).toBe(0);
+    expect(result.recovery.recoveredClassificationCount).toBe(0);
+    await expect(
+      repository.getClassificationsForProgrammeIds([
+        seeded.programmes[0]!.id,
+      ]),
+    ).resolves.toEqual([]);
+  });
+
   it('ignores a recovery observation older than newer canonical coverage even when the broadcast identity is unchanged', async () => {
     const repository = new InMemoryScheduleRepository();
     const row = programme(
