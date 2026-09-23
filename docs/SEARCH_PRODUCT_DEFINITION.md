@@ -401,7 +401,7 @@ Guide Search may be considered complete when:
 
 The **Guide Search Architecture** handoff is defined by ADR 0009 and implemented in PR #132.
 
-After merge:
+Next:
 1. deploy and live-verify the hosted Search migration + Edge Function against canonical Teevee data;
 2. implement the mobile Search runtime/screen against the frozen `GuideSearchApi` boundary;
 3. preserve query/results on Programme Detail round-trip and consume explicit Per-zender navigation intent;
