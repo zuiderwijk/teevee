@@ -41,6 +41,13 @@ import type { TeeveeTheme } from '@/theme/tokens';
 import { useTeeveeTheme } from '@/theme/useTeeveeTheme';
 
 import {
+  applyTonightDevelopmentModuleState,
+  resolveTonightDevelopmentState,
+  TONIGHT_DEVELOPMENT_SCENARIOS,
+  tonightDevelopmentRefreshAnchor,
+  type TonightDevelopmentScenario,
+} from './tonightDevelopmentState';
+import {
   buildTonightViewModel,
   tonightCardMetrics,
   tonightProgrammeAccessibilityLabel,
@@ -59,6 +66,8 @@ const PAGE_INSET = 20;
 const MODULE_GAP = 28;
 const HEADING_CONTENT_GAP = 12;
 const CAROUSEL_GAP = 12;
+const DEVELOPMENT_CONTROLS_ENABLED =
+  typeof __DEV__ !== 'undefined' && __DEV__;
 
 function alpha(hex: string, opacity: number): string {
   const match = /^#([0-9a-f]{6})$/i.exec(hex);
@@ -526,46 +535,107 @@ export function TonightScreen() {
   const theme = useTeeveeTheme();
   const router = useRouter();
   const { width: windowWidth, fontScale = 1 } = useWindowDimensions();
-  const nowMs = useGuideClock();
+  const liveNowMs = useGuideClock();
   const runtime = useTonightRuntime();
   const [personalState, setPersonalState] = useState<ProgrammePersonalState>(
     EMPTY_PROGRAMME_PERSONAL_STATE,
   );
+  const [developmentScenario, setDevelopmentScenario] =
+    useState<TonightDevelopmentScenario>('live');
+  const [developmentMenuVisible, setDevelopmentMenuVisible] = useState(false);
   const [detail, dispatchDetail] = useReducer(detailReducer, initialDetailState);
-  const televisionDayStartMs = guideTelevisionDayStart(nowMs);
+  const televisionDayStartMs = guideTelevisionDayStart(liveNowMs);
   const contentWidth = Math.max(0, windowWidth - PAGE_INSET * 2);
+
+  const refreshForMode = useCallback(
+    (anchorMs: number) => {
+      if (
+        DEVELOPMENT_CONTROLS_ENABLED &&
+        developmentScenario === 'offline'
+      ) {
+        return;
+      }
+      const developmentAnchor = DEVELOPMENT_CONTROLS_ENABLED
+        ? tonightDevelopmentRefreshAnchor(developmentScenario, anchorMs)
+        : null;
+      void tonightRuntime.refresh(developmentAnchor ?? anchorMs);
+    },
+    [developmentScenario],
+  );
 
   useFocusEffect(
     useCallback(() => {
       setPersonalState(readProgrammePersonalState());
-      void tonightRuntime.refresh(Date.now());
+      refreshForMode(Date.now());
       return undefined;
-    }, []),
+    }, [refreshForMode]),
   );
 
   useEffect(() => {
-    tonightRuntime.ensureTelevisionDay(nowMs);
-  }, [televisionDayStartMs, nowMs]);
+    if (
+      DEVELOPMENT_CONTROLS_ENABLED &&
+      developmentScenario !== 'live'
+    ) {
+      const developmentAnchor = tonightDevelopmentRefreshAnchor(
+        developmentScenario,
+        televisionDayStartMs,
+      );
+      if (developmentAnchor !== null) {
+        void tonightRuntime.refresh(developmentAnchor);
+      }
+      return;
+    }
+    tonightRuntime.ensureTelevisionDay(televisionDayStartMs);
+  }, [developmentScenario, televisionDayStartMs]);
 
   useEffect(() => {
     const subscription = AppState.addEventListener('change', (state) => {
       if (state !== 'active') return;
       setPersonalState(readProgrammePersonalState());
-      void tonightRuntime.refresh(Date.now());
+      refreshForMode(Date.now());
     });
     return () => subscription.remove();
-  }, []);
+  }, [refreshForMode]);
 
-  const model = useMemo(
+  const developmentState = useMemo(
+    () =>
+      DEVELOPMENT_CONTROLS_ENABLED
+        ? resolveTonightDevelopmentState({
+            scenario: developmentScenario,
+            liveNowMs,
+            runtime,
+            personalState,
+          })
+        : {
+            nowMs: liveNowMs,
+            runtime,
+            personalState,
+          },
+    [developmentScenario, liveNowMs, runtime, personalState],
+  );
+
+  const baseModel = useMemo(
     () =>
       buildTonightViewModel({
-        schedule: runtime.data?.schedule ?? null,
-        editorialSignals: runtime.data?.editorialSignals ?? [],
-        classifications: runtime.data?.classifications ?? [],
-        personalState,
-        nowMs,
+        schedule: developmentState.runtime.data?.schedule ?? null,
+        editorialSignals:
+          developmentState.runtime.data?.editorialSignals ?? [],
+        classifications:
+          developmentState.runtime.data?.classifications ?? [],
+        personalState: developmentState.personalState,
+        nowMs: developmentState.nowMs,
       }),
-    [runtime.data, personalState, nowMs],
+    [developmentState],
+  );
+  const model = useMemo(
+    () =>
+      DEVELOPMENT_CONTROLS_ENABLED
+        ? applyTonightDevelopmentModuleState(
+            developmentScenario,
+            baseModel,
+          )
+        : baseModel,
+    [baseModel, developmentScenario],
   );
 
   const openProgramme = useCallback((selection: ProgrammeSelection) => {
@@ -605,7 +675,13 @@ export function TonightScreen() {
           nestedScrollEnabled
         >
           <Text
+            testID="tonight-evening-date"
             accessibilityLabel={`Televisieavond ${model.eveningDateLabel}`}
+            onLongPress={
+              DEVELOPMENT_CONTROLS_ENABLED
+                ? () => setDevelopmentMenuVisible((visible) => !visible)
+                : undefined
+            }
             style={[
               styles.eveningDate,
               {
@@ -616,6 +692,65 @@ export function TonightScreen() {
           >
             {model.eveningDateLabel}
           </Text>
+
+          {DEVELOPMENT_CONTROLS_ENABLED && developmentMenuVisible ? (
+            <View
+              testID="tonight-development-controls"
+              style={[
+                styles.developmentControls,
+                {
+                  backgroundColor: theme.colors.surfaceElevated,
+                  borderColor: theme.colors.border,
+                },
+              ]}
+            >
+              <Text
+                style={[
+                  styles.developmentTitle,
+                  {
+                    color: theme.colors.textSecondary,
+                    fontFamily: TEEVEE_FONT_FAMILIES.semibold,
+                  },
+                ]}
+              >
+                Development state · geen productiecontent
+              </Text>
+              <View style={styles.developmentButtons}>
+                {TONIGHT_DEVELOPMENT_SCENARIOS.map((scenario) => (
+                  <Pressable
+                    key={scenario.id}
+                    accessibilityRole="button"
+                    onPress={() => {
+                      setDevelopmentScenario(scenario.id);
+                      setDevelopmentMenuVisible(false);
+                    }}
+                    style={({ pressed }) => [
+                      styles.developmentButton,
+                      {
+                        borderColor:
+                          developmentScenario === scenario.id
+                            ? theme.colors.currentTime
+                            : theme.colors.border,
+                        opacity: pressed ? 0.62 : 1,
+                      },
+                    ]}
+                  >
+                    <Text
+                      style={[
+                        styles.developmentButtonText,
+                        {
+                          color: theme.colors.text,
+                          fontFamily: TEEVEE_FONT_FAMILIES.medium,
+                        },
+                      ]}
+                    >
+                      {scenario.label}
+                    </Text>
+                  </Pressable>
+                ))}
+              </View>
+            </View>
+          ) : null}
 
           <View style={styles.firstModule}>
             <SectionHeading
@@ -643,7 +778,7 @@ export function TonightScreen() {
                       },
                     ]}
                   >
-                    {personalState.hasUsedSave
+                    {developmentState.personalState.hasUsedSave
                       ? 'Je hebt voor vanavond nog niets bewaard.'
                       : "Bewaar programma's die je vanavond wilt zien. Dan staat je tv-avond hier overzichtelijk bij elkaar."}
                   </Text>
@@ -678,11 +813,11 @@ export function TonightScreen() {
             </View>
           </View>
 
-          {runtime.phase === 'loading' ? (
+          {developmentState.runtime.phase === 'loading' ? (
             <AvailabilityNotice kind="loading" onRetry={tonightRuntime.retry} />
-          ) : runtime.phase === 'partial' ? (
+          ) : developmentState.runtime.phase === 'partial' ? (
             <AvailabilityNotice kind="partial" onRetry={tonightRuntime.retry} />
-          ) : runtime.phase === 'unavailable' ? (
+          ) : developmentState.runtime.phase === 'unavailable' ? (
             <AvailabilityNotice
               kind="unavailable"
               onRetry={tonightRuntime.retry}
@@ -752,6 +887,35 @@ const styles = StyleSheet.create({
     paddingHorizontal: PAGE_INSET,
     fontSize: 14,
     lineHeight: 20,
+  },
+  developmentControls: {
+    marginHorizontal: PAGE_INSET,
+    marginTop: 8,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderRadius: 12,
+    padding: 10,
+    gap: 8,
+  },
+  developmentTitle: {
+    fontSize: 12,
+    lineHeight: 16,
+  },
+  developmentButtons: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 6,
+  },
+  developmentButton: {
+    minHeight: 36,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderRadius: 18,
+    paddingHorizontal: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  developmentButtonText: {
+    fontSize: 12,
+    lineHeight: 16,
   },
   firstModule: {
     marginTop: 24,
