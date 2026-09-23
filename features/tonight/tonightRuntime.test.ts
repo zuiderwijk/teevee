@@ -1,7 +1,12 @@
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import type { GuideScheduleApi } from '@/services/api/guideScheduleContract';
 import type { ProgrammeClassificationApi } from '@/services/api/programmeClassificationContract';
+import {
+  clearRuntimeGuideSchedule,
+  installRuntimeGuideSchedule,
+  runtimeGuideScheduleFor,
+} from '@/data/runtime/guideScheduleRuntime';
 
 import { TonightRuntime } from './tonightRuntime';
 
@@ -52,6 +57,11 @@ function highOther(programmeId: string) {
   };
 }
 
+afterEach(() => {
+  clearRuntimeGuideSchedule();
+  vi.restoreAllMocks();
+});
+
 describe('Tonight runtime ownership', () => {
   it('owns one active television-day schedule read followed by one bounded classification read', async () => {
     const guide = schedule(3);
@@ -69,8 +79,11 @@ describe('Tonight runtime ownership', () => {
       }),
     };
     const runtime = new TonightRuntime(scheduleApi, classificationApi);
+    const anchorMs = Date.parse('2026-09-23T18:00:00+02:00');
+    installRuntimeGuideSchedule(guide, anchorMs);
+    const installedGuide = runtimeGuideScheduleFor(anchorMs);
 
-    await runtime.refresh(Date.parse('2026-09-23T18:00:00+02:00'));
+    await runtime.refresh(anchorMs);
 
     expect(scheduleApi.getSchedule).toHaveBeenCalledTimes(1);
     expect(scheduleApi.getSchedule).toHaveBeenCalledWith({
@@ -82,6 +95,27 @@ describe('Tonight runtime ownership', () => {
       programmeIds: guide.programmes.map(({ id }) => id),
     });
     expect(runtime.getSnapshot().phase).toBe('ready');
+    expect(runtimeGuideScheduleFor(anchorMs)).toBe(installedGuide);
+  });
+
+  it('publishes loading synchronously without inventing discovery content', async () => {
+    const pending = deferred<Awaited<ReturnType<GuideScheduleApi['getSchedule']>>>();
+    const scheduleApi: GuideScheduleApi = {
+      getSchedule: vi.fn().mockReturnValue(pending.promise),
+    };
+    const classificationApi: ProgrammeClassificationApi = {
+      getClassifications: vi.fn(),
+    };
+    const runtime = new TonightRuntime(scheduleApi, classificationApi);
+
+    const request = runtime.refresh(Date.parse('2026-09-23T18:00:00+02:00'));
+    expect(runtime.getSnapshot()).toMatchObject({
+      phase: 'loading',
+      data: null,
+    });
+
+    pending.resolve({ status: 'unavailable' });
+    await request;
   });
 
   it('preserves schedule/Kijktip content as partial when classification is unavailable', async () => {
