@@ -33,6 +33,19 @@ Optional editorial enrichment is a parallel, non-authoritative lane:
 
 The two lanes meet only on canonical `Programme.id`. Editorial source identity never becomes EPG identity, `Programme` is not mutated, and enrichment failure cannot make a canonical schedule unavailable.
 
+Vanavond classification is a different sibling with **ingest ownership** (ADR 0010):
+
+`provider-only structured evidence -> central provider mapping -> ProgrammeClassification -> atomic canonical schedule/classification persistence -> bounded semantic read`
+
+Key boundary rules:
+- complete provider categories/episode numbers exist only on server-side `ExternalProgramme`;
+- canonical `Programme` and existing Guide/Search contracts are unchanged;
+- provider vocabulary terminates at `server/classification`;
+- private classification rows FK/cascade with the concrete canonical programme;
+- classified writes wrap the existing ADR-0007 schedule replacement so start-time rekeys/deletions/stale writes cannot diverge;
+- `programme-classifications` is a separate service-role-backed Edge read bounded to 256 programme IDs;
+- Guide never calls that read boundary and no classification work runs in a mobile Guide render path.
+
 Phase 3 proved this complete boundary on a physical iPhone: the Guide renders deterministic fixture data immediately, then replaces it with canonical hosted data when a complete hosted schedule is available. Unavailable/network-failed hosted reads keep the Guide usable rather than clearing the current state.
 
 ## Phase 5A Guide Search architecture

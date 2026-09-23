@@ -1,5 +1,24 @@
 # Teevee Development Logboek
 
+## 23 september 2026 — PR #144 starts central Vanavond classification foundation
+
+Issue #142 moves Vanavond Film/Series/Sport classification out of raw canonical `Programme.genre` and into one provider-independent sibling enrichment owned by EPG ingest. Canonical Programme and Guide transport stay unchanged.
+
+A temporary live source-evidence probe (workflow run #9 / `35855124285`, job `107161659875`) inspected the current 36,654,822-byte XMLTV feed. It directly confirmed the research failure modes: e.g. `The Martian` is `Drama + Film`; `Best Medicine` and `The Spencer Sisters` have generic scripted categories plus structured S/E evidence; `Bluey` and `Spidey` combine `Kinderen + Animatie` with S/E evidence; `Andere Tijden Sport` adds `Documentaire`; `NOS Voetbal` adds `Sporttalkshow`; event/highlight broadcasts expose narrow description evidence. Evidence is retained in `docs/TONIGHT_CLASSIFICATION_SOURCE_EVIDENCE_2026-09-23.md`; the temporary network workflow will be removed before final handoff.
+
+Implementation direction is recorded in proposed ADR 0010:
+- preserve all XMLTV categories and episode numbers only in server-side `ExternalProgramme`;
+- classify once during normalisation through the central provider mapping;
+- output only Teevee semantics (film/series/sport; scripted/audience; sport subtype; tri-state live/repeat; high/unknown confidence);
+- fail closed on ambiguity and never inspect programme titles in production classification;
+- persist one classification row per canonical broadcast using FK cascade and an atomic wrapper around ADR-0007 schedule replacement;
+- expose a separate 1..256 programme-ID classification API so Guide loading/payload remains untouched;
+- after reviewed deployment, backfill retained broadcasts by one authoritative provider `guide-horizon` refresh rather than guessing from old first-category genre.
+
+No production Vanavond UI, artwork/TMDB, recommendation engine or Guide redesign is included.
+
+---
+
 ## 23 september 2026 — Vanavond production design accepted and merged
 
 Owner approved the final Vanavond production design. PR #141 promoted the accepted visual and deterministic implementation specification to canonical authority.
