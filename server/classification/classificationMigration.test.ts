@@ -12,6 +12,13 @@ const migration = readFileSync(
   ),
   'utf8',
 );
+const recoveryMigration = readFileSync(
+  resolve(
+    repoRoot,
+    'supabase/migrations/20260923201300_recover_programme_classification_siblings.sql',
+  ),
+  'utf8',
+);
 const smoke = readFileSync(
   resolve(repoRoot, 'server/classification/classificationMigrationSmoke.sql'),
   'utf8',
@@ -65,12 +72,68 @@ describe('programme classification migration contract', () => {
     expect(migration).toContain('to service_role');
   });
 
+  it('adds a service-only non-destructive recovery RPC without weakening schedule replacement authority', () => {
+    expect(recoveryMigration).toContain(
+      'create or replace function teevee.recover_programme_classifications',
+    );
+    expect(recoveryMigration).toContain(
+      'public.teevee_recover_programme_classifications',
+    );
+    expect(recoveryMigration).toContain('security invoker');
+    expect(recoveryMigration).toContain("set search_path = ''");
+    expect(recoveryMigration).toContain('pg_advisory_xact_lock');
+    expect(recoveryMigration).toContain(
+      'coverage.generated_at > p_observed_at',
+    );
+    expect(recoveryMigration).toContain(
+      'current_classification.classified_at > p_observed_at',
+    );
+    expect(recoveryMigration).toContain(
+      'existing.id = candidate.id',
+    );
+    expect(recoveryMigration).toContain(
+      'existing.channel_id = candidate."channelId"',
+    );
+    expect(recoveryMigration).toContain(
+      'existing.start_at = candidate."startAt"',
+    );
+    expect(recoveryMigration).toContain(
+      'existing.end_at = candidate."endAt"',
+    );
+    expect(recoveryMigration).toContain(
+      'existing.title = candidate.title',
+    );
+    expect(recoveryMigration).not.toContain(
+      'teevee.replace_schedule_window(',
+    );
+    expect(recoveryMigration).not.toMatch(
+      /delete\s+from\s+teevee\.(?:programmes|schedule_coverage)/i,
+    );
+  });
+
+  it('keeps recovery least-privilege and provider-independent', () => {
+    expect(recoveryMigration).toContain(
+      'from public, anon, authenticated',
+    );
+    expect(recoveryMigration).toContain('to service_role');
+    expect(recoveryMigration).not.toMatch(
+      /provider_key|provider_category|categories|episodeNumbers/i,
+    );
+  });
+
   it('keeps executable lifecycle smoke for idempotency, start correction, stale protection and deletion cleanup', () => {
     expect(smoke).toContain('Same broadcast again must remain idempotent');
     expect(smoke).toContain('Canonical start correction rekeys Programme.id');
     expect(smoke).toContain('stale classified write was not ignored');
     expect(smoke).toContain('classification orphan survived programme deletion');
     expect(smoke).toContain('provider-independent read contract failed');
+    expect(smoke).toContain('classification recovery mutated canonical programme count');
+    expect(smoke).toContain('classification recovery mutated schedule coverage');
+    expect(smoke).toContain('repeated recovery duplicated classification');
+    expect(smoke).toContain('corrected recovery row did not fail closed');
+    expect(smoke).toContain('stale recovery was not ignored');
+    expect(smoke).toContain('classification recovery lifecycle left an orphan');
+    expect(smoke).toContain('20260923201300_recover_programme_classification_siblings.sql');
     expect(smoke).toContain('rollback;');
   });
 });
