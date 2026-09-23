@@ -3,6 +3,8 @@ import { describe, expect, it } from 'vitest';
 import {
   guideSearchMatchKind,
   guideSearchMatchRank,
+  guideSearchPerChannelIntent,
+  guideSearchProgrammeDetailIntent,
   normalizeGuideSearchText,
 } from './search';
 
@@ -32,6 +34,45 @@ describe('Guide Search lexical semantics', () => {
     );
     expect(guideSearchMatchRank('prefix')).toBeLessThan(
       guideSearchMatchRank('substring'),
+    );
+  });
+
+  it('keeps Search navigation transient and keyed to exact canonical identity', () => {
+    const channel = {
+      id: 'nl-npo-1',
+      name: 'NPO 1',
+      displayName: 'NPO 1',
+      sortOrder: 1,
+      isActive: true,
+    };
+    const programme = {
+      id: 'programme-1',
+      channelId: channel.id,
+      startAt: '2026-09-23T18:30:00Z',
+      endAt: '2026-09-23T19:30:00Z',
+      title: 'De slimste mens',
+    };
+
+    expect(
+      guideSearchProgrammeDetailIntent({ programme, channel }),
+    ).toEqual({
+      type: 'programme-detail',
+      match: { programme, channel },
+    });
+
+    expect(
+      guideSearchPerChannelIntent(
+        channel,
+        Date.parse('2026-09-23T18:00:00Z'),
+      ),
+    ).toEqual({
+      type: 'per-channel',
+      channelId: 'nl-npo-1',
+      referenceAt: '2026-09-23T18:00:00.000Z',
+    });
+
+    expect(() => guideSearchPerChannelIntent(channel, Number.NaN)).toThrow(
+      'valid reference instant',
     );
   });
 });
