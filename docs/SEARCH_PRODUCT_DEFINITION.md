@@ -1,6 +1,6 @@
 # Phase 5A — Guide Search Product Definition
 
-Status: **CANONICAL PRODUCT CONTRACT — implementation not started**  
+Status: **CANONICAL PRODUCT CONTRACT — hosted architecture live; mobile UI/runtime is the active implementation increment**  
 Activated: 2026-09-23  
 Owner: Teevee product  
 Scope: first slice of Phase 5 — Search and Discovery
@@ -399,13 +399,13 @@ Guide Search may be considered complete when:
 
 ## Immediate next engineering step
 
-The **Guide Search Architecture** handoff is defined by ADR 0009 and implemented in PR #132.
+The **Guide Search Architecture** handoff is defined by ADR 0009, merged in PR #132 and deployed/live-verified. Deployment evidence: `docs/GUIDE_SEARCH_DEPLOYMENT_2026-09-23.md`.
 
 Next:
-1. deploy and live-verify the hosted Search migration + Edge Function against canonical Teevee data;
-2. implement the mobile Search runtime/screen against the frozen `GuideSearchApi` boundary;
-3. preserve query/results on Programme Detail round-trip and consume explicit Per-zender navigation intent;
-4. add measured stale-response/debounce handling, loading/no-match/partial/unavailable states, accessibility and Dynamic Type;
+1. implement the mobile Search runtime/screen against the frozen `GuideSearchApi` boundary;
+2. preserve query/results on Programme Detail round-trip and consume explicit Per-zender navigation intent;
+3. add measured debounce/cancellation and stale-response handling plus loading/no-match/partial/unavailable states;
+4. meet accessibility, Dynamic Type and measured performance requirements without reopening Guide loading;
 5. complete focused physical iPhone validation and Independent QA before Phase 5A exit.
 
 Do not reopen the Guide loading architecture, add broad discovery scope or introduce fuzzy/semantic search while implementing the mobile surface.
