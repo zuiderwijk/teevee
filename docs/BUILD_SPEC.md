@@ -131,7 +131,7 @@ Do not reintroduce card-heavy programme presentation, redundant metadata or low-
 
 Build sequence:
 1. **DONE in PR #132** — Guide Search architecture boundary over the canonical hosted schedule store;
-2. **NEXT after merge** — deploy/live-verify that hosted boundary, then wire Search UI/runtime for concrete programme broadcasts + channels;
+2. **NEXT** — deploy/live-verify that hosted boundary, then wire Search UI/runtime for concrete programme broadcasts + channels;
 3. focused physical iPhone validation and Independent QA;
 4. only then evaluate the next Phase 5 slice.
 
