@@ -87,7 +87,7 @@ Data semantics:
 - Kijktip remains optional sibling metadata, queried only for returned programme IDs, and never changes Search ranking;
 - corrected-start canonical identities supersede stale identities naturally because Search reads current canonical storage.
 
-Current Supabase implementation:
+Current Supabase repository implementation (deployed only after the architecture PR is merged):
 - `teevee.search_guide` reads private canonical storage;
 - `public.teevee_search_guide` is a service-role-only PostgREST bridge;
 - both use SECURITY INVOKER with empty `search_path`;
