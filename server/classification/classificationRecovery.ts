@@ -44,6 +44,45 @@ function programmeInRecoveryScope(
   );
 }
 
+function overlappingProgrammeIds(
+  programmes: readonly Programme[],
+): ReadonlySet<Programme['id']> {
+  const byChannel = new Map<string, Programme[]>();
+  for (const programme of programmes) {
+    const channelProgrammes = byChannel.get(programme.channelId) ?? [];
+    channelProgrammes.push(programme);
+    byChannel.set(programme.channelId, channelProgrammes);
+  }
+
+  const overlapping = new Set<Programme['id']>();
+  for (const channelProgrammes of byChannel.values()) {
+    const ordered = [...channelProgrammes].sort(
+      (left, right) =>
+        Date.parse(left.startAt) - Date.parse(right.startAt) ||
+        Date.parse(left.endAt) - Date.parse(right.endAt) ||
+        left.id.localeCompare(right.id),
+    );
+
+    for (let leftIndex = 0; leftIndex < ordered.length; leftIndex += 1) {
+      const left = ordered[leftIndex]!;
+      const leftEndMs = Date.parse(left.endAt);
+      for (
+        let rightIndex = leftIndex + 1;
+        rightIndex < ordered.length;
+        rightIndex += 1
+      ) {
+        const right = ordered[rightIndex]!;
+        const rightStartMs = Date.parse(right.startAt);
+        if (rightStartMs >= leftEndMs) break;
+        overlapping.add(left.id);
+        overlapping.add(right.id);
+      }
+    }
+  }
+
+  return overlapping;
+}
+
 /**
  * Non-destructively recovers classification siblings from one bounded provider
  * observation. Provider coverage may be partial: coverage controls schedule
@@ -56,17 +95,19 @@ export async function recoverProviderClassifications(
   const observation = await observeProviderSchedule(input);
   const fromMs = Date.parse(observation.from);
   const toMs = Date.parse(observation.to);
-  const requestedChannelIds = new Set(
-    observation.requestedCanonicalChannelIds,
-  );
+  const safeChannelIds = new Set(observation.safeChannelIds);
 
-  const programmes = observation.schedule.programmes.filter((programme) =>
+  const scopedProgrammes = observation.schedule.programmes.filter((programme) =>
     programmeInRecoveryScope(
       programme,
-      requestedChannelIds,
+      safeChannelIds,
       fromMs,
       toMs,
     ),
+  );
+  const ambiguousProgrammeIds = overlappingProgrammeIds(scopedProgrammes);
+  const programmes = scopedProgrammes.filter(
+    ({ id }) => !ambiguousProgrammeIds.has(id),
   );
   const candidateIds = new Set(programmes.map(({ id }) => id));
   const classifications = observation.classifications.filter(
@@ -83,7 +124,7 @@ export async function recoverProviderClassifications(
     from: observation.from,
     to: observation.to,
     observedAt: observation.observedAt,
-    channelIds: observation.requestedCanonicalChannelIds,
+    channelIds: observation.safeChannelIds,
     programmes,
     classifications,
   });
