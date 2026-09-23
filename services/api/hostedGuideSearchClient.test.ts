@@ -34,7 +34,6 @@ describe('HostedGuideSearchClient', () => {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({ query: 'NPO 1' }),
-      signal: undefined,
     });
   });
 
