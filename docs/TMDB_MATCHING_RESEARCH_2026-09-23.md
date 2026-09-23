@@ -674,4 +674,8 @@ Observed final sample:
 
 The next engineering step is the smallest server-side external-identity production design, contingent on the separate TMDB commercial-use gate.
 
+Issue #157 / PR #158 is the prerequisite parser/evidence foundation for that design. It productionizes only the transient typed provider evidence that this research materially used: Film production year/director/actor evidence and Series actor/episode evidence, while also retaining producer names by source role for the proven provider boundary. It does not implement TMDB calls, matching, persistence or artwork.
+
+The #152 D0 recovery result also tightens production-readiness gate #5: bounded replay for already-retained broadcasts may not assume later provider refetch still exactly reconciles every canonical broadcast. External-identity production design must explicitly own bootstrap/replay semantics before persistence/deployment.
+
 No artwork UI/runtime implementation is authorized by this report.
