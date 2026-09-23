@@ -329,7 +329,9 @@ const DiscoveryCard = memo(function DiscoveryCard({
       <View
         {...(sport
           ? { testID: `tonight-sport-fallback-${programme.id}` }
-          : {})}
+          : kijktip
+            ? { testID: `tonight-kijktip-fallback-${programme.id}` }
+            : {})}
         accessible={false}
         accessibilityElementsHidden
         importantForAccessibility="no-hide-descendants"
