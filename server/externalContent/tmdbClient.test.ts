@@ -192,5 +192,8 @@ describe('TmdbRequestSession', () => {
     await session.getMovie('100');
 
     expect(fetcher).toHaveBeenCalledTimes(2);
+    const movieDetailUrl = String(fetcher.mock.calls[1]?.[0]);
+    expect(movieDetailUrl).toContain('/movie/100');
+    expect(movieDetailUrl).toContain('language=en-US');
   });
 });
