@@ -109,7 +109,15 @@ function savedItems(
 ): TonightSavedItem[] {
   const window = tonightWindow(nowMs);
   const programmes = new Map(
-    schedule?.programmes.map((programme) => [programme.id, programme]) ?? [],
+    schedule?.programmes
+      .filter((programme) =>
+        programmeIntersectsWindow(
+          programme,
+          window.eveningStartMs,
+          window.eveningEndMs,
+        ),
+      )
+      .map((programme) => [programme.id, programme]) ?? [],
   );
   const channels = new Map(
     schedule?.channels.map((channel) => [channel.id, channel]) ?? [],
@@ -158,8 +166,16 @@ export function buildTonightViewModel(input: {
   const channelById = new Map(
     schedule?.channels.map((channel) => [channel.id, channel]) ?? [],
   );
+  const eveningProgrammes =
+    schedule?.programmes.filter((programme) =>
+      programmeIntersectsWindow(
+        programme,
+        window.eveningStartMs,
+        window.eveningEndMs,
+      ),
+    ) ?? [];
   const programmeById = new Map(
-    schedule?.programmes.map((programme) => [programme.id, programme]) ?? [],
+    eveningProgrammes.map((programme) => [programme.id, programme]),
   );
   const classificationById = new Map(
     classifications.map((classification) => [
@@ -185,10 +201,9 @@ export function buildTonightViewModel(input: {
         discoverable(programme, window.eveningStartMs),
     );
 
-  const categoryProgrammes =
-    schedule?.programmes.filter((programme) =>
-      discoverable(programme, window.categoryStartMs),
-    ) ?? [];
+  const categoryProgrammes = eveningProgrammes.filter((programme) =>
+    discoverable(programme, window.categoryStartMs),
+  );
 
   const films: Programme[] = [];
   const series: Programme[] = [];
