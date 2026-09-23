@@ -94,7 +94,7 @@ Issue #142 implementation lives on `feat/tonight-classification-foundation` and 
 
 Proposed ADR 0010 freezes the implementation direction pending Lead + Independent QA:
 - canonical `Programme` remains unchanged;
-- server-only `ExternalProgramme` preserves the complete provider category set and structured episode-number evidence before canonicalization;
+- server-only `ExternalProgramme` preserves the complete provider category set, structured episode-number evidence and only minimal director-credit presence before canonicalization;
 - one central provider-specific evidence interpreter produces provider-independent `ProgrammeClassification` semantics;
 - unknown/ambiguous classification fails closed;
 - Film eligibility requires high-confidence film semantics;
@@ -106,7 +106,7 @@ Proposed ADR 0010 freezes the implementation direction pending Lead + Independen
 - Guide schedule transport remains unchanged;
 - future Vanavond reads use a separate bounded `programme-classifications` semantic API rather than raw provider categories or eager Guide-horizon prefetch.
 
-Current-provider evidence for the mapping is recorded in `docs/TONIGHT_CLASSIFICATION_SOURCE_EVIDENCE_2026-09-23.md`. The live probe proves multi-category Film evidence, structured season/episode evidence for researched scripted series, explicit children-audience collisions and Sport subtype evidence; normal CI remains deterministic/network-free. Disposable PostgreSQL 17 smoke run #1 / `35855629562`, job `107163296515`, executed the real base schedule migrations plus the new classification migration and passed the lifecycle assertion block before `ROLLBACK`.
+Current-provider evidence for the mapping is recorded in `docs/TONIGHT_CLASSIFICATION_SOURCE_EVIDENCE_2026-09-23.md`. Independent raw capture run `35856096847` proved 60.47% of 3,372 mapped rows carry multiple categories and 69.25% carry episode metadata, while live/repeat/new/premiere evidence remained absent. Exact-classifier live run #4 / `35857949057`, job `107170868358`, exposed a first-pass generic-Series precision defect and verified its structured-evidence fix: the remaining generic general/mainstream recoveries are exactly the researched `Spencer Sisters`, `Best Medicine`, `Missie Aarde`, `Poirot` and `Aspe` boundaries; Sport remains 2 events + 1 highlights eligible, with talk/documentary excluded. Normal CI remains deterministic/network-free. Disposable PostgreSQL 17 smoke run #1 / `35855629562`, job `107163296515`, executed the real base schedule migrations plus the new classification migration and passed the lifecycle assertion block before `ROLLBACK`.
 
 Hosted deployment is deliberately pending review. After merge, the exact migration and updated `epg-refresh` runtime must be deployed, `programme-classifications` deployed, then one authoritative `guide-horizon` refresh must backfill retained broadcasts from full provider evidence. No SQL backfill may guess from historical first-category `Programme.genre`.
 

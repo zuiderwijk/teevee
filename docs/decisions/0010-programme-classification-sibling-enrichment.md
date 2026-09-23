@@ -27,8 +27,11 @@ Canonical `Programme` remains unchanged.
 `ExternalProgramme` at the server/provider boundary may preserve structured provider evidence needed for classification:
 - the complete category set;
 - structured episode-number values;
+- a minimal boolean `hasDirectorCredit` signal when the provider supplies a credits block;
 - existing live/repeat flags;
 - existing programme description.
+
+Credit names/cast are deliberately not propagated into the classification boundary. The current source frequently labels factual hosts as actors, while the only precision-improving signal required by the researched generic-series boundary is whether a director credit is explicitly present.
 
 Raw provider categories and episode-number vocabulary never become canonical/mobile `Programme` fields and are not persisted in the public classification contract.
 
@@ -56,12 +59,17 @@ Unknown/ambiguous state always fails closed.
 Current XMLTV mapping uses structured evidence first:
 1. conflicting target-family evidence => unknown;
 2. Film requires explicit `Film` anywhere in the full category set;
-3. Series uses explicit series categories or strong season+episode evidence combined with a scripted-content category and without non-scripted blockers;
-4. audience uses explicit children-audience categories or a provider-specific scripted/general category mapping;
-5. Sport first excludes talk and documentary/magazine categories, then recognizes explicit highlights/summary wording inside already-structured Sport evidence, then event wording plus a sport/event category;
-6. generic `Sport` alone remains sport/unknown and is not Vanavond-eligible.
+3. Series treats strong scripted-form categories (`Dramaseries`, `Misdaaddrama`, `Sitcoms`, `Soap`) as positive evidence unless a strong non-scripted format such as Reality/Documentaire/Talkshow conflicts;
+4. generic Series recovery requires explicit season+episode evidence plus either multiple compatible scripted-content categories or one compatible scripted category together with an explicit director-credit signal; broad factual/context categories block this generic inference;
+5. children's scripted recovery is limited to explicit season+episode + children-audience + animation evidence and maps to `primarily-children`, so it remains in semantic classification but fails the Vanavond Series eligibility helper;
+6. `Miniseries` is not itself treated as scripted-form evidence because the live source also uses it for documentary/factual miniseries;
+7. audience uses explicit children-audience categories or the high-confidence scripted/general result;
+8. Sport first excludes talk and documentary/magazine categories, then recognizes explicit highlights/summary wording inside already-structured Sport evidence, then event wording plus a sport/event category;
+9. generic `Sport` alone remains sport/unknown and is not Vanavond-eligible.
 
-Title is not classification evidence. Description text is used only inside an already-established Sport context for deliberately narrow, explicit Dutch provider phrases such as `samenvatting`, `hoogtepunten`, `voorbeschouwing`, `nabeschouwing` and `verslag`. No LLM/NLP classification is used.
+Title is not classification evidence. Actor names/counts are not classification evidence. Description text is used only inside an already-established Sport context for deliberately narrow, explicit Dutch provider phrases such as `samenvatting`, `hoogtepunten`, `voorbeschouwing`, `nabeschouwing` and `verslag`. No LLM/NLP classification is used.
+
+A disposable exact-implementation live probe exposed and then closed a real Series precision problem: the first generic rule also classified `The Yorkshire Vet`, `Sluipschutters`, `LUBACH`, `Beste Kijkers`, `Het Interventie Team` and `Top Gear`. After the structured-evidence tightening, the only generic general/mainstream Series recoveries in the current mapped evening source were the research-identified boundary titles `The Spencer Sisters`, `Best Medicine`, `Missie Aarde`, `Agatha Christie's Poirot` and `Aspe`. These titles remain test/evidence labels only; production code contains no title exceptions.
 
 ### Persistence ownership
 
@@ -138,7 +146,7 @@ Positive:
 - deterministic tests can cover research failure modes without live network data.
 
 Costs:
-- EPG ingest now parses/preserves all source categories and episode numbers before canonicalization;
+- EPG ingest now parses/preserves all source categories, episode numbers and minimal director-credit presence before canonicalization;
 - one classification row is stored per retained canonical programme;
 - `epg-refresh` and the new classification read Edge Function must be deployed after migration review/merge;
 - existing retained rows require one authoritative horizon refresh after deployment.

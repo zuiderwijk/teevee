@@ -17,6 +17,26 @@ Latest successful probe:
 
 The temporary workflow is evidence instrumentation only and must not remain a production/normal-CI dependency.
 
+### Independent raw-source richness capture
+
+Issue #142 also received an independent raw XMLTV capture from closed, intentionally unmerged research PR #145. CI #1055 / run `35856096847` inspected the same 12 mapped Teevee provider channels **before** `XmltvEpgProvider` parsing:
+
+- raw XML: **36,654,822 bytes**;
+- mapped programme rows: **3,372**;
+- categories present: **3,372 / 3,372 (100%)**;
+- multiple categories: **2,039 / 3,372 (60.47%)**;
+- distinct secondary/tertiary category values: **61**;
+- episode number: **2,335 / 3,372 (69.25%)**;
+- credits block: **2,803 / 3,372 (83.13%)**;
+- actor element: **2,702 / 3,372 (80.13%)**;
+- production date/year: **2,417 / 3,372 (71.68%)**;
+- director element: **779 / 3,372 (23.10%)**;
+- producer element: **902 / 3,372 (26.75%)**.
+
+The same capture found zero `<live/>`, `<previously-shown>`, `<new>`, `<premiere>`, rating, language or country metadata in those 3,372 rows. The programme-level `<icon>` tag was present but had no usable standard XMLTV URL, so it is not treated as artwork evidence.
+
+This confirms that source richness is specifically useful for taxonomy/episodic classification, not for inventing live/repeat/first-run or artwork semantics.
+
 ## Film
 
 The full category set directly explains the researched first-category false negatives.
@@ -54,6 +74,44 @@ Observed non-scripted children's counterexample:
 - `NOS Jeugdjournaal`: `Kinderen / Nieuws`, `E266` (no season+episode signal).
 
 This supports a provider mapping to Teevee's public `primarily-children` audience semantic without exposing raw `Kinderen` to mobile or implementing `genre !== 'Kinderen'`.
+
+### Exact-classifier live validation and precision correction
+
+A disposable workflow ran the **actual PR #144 classifier implementation** over the current mapped 12-channel source. The first run exposed a real precision defect in the generic Series rule: alongside the researched misses, it also admitted clearly non-scripted/factual/panel formats such as `The Yorkshire Vet`, `Sluipschutters`, `LUBACH`, `Beste Kijkers`, `Het Interventie Team` and `Top Gear`.
+
+Raw-source inspection showed why episode numbers and actor credits were insufficient:
+- factual programmes also carry `Sx Ey` episode numbers;
+- presenters/hosts are frequently encoded as `<actor>`;
+- some factual programmes even have director credits.
+
+The final rule therefore uses **category-format precedence first**, then minimal director-credit presence only for otherwise non-conflicting generic single-scripted-category recovery. It does not retain director names or actor/cast data.
+
+Final exact-implementation live evidence:
+- workflow: `Tonight classification runtime probe`;
+- run: **#4 / 35857949057**;
+- job: **107170868358 — SUCCESS**;
+- evening rows inspected: **965**;
+- Film eligible: **36**;
+- general/mainstream Series eligible: **99**;
+- Sport eligible: **3**;
+- all semantic Series including primarily-children: **182**;
+- unknown after fail-closed classification: **5**.
+
+After the fix, the complete unique set of **generic** general/mainstream Series recoveries in that live evening population was:
+- `The Spencer Sisters`;
+- `Best Medicine`;
+- `Missie Aarde`;
+- `Agatha Christie's Poirot`;
+- `Aspe`.
+
+That set exactly matches the research-derived generic adult-scripted boundary examples. The prior factual/panel false positives disappeared without any production title rule.
+
+The same live run classified the reviewed Sport boundary as:
+- `NOS Studio Sport` → highlights → Vanavond eligible;
+- `UEFA Nations League Soccer` → event → eligible;
+- `UCI Road World Championships` → event → eligible;
+- `NOS Voetbal` → talk → excluded;
+- `Andere Tijden Sport` → magazine/documentary → excluded.
 
 ## Sport
 
@@ -108,7 +166,7 @@ The central Teevee classification contract converts explicit boolean `true` / `f
 ## Implementation consequence
 
 The correct boundary is:
-1. preserve full structured evidence in server-only `ExternalProgramme`;
+1. preserve only classification-relevant structured evidence in server-only `ExternalProgramme`: full categories, episode numbers and minimal director-credit presence (not names/cast);
 2. classify once during normalization/ingest;
 3. persist only provider-independent Teevee semantics beside the concrete canonical broadcast;
 4. never add raw category arrays to canonical/mobile `Programme`;
@@ -138,5 +196,7 @@ The executable smoke covers:
 - authoritative programme deletion/empty replacement cascading classification cleanup.
 
 No migration, function or classification row was deployed to the hosted Teevee project by this test.
+
+All temporary network/migration workflows are disposable evidence tooling and are removed before final review handoff; normal repository CI remains deterministic and network-free.
 
 This document records empirical implementation evidence. The product/classification authority remains `docs/TONIGHT_CLASSIFICATION_RESEARCH_2026-09-23.md`; architecture authority is ADR 0010.

@@ -75,6 +75,7 @@ The classification lane is derived from the same provider record that creates a 
 Provider evidence kept **only server-side before canonicalization**:
 - all XMLTV categories, not just the first category retained in `Programme.genre`;
 - structured `episode-num` values;
+- minimal `hasDirectorCredit` presence when the provider supplies a credits block; credit names/cast are not propagated;
 - explicit provider live/repeat booleans when present;
 - description only for narrow deterministic Sport subtype phrases after structured Sport evidence already exists.
 
@@ -87,6 +88,8 @@ Persisted/public semantics contain no provider vocabulary:
 - confidence: `high | unknown`.
 
 Eligibility is deliberately fail-closed. A future Vanavond module does not inspect `Programme.genre`: it consumes only high-confidence Teevee semantics.
+
+Series precision is deliberately stricter than “S/E + a genre”: strong scripted-form categories survive broad subject labels unless a strong non-scripted format conflicts; generic recovery rejects broad factual/context categories and requires S/E plus either multiple compatible scripted categories or one compatible category with explicit director-credit evidence. A live exact-implementation probe originally surfaced factual/panel false positives and verified that the tightened rule leaves only the research-derived generic adult-scripted boundary titles.
 
 Persistence:
 - private `teevee.programme_classifications` is one row per canonical broadcast;
@@ -109,8 +112,8 @@ Read/transport:
 - later Vanavond can read one bounded evening schedule and request those programme classifications; it must not eagerly preload D-2..D+7 or classify in a mobile render path.
 
 Performance:
-- category/episode parsing happens once per fetched XMLTV document; `XmltvEpgProvider` already memoizes that document within one refresh invocation;
-- classification is O(number of categories + episode-number evidence) per normalized programme, with description normalization only after structured Sport evidence;
+- category/episode/credit-role parsing happens once per fetched XMLTV document; `XmltvEpgProvider` already memoizes that document within one refresh invocation;
+- classification is O(number of categories + episode-number evidence) per normalized programme, with one precomputed director-presence boolean and description normalization only after structured Sport evidence;
 - persistence adds one compact sibling row per retained programme inside the existing replacement transaction;
 - classification reads are primary-key bounded and are not called by Guide;
 - Guide startup/render payload/cost is therefore unchanged.
