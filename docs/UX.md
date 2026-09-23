@@ -211,22 +211,31 @@ Rules:
 - short detail pages where the original actions never leave the viewport never show the sticky bar;
 - swipe-to-dismiss behaviour must remain usable without turning the action bar into a gesture trap.
 
-## Tonight / Vanavond — provisional visual direction
-This surface is intentionally less frozen than Guide and Programme Detail.
+## Tonight / Vanavond — product contract frozen, visual design open
 
-Purpose: help the user choose what to watch tonight. It may be more image-led than Guide but must not become an endless content feed or streaming catalogue.
+Canonical product authority: `docs/TONIGHT_PRODUCT_DEFINITION.md`.
 
-Current direction:
-- title and date;
-- compact time choices such as `Nu · 20:30 · 21:00 · 22:00`;
-- one visually stronger highlighted programme;
-- a restrained `Verder vanavond` selection;
-- optional useful television groupings such as Films, Series and Sport;
-- channel and start time remain immediately visible;
-- no news/article feed;
-- artwork is progressive enrichment and the screen must degrade gracefully without it.
+Vanavond is a finite decision-support surface for the active television evening. It remains rooted in concrete canonical linear-TV broadcasts and may be more visual than Guide, but it must not become an endless feed, streaming catalogue or news/article surface.
 
-Do not treat the exact Tonight module composition as frozen yet.
+First-release product hierarchy:
+1. `Jouw gids` — explicit broadcast-level saves for the active evening;
+2. `Onze Kijktips` — existing canonical editorial Kijktips;
+3. `Films vanavond`;
+4. `Series vanavond`;
+5. `Sport vanavond`.
+
+Film/Series/Sport are individually blocked on empirical canonical-data validation before implementation. `Voor jou` is a separate future learned-personalisation concept and has no first-release placeholder.
+
+Product semantics already frozen in the definition include:
+- active television-day ownership remains 06:00 Europe/Amsterdam -> 06:00 next day;
+- Jouw gids uses explicit saved broadcasts and remains distinct from recommendations;
+- Kijktips start at 18:00; category modules start at 19:00;
+- Jouw gids keeps ended saved items visible until the 06:00 rollover; discovery modules remove ended items;
+- no generic highlighted item, catch-all `Verder vanavond` list, invented ranking or global time-chip selector is required;
+- artwork is optional enrichment and the page must remain complete without it;
+- empty Jouw gids remains visible with personal empty-state behaviour, while empty discovery/category modules are omitted.
+
+Exact layout, card composition, save feedback treatment, carousel affordances, Larger Text behaviour and light/dark visual convergence are intentionally left to a dedicated Design/UX increment.
 
 ## Search
 Canonical Phase 5A contract: `docs/SEARCH_PRODUCT_DEFINITION.md`.

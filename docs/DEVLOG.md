@@ -1,5 +1,12 @@
 # Teevee Development Logboek
 
+## 2026-09-23 — Vanavond product definition
+- Defined the first canonical product-contract candidate for `Vanavond` in `docs/TONIGHT_PRODUCT_DEFINITION.md`: finite linear-TV decision support with `Jouw gids`, `Onze Kijktips`, and empirically gated Film/Series/Sport modules.
+- Froze the distinction between explicit broadcast-level `Jouw gids` saves and future learned `Voor jou` recommendations, active 06:00 television-day ownership, evening windows, chronological selection, per-module repeat principles and empty-module behaviour.
+- Kept visual composition open for a dedicated Design/UX increment and explicitly protected the accepted Guide layouts from new permanent save controls.
+- Recorded the mandatory real-canonical-data classification research as GitHub issue #135 before Film/Series/Sport can be implemented.
+- No production runtime code changed and no physical/CI implementation acceptance is claimed.
+
 ## 23 september 2026 — Guide Search hosted boundary merged, deployed and live-verified
 
 PR #132 exact accepted head `8bdc679f28289a7ccf5b8445aa7f2c42e13b35df` passed exact-head CI #984, Independent QA (#5787177734) and final Lead merge gate (#5787185229), then merged to `main` as `3c7ebcf906ff64bb2b6b71c04d177a20519eb2a0`. Exact-main CI #985 subsequently passed strict TypeScript, lint, 89 test files / 670 tests, iOS/Android/web exports and the full-ABI Android build.
