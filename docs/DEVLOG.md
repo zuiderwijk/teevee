@@ -1,5 +1,21 @@
 # Teevee Development Logboek
 
+## 23 september 2026 — PR #149 Kijktip density + deterministic discovery acceptance states
+
+Acc Design Refinement physical comments #5800174670 and #5800351843 identified two remaining convergence/testability blockers on exact head `01dd40ee5715fae52aa3bf929f8d4b741de225c9`.
+
+First, Kijktip base-density title treatment now matches the written contract exactly. At `fontScale <= 1.35`, the 168×94.5 no-artwork Kijktip card keeps its existing 15/19 title and 14/18 metadata but limits the visible title to two lines with normal tail truncation. Above 1.35 that compact cap is removed, preserving the canonical Larger Text rule that substantive programme text may wrap further as card width/density adapts.
+
+Second, the physical acceptance harness no longer depends on live classification luck. The development-only **Series ≥12** and new **Alle modules** states inject only typed provider-independent semantic/editorial overlays on concrete broadcasts from the current active-day schedule, before the normal production `buildTonightViewModel` eligibility/render path. Series ≥12 therefore works even when the production Series result is zero; if fewer than 12 concrete Series cards result, the existing concrete items are repeated deterministically only for density inspection. Alle modules guarantees at least one concrete Kijktip, Film, Series and Sport under a normal realistic schedule, with the same exact-broadcast Programme Detail actions. Source runtime arrays are not mutated, and Live/default production state is untouched. Zonder Sport and Geen discovery remain authoritative omission controls.
+
+The previous Sport Dynamic Type correction remains intact: <=1.35 fixed 220×112/two-line title; >1.35 uncapped/content-safe minimum height. Frozen base geometry remains Kijktip 168×94.5, Film 108×162, Series 96×144 and Sport 220×112. No production classifier/runtime/network/backend logic, artwork/TMDB, ranking, dedupe, paging or filters changed.
+
+Code-head CI before this documentation update passed typecheck, lint, **106 test files / 770 tests**, including TonightScreen **12**, tonightPresentation **8** and the new tonightDevelopmentState **4** tests, plus iOS/Android/web exports; Android native was correctly skipped by the repository classifier.
+
+**Next gate:** final exact-head CI including docs, then return the exact PR head to Acc Design Refinement for focused physical iPhone convergence. Do not merge, deploy or send to Independent QA before physical acceptance.
+
+---
+
 ## 23 september 2026 — PR #149 Sport Larger/Accessibility Text convergence correction
 
 Acc Design Refinement comment #5799845708 found one narrow deterministic mismatch on the Development-complete Vanavond runtime: the no-artwork Sport title used an unconditional two-line cap, so substantive programme text could still clip at Larger/Accessibility Text despite the existing wider Dynamic Type card metrics.
