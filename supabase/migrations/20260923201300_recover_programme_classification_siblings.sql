@@ -102,6 +102,28 @@ begin
     raise exception 'Recovery programme is outside requested scope: %', v_invalid;
   end if;
 
+  if exists (
+    select 1
+    from jsonb_to_recordset(p_programmes) as left_candidate(
+      id text,
+      "channelId" text,
+      "startAt" timestamptz,
+      "endAt" timestamptz
+    )
+    join jsonb_to_recordset(p_programmes) as right_candidate(
+      id text,
+      "channelId" text,
+      "startAt" timestamptz,
+      "endAt" timestamptz
+    )
+      on left_candidate."channelId" = right_candidate."channelId"
+     and left_candidate.id < right_candidate.id
+     and left_candidate."startAt" < right_candidate."endAt"
+     and left_candidate."endAt" > right_candidate."startAt"
+  ) then
+    raise exception 'Recovery payload contains overlapping programme candidates';
+  end if;
+
   select c."programmeId"
     into v_duplicate
   from jsonb_to_recordset(p_classifications) as c("programmeId" text)
