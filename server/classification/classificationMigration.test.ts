@@ -103,6 +103,9 @@ describe('programme classification migration contract', () => {
     expect(recoveryMigration).toContain(
       'existing.title = candidate.title',
     );
+    expect(recoveryMigration).toContain(
+      'Recovery payload contains overlapping programme candidates',
+    );
     expect(recoveryMigration).not.toContain(
       'teevee.replace_schedule_window(',
     );
