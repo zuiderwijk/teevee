@@ -1,12 +1,11 @@
 import { SupabaseEditorialSignalRepository } from '../../../server/editorial/supabaseEditorialRepository.ts';
-import { DEVELOPMENT_CHANNELS } from '../../../server/epg/developmentChannelCatalog.ts';
-import { HOSTED_REQUEST_MAX_BODY_BYTES } from '../../../server/epg/hostedTransportPolicy.ts';
 import { SupabaseRestRpcClient } from '../../../server/epg/supabaseRestRpcClient.ts';
-import { SupabaseScheduleRepository } from '../../../server/epg/supabaseScheduleRepository.ts';
 import { RepositoryGuideSearchApi } from '../../../server/search/searchService.ts';
+import { SupabaseGuideSearchRepository } from '../../../server/search/supabaseGuideSearchRepository.ts';
 import {
   parseGuideSearchApiRequest,
 } from '../../../services/api/guideSearchContract.ts';
+import { HOSTED_REQUEST_MAX_BODY_BYTES } from '../../../server/epg/hostedTransportPolicy.ts';
 import {
   defaultSupabaseSecretKey,
   edgeJson,
@@ -20,9 +19,8 @@ function searchApi() {
     apiKey: defaultSupabaseSecretKey(),
   });
   return new RepositoryGuideSearchApi(
-    new SupabaseScheduleRepository(client),
+    new SupabaseGuideSearchRepository(client),
     new SupabaseEditorialSignalRepository(client),
-    DEVELOPMENT_CHANNELS,
   );
 }
 
