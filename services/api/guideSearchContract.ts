@@ -14,7 +14,7 @@ import {
 export const GUIDE_SEARCH_MIN_QUERY_LENGTH = 2;
 export const GUIDE_SEARCH_MAX_QUERY_LENGTH = 80;
 export const GUIDE_SEARCH_PROGRAMME_LIMIT = 24;
-export const GUIDE_SEARCH_CHANNEL_LIMIT = 12;
+export const GUIDE_SEARCH_CHANNEL_LIMIT = 24;
 
 export type GuideSearchApiRequest = {
   query: string;
