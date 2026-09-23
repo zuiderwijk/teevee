@@ -14,6 +14,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { AppScreenHeader } from '@/components/AppScreenHeader';
 import { SettingsButton } from '@/components/SettingsButton';
+import type { Channel } from '@/data/domain/epg';
 import {
   guideSearchPerChannelIntent,
   guideSearchProgrammeDetailIntent,
@@ -124,7 +125,7 @@ function ChannelResult({
   channel,
   onPress,
 }: {
-  channel: Parameters<typeof ChannelIdentity>[0]['channel'];
+  channel: Channel;
   onPress: () => void;
 }) {
   const theme = useTeeveeTheme();
@@ -297,9 +298,7 @@ export function GuideSearchScreen() {
     dispatchDetail({ type: 'open', selection: intent.match });
   };
 
-  const openChannel = (
-    channel: NonNullable<typeof response>['channelMatches'][number],
-  ) => {
+  const openChannel = (channel: Channel) => {
     Keyboard.dismiss();
     publishGuideNavigationIntent(guideSearchPerChannelIntent(channel, Date.now()));
     router.push('/');
