@@ -4,6 +4,9 @@ on:
   push:
     branches:
       - research/issue-153-external-content-identity
+  pull_request:
+    branches:
+      - main
 
 permissions:
   contents: read
