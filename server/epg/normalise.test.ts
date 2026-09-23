@@ -29,7 +29,7 @@ const mappings: ChannelMapping[] = [
 
 function normalise(programmes: ExternalProgramme[], channelMappings = mappings) {
   return normaliseProviderSchedule({
-    providerKey: 'development-provider',
+    providerKey: 'development-xmltv',
     generatedAt: '2026-09-14T00:00:00+02:00',
     canonicalChannels: channels,
     channelMappings,
