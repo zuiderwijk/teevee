@@ -1,5 +1,20 @@
 # Teevee Development Logboek
 
+## 23 september 2026 — Series vanavond product scope frozen
+
+Owner selected the narrower general/mainstream scope for `Series vanavond` after the empirical PR #137 classification research exposed a material audience/category collision.
+
+Canonical product decision:
+- include scripted episodic series intended for a general/mainstream audience;
+- exclude programming primarily intended for children from `Series vanavond` v1;
+- do **not** implement that exclusion as a raw provider `genre === "Kinderen"` shortcut;
+- central provider-independent classification/enrichment must own scripted-series identity plus audience intent;
+- keep repeat filtering out of v1 until a trustworthy repeat signal exists.
+
+The research sample indicates roughly **12–17** qualifying adult/general scripted-series broadcasts per evening after reviewed boundary corrections, versus 24–29 when children's scripted series are included. Dedicated Vanavond Design/UX convergence is now the next project gate; production category runtime remains blocked on central classification/enrichment.
+
+---
+
 ## 23 september 2026 — Vanavond classification data gate complete
 
 PR #137 completed issue #135 against the real hosted canonical Teevee `guide-schedule` boundary. The research captured D-2 through D+5 as authoritative across all 12 active canonical channels; D+6/D+7 were correctly `unavailable`. The usable population contained 3,932 returned canonical rows and 1,114 unique broadcasts starting in the [19:00,06:00) Vanavond category window.
