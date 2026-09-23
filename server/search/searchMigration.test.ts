@@ -48,6 +48,6 @@ describe('Guide Search migration contract', () => {
         /20260923003500_create_guide_search_read_boundary\.sql/g,
       ),
     ).toHaveLength(1);
-    expect(smoke).toContain('ROLLBACK');
+    expect(smoke).toMatch(/\brollback\b/i);
   });
 });
