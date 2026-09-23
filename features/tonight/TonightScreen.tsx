@@ -555,7 +555,7 @@ export function TonightScreen() {
   const liveNowMs = useGuideClock();
   const runtime = useTonightRuntime();
   const [personalState, setPersonalState] = useState<ProgrammePersonalState>(
-    EMPTY_PROGRAMME_PERSONAL_STATE,
+    () => readProgrammePersonalState(),
   );
   const [developmentScenario, setDevelopmentScenario] =
     useState<TonightDevelopmentScenario>('live');
