@@ -179,16 +179,17 @@ Phase 4 measurement showed the dominant cold Guide bottleneck was React/render +
 
 A true no-network cold start cannot be validated through Expo Go after force-quit because Expo Go itself needs Metro/network to load the development bundle. The product-level local caching/graceful-offline requirement remains for release, but release-like offline cold-start validation and any concrete persistent-cache technology decision are deferred to Phase 9 when a standalone/dev build is available.
 
-## Phase 4 architecture increment
-The architecture sequence follows `PROJECT_STATE.md` exactly:
-1. **DONE** — create shared 06:00 `Europe/Amsterdam` television-day primitives and D-2..D+7 horizon semantics (PR #62);
-2. **DONE for current runtime boundary** — migrate hosted runtime anchoring/loading away from strict calendar-day assumptions to D + D+1 television-day semantics (PR #64);
-3. **NEXT** — wire the accepted compact date context/day selector into Totaal and Per zender, with functional D-2..D+7 selection backed by bounded per-day reads while preserving frozen gesture mechanics;
-4. keep Nu & Straks deferred and single-active-day;
-5. retain deterministic fixtures and controlled hosted fallback;
-6. evaluate realistic full-horizon payload/render performance before introducing persistent caching or eager ten-day rendering.
+## Phase 4 architecture record — CLOSED
+Phase 4 is closed in `PROJECT_STATE.md`; this section is historical architecture record, not active sequencing.
 
-Because television-day/date/horizon code is high risk under `ENGINEERING_QUALITY_POLICY.md`, the implementation requires deterministic boundary/DST/selection tests and independent QA before merge. Physical iPhone evidence is required when user-facing Guide day navigation/scroll context changes.
+1. **DONE — PR #62:** shared 06:00 `Europe/Amsterdam` television-day primitives and D-2..D+7 horizon semantics.
+2. **DONE — PR #64:** hosted current-runtime anchoring/loading migrated from strict calendar-day assumptions to bounded television-day reads.
+3. **DONE — PR #66:** Totaal and Per zender gained functional D-2..D+7 selection backed by bounded selected-day reads while preserving frozen Guide mechanics.
+4. **DONE:** Nu & Straks preserved its single-active-television-day contract and later completed production convergence.
+5. **RETAINED:** deterministic fixtures and controlled hosted fallback remain part of the accepted runtime.
+6. **CLOSED DECISION:** measured Guide performance work did not justify persistent mobile schedule caching or eager ten-day rendering; that decision remains deferred unless new evidence appears.
+
+The high-risk television-day/date/horizon work received deterministic boundary/DST/selection coverage, independent review and the required physical iPhone acceptance during Phase 4.
 
 ## Data refresh invariants
 - corrections replace only explicit refreshed channel/time scope;
