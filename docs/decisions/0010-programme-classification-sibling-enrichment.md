@@ -60,16 +60,18 @@ Current XMLTV mapping uses structured evidence first:
 1. conflicting target-family evidence => unknown;
 2. Film requires explicit `Film` anywhere in the full category set;
 3. Series treats strong scripted-form categories (`Dramaseries`, `Misdaaddrama`, `Sitcoms`, `Soap`) as positive evidence unless a strong non-scripted format such as Reality/Documentaire/Talkshow conflicts;
-4. generic Series recovery requires explicit season+episode evidence plus either multiple compatible scripted-content categories or one compatible scripted category together with an explicit director-credit signal; broad factual/context categories block this generic inference;
-5. children's scripted recovery is limited to explicit season+episode + children-audience + animation evidence and maps to `primarily-children`, so it remains in semantic classification but fails the Vanavond Series eligibility helper;
-6. `Miniseries` is not itself treated as scripted-form evidence because the live source also uses it for documentary/factual miniseries;
-7. audience uses explicit children-audience categories or the high-confidence scripted/general result;
-8. Sport first excludes talk and documentary/magazine categories, then recognizes explicit highlights/summary wording inside already-structured Sport evidence, then event wording plus a sport/event category;
-9. generic `Sport` alone remains sport/unknown and is not Vanavond-eligible.
+4. generic Series recovery requires explicit season+episode evidence plus either multiple compatible scripted-content categories or one compatible scripted category together with an explicit director-credit signal;
+5. broad context/subject categories may block generic scripted inference, but **blocking Series inference is not positive evidence for `other`**; without stronger positive evidence the classification remains `unknown`;
+6. only strong structured non-scripted/other evidence may produce high-confidence `other`; broad context blockers are never automatically promoted to `other/high`;
+7. children's scripted recovery is limited to explicit season+episode + children-audience + animation evidence and maps to `primarily-children`, so it remains in semantic classification but fails the Vanavond Series eligibility helper;
+8. `Miniseries` is not itself treated as scripted-form evidence because the live source also uses it for documentary/factual miniseries;
+9. audience uses explicit children-audience categories or the high-confidence scripted/general result;
+10. Sport first excludes talk and documentary/magazine categories, then recognizes explicit highlights/summary wording inside already-structured Sport evidence, then event wording plus a sport/event category;
+11. generic `Sport` alone remains sport/unknown and is not Vanavond-eligible.
 
 Title is not classification evidence. Actor names/counts are not classification evidence. Description text is used only inside an already-established Sport context for deliberately narrow, explicit Dutch provider phrases such as `samenvatting`, `hoogtepunten`, `voorbeschouwing`, `nabeschouwing` and `verslag`. No LLM/NLP classification is used.
 
-A disposable exact-implementation live probe exposed and then closed a real Series precision problem: the first generic rule also classified `The Yorkshire Vet`, `Sluipschutters`, `LUBACH`, `Beste Kijkers`, `Het Interventie Team` and `Top Gear`. After the structured-evidence tightening, the only generic general/mainstream Series recoveries in the current mapped evening source were the research-identified boundary titles `The Spencer Sisters`, `Best Medicine`, `Missie Aarde`, `Agatha Christie's Poirot` and `Aspe`. These titles remain test/evidence labels only; production code contains no title exceptions.
+Disposable exact-implementation live probes exposed two distinct Series-boundary defects before review. First, the initial generic rule admitted rows whose structured evidence was not sufficient for Vanavond Series. Second, Technical Lead review #5794926935 found that the correction reused broad generic-Series blockers as positive `other/high` evidence, overstating certainty. The final mapping separates those concepts: strong non-scripted format evidence can prove `other/high`, while broad context blockers only prevent generic Series inference and otherwise remain `unknown`. On the post-blocker live probe, Film/Series/Sport eligibility stayed unchanged, while 112 broadcast row instances moved from `other/high` to `unknown/unknown`. `Sluipschutters` is the canonical ambiguity example: `Komedie + Entertainment + S5 E3` is not Series-eligible, but `Entertainment` alone does not prove `other`. Strong explicit scripted labels continue to outrank broad subject/context categories when no strong non-scripted format conflict exists. Research titles remain evidence labels only; production code contains no title exceptions.
 
 ### Persistence ownership
 

@@ -1,5 +1,30 @@
 # Teevee Development Logboek
 
+## 23 september 2026 — PR #144 Lead Series-confidence blocker corrected
+
+Technical Lead review #5794926935 found a semantic certainty bug after the initial classification handoff: `GENERIC_SERIES_BLOCKER_CATEGORIES` correctly prevented unsafe generic scripted-Series inference, but the same broad set was also reused as positive `other/high` evidence. That violated ADR 0010's fail-closed contract because “Series not proven” does not imply “other proven”.
+
+Development corrected only this Series confidence boundary:
+- strong non-scripted format evidence remains eligible for `contentType: other / confidence: high`;
+- broad context/subject categories remain generic-Series inference blockers only;
+- ambiguous rows now stay `unknown/unknown`;
+- strong explicit scripted categories still survive broad subject/context labels unless a strong non-scripted format conflict exists;
+- Film, Sport, child-Series semantics, persistence, API boundaries and Guide isolation are unchanged;
+- no title whitelist/blacklist was introduced.
+
+Deterministic regression coverage now proves:
+- a `Komedie + Entertainment + S5 E3` ambiguity is neither Series-eligible nor `other/high`;
+- `Reality`, `Documentaire`, `Nieuws` and `Talkshow` remain positive `other/high` evidence;
+- `Sitcoms + Politiek` and `Misdaaddrama + Entertainment` remain scripted/high.
+
+Disposable exact-implementation live revalidation run #1 / `35862210491`, job `107184911263`, passed against the current mapped 12-channel XMLTV source. On 965 evening rows, Film eligible remains 36, general/mainstream Series 99, semantic Series 182 and Sport eligible 3. The confidence fix moves 112 row instances from `other/high` to `unknown/unknown`: other 733→621 and unknown 5→117. The five researched Series boundary examples remain eligible; `Sluipschutters`, `The Yorkshire Vet`, `LUBACH`, `Beste Kijkers` and `Top Gear` are now explicitly ambiguous rather than overclaimed as `other/high`.
+
+The classification migration is untouched and remains the PostgreSQL-smoke-proven blob `f39e728b2098806f31b237319396436fc0a4e618`. The temporary network workflow must be removed before final exact-head CI. Hosted production remains untouched.
+
+**Next step:** remove the disposable live probe, run full exact-head CI, prove classifier probe-blob identity and unchanged migration blob, then request Technical Lead exact-head re-review. Do not send to Independent QA before Lead PASS.
+
+---
+
 ## 23 september 2026 — PR #144 classification foundation Development-complete
 
 The issue #142 implementation is now complete at Development level and awaits Lead + Independent QA. The accepted Vanavond visual runtime remains untouched; this PR contains no production `app/tonight.tsx` category population.

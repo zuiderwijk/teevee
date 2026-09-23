@@ -89,7 +89,7 @@ Persisted/public semantics contain no provider vocabulary:
 
 Eligibility is deliberately fail-closed. A future Vanavond module does not inspect `Programme.genre`: it consumes only high-confidence Teevee semantics.
 
-Series precision is deliberately stricter than “S/E + a genre”: strong scripted-form categories survive broad subject labels unless a strong non-scripted format conflicts; generic recovery rejects broad factual/context categories and requires S/E plus either multiple compatible scripted categories or one compatible category with explicit director-credit evidence. A live exact-implementation probe originally surfaced factual/panel false positives and verified that the tightened rule leaves only the research-derived generic adult-scripted boundary titles.
+Series precision is deliberately stricter than “S/E + a genre”: strong scripted-form categories survive broad subject labels unless a strong non-scripted format conflicts; generic recovery rejects broad context/subject categories and requires S/E plus either multiple compatible scripted categories or one compatible category with explicit director-credit evidence. **A generic-Series blocker is not positive `other` evidence.** Only strong structured non-scripted/other categories can produce `other/high`; broad context blockers that merely make scripted inference unsafe remain `unknown/unknown` unless another positive rule applies. Post-blocker exact-live revalidation kept Film/Series/Sport eligibility unchanged and moved 112 evening broadcast rows from overstated `other/high` to fail-closed `unknown/unknown`.
 
 Persistence:
 - private `teevee.programme_classifications` is one row per canonical broadcast;

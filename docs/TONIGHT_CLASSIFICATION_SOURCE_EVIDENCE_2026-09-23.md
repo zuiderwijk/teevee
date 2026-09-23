@@ -75,43 +75,95 @@ Observed non-scripted children's counterexample:
 
 This supports a provider mapping to Teevee's public `primarily-children` audience semantic without exposing raw `Kinderen` to mobile or implementing `genre !== 'Kinderen'`.
 
-### Exact-classifier live validation and precision correction
+### Exact-classifier live validation and confidence correction
 
-A disposable workflow ran the **actual PR #144 classifier implementation** over the current mapped 12-channel source. The first run exposed a real precision defect in the generic Series rule: alongside the researched misses, it also admitted clearly non-scripted/factual/panel formats such as `The Yorkshire Vet`, `Sluipschutters`, `LUBACH`, `Beste Kijkers`, `Het Interventie Team` and `Top Gear`.
+A disposable workflow runs the **actual PR #144 classifier implementation** over the current mapped 12-channel source.
 
-Raw-source inspection showed why episode numbers and actor credits were insufficient:
+The first implementation probe correctly identified several rows that must not be promoted into `Series vanavond`, but the subsequent classifier version still overstated certainty: every broad `GENERIC_SERIES_BLOCKER_CATEGORIES` value was also reused as positive `other/high` evidence. Technical Lead review #5794926935 identified the semantic error: **blocking generic Series inference is not positive proof of another content type**.
+
+The concrete boundary is `Sluipschutters`:
+- categories `Komedie / Entertainment`;
+- episode `S5 E3`;
+- description includes `humoristisch sketchprogramma`.
+
+That evidence is insufficient to prove high-confidence scripted episodic Series for the frozen Vanavond scope, so the row is not Series-eligible. But `Entertainment` is only broad context at this provider boundary and does not itself prove `other/high`. The corrected result is therefore `contentType: unknown`, `confidence: unknown`.
+
+The same distinction applies to other broad context/subject categories. Strong structured non-scripted format evidence such as `Reality`, `Documentaire`, `Nieuws` and `Talkshow` can still produce high-confidence `other`. Broad context such as `Entertainment`, `Auto's`, `Dieren`, `Politiek`, `Muziek`, `Reizen` and similar categories only blocks generic scripted inference; without stronger positive evidence, ambiguity stays `unknown`.
+
+Raw-source inspection remains important because episode numbers, actor credits and even director credits are not sufficient by themselves:
 - factual programmes also carry `Sx Ey` episode numbers;
 - presenters/hosts are frequently encoded as `<actor>`;
-- some factual programmes even have director credits.
+- some factual programmes have director credits.
 
-The final rule therefore uses **category-format precedence first**, then minimal director-credit presence only for otherwise non-conflicting generic single-scripted-category recovery. It does not retain director names or actor/cast data.
+The final rule therefore keeps:
+1. strong explicit scripted-form precedence, except for strong non-scripted format conflicts;
+2. conservative generic scripted recovery from S/E plus compatible structured evidence;
+3. broad context blockers only as **negative inference gates**, never as automatic positive `other` evidence;
+4. high-confidence `other` only from strong positive non-scripted/other evidence.
 
-Final exact-implementation live evidence:
-- workflow: `Tonight classification runtime probe`;
-- run: **#4 / 35857949057**;
-- job: **107170868358 — SUCCESS**;
+Final post-blocker exact-implementation live evidence:
+- workflow: `Tonight classification semantic revalidation`;
+- run: **#1 / 35862210491**;
+- job: **107184911263 — SUCCESS**;
+- source bytes: **36,597,644**;
 - evening rows inspected: **965**;
 - Film eligible: **36**;
 - general/mainstream Series eligible: **99**;
-- Sport eligible: **3**;
 - all semantic Series including primarily-children: **182**;
-- unknown after fail-closed classification: **5**.
+- Sport eligible: **3**;
+- content types: **621 other / 182 series / 36 film / 117 unknown / 9 sport**;
+- high-confidence `other` row instances: **621**.
 
-After the fix, the complete unique set of **generic** general/mainstream Series recoveries in that live evening population was:
+Compared with the preceding live classifier probe on the same current source population, Film/Series/Sport eligibility and semantic Series counts are unchanged. The confidence-only correction moves **112 broadcast row instances** from `other/high` to fail-closed `unknown/unknown`: `other` **733 → 621**, `unknown` **5 → 117**.
+
+The probe found **27 unique title/category combinations** with broad context blockers that now remain ambiguous rather than being promoted to `other/high`:
+- `Nederland in Beweging` — `Exercise`;
+- `Beste Zangers` — `Muziek`;
+- `Tussen Kunst en Kitsch` — `Entertainment / Consumentenprogramma's`;
+- `BinnensteBuiten` — `Bouwen En Verbouwen / Culinair`;
+- `In de Buurt` — `Samenleving`;
+- `Maarten & Philip op het spoor` — `Entertainment`;
+- `The Yorkshire Vet` — `Dieren / Medisch`;
+- `Sluipschutters` — `Komedie / Entertainment`;
+- `Vlogmania kort` — `Entertainment`;
+- `De mosterd van Meus` — `Culinair / Reizen`;
+- `Too Good To Be True` — `Entertainment`;
+- `Tommy Teleshopping` — `Shoppen`;
+- `LUBACH` — `Entertainment / Komedie`;
+- `Casa Di Beau` — `Entertainment`;
+- `Make Up Your Mind` — `Entertainment`;
+- `VriendenLoterij De Winnaars` — `Entertainment / Samenleving`;
+- `Beste Kijkers` — `Entertainment / Komedie`;
+- `Telvero` — `Consumentenprogramma's / Shoppen`;
+- `Adam's Family: 25 Jaar Later` — `Entertainment`;
+- `Politie In Actie UK` — `Entertainment`;
+- `RTL Autowereld` — `Auto's`;
+- `America's Got Talent` — `Variété / Muziek`;
+- `Business Class` — `Business & Financial`;
+- `Mr. Frank Visser rijdt visite` — `Debat / Recht`;
+- `Lachen om Home Video's` — `Komedie / Entertainment`;
+- `Veronica Film` — `Entertainment`;
+- `Top Gear` — `Auto's / Komedie`.
+
+These rows are not asserted to be one ground-truth content family by Teevee. The only production claim is that the available structured evidence does not justify high-confidence Series or high-confidence `other` under the current provider mapping.
+
+The requested researched Series boundaries remain stable and Series-eligible:
 - `The Spencer Sisters`;
 - `Best Medicine`;
 - `Missie Aarde`;
 - `Agatha Christie's Poirot`;
 - `Aspe`.
 
-That set exactly matches the research-derived generic adult-scripted boundary examples. The prior factual/panel false positives disappeared without any production title rule.
+`Het Interventie Team` also remains `unknown/unknown`; it was already ambiguous because `Misdaad + S/E` without the required positive scripted evidence is insufficient. It is not part of the 112-row confidence correction.
 
-The same live run classified the reviewed Sport boundary as:
+The same live run keeps the reviewed Sport boundary unchanged:
 - `NOS Studio Sport` → highlights → Vanavond eligible;
 - `UEFA Nations League Soccer` → event → eligible;
 - `UCI Road World Championships` → event → eligible;
 - `NOS Voetbal` → talk → excluded;
 - `Andere Tijden Sport` → magazine/documentary → excluded.
+
+Production classifier source still contains no title-specific whitelist/blacklist logic. Research titles above are evidence labels only.
 
 ## Sport
 
