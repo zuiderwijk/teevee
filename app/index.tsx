@@ -62,7 +62,7 @@ export default function GuideScreen() {
 
   const showPerChannel =
     presentation === 'per-channel' || guideNavigationRequest !== null;
-  const showNowNext = presentation === 'now-next' && nowNextComponent !== null;
+  const showNowNext =\n    guideNavigationRequest === null &&\n    presentation === 'now-next' &&\n    nowNextComponent !== null;
   const NowNextComponent = nowNextComponent;
 
   const loadAndShowNowNext = useCallback(async () => {
