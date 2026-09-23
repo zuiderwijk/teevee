@@ -2,7 +2,7 @@
 
 Last updated: 2026-09-23.
 Status: ACTIVE — **Phase 5A — Guide Search**.
-Current implementation priority: **merge, deploy and live-verify the Guide Search hosted boundary; then implement Search mobile UI/runtime**
+Current implementation priority: **deploy and live-verify the Guide Search hosted boundary; then implement Search mobile UI/runtime**
 Current broader product phase: **Phase 5 — Search and Discovery**
 Previous phase: **Phase 4 — Core Guide MVP hardening — CLOSED**
 
