@@ -339,6 +339,90 @@ describe('non-destructive programme classification recovery', () => {
     ]);
   });
 
+  it('rejects a corrected row even when a stable provider id keeps the regenerated canonical id unchanged', async () => {
+    const repository = new InMemoryScheduleRepository();
+    const original = programme(
+      'raw-one',
+      'Stable provider id',
+      '2026-09-23T18:00:00.000Z',
+      '2026-09-23T19:00:00.000Z',
+      {
+        id: 'provider-stable-42',
+        categories: ['Film'],
+      },
+    );
+    const seeded = await seedUnclassified(repository, [original]);
+    const correctedEnd = {
+      ...original,
+      endAt: '2026-09-23T19:05:00.000Z',
+    };
+    const correctedCanonical = canonical(
+      [correctedEnd],
+      '2026-09-23T20:00:00.000Z',
+    );
+
+    expect(correctedCanonical.programmes[0]!.id).toBe(
+      seeded.programmes[0]!.id,
+    );
+
+    const result = await recover(repository, {
+      coverage: 'partial',
+      programmes: [correctedEnd],
+    });
+
+    expect(result.recovery).toMatchObject({
+      candidateProgrammeCount: 1,
+      matchedProgrammeCount: 0,
+      recoveredClassificationCount: 0,
+      unmatchedProgrammeCount: 1,
+    });
+    await expect(
+      repository.getClassificationsForProgrammeIds([
+        seeded.programmes[0]!.id,
+      ]),
+    ).resolves.toEqual([]);
+  });
+
+  it('keeps same-title repeated broadcasts distinct and recovers only the exact returned repeat', async () => {
+    const repository = new InMemoryScheduleRepository();
+    const first = programme(
+      'raw-one',
+      'Zelfde titel',
+      '2026-09-23T18:00:00.000Z',
+      '2026-09-23T19:00:00.000Z',
+      { categories: ['Film'] },
+    );
+    const second = programme(
+      'raw-one',
+      'Zelfde titel',
+      '2026-09-23T20:00:00.000Z',
+      '2026-09-23T21:00:00.000Z',
+      { categories: ['Film'] },
+    );
+    const seeded = await seedUnclassified(repository, [first, second]);
+
+    const result = await recover(repository, {
+      coverage: 'partial',
+      programmes: [second],
+    });
+
+    expect(result.recovery).toMatchObject({
+      candidateProgrammeCount: 1,
+      matchedProgrammeCount: 1,
+      recoveredClassificationCount: 1,
+    });
+    const classifications =
+      await repository.getClassificationsForProgrammeIds(
+        seeded.programmes.map(({ id }) => id),
+      );
+    expect(classifications).toHaveLength(1);
+    expect(classifications[0]!.programmeId).toBe(
+      seeded.programmes.find(
+        ({ startAt }) => startAt === '2026-09-23T20:00:00.000Z',
+      )!.id,
+    );
+  });
+
   it('ignores a recovery observation older than newer canonical coverage even when the broadcast identity is unchanged', async () => {
     const repository = new InMemoryScheduleRepository();
     const row = programme(
