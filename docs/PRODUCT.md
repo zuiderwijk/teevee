@@ -60,7 +60,7 @@ Dutch television viewers who want a high-quality guide experience. The MVP targe
 
 ## Primary product surfaces
 - **Guide** — default destination, with Totaal, Per zender and Nu & Straks.
-- **Tonight** — discovery presentation of the same programme domain. It may be more visual than Guide, but its final module composition remains provisional.
+- **Tonight / Vanavond** — finite decision-support for the active television evening, rooted in concrete linear-TV broadcasts. Product contract: `docs/TONIGHT_PRODUCT_DEFINITION.md`; visual composition remains open for Design/UX.
 - **Search** — direct programme-broadcast/channel retrieval answering when and where something is on television. Phase 5A canonical contract: `docs/SEARCH_PRODUCT_DEFINITION.md`.
 
 The working primary navigation baseline is Guide / Tonight / Search. Saved programmes/reminders do not require a permanent primary tab unless testing demonstrates a clear need.
@@ -192,6 +192,7 @@ The Phase 1 gate is qualitative and strict: **does the guide itself demonstrably
 - midnight does not split the evening Guide context;
 - Nu & Straks: active television day, reference programme + three following programmes;
 - Programme Detail direct-open hierarchy and current two-action scope.
+- Vanavond product role, first module hierarchy, active-evening time semantics and Jouw gids / Voor jou distinction as defined in `docs/TONIGHT_PRODUCT_DEFINITION.md`; Film/Series/Sport remain individually gated by empirical classification research.
 
 ### Open
 - final product/brand name;
@@ -200,4 +201,5 @@ The Phase 1 gate is qualitative and strict: **does the guide itself demonstrably
 - pricing and trial/paywall model;
 - final production backend/data supplier;
 - metadata enrichment source;
-- final module composition/role of Tonight.
+- empirical Film/Series/Sport classification quality and resulting Vanavond module enablement;
+- future `Voor jou` recommendation/personalisation contract.
