@@ -241,7 +241,7 @@ export class TmdbRequestSession implements TmdbGateway {
   async searchMovieIds(query: string): Promise<string[]> {
     const normalizedQuery = query.trim();
     const payload = await this.cached(
-      `movie-search:\${normalizedQuery}`,
+      `movie-search:${normalizedQuery}`,
       () => this.client.getJson('/3/search/movie', {
         query: normalizedQuery,
         language: 'nl-NL',
@@ -257,8 +257,8 @@ export class TmdbRequestSession implements TmdbGateway {
 
   async getMovie(movieId: string): Promise<TmdbMovieIdentityCandidate> {
     const payload = await this.cached(
-      `movie:\${movieId}`,
-      () => this.client.getJson(`/3/movie/\${encodeURIComponent(movieId)}`, {
+      `movie:${movieId}`,
+      () => this.client.getJson(`/3/movie/${encodeURIComponent(movieId)}`, {
         language: 'nl-NL',
         append_to_response: 'credits,alternative_titles',
       }),
@@ -288,7 +288,7 @@ export class TmdbRequestSession implements TmdbGateway {
   async getDirectedMovieCredits(directorName: string): Promise<TmdbDirectedMovieCredit[]> {
     const normalizedName = directorName.trim();
     const search = await this.cached(
-      `person-search:\${normalizedName}`,
+      `person-search:${normalizedName}`,
       () => this.client.getJson('/3/search/person', {
         query: normalizedName,
         language: 'nl-NL',
@@ -308,9 +308,9 @@ export class TmdbRequestSession implements TmdbGateway {
       const personId = id(person.id);
       if (!personId) continue;
       const creditsPayload = await this.cached(
-        `person-movie-credits:\${personId}`,
+        `person-movie-credits:${personId}`,
         () => this.client.getJson(
-          `/3/person/\${encodeURIComponent(personId)}/movie_credits`,
+          `/3/person/${encodeURIComponent(personId)}/movie_credits`,
           { language: 'nl-NL' },
         ),
       );
@@ -332,7 +332,7 @@ export class TmdbRequestSession implements TmdbGateway {
   async searchSeriesIds(query: string): Promise<string[]> {
     const normalizedQuery = query.trim();
     const payload = await this.cached(
-      `series-search:\${normalizedQuery}`,
+      `series-search:${normalizedQuery}`,
       () => this.client.getJson('/3/search/tv', {
         query: normalizedQuery,
         language: 'nl-NL',
@@ -348,8 +348,8 @@ export class TmdbRequestSession implements TmdbGateway {
 
   async getSeries(seriesId: string): Promise<TmdbSeriesIdentityCandidate> {
     const payload = await this.cached(
-      `series:\${seriesId}`,
-      () => this.client.getJson(`/3/tv/\${encodeURIComponent(seriesId)}`, {
+      `series:${seriesId}`,
+      () => this.client.getJson(`/3/tv/${encodeURIComponent(seriesId)}`, {
         language: 'nl-NL',
         append_to_response: 'aggregate_credits,alternative_titles',
       }),
@@ -374,9 +374,9 @@ export class TmdbRequestSession implements TmdbGateway {
     episodeNumber: number,
   ): Promise<boolean> {
     const payload = await this.cached(
-      `series-season:\${seriesId}:\${seasonNumber}`,
+      `series-season:${seriesId}:${seasonNumber}`,
       () => this.client.getJson(
-        `/3/tv/\${encodeURIComponent(seriesId)}/season/\${seasonNumber}`,
+        `/3/tv/${encodeURIComponent(seriesId)}/season/${seasonNumber}`,
         { language: 'nl-NL' },
       ),
     );
