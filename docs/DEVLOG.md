@@ -15,7 +15,9 @@ A new private `teevee.programme_external_content_references` table is keyed by c
 
 Bootstrap is deliberately forward-only. Current/future identity is filled from authoritative complete observations and then ages into D0 with the broadcast. Existing retained D0 may temporarily lack identity after deployment. PR #152's dormant classification-recovery migration/RPC is not reused; it is explicitly superseded for external-identity bootstrap and can only be retired later by a separate forward cleanup if no caller remains.
 
-This is a High-risk migration/trust-boundary change. No hosted migration, Edge deployment, merge or physical owner acceptance is claimed. Required next gates are exact-head CI, executable PostgreSQL lifecycle smoke, Technical Lead review and Independent QA.
+Series numbering-mismatch handling was additionally hardened after self-review: a TMDB 404 for a missing season now means the provider coordinate is absent, allowing the already-reviewed strong Series-only fallback to run instead of misclassifying that case as a TMDB outage. The regression is covered at the request-session boundary. Guide failure-isolation coverage also explicitly exercises timeout, 429 and 5xx outcomes after the canonical write.
+
+The disposable PostgreSQL 17 lifecycle smoke passed on the exact migration/code lineage before its temporary branch-only workflow was removed from the final PR diff. No hosted migration, Edge deployment, merge or physical owner acceptance is claimed. Required next gates remain exact-head CI, Technical Lead review and Independent QA.
 
 ---
 

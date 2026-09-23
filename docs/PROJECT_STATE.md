@@ -285,7 +285,7 @@ Physical Android interaction acceptance remains OPEN/DEFERRED because no Android
 - physical Android validation.
 
 ## Current next step
-**Complete issue #157 / PR #158 — EPG identity evidence production foundation — then design the narrow server-side external-content identity increment before Phase 6 Personal Features.** The follow-up must use the empirically reviewed high-confidence Film/Series rules, keep Guide/mobile independent from raw provider/TMDB vocabulary, solve bootstrap/replay ownership for already-retained broadcasts, and implement against the now-cleared TMDB commercial-use basis without storing contractual terms or credentials in the repository. Do not add artwork UI, fuzzy broadcast reconciliation, a generic content catalogue or a second enrichment framework in this foundation.
+**Complete Technical Lead review and Independent QA for issue #159 / PR #161 — TMDB Film/Series external-content identity production foundation.** Do not deploy or merge before both gates pass. After merge, deploy only from reviewed canonical `main`, verify the migration/Edge runtime and production secret ownership, then use the resulting private external identity as the prerequisite for a separate artwork-selection/transport increment. Do not add artwork UI, fuzzy historical reconciliation, TMDB episode identity or a generic content catalogue in PR #161.
 
 Owner checkout: `~/projects/teevee`.
 

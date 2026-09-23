@@ -75,7 +75,7 @@ Title + year alone never resolves Film.
 Series matching keeps series identity separate from episode identity:
 1. search the full provider title first;
 2. require conservative title identity (with the researched leading-article variation) and actor overlap;
-3. when coherent explicit S/E evidence exists, validate that coordinate against the candidate Series;
+3. when coherent explicit S/E evidence exists, validate that coordinate against the candidate Series; a TMDB 404 for a missing season is a deterministic numbering mismatch (`false`), not an infrastructure failure;
 4. exactly one qualifying full-title candidate resolves;
 5. ambiguity fails closed;
 6. only after full-title failure may a clear separator-derived base title be searched;

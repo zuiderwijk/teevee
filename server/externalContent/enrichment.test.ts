@@ -7,6 +7,7 @@ import { ingestProviderSchedule, type StoredProviderScheduleObservation } from '
 import type { NormalisedProgrammeObservation } from '../epg/normalise.ts';
 import type { EpgProvider } from '../epg/provider.ts';
 import { enrichStoredExternalContent } from './enrichment.ts';
+import { TmdbRequestError } from './tmdbClient.ts';
 import type { ProgrammeExternalContentRepository } from './externalContentRepository.ts';
 import type { TmdbGateway } from './tmdbGateway.ts';
 
@@ -133,7 +134,11 @@ describe('external content enrichment lifecycle', () => {
     )).toEqual(['100', '100']);
   });
 
-  it('keeps a stored canonical Guide write usable when TMDB fails after the write', async () => {
+  it.each([
+    ['timeout', new TmdbRequestError('timeout', 'TMDB request timed out')],
+    ['429', new TmdbRequestError('rate-limited', 'TMDB rate limit exceeded', 429)],
+    ['5xx', new TmdbRequestError('server', 'TMDB server unavailable', 503)],
+  ])('keeps a stored canonical Guide write usable after TMDB %s failure', async (_kind, failure) => {
     const repository = new InMemoryScheduleRepository();
     const provider: EpgProvider = {
       key: 'development-xmltv',
@@ -174,7 +179,7 @@ describe('external content enrichment lifecycle', () => {
     const failingGateway: TmdbGateway = {
       ...tmdbGateway(),
       searchMovieIds: vi.fn(async () => {
-        throw new Error('TMDB unavailable');
+        throw failure;
       }),
     };
     const externalRepository = captureRepository();
