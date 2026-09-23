@@ -136,8 +136,9 @@ Build sequence:
 4. **DONE** — owner physical iPhone validation, Independent QA, merge and exact-main CI;
 5. **DONE in PR #137 / issue #135** — empirical Vanavond Film / Series / Sport classification research against real canonical hosted schedule data; all three modules require central provider-independent classification mapping/enrichment;
 6. **DONE — Product scope frozen** — `Series vanavond` means scripted episodic series for a general/mainstream audience; programming primarily intended for children is excluded from this module in v1, without using provider `Kinderen` as the raw implementation rule;
-7. **NEXT** — complete dedicated Vanavond Design/UX acceptance using the product definition plus classification research and measured module densities;
-8. only then begin the production Vanavond implementation sequence defined in `docs/TONIGHT_PRODUCT_DEFINITION.md`, including the central classification/enrichment contract before category modules are enabled.
+7. **DONE — owner-approved design/spec pending docs/design merge** — Vanavond production composition is frozen in `design/current/TONIGHT.md` + `docs/TONIGHT_VISUAL_CONVERGENCE.md`, including Jouw gids states, carousel semantics, 2:3 Film/Series poster direction, no-artwork fallbacks, Larger Text and light/dark behaviour;
+8. **NEXT after design merge** — design and implement the central provider-independent Film/Series/Sport classification/enrichment contract required by the empirical research;
+9. only after that foundation is authoritative, implement the production Vanavond runtime against the accepted visual/product contracts; artwork enrichment remains optional and must stay provider-independent/rights-cleared.
 
 Do not implement Search by eager D-2..D+7 mobile Guide prefetch or a title-only programme catalogue identity. Do not implement Vanavond Film/Series/Sport with naive genre matching. Vanavond remains finite linear-TV evening decision support, not an editorial/news dependency or infinite engagement feed.
 
