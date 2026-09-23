@@ -321,6 +321,7 @@ Observed real-feed evidence on 2026-09-14 via temporary unmerged inspection:
 - 30,237,192 bytes;
 - 184 channels;
 - Belgian target-channel source check: `docs/BELGIAN_EPG_TARGET_CHANNEL_CHECK_2026-09-24.md`; the requested VRT/VTM/Play/Ketnet set is available in `epg-be.xml`, with Play/Play Fictie/Play Actie/Play Reality still exposed under legacy provider names Play4/5/6/7.
+- owner-approved next channel-expansion target/order: `docs/CHANNEL_EXPANSION_TARGET_2026-09-24.md`; implementation must explicitly compose/map the required source records without leaking provider ordering or aliases into canonical Teevee channel identity.
 - full live-source channel inventory: `docs/RAW_EPG_CHANNEL_INVENTORY_2026-09-24.md` (184 unique provider channel IDs, 40,282 programme rows observed 2026-09-24);
 - 33,117 programme records;
 - observed range `20260913000600 +0000` through `20260919235500 +0000`;

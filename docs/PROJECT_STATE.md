@@ -18,6 +18,7 @@ Previous phase: **Phase 5 — Search and Discovery — CLOSED**
 - Core Guide cannot depend on artwork/enrichment.
 - `docs/VISUAL_BASELINE.md` plus `design/current/` select the accepted visual references. New visual exploration is not canonical until explicitly approved and merged.
 - Relevant durable architecture contracts are ADR 0001 through ADR 0011; ADR 0010 is canonical for the classification sibling boundary and proposed ADR 0011 records the broadcast-keyed external-content identity lifecycle pending review.
+- **Queued owner-approved next iteration:** expand the canonical channel catalog to the exact 49-channel set/order in `docs/CHANNEL_EXPANSION_TARGET_2026-09-24.md`. This is not the current implementation priority and must not interrupt the active external-content/artwork foundation.
 
 ## Phase status
 1. **Phase 1A — Totaal interaction/technical baseline:** complete and physically accepted on iPhone. Totaal production visual design, implementation-ready specification and runtime production convergence are merged, owner-accepted and canonical.
