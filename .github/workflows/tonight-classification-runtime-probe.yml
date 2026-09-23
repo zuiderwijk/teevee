@@ -147,3 +147,72 @@ jobs:
           EOF
       - name: Run exact implementation against live source
         run: npx vitest run server/classification/__classificationLiveProbe.test.ts --reporter=verbose
+      - name: Inspect structured credits for generic-series boundary rows
+        shell: python
+        run: |
+          import re
+          import urllib.request
+          import xml.etree.ElementTree as ET
+
+          targets = {
+              "Aspe",
+              "The Spencer Sisters",
+              "Best Medicine",
+              "Missie Aarde",
+              "Agatha Christie's Poirot",
+              "Het Interventie Team",
+              "Top Gear",
+              "The Yorkshire Vet",
+              "Sluipschutters",
+              "LUBACH",
+              "Beste Kijkers",
+          }
+
+          with urllib.request.urlopen("https://iptv-epg.org/files/epg-nl.xml", timeout=30) as response:
+              root = ET.fromstring(response.read())
+
+          seen = set()
+          for programme in root.findall("programme"):
+              title = (programme.findtext("title") or "").strip()
+              if title not in targets or title in seen:
+                  continue
+              seen.add(title)
+              categories = [
+                  (item.text or "").strip()
+                  for item in programme.findall("category")
+                  if (item.text or "").strip()
+              ]
+              episode_nums = [
+                  (item.text or "").strip()
+                  for item in programme.findall("episode-num")
+                  if (item.text or "").strip()
+              ]
+              credits = programme.find("credits")
+              actors = [] if credits is None else [
+                  (item.text or "").strip()
+                  for item in credits.findall("actor")
+                  if (item.text or "").strip()
+              ]
+              directors = [] if credits is None else [
+                  (item.text or "").strip()
+                  for item in credits.findall("director")
+                  if (item.text or "").strip()
+              ]
+              producers = [] if credits is None else [
+                  (item.text or "").strip()
+                  for item in credits.findall("producer")
+                  if (item.text or "").strip()
+              ]
+              print("GENERIC_SERIES_BOUNDARY", {
+                  "title": title,
+                  "categories": categories,
+                  "episodes": episode_nums,
+                  "date": (programme.findtext("date") or "").strip() or None,
+                  "actorCount": len(actors),
+                  "actors": actors[:5],
+                  "directorCount": len(directors),
+                  "directors": directors[:4],
+                  "producerCount": len(producers),
+                  "producers": producers[:3],
+                  "description": re.sub(r"\\s+", " ", (programme.findtext("desc") or "").strip())[:180],
+              })
