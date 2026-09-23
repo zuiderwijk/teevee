@@ -1,8 +1,8 @@
 # Teevee — Canonical Project State
 
 Last updated: 2026-09-23.
-Status: ACTIVE — **Phase 5 — Vanavond product/Design handoff**.
-Current implementation priority: **resolve the Product scope of `Series vanavond` (all scripted ages vs a narrower adult/mainstream scope), then hand `docs/TONIGHT_PRODUCT_DEFINITION.md` + `docs/TONIGHT_CLASSIFICATION_RESEARCH_2026-09-23.md` to a dedicated Design/UX convergence increment; production Film/Series/Sport remain blocked on central classification enrichment**
+Status: ACTIVE — **Phase 5 — Vanavond Design/UX convergence**.
+Current implementation priority: **start the dedicated Vanavond Design/UX increment using the frozen product contract plus classification research; `Series vanavond` is general/mainstream scripted episodic series with programming primarily intended for children excluded in v1; production Film/Series/Sport remain blocked on central provider-independent classification enrichment**
 Current broader product phase: **Phase 5 — Search and Discovery**
 Previous phase: **Phase 4 — Core Guide MVP hardening — CLOSED**
 
@@ -86,7 +86,7 @@ The evidence establishes that current raw canonical fields are not a sufficient 
 
 The future classifier/enrichment must be centralized and provider-independent, prefer structured source evidence such as the full category set, preserve tri-state live/repeat semantics, and fail closed on unknown classification. No production category module may implement current provider vocabulary directly in UI code.
 
-One Product decision remains before Series visual convergence: whether `Series vanavond` intentionally includes children's scripted series or is a narrower adult/mainstream scripted-series module. Do not let the temporary provider's `Kinderen` taxonomy decide that implicitly.
+`Series vanavond` product scope is now frozen: **scripted episodic series for a general/mainstream audience**. Programming primarily intended for children, including the researched `Bluey` / `Marvel's Spidey and His Amazing Friends` examples, is excluded from this module in v1. This is a semantic product decision; implementation must not turn raw provider `Kinderen` into the classifier itself.
 
 ## Frozen television-day and Guide-horizon semantics
 ADR 0008 is canonical:
@@ -226,9 +226,9 @@ Physical Android interaction acceptance remains OPEN/DEFERRED because no Android
 - physical Android validation.
 
 ## Current next step
-**Owner/Product decision: define the intended scope of `Series vanavond`.** Decide explicitly whether the module includes children's scripted series or is intentionally narrower. After that decision is written to the Vanavond product contract, hand `docs/TONIGHT_PRODUCT_DEFINITION.md` plus `docs/TONIGHT_CLASSIFICATION_RESEARCH_2026-09-23.md` to a dedicated Design/UX convergence increment. Film/Series/Sport production runtime remains blocked until a central provider-independent classification/enrichment contract is designed and implemented in the subsequent development sequence.
+**Start dedicated Vanavond Design/UX convergence.** Use `docs/TONIGHT_PRODUCT_DEFINITION.md` plus `docs/TONIGHT_CLASSIFICATION_RESEARCH_2026-09-23.md` as frozen product/data inputs. Design must cover Jouw gids, its two empty states, save feedback, Kijktips and category-carousel composition at the measured real-data densities, including approximately 12–17 general/mainstream Series broadcasts per researched evening. Film/Series/Sport production runtime remains blocked until a central provider-independent classification/enrichment contract is designed and implemented in the subsequent development sequence.
 
 Owner checkout: `~/projects/teevee`.
 
 ## Resume instruction
-> Read `AGENTS.md`, this file, `docs/TONIGHT_PRODUCT_DEFINITION.md`, `docs/TONIGHT_CLASSIFICATION_RESEARCH_2026-09-23.md`, `docs/SEARCH_PRODUCT_DEFINITION.md`, `docs/PRODUCT.md`, `docs/UX.md`, `docs/ARCHITECTURE.md`, `docs/DATA.md`, `docs/ENGINEERING_QUALITY_POLICY.md` and `docs/BUILD_SPEC.md` before changing the repository. Phase 4, Kijktip and Phase 5A Guide Search are CLOSED. Vanavond's empirical classification gate is complete; all three category modules require central provider-independent classification enrichment. The immediate Product gate is Series age/scope, followed by dedicated Vanavond Design/UX convergence. Preserve the provider-independent canonical programme/channel domain, 06:00 television-day semantics and accepted Guide/Search loading architecture. Physical Android interaction validation remains deferred until Android hardware is available.
+> Read `AGENTS.md`, this file, `docs/TONIGHT_PRODUCT_DEFINITION.md`, `docs/TONIGHT_CLASSIFICATION_RESEARCH_2026-09-23.md`, `docs/SEARCH_PRODUCT_DEFINITION.md`, `docs/PRODUCT.md`, `docs/UX.md`, `docs/ARCHITECTURE.md`, `docs/DATA.md`, `docs/ENGINEERING_QUALITY_POLICY.md` and `docs/BUILD_SPEC.md` before changing the repository. Phase 4, Kijktip and Phase 5A Guide Search are CLOSED. Vanavond's empirical classification gate is complete; all three category modules require central provider-independent classification enrichment. The Series audience scope is frozen; dedicated Vanavond Design/UX convergence is the immediate next gate. Preserve the provider-independent canonical programme/channel domain, 06:00 television-day semantics and accepted Guide/Search loading architecture. Physical Android interaction validation remains deferred until Android hardware is available.
