@@ -1,10 +1,12 @@
 import type { ProgrammeEditorialSignal } from '@/data/domain/editorial';
 import type { GuideSchedule, Programme } from '@/data/domain/epg';
 import { guideTelevisionDayTime } from '@/data/domain/guideTime';
+import type { ProgrammeClassification } from '@/data/domain/programmeClassification';
 import {
   programmeHasEndedAt,
   programmeIntersectsWindow,
   programmeIsCurrentAt,
+  programmeStartsInWindow,
   tonightWindow,
 } from '@/data/domain/tonight';
 import {
@@ -31,6 +33,7 @@ export const TONIGHT_DEVELOPMENT_SCENARIOS = [
   { id: 'offline', label: 'Offline' },
   { id: 'no-sport', label: 'Zonder Sport' },
   { id: 'series-density', label: 'Series ≥12' },
+  { id: 'discovery-mix', label: 'Alle modules' },
   { id: 'no-discovery', label: 'Geen discovery' },
   { id: 'after-midnight', label: 'Na middernacht' },
 ] as const;
@@ -44,9 +47,13 @@ function developmentAnchor(
 ): number {
   if (scenario === 'live') return liveNowMs;
   const window = tonightWindow(liveNowMs);
-  return scenario === 'after-midnight'
-    ? guideTelevisionDayTime(window.televisionDayStartMs, 0, 30)
-    : guideTelevisionDayTime(window.televisionDayStartMs, 20, 30);
+  if (scenario === 'after-midnight') {
+    return guideTelevisionDayTime(window.televisionDayStartMs, 0, 30);
+  }
+  if (scenario === 'series-density' || scenario === 'discovery-mix') {
+    return guideTelevisionDayTime(window.televisionDayStartMs, 19);
+  }
+  return guideTelevisionDayTime(window.televisionDayStartMs, 20, 30);
 }
 
 function mixedPersonalState(
@@ -114,40 +121,167 @@ function mixedPersonalState(
   return state;
 }
 
-function developmentEditorialData(
-  scenario: TonightDevelopmentScenario,
-  data: TonightRuntimeData | null,
+type DevelopmentClassificationKind = 'film' | 'series' | 'sport';
+
+function developmentClassification(
+  programmeId: Programme['id'],
+  kind: DevelopmentClassificationKind,
+): ProgrammeClassification {
+  const base: ProgrammeClassification = {
+    programmeId,
+    contentType: 'unknown',
+    seriesType: 'unknown',
+    audience: 'unknown',
+    sportType: 'unknown',
+    liveStatus: 'unknown',
+    repeatStatus: 'unknown',
+    confidence: 'high',
+  };
+
+  if (kind === 'film') return { ...base, contentType: 'film' };
+  if (kind === 'series') {
+    return {
+      ...base,
+      contentType: 'series',
+      seriesType: 'scripted-episodic',
+      audience: 'general-mainstream',
+    };
+  }
+  return {
+    ...base,
+    contentType: 'sport',
+    sportType: 'event',
+  };
+}
+
+function developmentCategoryCandidates(
+  data: TonightRuntimeData,
   nowMs: number,
-): TonightRuntimeData | null {
-  if (scenario !== 'kijktip-fallback' || !data) return data;
-  if (data.editorialSignals.some((signal) => signal.type === 'kijktip')) {
+): Programme[] {
+  const window = tonightWindow(nowMs);
+  const channelOrder = new Map(
+    data.schedule.channels.map((channel) => [channel.id, channel.sortOrder]),
+  );
+
+  return data.schedule.programmes
+    .filter(
+      (programme) =>
+        channelOrder.has(programme.channelId) &&
+        programmeStartsInWindow(
+          programme,
+          window.categoryStartMs,
+          window.eveningEndMs,
+        ) &&
+        !programmeHasEndedAt(programme, nowMs),
+    )
+    .sort(
+      (left, right) =>
+        Date.parse(left.startAt) - Date.parse(right.startAt) ||
+        (channelOrder.get(left.channelId) ?? Number.MAX_SAFE_INTEGER) -
+          (channelOrder.get(right.channelId) ?? Number.MAX_SAFE_INTEGER) ||
+        left.id.localeCompare(right.id),
+    );
+}
+
+function withDevelopmentClassifications(
+  data: TonightRuntimeData,
+  overrides: readonly ProgrammeClassification[],
+): TonightRuntimeData {
+  if (overrides.length === 0) return data;
+  const overriddenIds = new Set(
+    overrides.map((classification) => classification.programmeId),
+  );
+  return {
+    ...data,
+    classifications: [
+      ...data.classifications.filter(
+        (classification) => !overriddenIds.has(classification.programmeId),
+      ),
+      ...overrides,
+    ],
+  };
+}
+
+function withDevelopmentKijktip(
+  data: TonightRuntimeData,
+  programme: Programme,
+): TonightRuntimeData {
+  if (
+    data.editorialSignals.some(
+      (signal) =>
+        signal.type === 'kijktip' && signal.programmeId === programme.id,
+    )
+  ) {
     return data;
   }
 
-  const existingIds = new Set(
-    data.editorialSignals.map((signal) => signal.programmeId),
-  );
-  const window = tonightWindow(nowMs);
-  const candidate = data.schedule.programmes.find(
-    (programme) =>
-      Date.parse(programme.startAt) >= window.eveningStartMs &&
-      Date.parse(programme.startAt) < window.eveningEndMs &&
-      Date.parse(programme.endAt) > nowMs &&
-      !existingIds.has(programme.id),
-  );
-  if (!candidate) return data;
-
   const signal: ProgrammeEditorialSignal = {
-    programmeId: candidate.id,
+    programmeId: programme.id,
     type: 'kijktip',
     source: 'tvgids',
-    sourceItemId: `dev-fixture-${candidate.id}`,
+    sourceItemId: `dev-fixture-${programme.id}`,
     matchedBy: 'source-id',
   };
   return {
     ...data,
     editorialSignals: [...data.editorialSignals, signal],
   };
+}
+
+function developmentRuntimeData(
+  scenario: TonightDevelopmentScenario,
+  data: TonightRuntimeData | null,
+  nowMs: number,
+): TonightRuntimeData | null {
+  if (!data) return data;
+
+  if (scenario === 'kijktip-fallback') {
+    if (data.editorialSignals.some((signal) => signal.type === 'kijktip')) {
+      return data;
+    }
+    const existingIds = new Set(
+      data.editorialSignals.map((signal) => signal.programmeId),
+    );
+    const window = tonightWindow(nowMs);
+    const candidate = data.schedule.programmes.find(
+      (programme) =>
+        programmeStartsInWindow(
+          programme,
+          window.eveningStartMs,
+          window.eveningEndMs,
+        ) &&
+        !programmeHasEndedAt(programme, nowMs) &&
+        !existingIds.has(programme.id),
+    );
+    return candidate ? withDevelopmentKijktip(data, candidate) : data;
+  }
+
+  if (scenario === 'series-density') {
+    const candidates = developmentCategoryCandidates(data, nowMs).slice(0, 12);
+    return withDevelopmentClassifications(
+      data,
+      candidates.map((programme) =>
+        developmentClassification(programme.id, 'series'),
+      ),
+    );
+  }
+
+  if (scenario === 'discovery-mix') {
+    const candidates = developmentCategoryCandidates(data, nowMs);
+    const film = candidates[0];
+    const series = candidates[1];
+    const sport = candidates[2];
+    if (!film || !series || !sport) return data;
+
+    const classified = withDevelopmentClassifications(data, [
+      developmentClassification(film.id, 'film'),
+      developmentClassification(series.id, 'series'),
+      developmentClassification(sport.id, 'sport'),
+    ]);
+    return withDevelopmentKijktip(classified, film);
+  }
+
+  return data;
 }
 
 export function resolveTonightDevelopmentState(input: {
@@ -163,7 +297,7 @@ export function resolveTonightDevelopmentState(input: {
   const { scenario, liveNowMs } = input;
   const nowMs = developmentAnchor(scenario, liveNowMs);
   const originalData = input.runtime.data;
-  const data = developmentEditorialData(scenario, originalData, nowMs);
+  const data = developmentRuntimeData(scenario, originalData, nowMs);
 
   let personalState = input.personalState;
   if (scenario === 'never-used-empty') {
