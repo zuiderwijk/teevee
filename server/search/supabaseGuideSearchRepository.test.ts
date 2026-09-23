@@ -43,6 +43,7 @@ describe('SupabaseGuideSearchRepository', () => {
   it('calls one bounded Search RPC with the exact server-owned horizon', async () => {
     const rpc = vi.fn(async () => ({
       data: {
+        status: 'ok',
         programmeCoverage: 'complete',
         channelMatches: [channel],
         programmeMatches: [{ programme, channel }],
@@ -71,7 +72,8 @@ describe('SupabaseGuideSearchRepository', () => {
     const malformed = new SupabaseGuideSearchRepository({
       rpc: vi.fn(async () => ({
         data: {
-          programmeCoverage: 'complete',
+        status: 'ok',
+        programmeCoverage: 'complete',
           channelMatches: [],
           programmeMatches: [{ programme, channel: { ...channel, id: 'nl-npo-2' } }],
         },
@@ -79,13 +81,14 @@ describe('SupabaseGuideSearchRepository', () => {
       })),
     });
     await expect(malformed.search(request)).rejects.toThrow(
-      'programme/channel identity mismatch',
+      'channel does not match programme',
     );
 
     const duplicate = new SupabaseGuideSearchRepository({
       rpc: vi.fn(async () => ({
         data: {
-          programmeCoverage: 'complete',
+        status: 'ok',
+        programmeCoverage: 'complete',
           channelMatches: [channel, channel],
           programmeMatches: [],
         },
