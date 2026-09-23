@@ -1,3 +1,5 @@
+import { recoverProviderClassifications } from '../../../server/classification/classificationRecovery.ts';
+import { SupabaseProgrammeClassificationRecoveryRepository } from '../../../server/classification/supabaseProgrammeClassificationRecoveryRepository.ts';
 import {
   DEVELOPMENT_CHANNELS,
   IPTV_EPG_NL_CHANNEL_MAPPINGS,
@@ -59,6 +61,12 @@ async function authorised(req, secretKey) {
 
 function repository(secretKey) {
   return new SupabaseScheduleRepository(rpcClient(secretKey));
+}
+
+function classificationRecoveryRepository(secretKey) {
+  return new SupabaseProgrammeClassificationRecoveryRepository(
+    rpcClient(secretKey),
+  );
 }
 
 async function parseJsonBody(req) {
@@ -146,6 +154,36 @@ export default {
           status: 'completed',
           mode: request.mode,
           windows: windows.map(horizonWindowResponse),
+          elapsedMs: Math.round(performance.now() - startedAt),
+        });
+      }
+
+      if (request.mode === 'classification-recovery') {
+        const result = await recoverProviderClassifications({
+          provider,
+          repository: classificationRecoveryRepository(secretKey),
+          canonicalChannels: [...DEVELOPMENT_CHANNELS],
+          channelMappings: [...IPTV_EPG_NL_CHANNEL_MAPPINGS],
+          providerChannelIds: request.providerChannelIds,
+          from: new Date(request.from),
+          to: new Date(request.to),
+          clock: () => refreshStartedAt,
+        });
+
+        return Response.json({
+          status: 'completed',
+          mode: request.mode,
+          providerCoverage: result.providerCoverage,
+          observedAt: result.observedAt,
+          candidateProgrammeCount: result.candidateProgrammeCount,
+          recovery: result.recovery,
+          diagnosticCounts: result.diagnostics.reduce(
+            (counts, diagnostic) => {
+              counts[diagnostic.severity] += 1;
+              return counts;
+            },
+            { warning: 0, error: 0 },
+          ),
           elapsedMs: Math.round(performance.now() - startedAt),
         });
       }
