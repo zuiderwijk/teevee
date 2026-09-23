@@ -1,6 +1,6 @@
 # Teevee Design System Direction
 
-Status: visual-design baseline updated through 22 September 2026. Guide and Programme Detail direction below reflects owner-approved design decisions. Instrument Sans is the accepted UI typeface. Exact production token values still require implementation/device validation. Tonight remains provisional.
+Status: visual-design baseline updated through 23 September 2026. Guide and Programme Detail direction below reflects owner-approved design decisions. Instrument Sans is the accepted UI typeface. Exact production token values still require implementation/device validation. Tonight remains provisional.
 
 ## Objective
 Teevee should communicate premium utility: calm, precise, contemporary and highly legible. The Guide can contain substantial schedule information without looking dense or cheap.
@@ -202,7 +202,23 @@ Programme Detail is a calm information surface, not a streaming-service hero pag
 - accessibility text may reflow the two actions vertically.
 
 ## Tonight / Vanavond
-Provisional direction only. Tonight may use more imagery and editorial composition than Guide, while remaining a finite decision-support surface rather than an engagement feed. Channel and start-time information remain immediately legible. Missing artwork must not break the composition.
+Vanavond has an accepted production visual system.
+
+Use one finite vertical page with the shared standalone-screen shell. Jouw gids is an open chronological utility list; discovery/category modules are horizontal carousels whose continuation is communicated by a partially visible next item rather than chevrons, `Alles` links or pager dots.
+
+Surface-specific visual rules:
+- Jouw gids remains typographic/open and does not become a card stack;
+- Onze Kijktips uses restrained 16:9 broadcast cards; the section itself carries editorial meaning, so a visible Kijktip label is not repeated on every card;
+- Films and Series use standing **2:3 poster geometry**; Series is deliberately denser than Films because real nightly volume is materially larger;
+- Sport uses landscape broadcast cards;
+- no module heading has a trailing navigation chevron unless a real future destination is explicitly added to Product;
+- missing artwork preserves the exact media frame using semantic surface/border plus canonical channel identity; never invent fake posters;
+- light/dark/system keep identical information hierarchy;
+- substantive card/list text follows Dynamic Type; density adapts by increasing row/card width/height rather than shrinking text.
+
+Preferred future Film/Series artwork is language-neutral/no-language poster art. The intended TMDB source class is a data/enrichment concern and must not become a direct mobile dependency or bypass rights/provenance review.
+
+Exact Vanavond metrics, state treatments and responsive rules are defined in `docs/TONIGHT_VISUAL_CONVERGENCE.md`.
 
 ## Motion
 Motion clarifies spatial/time relationships, selection and navigation. Avoid decorative animation.
