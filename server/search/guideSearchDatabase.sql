@@ -11,7 +11,7 @@ create or replace function teevee.normalize_search_text(
   p_value text
 ) returns text
 language sql
-immutable
+stable
 strict
 security invoker
 set search_path = ''
@@ -182,8 +182,8 @@ begin
       from (
         select case
           when normalized.value = v_query then 0
-          when pg_catalog.position(v_query in normalized.value) = 1 then 1
-          when pg_catalog.position(v_query in normalized.value) > 0 then 2
+          when pg_catalog.strpos(normalized.value, v_query) = 1 then 1
+          when pg_catalog.strpos(normalized.value, v_query) > 0 then 2
           else null
         end as match_rank
         from (
@@ -274,8 +274,8 @@ begin
       candidates.*,
       case
         when normalized_title = v_query then 0
-        when pg_catalog.position(v_query in normalized_title) = 1 then 1
-        when pg_catalog.position(v_query in normalized_title) > 0 then 2
+        when pg_catalog.strpos(normalized_title, v_query) = 1 then 1
+        when pg_catalog.strpos(normalized_title, v_query) > 0 then 2
         else null
       end as match_rank,
       case
@@ -284,7 +284,7 @@ begin
         else 2
       end as temporal_rank
     from candidates
-    where pg_catalog.position(v_query in normalized_title) > 0
+    where pg_catalog.strpos(normalized_title, v_query) > 0
   ),
   limited as (
     select *
