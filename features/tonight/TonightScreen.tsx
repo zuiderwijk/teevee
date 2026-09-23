@@ -471,9 +471,9 @@ function DiscoveryModule({
         contentContainerStyle={styles.carouselContent}
         style={styles.carousel}
       >
-        {items.map((item) => (
+        {items.map((item, index) => (
           <DiscoveryCard
-            key={item.programme.id}
+            key={`${item.programme.id}-${index}`}
             kind={kind}
             item={item}
             width={metrics.width}
