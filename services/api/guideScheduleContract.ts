@@ -51,7 +51,6 @@ function optionalString(value: unknown, field: string): string | undefined {
 }
 
 export function parseGuideChannel(value: unknown): Channel {
-
   const input = record(value);
   if (!input) throw new Error('Schedule response channel must be an object');
   if (typeof input.sortOrder !== 'number' || !Number.isInteger(input.sortOrder)) {
@@ -76,7 +75,6 @@ export function parseGuideChannel(value: unknown): Channel {
 }
 
 export function parseGuideProgramme(value: unknown): Programme {
-
   const input = record(value);
   if (!input) throw new Error('Schedule response programme must be an object');
 
