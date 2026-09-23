@@ -1,5 +1,28 @@
 # Teevee Development Logboek
 
+## 23 september 2026 — Vanavond production design accepted and merged
+
+Owner approved the final Vanavond production design. PR #141 promoted the accepted visual and deterministic implementation specification to canonical authority.
+
+Canonical visual:
+- `/Teevee/Vanavond production design - hoofdvariant.png`
+- Library file id `file_00000000c6e081f4b4e0ed5e08a9c1fe`.
+
+Frozen composition:
+- Jouw gids as an open chronological list;
+- Onze Kijktips as 16:9 broadcast cards;
+- Films and Series as standing 2:3 poster carousels;
+- Sport as landscape cards, omitted at zero items;
+- no hero, section chevrons, `Alles` destinations, pager dots or filler.
+
+Lead review additionally made explicit that generated-raster proportions/header omissions are not implementation authority: the written spec owns Film 108×162 and Series 96×144 2:3 geometry plus the canonical standalone shell/date context.
+
+PR #141 final head `54d9c08e24a8d3f16b110ce9d9cf9b110b3209ad` passed exact-head CI #1040 and merged as `ed4c84a339ab1979276a1d7719c0d57457573f2b`. Exact-main CI #1041 / run `35851540191` passed the docs/design gate.
+
+**Next engineering gate:** issue #142 — central provider-independent programme classification/enrichment foundation. Production Film/Series/Sport population remains blocked until that foundation is authoritative and, if hosted changes are involved, deployed/live-verified.
+
+---
+
 ## 23 september 2026 — Series vanavond product scope frozen
 
 Owner selected the narrower general/mainstream scope for `Series vanavond` after the empirical PR #137 classification research exposed a material audience/category collision.
