@@ -8,7 +8,7 @@ Independent QA then passed the same exact head in #5801947266. The final Technic
 
 PR #149 merged to `main` as squash commit `f8df570b2dbf1c4fe35b35e02d9663252bb288b8`. No hosted/backend deployment is required: the mobile runtime consumes the already-deployed `guide-schedule`, editorial-signal and `programme-classifications` boundaries. Physical Android interaction acceptance remains deferred under the existing hardware gate and is not claimed from iPhone/CI evidence.
 
-Post-merge exact-main CI #1126 / run `35912892341` is the remaining merge-closeout evidence; this documentation closeout does not merge until that run is green.
+Post-merge exact-main CI #1126 / run `35912892341` completed **SUCCESS** on merge commit `f8df570b2dbf1c4fe35b35e02d9663252bb288b8`: classify and quality passed, **106 test files / 770 tests** passed, strict TypeScript/lint passed, iOS/Android/web exports passed and Android native was correctly skipped for the runtime-ui change class.
 
 With Kijktip, Guide Search and first-production Vanavond now complete, **Phase 5 — Search and Discovery is closed**. The next step is Phase 6 definition: reconcile Personal Features with the already-existing `ProgrammePersonalState` save/reminder authority before implementing any new favourites/channel-preference behavior.
 
