@@ -33,10 +33,11 @@ function defaultSecretKey() {
   return keys.default;
 }
 
-function rpcClient(secretKey) {
+function rpcClient(secretKey, signal) {
   return new SupabaseRestRpcClient({
     baseUrl: Deno.env.get('SUPABASE_URL') ?? '',
     apiKey: secretKey,
+    signal,
   });
 }
 
@@ -69,8 +70,8 @@ function repository(secretKey) {
 
 const EXTERNAL_CONTENT_ENRICHMENT_BUDGET_MS = 20_000;
 
-function externalContentRepository(secretKey) {
-  return new SupabaseProgrammeExternalContentRepository(rpcClient(secretKey));
+function externalContentRepository(secretKey, signal) {
+  return new SupabaseProgrammeExternalContentRepository(rpcClient(secretKey, signal));
 }
 
 async function enrichExternalContent(observations, secretKey, ownerSignal) {
@@ -86,6 +87,8 @@ async function enrichExternalContent(observations, secretKey, ownerSignal) {
   const controller = new AbortController();
   const ownerAbort = () => controller.abort();
   ownerSignal?.addEventListener('abort', ownerAbort, { once: true });
+  // One owner signal bounds both TMDB HTTP work and the final external-content
+  // PostgREST persistence request. Canonical Guide writes already committed first.
   const timeout = setTimeout(
     () => controller.abort(),
     EXTERNAL_CONTENT_ENRICHMENT_BUDGET_MS,
@@ -104,7 +107,7 @@ async function enrichExternalContent(observations, secretKey, ownerSignal) {
     const result = await enrichStoredExternalContent({
       observations,
       gateway,
-      repository: externalContentRepository(secretKey),
+      repository: externalContentRepository(secretKey, controller.signal),
       concurrency: 3,
     });
     return { status: 'completed', ...result };

@@ -4,6 +4,7 @@ export type SupabaseRestRpcClientOptions = {
   baseUrl: string;
   apiKey: string;
   fetcher?: typeof fetch;
+  signal?: AbortSignal;
 };
 
 function required(value: string, label: string): string {
@@ -31,11 +32,13 @@ export class SupabaseRestRpcClient implements ScheduleRpcClient {
   private readonly baseUrl: string;
   private readonly apiKey: string;
   private readonly fetcher: typeof fetch;
+  private readonly signal: AbortSignal | undefined;
 
   constructor(options: SupabaseRestRpcClientOptions) {
     this.baseUrl = required(options.baseUrl, 'Supabase baseUrl').replace(/\/+$/, '');
     this.apiKey = required(options.apiKey, 'Supabase apiKey');
     this.fetcher = options.fetcher ?? fetch;
+    this.signal = options.signal;
   }
 
   async rpc<T>(functionName: string, args: Record<string, unknown>) {
@@ -50,6 +53,7 @@ export class SupabaseRestRpcClient implements ScheduleRpcClient {
           Accept: 'application/json',
         },
         body: JSON.stringify(args),
+        ...(this.signal ? { signal: this.signal } : {}),
       },
     );
 
