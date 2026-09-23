@@ -1,6 +1,6 @@
 # Teevee Programme Data Strategy
 
-Status: **Phase 5 — Vanavond classification foundation is active in PR #144.** Phase 3 proved the provider-independent hosted data path, Phase 4 closed the television-day-aware Guide runtime and D-2..D+7 navigation/horizon behaviour, Kijktip is merged/deployed/physically verified, and Phase 5A Guide Search is closed. Issue #142 now adds provider-independent broadcast classification without changing Guide loading. The Phase 4 cache decision is unchanged: keep the current fixture-first + in-memory runtime fallback and do not introduce persistent mobile schedule caching without new measured evidence. Production **EPG** provider selection/rights remain a later release gate and release-like offline cold-start/persistent-cache validation remains Phase 9.
+Status: **Phase 5 — Vanavond classification foundation is merged, deployed and live-verified; production Vanavond runtime is next.** Phase 3 proved the provider-independent hosted data path, Phase 4 closed the television-day-aware Guide runtime and D-2..D+7 navigation/horizon behaviour, Kijktip is merged/deployed/physically verified, Phase 5A Guide Search is closed, and PR #144 / issue #142 established the provider-independent Film/Series/Sport classification sibling without changing Guide loading. The Phase 4 cache decision is unchanged: keep the current fixture-first + in-memory runtime fallback and do not introduce persistent mobile schedule caching without new measured evidence. Production **EPG** provider selection/rights remain a later release gate and release-like offline cold-start/persistent-cache validation remains Phase 9.
 
 ## Goal
 Teevee must support the complete core Guide without coupling the mobile experience to one EPG supplier. Replacing the temporary development source with an authorized Bindinc/TVgids or commercial provider must not require a Guide rewrite.
@@ -121,6 +121,16 @@ Performance:
 - Guide startup/render payload/cost is therefore unchanged.
 
 Empirical provider evidence: `docs/TONIGHT_CLASSIFICATION_SOURCE_EVIDENCE_2026-09-23.md`. Durable decision: ADR 0010.
+
+Hosted deployment is complete and canonical:
+- PR #144 merged as `ca738e3c80d714ad6f95833554c6319674647fdb`;
+- hosted migration `20260923144656_create_programme_classification_foundation` contains the exact reviewed SQL blob `f39e728b2098806f31b237319396436fc0a4e618`;
+- `epg-refresh` v7 and `programme-classifications` v1 are ACTIVE and their deployed runtime files match the merge SHA byte-for-byte;
+- protected guide-horizon refresh request 118 returned HTTP 200 and populated every source-complete D+1..D+5 television-day window;
+- the distinct stored scope contains 2,358 canonical programmes and exactly 2,358 classification siblings, with 0 missing, 0 outside-scope and 0 orphans;
+- live HTTP smoke run `35878911866`, job `107241960510`, proved real Film/Series/Sport reads, absence of raw provider-field leakage and the 256-ID request bound.
+
+Deployment evidence: `docs/TONIGHT_CLASSIFICATION_DEPLOYMENT_2026-09-23.md`.
 
 ## Phase 5A Guide Search data boundary
 

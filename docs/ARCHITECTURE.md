@@ -46,6 +46,8 @@ Key boundary rules:
 - `programme-classifications` is a separate service-role-backed Edge read bounded to 256 programme IDs;
 - Guide never calls that read boundary and no classification work runs in a mobile Guide render path.
 
+This classification boundary is **deployed and live-verified**. PR #144 merged as `ca738e3c80d714ad6f95833554c6319674647fdb`; hosted migration `20260923144656_create_programme_classification_foundation` carries the exact reviewed SQL blob `f39e728b2098806f31b237319396436fc0a4e618`. `epg-refresh` v7 and `programme-classifications` v1 are ACTIVE and match canonical merge bytes. Protected refresh request 118 returned HTTP 200 and produced a complete one-to-one classification sibling for all 2,358 distinct canonical programmes in the source-complete stored D+1..D+5 scope, with zero missing/outside-scope/orphan rows. Live bounded-read smoke run `35878911866` / job `107241960510` passed. Evidence: `docs/TONIGHT_CLASSIFICATION_DEPLOYMENT_2026-09-23.md`.
+
 Phase 3 proved this complete boundary on a physical iPhone: the Guide renders deterministic fixture data immediately, then replaces it with canonical hosted data when a complete hosted schedule is available. Unavailable/network-failed hosted reads keep the Guide usable rather than clearing the current state.
 
 ## Phase 5A Guide Search architecture
@@ -123,7 +125,7 @@ Teevee has a dedicated Supabase project:
 - Free plan;
 - region `eu-west-2`.
 
-Private schema `teevee` contains canonical channels, programmes, authoritative schedule coverage segments, and the separate optional `programme_editorial_signals` / `editorial_source_state` enrichment store. Transactional schedule replacement continues to enforce ADR 0007 and stale-write protection. Editorial signals intentionally do not FK/cascade to programme rows because normal schedule-window replacement deletes/reinserts programmes. The editorial writer keeps a per-source advisory lock and stale guard, then reconciles source-item rekeys, orphans and omitted-future rows **before** incoming upsert. This preserves the unique source-item constraint when a normal EPG start correction changes canonical `Programme.id`, while simple omission after `start_at` still retains historical Kijktip metadata. Reads continue to join current programmes. The PR #127 forward migration is deployed in the hosted project as `20260922235737_preserve_started_editorial_signals` and contains one fail-closed, idempotent recovery from direct historical `tips.rss` evidence; live verification recovered exactly one owner-observed historical signal and found zero orphans. No general article/title inference is introduced.
+Private schema `teevee` contains canonical channels, programmes, authoritative schedule coverage segments, the separate optional `programme_editorial_signals` / `editorial_source_state` editorial-enrichment store, and the provider-independent `programme_classifications` sibling store. Transactional schedule replacement continues to enforce ADR 0007 and stale-write protection. Editorial signals intentionally do not FK/cascade to programme rows because normal schedule-window replacement deletes/reinserts programmes. The editorial writer keeps a per-source advisory lock and stale guard, then reconciles source-item rekeys, orphans and omitted-future rows **before** incoming upsert. This preserves the unique source-item constraint when a normal EPG start correction changes canonical `Programme.id`, while simple omission after `start_at` still retains historical Kijktip metadata. Reads continue to join current programmes. The PR #127 forward migration is deployed in the hosted project as `20260922235737_preserve_started_editorial_signals` and contains one fail-closed, idempotent recovery from direct historical `tips.rss` evidence; live verification recovered exactly one owner-observed historical signal and found zero orphans. No general article/title inference is introduced.
 
 ### Security boundary
 - private Teevee tables are unavailable to `anon` and `authenticated`;
@@ -165,11 +167,11 @@ Independent protected Kijktip refresh:
 - is not called by `epg-refresh`, `guide-schedule` or the mobile client.
 
 ### Automatic development freshness
-`pg_cron` + `pg_net` enqueue the temporary development refresh every six hours. A rolling three-calendar-day Amsterdam buffer covers current day, tomorrow and one rollover day. That buffer is sufficient for the current development runtime's bounded D + D+1 television-day reads around midnight/06:00, but it is not the final multi-day product strategy.
+`pg_cron` + `pg_net` enqueue the temporary development refresh every six hours. The protected `epg-refresh` `guide-horizon` mode derives independent **06:00 Europe/Amsterdam D-3..D+8 television-day windows**. D-2..D+7 remains the selectable product horizon; D-3 and D+8 are backend safety buffers only. Each provider window is evaluated independently, and incomplete windows are skipped as non-authoritative rather than destructively replacing canonical coverage.
 
 A dedicated random cron token is generated/stored encrypted in Supabase Vault. The real Supabase secret key remains inside the Edge Function environment.
 
-This three-calendar-day development buffer is operational support for the current development feed; it is **not** the final D-2..D+7 product implementation and does not prove that the temporary provider can satisfy the production horizon.
+This refresh architecture implements the required horizon semantics, but the current development provider still does **not** prove complete D-2..D+7 availability on every run. Provider-partial windows remain unavailable by design; Phase 8 must still select a rights-cleared production EPG source that can satisfy the full horizon/freshness contract.
 
 ## Mobile runtime schedule boundary
 The mobile app currently uses:
@@ -178,7 +180,7 @@ The mobile app currently uses:
 - runtime validation before accepting serialized hosted data;
 - provider-independent merge/deduplication;
 - a small in-memory runtime schedule bridge shared by Totaal, Per zender and deferred Nu & Straks;
-- D and D+1 television-day hosted reads derived with the shared 06:00 Europe/Amsterdam primitive;
+- startup/current-evening D and D+1 television-day hosted reads plus independently bounded selected-day reads across the accepted D-2..D+7 horizon, all derived with the shared 06:00 Europe/Amsterdam primitive;
 - independently bounded one-day requests, including 23/25-hour DST television days;
 - refresh after startup, app resume and 06:00 television-day rollover;
 - content equality that ignores freshness-only metadata so harmless refreshes do not remount the Guide;
