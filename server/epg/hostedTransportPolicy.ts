@@ -16,9 +16,17 @@ export type HostedGuideHorizonRefreshRequest = {
   providerChannelIds: string[];
 };
 
+export type HostedClassificationRecoveryRequest = {
+  mode: 'classification-recovery';
+  from: string;
+  to: string;
+  providerChannelIds: string[];
+};
+
 export type HostedRefreshRequest =
   | HostedWindowRefreshRequest
-  | HostedGuideHorizonRefreshRequest;
+  | HostedGuideHorizonRefreshRequest
+  | HostedClassificationRecoveryRequest;
 
 function record(value: unknown): Record<string, unknown> | null {
   if (typeof value !== 'object' || value === null || Array.isArray(value)) return null;
@@ -107,7 +115,11 @@ export function parseHostedRefreshRequest(
     return { mode: 'guide-horizon', providerChannelIds };
   }
 
-  if (input.mode !== undefined && input.mode !== 'window') {
+  if (
+    input.mode !== undefined &&
+    input.mode !== 'window' &&
+    input.mode !== 'classification-recovery'
+  ) {
     throw new Error('Refresh request mode is invalid');
   }
 
@@ -128,7 +140,9 @@ export function parseHostedRefreshRequest(
   assertHostedWindow(normalizedFrom, normalizedTo);
 
   return {
-    mode: 'window',
+    mode: input.mode === 'classification-recovery'
+      ? 'classification-recovery'
+      : 'window',
     from: normalizedFrom,
     to: normalizedTo,
     providerChannelIds,
