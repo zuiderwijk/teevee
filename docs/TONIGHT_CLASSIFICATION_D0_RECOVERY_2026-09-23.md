@@ -78,6 +78,14 @@ For the current XMLTV source, no stable provider programme ID is exposed, so can
 
 A future provider with stable programme IDs still must pass channel/start/end/title equality before recovery writes.
 
+Recovery also refuses ambiguous provider observations before persistence:
+- any channel with a normalisation **error** is excluded from recovery;
+- exact duplicate provider rows are deterministically collapsed by the existing normaliser;
+- normalized broadcasts that overlap another candidate on the same channel are excluded from recovery;
+- the service-role persistence RPC independently rejects any directly supplied overlapping candidate payload as defense in depth.
+
+The active hosted D0 baseline itself contains **0 overlapping canonical programme pairs**.
+
 ### Concurrency and staleness
 
 The persistence RPC:
@@ -109,14 +117,18 @@ The smoke covers:
 - schedule coverage/freshness unchanged;
 - repeated recovery idempotency;
 - corrected/rekeyed provider row failing closed;
+- stable-provider-id correction still requiring exact end/title equality;
+- exact duplicate provider rows remaining one recovery candidate;
+- overlapping provider candidates failing closed, including direct RPC defense;
+- channel-level normalisation errors making that channel recovery-ineligible;
 - later authoritative correction owning the new programme/sibling pair;
 - stale recovery not rolling back newer classification;
 - zero orphan classifications.
 
 Disposable PostgreSQL 17 smoke evidence:
 - workflow: `Classification recovery PostgreSQL smoke`;
-- run: `35916280678`;
-- job: `107368458307`;
+- latest run after overlap hardening: `35919038820`;
+- job: `107377942252`;
 - result: **SUCCESS**;
 - SQL lifecycle: `BEGIN → DO → ROLLBACK`;
 - the temporary workflow is removed from the final PR diff.
