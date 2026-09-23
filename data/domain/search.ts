@@ -17,7 +17,7 @@ export function normalizeGuideSearchText(value: string): string {
     .normalize('NFKD')
     .replace(/[\u0300-\u036f]/g, '')
     .toLocaleLowerCase('nl-NL')
-    .replace(/[’'\`´]/g, '')
+    .replace(/[’'\u0060´]/g, '')
     .replace(/&/g, ' en ')
     .replace(/[^a-z0-9]+/g, ' ')
     .trim()
