@@ -12,6 +12,7 @@ import {
 import {
   buildTonightViewModel,
   tonightCardMetrics,
+  tonightKijktipTitleLayout,
   tonightSavedAccessibilityLabel,
   tonightSportFallbackLayout,
 } from './tonightPresentation';
@@ -439,6 +440,28 @@ describe('Tonight presentation selection', () => {
     expect(tonightSavedAccessibilityLabel(model.saved[0]!)).toContain(
       '21:30',
     );
+  });
+
+  it('caps only base-density Kijktip titles while Larger Text stays uncapped', () => {
+    expect(tonightKijktipTitleLayout(1)).toEqual({
+      titleNumberOfLines: 2,
+      ellipsizeMode: 'tail',
+    });
+    expect(tonightKijktipTitleLayout(1.35)).toEqual({
+      titleNumberOfLines: 2,
+      ellipsizeMode: 'tail',
+    });
+    expect(tonightKijktipTitleLayout(1.36)).toEqual({
+      titleNumberOfLines: undefined,
+      ellipsizeMode: undefined,
+    });
+    expect(tonightKijktipTitleLayout(2)).toEqual({
+      titleNumberOfLines: undefined,
+      ellipsizeMode: undefined,
+    });
+    expect(
+      tonightCardMetrics({ kind: 'kijktip', contentWidth: 350, fontScale: 1 }),
+    ).toEqual({ width: 168, mediaHeight: 94.5 });
   });
 
   it('keeps frozen base media geometry and makes only Larger-Text Sport fallback vertically flexible', () => {
