@@ -12,6 +12,12 @@ import { ingestProviderSchedule } from '../../../server/epg/ingest.ts';
 import { SupabaseRestRpcClient } from '../../../server/epg/supabaseRestRpcClient.ts';
 import { SupabaseScheduleRepository } from '../../../server/epg/supabaseScheduleRepository.ts';
 import { XmltvEpgProvider } from '../../../server/epg/xmltvProvider.ts';
+import { enrichStoredExternalContent } from '../../../server/externalContent/enrichment.ts';
+import { SupabaseProgrammeExternalContentRepository } from '../../../server/externalContent/supabaseProgrammeExternalContentRepository.ts';
+import {
+  TmdbApiClient,
+  TmdbRequestSession,
+} from '../../../server/externalContent/tmdbClient.ts';
 
 function errorResponse(message, status) {
   return Response.json({ error: message }, { status });
@@ -59,6 +65,55 @@ async function authorised(req, secretKey) {
 
 function repository(secretKey) {
   return new SupabaseScheduleRepository(rpcClient(secretKey));
+}
+
+const EXTERNAL_CONTENT_ENRICHMENT_BUDGET_MS = 20_000;
+
+function externalContentRepository(secretKey) {
+  return new SupabaseProgrammeExternalContentRepository(rpcClient(secretKey));
+}
+
+async function enrichExternalContent(observations, secretKey, ownerSignal) {
+  if (observations.length === 0) {
+    return { status: 'skipped', reason: 'no-authoritative-current-candidates' };
+  }
+
+  const token = Deno.env.get('TMDB_API_READ_ACCESS_TOKEN')?.trim();
+  if (!token) {
+    return { status: 'unavailable', reason: 'tmdb-secret-unavailable' };
+  }
+
+  const controller = new AbortController();
+  const ownerAbort = () => controller.abort();
+  ownerSignal?.addEventListener('abort', ownerAbort, { once: true });
+  const timeout = setTimeout(
+    () => controller.abort(),
+    EXTERNAL_CONTENT_ENRICHMENT_BUDGET_MS,
+  );
+
+  try {
+    const gateway = new TmdbRequestSession(
+      new TmdbApiClient({
+        token,
+        signal: controller.signal,
+        timeoutMs: 2500,
+        maxRetries: 1,
+        maxRetryAfterMs: 1000,
+      }),
+    );
+    const result = await enrichStoredExternalContent({
+      observations,
+      gateway,
+      repository: externalContentRepository(secretKey),
+      concurrency: 3,
+    });
+    return { status: 'completed', ...result };
+  } catch {
+    return { status: 'unavailable', reason: 'external-content-enrichment-failed' };
+  } finally {
+    clearTimeout(timeout);
+    ownerSignal?.removeEventListener('abort', ownerAbort);
+  }
 }
 
 async function parseJsonBody(req) {
@@ -142,10 +197,23 @@ export default {
           clock: () => refreshStartedAt,
         });
 
+        // Canonical Guide writes for the entire horizon finish before any TMDB work.
+        // Enrichment is therefore fail-open and cannot roll back or delay an individual
+        // authoritative schedule transaction.
+        const storedObservations = windows.flatMap(({ result }) =>
+          result.storedObservation ? [result.storedObservation] : [],
+        );
+        const externalContent = await enrichExternalContent(
+          storedObservations,
+          secretKey,
+          req.signal,
+        );
+
         return Response.json({
           status: 'completed',
           mode: request.mode,
           windows: windows.map(horizonWindowResponse),
+          externalContent,
           elapsedMs: Math.round(performance.now() - startedAt),
         });
       }
@@ -161,12 +229,19 @@ export default {
         clock: () => refreshStartedAt,
       });
 
+      const externalContent = await enrichExternalContent(
+        result.storedObservation ? [result.storedObservation] : [],
+        secretKey,
+        req.signal,
+      );
+
       return Response.json({
         status: result.write.status,
         mode: request.mode,
         write: result.write,
         programmeCount: result.schedule.programmes.length,
         diagnosticCounts: diagnosticCounts(result),
+        externalContent,
         elapsedMs: Math.round(performance.now() - startedAt),
       });
     } catch (error) {
