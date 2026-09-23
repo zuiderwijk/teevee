@@ -145,6 +145,22 @@ describe('TmdbApiClient', () => {
 });
 
 describe('TmdbRequestSession', () => {
+  it('treats a missing TMDB season as a deterministic episode-coordinate mismatch', async () => {
+    const fetcher = vi.fn(async (url: URL | RequestInfo) => {
+      const value = String(url);
+      if (value.includes('/tv/200/season/38')) {
+        return jsonResponse({ status_message: 'not found' }, 404);
+      }
+      throw new Error(`unexpected URL ${value}`);
+    });
+    const session = new TmdbRequestSession(
+      new TmdbApiClient({ token: 'secret', fetcher, maxRetries: 0 }),
+    );
+
+    await expect(session.seriesHasEpisode('200', 38, 188)).resolves.toBe(false);
+    expect(fetcher).toHaveBeenCalledTimes(1);
+  });
+
   it('deduplicates identical request-scope searches and candidate detail work', async () => {
     const fetcher = vi.fn(async (url: URL | RequestInfo) => {
       const value = String(url);

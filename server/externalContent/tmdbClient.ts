@@ -373,13 +373,26 @@ export class TmdbRequestSession implements TmdbGateway {
     seasonNumber: number,
     episodeNumber: number,
   ): Promise<boolean> {
-    const payload = await this.cached(
-      `series-season:${seriesId}:${seasonNumber}`,
-      () => this.client.getJson(
-        `/3/tv/${encodeURIComponent(seriesId)}/season/${seasonNumber}`,
-        { language: 'nl-NL' },
-      ),
-    );
+    let payload: unknown;
+    try {
+      payload = await this.cached(
+        `series-season:${seriesId}:${seasonNumber}`,
+        () => this.client.getJson(
+          `/3/tv/${encodeURIComponent(seriesId)}/season/${seasonNumber}`,
+          { language: 'nl-NL' },
+        ),
+      );
+    } catch (error) {
+      if (
+        error instanceof TmdbRequestError &&
+        error.kind === 'client' &&
+        error.status === 404
+      ) {
+        return false;
+      }
+      throw error;
+    }
+
     return array(record(payload, 'series season').episodes).some((item) => {
       const episode = record(item, 'series episode');
       return episode.episode_number === episodeNumber;
