@@ -97,45 +97,59 @@ describe('central provider-independent programme classification', () => {
     }
   });
 
-  it('fails closed for researched generic-series false positives using structured format/context evidence', () => {
-    const falsePositives = [
+  it('keeps broad generic-series blockers ambiguous instead of promoting them to high-confidence other', () => {
+    const ambiguousCandidates = [
       classify({
-        title: 'The Yorkshire Vet',
-        categories: ['Dieren', 'Medisch'],
-        episodeNumbers: [{ value: 'S19 E3' }],
-        hasDirectorCredit: true,
-      }),
-      classify({
-        title: 'Sluipschutters',
+        title: 'Sluipschutters-like fixture',
         categories: ['Komedie', 'Entertainment'],
         episodeNumbers: [{ value: 'S5 E3' }],
       }),
       classify({
-        title: 'LUBACH',
-        categories: ['Entertainment', 'Komedie'],
-        episodeNumbers: [{ value: 'S4 E17' }],
-      }),
-      classify({
-        title: 'Beste Kijkers',
-        categories: ['Entertainment', 'Komedie'],
-        episodeNumbers: [{ value: 'S13 E5' }],
-      }),
-      classify({
-        title: 'Top Gear',
+        title: 'Automotive comedy fixture',
         categories: ["Auto's", 'Komedie'],
         episodeNumbers: [{ value: 'S15 E1' }],
         hasDirectorCredit: true,
       }),
       classify({
-        title: 'Het Interventie Team',
+        title: 'Animal medical fixture',
+        categories: ['Dieren', 'Medisch'],
+        episodeNumbers: [{ value: 'S19 E3' }],
+        hasDirectorCredit: true,
+      }),
+      classify({
+        title: 'Crime fixture without enough scripted evidence',
         categories: ['Misdaad'],
         episodeNumbers: [{ value: 'S4 E6' }],
         hasDirectorCredit: false,
       }),
     ];
 
-    for (const classification of falsePositives) {
+    for (const classification of ambiguousCandidates) {
       expect(isTonightSeriesClassification(classification)).toBe(false);
+      expect(classification).toMatchObject({
+        contentType: 'unknown',
+        confidence: 'unknown',
+      });
+    }
+  });
+
+  it('maps strong positive non-scripted format evidence to high-confidence other', () => {
+    for (const categories of [
+      ['Reality'],
+      ['Documentaire'],
+      ['Nieuws'],
+      ['Talkshow'],
+    ]) {
+      expect(
+        classify({
+          categories,
+          episodeNumbers: [{ value: 'S2 E4' }],
+        }),
+      ).toMatchObject({
+        contentType: 'other',
+        seriesType: 'unknown',
+        confidence: 'high',
+      });
     }
   });
 
@@ -158,6 +172,16 @@ describe('central provider-independent programme classification', () => {
       hasDirectorCredit: true,
     });
 
+    expect(scriptedWithBroadSubject).toMatchObject({
+      contentType: 'series',
+      seriesType: 'scripted-episodic',
+      confidence: 'high',
+    });
+    expect(sitcomWithSubject).toMatchObject({
+      contentType: 'series',
+      seriesType: 'scripted-episodic',
+      confidence: 'high',
+    });
     expect(isTonightSeriesClassification(scriptedWithBroadSubject)).toBe(true);
     expect(isTonightSeriesClassification(sitcomWithSubject)).toBe(true);
     expect(isTonightSeriesClassification(realityConflict)).toBe(false);

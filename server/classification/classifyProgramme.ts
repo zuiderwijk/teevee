@@ -105,9 +105,12 @@ const GENERIC_SERIES_BLOCKER_CATEGORIES = new Set([
   'Wetenschap',
 ]);
 
-const OTHER_CONTENT_CATEGORIES = new Set([
-  ...GENERIC_SERIES_BLOCKER_CATEGORIES,
-]);
+/**
+ * Positive high-confidence "other" evidence is intentionally narrower than the
+ * generic-Series blocker set. Blocking generic scripted inference only means
+ * "Series is not proven"; it must never be promoted into "other is proven".
+ */
+const POSITIVE_OTHER_CONTENT_CATEGORIES = STRONG_NON_SCRIPTED_FORM_CATEGORIES;
 
 const SPORT_ROOT_CATEGORIES = new Set(['Sport', 'Sports', 'Sporttalkshow']);
 const SPORT_TALK_CATEGORIES = new Set(['Sporttalkshow', 'Talkshow']);
@@ -338,7 +341,7 @@ function developmentXmltvClassification(
     categories.length > 0 &&
     (
       hasChildrenAudience ||
-      hasAny(OTHER_CONTENT_CATEGORIES, categories)
+      hasAny(POSITIVE_OTHER_CONTENT_CATEGORIES, categories)
     )
   ) {
     return {
