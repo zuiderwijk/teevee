@@ -121,12 +121,6 @@ export class GuideSearchSession {
     this.publish({ query: '', phase: 'idle', response: null });
   };
 
-  readonly dispose = (): void => {
-    this.requestVersion += 1;
-    this.cancelTransport();
-    this.listeners.clear();
-  };
-
   private publish(snapshot: GuideSearchSessionSnapshot): void {
     this.snapshot = snapshot;
     for (const listener of this.listeners) listener();
@@ -189,6 +183,10 @@ export class GuideSearchSession {
   }
 }
 
+/**
+ * Process-local active Search context only.
+ * Deliberately not persisted: this is query/result continuity, not Search history.
+ */
 export const guideSearchSession = new GuideSearchSession(
   new HostedGuideSearchClient(),
 );
