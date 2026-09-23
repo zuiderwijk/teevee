@@ -8,7 +8,7 @@ const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
 const migration = readFileSync(
   resolve(
     repoRoot,
-    'supabase/migrations/20260923111500_create_programme_classification_foundation.sql',
+    'supabase/migrations/20260923144656_create_programme_classification_foundation.sql',
   ),
   'utf8',
 );

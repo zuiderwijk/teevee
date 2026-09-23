@@ -1,5 +1,26 @@
 # Teevee Development Logboek
 
+## 23 september 2026 — PR #144 merged, deployed and live-verified
+
+PR #144 / issue #142 completed the central provider-independent Vanavond classification/enrichment foundation. The final exact QA/Lead head `c04088479e8026966db54eba47f07603c4b87ee6` merged as `ca738e3c80d714ad6f95833554c6319674647fdb`. Post-merge CI #1072 / run `35873133619` passed **100 test files / 727 tests**, strict TypeScript, lint, iOS/Android/web exports and the main/release full-ABI Android debug build.
+
+The exact reviewed migration blob `f39e728b2098806f31b237319396436fc0a4e618` is live in hosted project `eokszvpityhtysbwdduy`. Supabase recorded remote version `20260923144656_create_programme_classification_foundation`; repository closeout aligns the canonical migration filename to that history without changing SQL bytes.
+
+Hosted runtime:
+- `epg-refresh` v7 ACTIVE; all 16 deployed runtime files match merge SHA byte-for-byte;
+- `programme-classifications` v1 ACTIVE; all 9 deployed runtime files match merge SHA byte-for-byte;
+- anon/authenticated direct classification table and RPC access remains blocked; service_role access is retained as designed.
+
+The owner-triggered protected `guide-horizon` refresh returned request id **118** and HTTP **200**. The development provider was complete for D+1..D+5 and partial outside that range, so only complete windows were authoritatively replaced. Their distinct union contains **2,358 canonical programmes and exactly 2,358 classification siblings**, with **0 missing, 0 outside-scope and 0 orphans**.
+
+Temporary non-mergeable live-smoke run `35878911866`, job `107241960510`, proved the deployed public semantic read boundary on real persisted Film/Series/Sport broadcasts, confirmed that no raw provider fields leak, and proved the **256-ID bound** by rejecting 257 IDs with HTTP 400. The temporary workflow was removed before final closeout.
+
+Full evidence: `docs/TONIGHT_CLASSIFICATION_DEPLOYMENT_2026-09-23.md`.
+
+**Next step:** implement the first production Vanavond runtime. Once real runtime exists, route it through mandatory Acc Design Refinement and physical iPhone convergence before Independent QA/final merge acceptance.
+
+---
+
 ## 23 september 2026 — PR #144 children audience/content-type certainty corrected
 
 Technical Lead exact-head review #5795818040 found a second, narrowly scoped certainty conflation after blocker #5794926935 had been closed: `Kinderen` / `Kids En Familie` audience evidence still caused unresolved programme families to become `contentType: other / confidence: high`.
