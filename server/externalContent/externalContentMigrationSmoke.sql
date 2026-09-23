@@ -3,7 +3,7 @@ begin;
 
 create role anon nologin;
 create role authenticated nologin;
-create role service_role nologin;
+create role service_role nologin bypassrls;
 create schema extensions;
 
 \ir ../../supabase/migrations/20260914001257_create_canonical_schedule_store.sql
