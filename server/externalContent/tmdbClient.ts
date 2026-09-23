@@ -70,7 +70,7 @@ export class TmdbApiClient {
   private readonly maxRetries: number;
   private readonly maxRetryAfterMs: number;
   private readonly sleep: (ms: number) => Promise<void>;
-  private readonly signal?: AbortSignal;
+  private readonly signal: AbortSignal | undefined;
 
   constructor(options: TmdbApiClientOptions) {
     this.token = required(options.token, 'TMDB token');
