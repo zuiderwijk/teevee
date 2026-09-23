@@ -1,4 +1,4 @@
-import { useMemo, useReducer } from 'react';
+import { useEffect, useMemo, useReducer } from 'react';
 import { useRouter } from 'expo-router';
 import {
   ActivityIndicator,
@@ -15,6 +15,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { AppScreenHeader } from '@/components/AppScreenHeader';
 import { SettingsButton } from '@/components/SettingsButton';
 import type { Channel } from '@/data/domain/epg';
+import { guideTelevisionDayStart } from '@/data/domain/guideTime';
 import {
   guideSearchPerChannelIntent,
   guideSearchProgrammeDetailIntent,
@@ -282,6 +283,11 @@ export function GuideSearchScreen() {
   const session = useGuideSearchSession();
   const [detail, dispatchDetail] = useReducer(detailReducer, initialDetailState);
   const response = session.response;
+  const searchDayStartMs = guideTelevisionDayStart(nowMs);
+
+  useEffect(() => {
+    guideSearchSession.refreshForTelevisionDay(searchDayStartMs);
+  }, [searchDayStartMs]);
 
   const kijktipIds = useMemo(
     () =>
