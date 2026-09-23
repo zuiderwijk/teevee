@@ -61,7 +61,7 @@ Dutch television viewers who want a high-quality guide experience. The MVP targe
 ## Primary product surfaces
 - **Guide** — default destination, with Totaal, Per zender and Nu & Straks.
 - **Tonight** — discovery presentation of the same programme domain. It may be more visual than Guide, but its final module composition remains provisional.
-- **Search** — direct programme/channel retrieval answering when something is on television.
+- **Search** — direct programme-broadcast/channel retrieval answering when and where something is on television. Phase 5A canonical contract: `docs/SEARCH_PRODUCT_DEFINITION.md`.
 
 The working primary navigation baseline is Guide / Tonight / Search. Saved programmes/reminders do not require a permanent primary tab unless testing demonstrates a clear need.
 
