@@ -79,6 +79,7 @@ describe('external content reference migration contract', () => {
     expect(smoke).toContain('Multiple concrete broadcasts may share one TMDB content identity');
     expect(smoke).toContain('Same-observation rerun is idempotent');
     expect(smoke).toContain('normal authoritative refresh preserves');
+    expect(smoke).toContain('set local role service_role;');
     expect(smoke).toContain('correction/rekey');
     expect(smoke).toContain('late stale identity result was not rejected');
     expect(smoke).toContain('external reference survived canonical programme deletion');

@@ -10,6 +10,9 @@ create schema extensions;
 \ir ../../supabase/migrations/20260914001538_create_schedule_rpc_bridge.sql
 \ir ../../supabase/migrations/20260924001500_create_programme_external_content_reference.sql
 
+-- Exercise the exact production RPC/trigger permission boundary.
+set local role service_role;
+
 do $smoke$
 declare
   v_result jsonb;
