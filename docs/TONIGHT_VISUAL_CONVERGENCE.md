@@ -20,6 +20,8 @@ The image is canonical for module hierarchy, relative density, open-list versus 
 
 The generated schedule titles, broadcaster choices, poster pixels, icon glyphs and exact app-shell rendering are illustrative. The written contracts in this specification and the shared app-shell components win for those details.
 
+For avoidance of implementation ambiguity, the raster board is not authoritative for exact card aspect ratio. **§10 and §11 are authoritative:** Films use 108 × 162 pt (2:3) and Series use 96 × 144 pt (2:3), even where the generated Series thumbnails appear wider. Likewise §3 owns the standalone header and television-evening date line even if those details are omitted or approximated in the generated board.
+
 In particular:
 - use the existing Teevee standalone-screen shell and canonical bottom navigation; do not create a Vanavond-only navigation/header system because the generated board centres the title differently;
 - use the canonical broadcaster/logo registry rather than generated marks;
