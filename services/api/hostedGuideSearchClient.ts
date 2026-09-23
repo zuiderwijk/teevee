@@ -35,16 +35,24 @@ export class HostedGuideSearchClient implements GuideSearchApi {
       body: JSON.stringify(parsedRequest),
     });
 
-    if (!response.ok) {
-      throw new Error(`Teevee Guide Search request failed with HTTP ${response.status}`);
-    }
-
     let payload: unknown;
     try {
       payload = await response.json();
     } catch {
+      if (!response.ok) {
+        throw new Error(`Teevee Guide Search request failed with HTTP ${response.status}`);
+      }
       throw new Error('Teevee Guide Search returned invalid JSON');
     }
+
+    if (!response.ok) {
+      if (response.status === 503) {
+        const unavailable = parseGuideSearchApiResponse(payload);
+        if (unavailable.status === 'unavailable') return unavailable;
+      }
+      throw new Error(`Teevee Guide Search request failed with HTTP ${response.status}`);
+    }
+
     return parseGuideSearchApiResponse(payload);
   }
 }
