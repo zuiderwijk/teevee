@@ -288,7 +288,7 @@ The mobile boundary currently provides:
 
 PR #64 replaced the former Phase-3 strict-calendar today+tomorrow runtime assumption. Its deterministic tests cover 00:00, 05:59, exact 06:00, both Amsterdam DST transitions, bounded 23/25-hour reads, unavailable required windows, lifecycle refresh and stale response races. Independent exact-head QA found no code blocker, and focused iPhone evidence proved fixture-first -> hosted replacement plus same-television-day context retention after background/resume.
 
-The next Phase-4 mobile boundary is user-selected D-2..D+7 access for Totaal and Per zender using bounded per-day reads. Nu & Straks remains a single active-television-day presentation.
+PR #66 completed user-selected D-2..D+7 access for Totaal and Per zender using bounded per-day reads. Nu & Straks remains a single active-television-day presentation.
 
 ## Phase ownership for horizon/retention
 ### Phase 3 — complete
@@ -305,7 +305,7 @@ The historical two-calendar-day mobile loader has been superseded by PR #64. The
 ### Phase 4 — closed
 Owns:
 - shared 06:00 television-day primitives and query keys — implemented for the current runtime boundary;
-- D-2..D+7 day selection/navigation in Totaal and Per zender — next;
+- D-2..D+7 day selection/navigation in Totaal and Per zender — completed in PR #66;
 - bounded hosted loading strategy for selected/needed television days;
 - preservation of historical D-2/D-1 data while inside the guaranteed window;
 - uninterrupted evening browsing through midnight;
