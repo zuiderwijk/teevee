@@ -292,7 +292,7 @@ const DiscoveryCard = memo(function DiscoveryCard({
         programme,
         channelName: channel.displayName,
         current,
-        prefix: kijktip ? 'Kijktip' : undefined,
+        ...(kijktip ? { prefix: 'Kijktip' } : {}),
       })}
       accessibilityHint="Opent programmadetails"
       onPress={() => onSelect(selection)}
@@ -435,7 +435,7 @@ function DiscoveryModule({
   return (
     <View style={styles.module}>
       <View style={styles.moduleHeadingInset}>
-        <SectionHeading title={title} support={support} />
+        <SectionHeading title={title} {...(support ? { support } : {})} />
       </View>
       <ScrollView
         horizontal
@@ -620,7 +620,7 @@ export function TonightScreen() {
           <View style={styles.firstModule}>
             <SectionHeading
               title="Jouw gids"
-              support={savedCount > 0 ? savedSupport : undefined}
+              {...(savedCount > 0 ? { support: savedSupport } : {})}
             />
             <View style={styles.savedContent}>
               {savedCount > 0 ? (
