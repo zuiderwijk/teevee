@@ -258,8 +258,11 @@ export class TmdbRequestSession implements TmdbGateway {
   async getMovie(movieId: string): Promise<TmdbMovieIdentityCandidate> {
     const payload = await this.cached(
       `movie:${movieId}`,
+      // Keep the candidate primary title language-stable. Localized Dutch provider
+      // titles are still discoverable through search and alternative_titles, but then
+      // intentionally enter the stricter localized-title evidence path in filmMatcher.
       () => this.client.getJson(`/3/movie/${encodeURIComponent(movieId)}`, {
-        language: 'nl-NL',
+        language: 'en-US',
         append_to_response: 'credits,alternative_titles',
       }),
     );
