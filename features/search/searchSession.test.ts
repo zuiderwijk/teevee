@@ -161,6 +161,33 @@ describe('GuideSearchSession', () => {
     expect(search).toHaveBeenCalledTimes(2);
   });
 
+  it('requeries a retained result exactly when the 06:00 television day changes', async () => {
+    vi.setSystemTime(new Date('2026-09-23T03:59:30.000Z'));
+    const search = vi
+      .fn<GuideSearchApi['search']>()
+      .mockResolvedValue(okResponse());
+    const session = new GuideSearchSession({ search });
+
+    session.setQuery('slimste');
+    await vi.advanceTimersByTimeAsync(GUIDE_SEARCH_DEBOUNCE_MS);
+    await vi.runAllTicks();
+    expect(session.getSnapshot().phase).toBe('ready');
+    expect(search).toHaveBeenCalledTimes(1);
+
+    session.refreshForTelevisionDay(Date.parse('2026-09-23T03:59:59.000Z'));
+    expect(search).toHaveBeenCalledTimes(1);
+
+    session.refreshForTelevisionDay(Date.parse('2026-09-23T04:00:01.000Z'));
+    expect(session.getSnapshot().phase).toBe('loading');
+    await vi.runAllTicks();
+
+    expect(search).toHaveBeenCalledTimes(2);
+    expect(session.getSnapshot().phase).toBe('ready');
+
+    session.refreshForTelevisionDay(Date.parse('2026-09-23T04:30:00.000Z'));
+    expect(search).toHaveBeenCalledTimes(2);
+  });
+
   it('retains query/results across subscriber teardown within the app session', async () => {
     const search = vi.fn<GuideSearchApi['search']>().mockResolvedValue(okResponse());
     const session = new GuideSearchSession({ search });
