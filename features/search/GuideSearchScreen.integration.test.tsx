@@ -13,6 +13,7 @@ const sessionActions = vi.hoisted(() => ({
   setQuery: vi.fn(),
   clear: vi.fn(),
   retry: vi.fn(),
+  refreshForTelevisionDay: vi.fn(),
 }));
 const sessionState = vi.hoisted(() => ({
   snapshot: {
