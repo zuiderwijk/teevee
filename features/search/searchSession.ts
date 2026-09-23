@@ -94,6 +94,7 @@ export class GuideSearchSession {
 
   readonly refreshForTelevisionDay = (nowMs: number): void => {
     if (
+      this.snapshot.phase !== 'loading' &&
       this.snapshot.phase !== 'ready' &&
       this.snapshot.phase !== 'unavailable'
     ) {
