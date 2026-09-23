@@ -54,6 +54,8 @@ Only high-confidence semantics can make a programme eligible for a Vanavond cate
 
 Unknown/ambiguous state always fails closed.
 
+`audience` is an independent semantic dimension from `contentType`. The contract intentionally allows a known audience with an unknown programme family, for example `contentType: unknown` + `audience: primarily-children` + `confidence: unknown`. Knowing the audience never upgrades content-type certainty.
+
 ### Classification evidence and precedence
 
 Current XMLTV mapping uses structured evidence first:
@@ -62,16 +64,21 @@ Current XMLTV mapping uses structured evidence first:
 3. Series treats strong scripted-form categories (`Dramaseries`, `Misdaaddrama`, `Sitcoms`, `Soap`) as positive evidence unless a strong non-scripted format such as Reality/Documentaire/Talkshow conflicts;
 4. generic Series recovery requires explicit season+episode evidence plus either multiple compatible scripted-content categories or one compatible scripted category together with an explicit director-credit signal;
 5. broad context/subject categories may block generic scripted inference, but **blocking Series inference is not positive evidence for `other`**; without stronger positive evidence the classification remains `unknown`;
-6. only strong structured non-scripted/other evidence may produce high-confidence `other`; broad context blockers are never automatically promoted to `other/high`;
+6. only strong structured non-scripted/other evidence may produce high-confidence `other`; broad context blockers and children-audience categories are never automatically promoted to `other/high`;
 7. children's scripted recovery is limited to explicit season+episode + children-audience + animation evidence and maps to `primarily-children`, so it remains in semantic classification but fails the Vanavond Series eligibility helper;
-8. `Miniseries` is not itself treated as scripted-form evidence because the live source also uses it for documentary/factual miniseries;
-9. audience uses explicit children-audience categories or the high-confidence scripted/general result;
-10. Sport first excludes talk and documentary/magazine categories, then recognizes explicit highlights/summary wording inside already-structured Sport evidence, then event wording plus a sport/event category;
-11. generic `Sport` alone remains sport/unknown and is not Vanavond-eligible.
+8. explicit strong scripted-form evidence may also classify a children's programme as semantic Series when no strong non-scripted conflict exists;
+9. `Miniseries` is not itself treated as scripted-form evidence because the live source also uses it for documentary/factual miniseries;
+10. audience is orthogonal to content type: explicit children-audience categories may set `primarily-children` even when `contentType` and confidence remain `unknown`; children-audience evidence alone never proves `other`;
+11. Sport first excludes talk and documentary/magazine categories, then recognizes explicit highlights/summary wording inside already-structured Sport evidence, then event wording plus a sport/event category;
+12. generic `Sport` alone remains sport/unknown and is not Vanavond-eligible.
 
 Title is not classification evidence. Actor names/counts are not classification evidence. Description text is used only inside an already-established Sport context for deliberately narrow, explicit Dutch provider phrases such as `samenvatting`, `hoogtepunten`, `voorbeschouwing`, `nabeschouwing` and `verslag`. No LLM/NLP classification is used.
 
-Disposable exact-implementation live probes exposed two distinct Series-boundary defects before review. First, the initial generic rule admitted rows whose structured evidence was not sufficient for Vanavond Series. Second, Technical Lead review #5794926935 found that the correction reused broad generic-Series blockers as positive `other/high` evidence, overstating certainty. The final mapping separates those concepts: strong non-scripted format evidence can prove `other/high`, while broad context blockers only prevent generic Series inference and otherwise remain `unknown`. On the post-blocker live probe, Film/Series/Sport eligibility stayed unchanged, while 112 broadcast row instances moved from `other/high` to `unknown/unknown`. `Sluipschutters` is the canonical ambiguity example: `Komedie + Entertainment + S5 E3` is not Series-eligible, but `Entertainment` alone does not prove `other`. Strong explicit scripted labels continue to outrank broad subject/context categories when no strong non-scripted format conflict exists. Research titles remain evidence labels only; production code contains no title exceptions.
+Disposable exact-implementation live probes exposed three separate certainty boundaries during review. First, the initial generic rule admitted rows whose structured evidence was not sufficient for Vanavond Series. Second, Technical Lead review #5794926935 found that the correction reused broad generic-Series blockers as positive `other/high` evidence. Third, Technical Lead review #5795818040 found that children-audience evidence was still being reused as positive `other/high` evidence when no content family had been proven.
+
+The mapping now separates all three concepts: strong non-scripted format evidence can prove `other/high`; broad context blockers only prevent generic Series inference; and children-audience evidence only establishes `audience: primarily-children`. A known children audience may therefore coexist with `contentType: unknown / confidence: unknown`. `Sluipschutters` remains the broad-context ambiguity example; `Kinderen + Komedie + Sx Ey` is the deterministic audience/content-type ambiguity example. Strong explicit scripted labels continue to outrank broad subject/context categories when no strong non-scripted format conflict exists, including when children audience is present. Research titles remain evidence labels only; production code contains no title exceptions.
+
+Post-#5795818040 live revalidation run `35868756695`, job `107206994998`, kept Film / general-mainstream Series / semantic Series / Sport eligibility at **36 / 99 / 182 / 3** and moved exactly one current evening row from `other/high` to `unknown/unknown` (content types now 620 other / 182 series / 36 film / 118 unknown / 9 sport). Of 91 children-audience rows, 83 are semantic `series/high`, 7 are `other/high` from independent strong non-scripted evidence, and 1 remains `unknown/unknown`.
 
 ### Persistence ownership
 

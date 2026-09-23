@@ -1,5 +1,26 @@
 # Teevee Development Logboek
 
+## 23 september 2026 — PR #144 children audience/content-type certainty corrected
+
+Technical Lead exact-head review #5795818040 found a second, narrowly scoped certainty conflation after blocker #5794926935 had been closed: `Kinderen` / `Kids En Familie` audience evidence still caused unresolved programme families to become `contentType: other / confidence: high`.
+
+Development now keeps audience and content-type certainty independent:
+- children-audience evidence alone yields `audience: primarily-children` without proving a content family;
+- when no target family or strong positive non-scripted format is proven, content type/confidence fail closed to `unknown/unknown`;
+- `Kinderen + Nieuws` remains `other/high + primarily-children` because `Nieuws` proves the non-scripted family;
+- `Kinderen + Animatie + Sx Ey` and explicit scripted-form + children evidence remain semantic scripted Series/high and are excluded from `Series vanavond` by audience;
+- strong scripted-vs-non-scripted conflict precedence, the previous broad-context fix, Film, Sport and live/repeat semantics are unchanged.
+
+Deterministic tests add the ambiguous `Kinderen + Komedie + S1 E3` boundary, positive children+Nieuws evidence, explicit scripted children and a `Dramaseries + Reality` strong-conflict case while retaining the existing animated-children and previous Lead regressions.
+
+Disposable exact-classifier live revalidation run #1 / `35868756695`, job `107206994998`, passed over the same 36,597,644-byte mapped source and 965 evening rows. Film/general-Series/semantic-Series/Sport remain **36 / 99 / 182 / 3**. Exactly one row moves from `other/high` to `unknown/unknown`: other **621→620**, unknown **117→118**. The 91 children-audience rows now split into 83 series/high, 7 other/high with independent positive non-scripted evidence, and 1 unknown/unknown. Bluey and an explicit-S/E Spidey row remain semantic children Series; NOS Jeugdjournaal remains children + other/high. The sole current children ambiguity is another Spidey broadcast with only `S3`, which now preserves its known children audience while content type fails closed.
+
+Classifier blob under the successful live probe is `763b844db21c806415c7a3d877e709e4635842cd`. The classification migration remains untouched at `f39e728b2098806f31b237319396436fc0a4e618`; no new PostgreSQL execution is required. The temporary network workflow is removed from the final branch before exact-head CI.
+
+**Next gate:** final exact-head CI on the no-probe head, then Technical Lead exact-head re-review. Do not merge, deploy or send to Independent QA before Lead PASS.
+
+---
+
 ## 23 september 2026 — PR #144 Lead Series-confidence blocker corrected
 
 Technical Lead review #5794926935 found a semantic certainty bug after the initial classification handoff: `GENERIC_SERIES_BLOCKER_CATEGORIES` correctly prevented unsafe generic scripted-Series inference, but the same broad set was also reused as positive `other/high` evidence. That violated ADR 0010's fail-closed contract because “Series not proven” does not imply “other proven”.

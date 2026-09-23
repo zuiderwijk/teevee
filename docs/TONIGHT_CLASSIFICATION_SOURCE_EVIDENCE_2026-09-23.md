@@ -75,7 +75,9 @@ Observed non-scripted children's counterexample:
 
 This supports a provider mapping to Teevee's public `primarily-children` audience semantic without exposing raw `Kinderen` to mobile or implementing `genre !== 'Kinderen'`.
 
-### Exact-classifier live validation and confidence correction
+Audience evidence is deliberately **orthogonal to content-type evidence**. `Kinderen` / `Kids En Familie` can establish `audience: primarily-children` without proving whether the programme is Film, Series, Sport or `other`. The semantic contract therefore intentionally permits `contentType: unknown` + `audience: primarily-children` when the audience is known but the programme family is not. Children-audience evidence alone never proves `other/high`; a strong non-scripted format such as `Nieuws` must independently prove that content type.
+
+### Exact-classifier live validation and certainty corrections
 
 A disposable workflow runs the **actual PR #144 classifier implementation** over the current mapped 12-channel source.
 
@@ -95,13 +97,14 @@ Raw-source inspection remains important because episode numbers, actor credits a
 - presenters/hosts are frequently encoded as `<actor>`;
 - some factual programmes have director credits.
 
-The final rule therefore keeps:
+The rule therefore keeps:
 1. strong explicit scripted-form precedence, except for strong non-scripted format conflicts;
 2. conservative generic scripted recovery from S/E plus compatible structured evidence;
 3. broad context blockers only as **negative inference gates**, never as automatic positive `other` evidence;
-4. high-confidence `other` only from strong positive non-scripted/other evidence.
+4. high-confidence `other` only from strong positive non-scripted/other evidence;
+5. children-audience evidence as an independent audience dimension that may remain known while content type/confidence fail closed.
 
-Final post-blocker exact-implementation live evidence:
+Post-#5794926935 exact-implementation live evidence:
 - workflow: `Tonight classification semantic revalidation`;
 - run: **#1 / 35862210491**;
 - job: **107184911263 — SUCCESS**;
@@ -115,6 +118,36 @@ Final post-blocker exact-implementation live evidence:
 - high-confidence `other` row instances: **621**.
 
 Compared with the preceding live classifier probe on the same current source population, Film/Series/Sport eligibility and semantic Series counts are unchanged. The confidence-only correction moves **112 broadcast row instances** from `other/high` to fail-closed `unknown/unknown`: `other` **733 → 621**, `unknown` **5 → 117**.
+
+### Audience/content-type certainty correction
+
+Technical Lead exact-head review **#5795818040** found one remaining certainty conflation after the previous blocker was closed: the classifier treated children-audience evidence itself as sufficient to emit `contentType: other / confidence: high` whenever Series had not been proven.
+
+The correction is deliberately narrower:
+- `Kinderen` / `Kids En Familie` establish `audience: primarily-children` only;
+- without a proven target family or positive strong non-scripted format, content type remains `unknown` and confidence remains `unknown`;
+- `Kinderen + Nieuws` remains `other/high` because `Nieuws`, not `Kinderen`, proves the non-scripted content type;
+- `Kinderen + Animatie + Sx Ey` and explicit scripted-form + children evidence can still become semantic scripted Series, while the audience keeps them excluded from `Series vanavond`;
+- strong non-scripted conflict precedence remains unchanged.
+
+Disposable exact-classifier revalidation of this second correction:
+- workflow: `Tonight classification audience revalidation`;
+- run: **#1 / 35868756695**;
+- job: **107206994998 — SUCCESS**;
+- source bytes: **36,597,644**;
+- evening rows inspected: **965**;
+- Film eligible: **36**;
+- general/mainstream Series eligible: **99**;
+- all semantic Series including primarily-children: **182**;
+- Sport eligible: **3**;
+- content types: **620 other / 182 series / 36 film / 118 unknown / 9 sport**.
+
+Relative to the immediately preceding exact-classifier run `35862210491`, exactly **one** current evening row moves from `other/high` to `unknown/unknown`; Film, Series and Sport eligibility and semantic-Series counts are unchanged. Among **91** rows with `audience: primarily-children`, the corrected distribution is:
+- **83** `series/high`;
+- **7** `other/high`, each requiring independent positive non-scripted evidence;
+- **1** `unknown/unknown`.
+
+The single current children-audience ambiguity is a `Marvel's Spidey and His Amazing Friends` broadcast carrying `Kinderen / Animatie` but only `S3` rather than explicit season+episode evidence. It now correctly preserves `audience: primarily-children` while leaving content type unknown. Another Spidey broadcast with `S3 E12` remains semantic children Series, as does `Bluey`; `NOS Jeugdjournaal` remains `other/high + primarily-children` because `Nieuws` is strong positive non-scripted evidence.
 
 The probe found **27 unique title/category combinations** with broad context blockers that now remain ambiguous rather than being promoted to `other/high`:
 - `Nederland in Beweging` — `Exercise`;
