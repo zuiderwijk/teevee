@@ -32,8 +32,15 @@ export type GuideSearchApiResponse =
       status: 'unavailable';
     };
 
+export type GuideSearchApiOptions = {
+  signal?: AbortSignal;
+};
+
 export interface GuideSearchApi {
-  search(request: GuideSearchApiRequest): Promise<GuideSearchApiResponse>;
+  search(
+    request: GuideSearchApiRequest,
+    options?: GuideSearchApiOptions,
+  ): Promise<GuideSearchApiResponse>;
 }
 
 function record(value: unknown): Record<string, unknown> | null {
