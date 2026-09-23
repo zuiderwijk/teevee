@@ -352,19 +352,29 @@ The module is enabled only when the empirical classification gate proves that Te
 
 ## 5. Series vanavond
 
+### Product scope — frozen
+
+`Series vanavond` means **scripted episodic series for a general/mainstream audience**.
+
+Programming that is primarily intended for children is outside this module in v1. This is a product-scope decision, not a provider-taxonomy shortcut: implementation must **not** equate a raw provider genre such as `Kinderen` with the classification rule. The central provider-independent classification/enrichment layer must own both scripted-series identity and audience intent.
+
+Examples from the 2026-09-23 research:
+- programmes such as `The Resident`, `The Big Bang Theory`, `Flikken Gent`, `The Spencer Sisters` and comparable scripted episodic series belong in scope;
+- children's scripted series such as `Bluey` and `Marvel's Spidey and His Amazing Friends` do not belong in `Series vanavond` v1.
+
+This does not state that children's series are not series. They are deliberately excluded because this Vanavond module serves the general/mainstream evening decision context. A future dedicated Kids/Family discovery module would be a separate product decision.
+
 Eligibility target:
 
-- concrete canonical series broadcasts;
+- concrete canonical scripted episodic series broadcasts within the general/mainstream scope;
 - start in `[19:00, 06:00)`;
 - after 19:00, currently airing or future only;
 - chronological ordering;
 - exact-broadcast Programme Detail destination.
 
-Do not freeze a repeat filter yet.
+Do not filter repeats in v1 merely from current canonical `isRepeat`: the empirical classification research found that signal undefined for the complete researched evening population. A trustworthy repeat rule requires better structured evidence before it can become product behaviour.
 
-The data research must determine whether explicit repeats materially reduce usefulness and whether the available repeat signal is complete enough to support a trustworthy rule.
-
-The module is enabled only when the empirical classification gate proves that series classification is reliable enough.
+The module requires the central provider-independent classification mapping/enrichment established by the empirical data gate; raw `Programme.genre` matching is not a production contract.
 
 ## 6. Sport vanavond
 
@@ -540,22 +550,27 @@ The following are frozen for subsequent Design/Development unless concrete evide
 14. No global repeat rule.
 15. Artwork is optional enrichment, never structural.
 16. Guide visual layouts remain frozen; no new permanent Guide save control in this increment.
-17. Film/Series/Sport require empirical classification validation before implementation.
-18. No production implementation starts from naive `genre.includes(...)`.
+17. Film/Series/Sport require central provider-independent classification mapping/enrichment before production category implementation.
+18. `Series vanavond` is scripted episodic series for a general/mainstream audience; programming primarily intended for children is excluded from this module in v1.
+19. The Series audience rule is semantic product classification, not a direct raw-provider `Kinderen` filter.
+20. No production implementation starts from naive `genre.includes(...)`.
 
 ## Open questions / gates
 
 These are the remaining substantive gates.
 
-### Mandatory empirical data gate
+### Empirical data gate — COMPLETE
 
-Before Film/Series/Sport implementation:
+The mandatory research is complete in `docs/TONIGHT_CLASSIFICATION_RESEARCH_2026-09-23.md`.
 
-- validate real canonical genre/category quality;
-- validate explicit repeat/live signal behaviour;
-- measure nightly volumes and channel skew;
-- determine whether a centralized canonical classification mapping/enrichment is required;
-- decide separately whether Film, Series and Sport are GO, GO WITH ENRICHMENT, or POSTPONE.
+Final decisions:
+- Film — **GO WITH CENTRAL CLASSIFICATION MAPPING/ENRICHMENT**;
+- Series — **GO WITH CENTRAL CLASSIFICATION MAPPING/ENRICHMENT**;
+- Sport — **GO WITH CENTRAL CLASSIFICATION MAPPING/ENRICHMENT**.
+
+The post-research Series product scope is now also frozen: general/mainstream scripted episodic series are in scope; programming primarily intended for children is excluded from `Series vanavond` v1.
+
+The remaining classification work is implementation design for the central provider-independent mapping/enrichment boundary, not further raw-genre product inference.
 
 ### Saved-broadcast reconciliation
 
