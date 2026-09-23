@@ -12,6 +12,37 @@ export type GuideSearchProgrammeMatch = {
   channel: Channel;
 };
 
+export type GuideSearchNavigationIntent =
+  | {
+      type: 'programme-detail';
+      match: GuideSearchProgrammeMatch;
+    }
+  | {
+      type: 'per-channel';
+      channelId: Channel['id'];
+      referenceAt: string;
+    };
+
+export function guideSearchProgrammeDetailIntent(
+  match: GuideSearchProgrammeMatch,
+): GuideSearchNavigationIntent {
+  return { type: 'programme-detail', match };
+}
+
+export function guideSearchPerChannelIntent(
+  channel: Channel,
+  referenceMs: number,
+): GuideSearchNavigationIntent {
+  if (!Number.isFinite(referenceMs)) {
+    throw new RangeError('Guide Search channel navigation requires a valid reference instant');
+  }
+  return {
+    type: 'per-channel',
+    channelId: channel.id,
+    referenceAt: new Date(referenceMs).toISOString(),
+  };
+}
+
 export function normalizeGuideSearchText(value: string): string {
   return value
     .normalize('NFKD')
