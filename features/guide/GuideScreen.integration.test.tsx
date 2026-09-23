@@ -64,10 +64,27 @@ vi.mock('@/features/guide/GuideView', async () => {
     },
   };
 });
-vi.mock('@/features/guide/PerChannelGuideView', () => ({
-  PerChannelGuideView: () =>
-    createElement('div', { 'data-testid': 'mock-per-channel' }, 'Per zender'),
-}));
+vi.mock('@/features/guide/PerChannelGuideView', async () => {
+  const React = await import('react');
+  return {
+    PerChannelGuideView: ({
+      navigationRequest,
+      onNavigationRequestHandled,
+    }: {
+      navigationRequest?: { id: number } | null;
+      onNavigationRequestHandled?: (requestId: number) => void;
+    }) => {
+      React.useEffect(() => {
+        if (navigationRequest) onNavigationRequestHandled?.(navigationRequest.id);
+      }, [navigationRequest, onNavigationRequestHandled]);
+      return React.createElement(
+        'div',
+        { 'data-testid': 'mock-per-channel' },
+        'Per zender',
+      );
+    },
+  };
+});
 vi.mock('@/features/guide/ProgrammeDetail', async () => {
   const React = await import('react');
   return {
@@ -204,6 +221,10 @@ vi.mock('@/features/guide/NowNextGuideView', async () => {
 });
 
 import GuideScreen from '@/app/index';
+import {
+  publishGuideNavigationIntent,
+  resetGuideNavigationRequestForTests,
+} from '@/features/guide/guideNavigationIntent';
 
 let root: Root;
 let container: HTMLDivElement;
@@ -216,6 +237,7 @@ beforeEach(() => {
   state.preferredPresentation = 'now-next';
   state.runtimeVersion = 0;
   state.writtenPresentations = [];
+  resetGuideNavigationRequestForTests();
   vi.stubGlobal('requestAnimationFrame', (callback: FrameRequestCallback) => {
     state.startupFrame = callback;
     return 1;
@@ -263,6 +285,30 @@ describe('GuideScreen Totaal continuity', () => {
     await act(async () => root.render(<GuideScreen />));
     expect(getByTestId('mock-total')).toBe(mountedView);
     expect(state.totalMounts).toBe(1);
+  });
+});
+
+describe('GuideScreen Search navigation handoff', () => {
+  it('opens Per zender for a transient channel intent without rewriting the saved presentation', async () => {
+    state.preferredPresentation = 'total';
+    await act(async () => root.render(<GuideScreen />));
+    expect(getByTestId('mock-total')).toBeDefined();
+
+    await act(async () => {
+      publishGuideNavigationIntent({
+        type: 'per-channel',
+        channelId: 'nl-npo-1',
+        referenceAt: '2026-09-23T06:45:00.000Z',
+      });
+    });
+
+    expect(getByTestId('mock-per-channel')).toBeDefined();
+    expect(state.writtenPresentations).toEqual([]);
+
+    await act(async () => Promise.resolve());
+
+    expect(getByTestId('mock-per-channel')).toBeDefined();
+    expect(state.writtenPresentations).toEqual([]);
   });
 });
 
