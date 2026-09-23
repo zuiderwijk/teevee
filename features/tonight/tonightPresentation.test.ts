@@ -129,6 +129,13 @@ function realisticEvening(): {
             confidence: 'unknown',
           }),
         );
+      } else if (slot === 7) {
+        classifications.push(
+          classification(id, {
+            contentType: 'sport',
+            sportType: 'magazine-documentary',
+          }),
+        );
       } else {
         classifications.push(classification(id, {}));
       }
@@ -174,12 +181,70 @@ describe('Tonight presentation selection', () => {
     expect(model.series.every(({ programme }) => programme.title === 'Gedeelde serietitel')).toBe(true);
     expect(model.sport).toHaveLength(24);
     expect(model.kijktips).toHaveLength(4);
+    expect(model.kijktips.map(({ programme }) => programme.id)).toEqual([
+      'channel-1-7',
+      'channel-4-7',
+      'channel-7-7',
+      'channel-10-7',
+    ]);
     expect(model.series.map(({ programme }) => programme.id)).toHaveLength(12);
+  });
+
+  it('applies the exact Kijktip 18:00 start window and removes ended tips', () => {
+    const channel = channels()[0]!;
+    const before: Programme = {
+      id: 'tip-before',
+      channelId: channel.id,
+      startAt: '2026-09-23T17:59:00+02:00',
+      endAt: '2026-09-23T19:10:00+02:00',
+      title: 'Voor het venster',
+    };
+    const atStart: Programme = {
+      id: 'tip-at-start',
+      channelId: channel.id,
+      startAt: '2026-09-23T18:00:00+02:00',
+      endAt: '2026-09-23T19:30:00+02:00',
+      title: 'Op de grens',
+    };
+    const ended: Programme = {
+      id: 'tip-ended',
+      channelId: channel.id,
+      startAt: '2026-09-23T18:30:00+02:00',
+      endAt: '2026-09-23T19:00:00+02:00',
+      title: 'Afgelopen tip',
+    };
+    const signals: ProgrammeEditorialSignal[] = [before, atStart, ended].map(
+      (programme) => ({
+        programmeId: programme.id,
+        type: 'kijktip',
+        source: 'tvgids',
+        sourceItemId: programme.id,
+        matchedBy: 'source-id',
+      }),
+    );
+    const model = buildTonightViewModel({
+      schedule: {
+        generatedAt: '2026-09-23T12:00:00.000Z',
+        timezone: 'Europe/Amsterdam',
+        channels: [channel],
+        programmes: [before, atStart, ended],
+      },
+      editorialSignals: signals,
+      classifications: [],
+      personalState: EMPTY_PROGRAMME_PERSONAL_STATE,
+      nowMs: Date.parse('2026-09-23T19:00:00+02:00'),
+    });
+
+    expect(model.kijktips.map(({ programme }) => programme.id)).toEqual([
+      'tip-at-start',
+    ]);
   });
 
   it('fails closed for children Series, talk/unknown Sport and missing classifications', () => {
     const fixture = realisticEvening();
-    const missingId = fixture.schedule.programmes.find((item) => item.id.endsWith('-8'))!.id;
+    const missingId = fixture.schedule.programmes.find(
+      (item) => item.id === 'channel-1-0',
+    )!.id;
     const classifications = fixture.classifications.filter(
       ({ programmeId }) => programmeId !== missingId,
     );
@@ -194,6 +259,7 @@ describe('Tonight presentation selection', () => {
     expect(model.series.some(({ programme }) => programme.id.endsWith('-2'))).toBe(false);
     expect(model.sport.some(({ programme }) => programme.id.endsWith('-5'))).toBe(false);
     expect(model.sport.some(({ programme }) => programme.id.endsWith('-6'))).toBe(false);
+    expect(model.sport.some(({ programme }) => programme.id.endsWith('-7'))).toBe(false);
     expect(model.films.some(({ programme }) => programme.id === missingId)).toBe(false);
   });
 
