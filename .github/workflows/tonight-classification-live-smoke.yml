@@ -1,0 +1,89 @@
+name: Tonight classification live smoke
+
+on:
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  live-smoke:
+    if: github.head_ref == 'chore/tonight-classification-deployment-closeout'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Verify bounded public classification read
+        env:
+          URL: https://eokszvpityhtysbwdduy.supabase.co/functions/v1/programme-classifications
+        run: |
+          set -euo pipefail
+
+          response="$(curl --fail-with-body --silent --show-error             --header 'Content-Type: application/json'             --header 'Accept: application/json'             --data '{"programmeIds":["programme-1885p521qxv4h0","programme-0kmdsio0vohx5k","programme-03490j61tdygdg"]}'             "$URL")"
+
+          RESPONSE="$response" node <<'NODE'
+          const payload = JSON.parse(process.env.RESPONSE);
+          if (payload.status !== 'ok') throw new Error('classification endpoint status is not ok');
+          if (!Array.isArray(payload.classifications) || payload.classifications.length !== 3) {
+            throw new Error('classification endpoint did not return exactly 3 requested rows');
+          }
+
+          const byId = new Map(payload.classifications.map((row) => [row.programmeId, row]));
+
+          const film = byId.get('programme-1885p521qxv4h0');
+          if (!film || film.contentType !== 'film' || film.confidence !== 'high') {
+            throw new Error('The Martian classification mismatch');
+          }
+
+          const series = byId.get('programme-0kmdsio0vohx5k');
+          if (
+            !series ||
+            series.contentType !== 'series' ||
+            series.seriesType !== 'scripted-episodic' ||
+            series.audience !== 'general-mainstream' ||
+            series.confidence !== 'high'
+          ) {
+            throw new Error('GTST classification mismatch');
+          }
+
+          const sport = byId.get('programme-03490j61tdygdg');
+          if (
+            !sport ||
+            sport.contentType !== 'sport' ||
+            !['event', 'highlights'].includes(sport.sportType) ||
+            sport.confidence !== 'high'
+          ) {
+            throw new Error('sport classification mismatch');
+          }
+
+          const allowed = new Set([
+            'programmeId',
+            'contentType',
+            'seriesType',
+            'audience',
+            'sportType',
+            'liveStatus',
+            'repeatStatus',
+            'confidence',
+          ]);
+          for (const row of payload.classifications) {
+            for (const key of Object.keys(row)) {
+              if (!allowed.has(key)) throw new Error('unexpected/raw provider field leaked: ' + key);
+            }
+          }
+          NODE
+
+      - name: Verify request bound
+        env:
+          URL: https://eokszvpityhtysbwdduy.supabase.co/functions/v1/programme-classifications
+        run: |
+          set -euo pipefail
+          node <<'NODE' > /tmp/oversized.json
+          process.stdout.write(JSON.stringify({
+            programmeIds: Array.from({ length: 257 }, (_, index) => 'programme-' + index),
+          }));
+          NODE
+
+          status="$(curl --silent --show-error             --output /tmp/oversized-response.json             --write-out '%{http_code}'             --header 'Content-Type: application/json'             --header 'Accept: application/json'             --data-binary @/tmp/oversized.json             "$URL")"
+
+          test "$status" = "400"
+          cat /tmp/oversized-response.json
