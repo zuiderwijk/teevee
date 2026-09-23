@@ -1,9 +1,9 @@
 # Teevee — Canonical Project State
 
 Last updated: 2026-09-23.
-Status: ACTIVE — **Phase 6 — Personal Features definition**.
-Current implementation priority: **Define Phase 6 Personal Features against the already-shipped save/reminder foundation before adding behavior; preserve the existing ProgrammePersonalState authority and avoid duplicate persistence or semantics**
-Current broader product phase: **Phase 6 — Personal Features**
+Status: ACTIVE — **Inter-phase Premium Artwork & Content Identity enrichment**.
+Current implementation priority: **Build the minimum provider-independent external-content/artwork enrichment foundation before starting Phase 6 Personal Features; keep canonical Programme and core Guide independent from enrichment**
+Current broader product phase: **Phase 6 — Personal Features, intentionally deferred behind the owner-priority inter-phase enrichment**
 Previous phase: **Phase 5 — Search and Discovery — CLOSED**
 
 > Mandatory start point for every development-agent session. Read `AGENTS.md` and this file before changing the repository. Historical implementation detail belongs in Git history, `DEVLOG.md`, accepted PRs/issues and timestamped evidence documents; this file stays focused on current canonical state and the single next step.
@@ -26,6 +26,25 @@ Previous phase: **Phase 5 — Search and Discovery — CLOSED**
 4. **Phase 3 — Real Data Vertical Slice:** complete and physically accepted on iPhone. Real provider -> hosted ingest -> canonical persistence -> public typed read -> mobile canonical datasource is proven, including fixture-first startup, real-data transition, fallback and context retention.
 5. **Phase 4 — Core Guide MVP hardening:** **CLOSED**. The 06:00 television-day foundation, television-day-aware runtime, D-2..D+7 navigation/date context, measured Totaal performance hardening, Per-zender production convergence, Programme Detail production convergence, Nu & Straks production convergence and Totaal production convergence are all merged. Totaal PR #114 completed the final open Guide convergence work: its runtime was owner-accepted on iPhone, independently QA-reviewed, its sole QA accessibility blocker was corrected and re-verified at the final Lead merge gate, exact-head CI #877 passed 72 test files / 538 tests plus iOS/Android/web exports, and merge commit `4cea66eca92b7224ff51940b30de09db11928427` landed on `main`. The cache decision remains **no persistent mobile schedule cache now** absent new measured evidence; true no-network cold start and any persistence technology decision remain a release-like Phase 9 gate. Physical Android interaction acceptance remains deferred until Android hardware is available and does not keep Phase 4 open.
 6. **Phase 5 — Search and Discovery: CLOSED.** Kijktip, Guide Search and the first production Vanavond runtime are merged. PR #149 / issue #148 was accepted on exact head `4f1d29e2e1843adec33b2417ef14e312887545fd` after Technical Lead implementation review, owner **FINAL PHYSICAL REFINEMENT PASS** #5801613712 and **INDEPENDENT QA PASS** #5801947266; final Lead merge gate #5801975189 merged it as `f8df570b2dbf1c4fe35b35e02d9663252bb288b8`. The runtime preserves bounded active-evening reads, provider-independent classification, exact-broadcast Programme Detail ownership, the existing personal-state authority and production-usable no-artwork fallbacks. Physical Android interaction validation remains deferred under the project-wide hardware gate. TMDB/artwork remains future enrichment, not an unclosed Phase 5 blocker.
+
+### Owner-priority inter-phase enrichment — Premium Artwork & Content Identity
+
+Phase 5 remains **CLOSED**. This is not a Phase 5 reopen and does not change accepted Guide/Search/Vanavond product behavior.
+
+Canonical research:
+- PR #154 / `docs/PROGRAMME_EXTERNAL_IDENTITY_SOURCE_RESEARCH_2026-09-23.md` proves the current XMLTV source contains useful production year, episode and role-preserving credit evidence;
+- PR #156 / `docs/TMDB_MATCHING_RESEARCH_2026-09-23.md` proves a narrow fail-closed matcher can resolve **44/45 Film** and **49/50 Series** reviewed broadcasts at high confidence, with zero known false-positive external IDs in the reviewed accepted tier;
+- production TMDB use still has an independent commercial-licensing/credential/rate-limit gate.
+
+Issue #157 / PR #158 is the first production foundation increment. It adds only typed transient server/provider evidence:
+- opaque raw production-date evidence with optional exact-YYYY `year`;
+- source-role-preserving `director[]`, `actor[]`, `producer[]`;
+- existing categories/episode/description/live/repeat evidence unchanged.
+
+Canonical `Programme`, Guide schedule transport and mobile contracts remain unchanged. The existing classification algorithm keeps using only its reviewed evidence, including the separate `hasDirectorCredit` compatibility signal; richer credit names do not change Film/Series/Sport semantics.
+
+Evidence remains transient in this increment. PR #152 is **not** a foundation dependency and remains owner-blocked; its recovery execution is used only as lifecycle evidence. Its observed **512 candidates / 319 exact matched / 193 unmatched** proves that future external-identity bootstrap for already-retained broadcasts cannot rely solely on later provider refetch plus exact-current broadcast reconciliation. The next external-identity production increment must explicitly solve bootstrap/replay ownership without title hacks, canonical-genre authority, mobile heuristics or a premature generic enrichment framework.
+
 
 ## Kijktip enrichment vertical slice — merged and deployed
 The inter-phase Kijktip vertical slice is implementation-complete and merged. Do not reopen its accepted product, matching, persistence or Guide-presentation contracts without concrete regression evidence.
@@ -264,9 +283,9 @@ Physical Android interaction acceptance remains OPEN/DEFERRED because no Android
 - physical Android validation.
 
 ## Current next step
-**Define Phase 6 — Personal Features before implementation.** Reconcile the roadmap scope (saved programmes/favourites, reminders and refined channel preferences) with capabilities that already exist today. Reuse the existing `ProgrammePersonalState` store/authority, identify what Phase 6 actually adds versus what is already production behavior, and freeze product + architecture contracts before opening implementation work. Do not create a second save/reminder store or account requirement by default.
+**Complete issue #157 / PR #158 — EPG identity evidence production foundation — then design the narrow server-side external-content identity increment before Phase 6 Personal Features.** The follow-up must use the empirically reviewed high-confidence Film/Series rules, keep Guide/mobile independent from raw provider/TMDB vocabulary, solve bootstrap/replay ownership for already-retained broadcasts, and respect the separate TMDB commercial-use gate. Do not add artwork UI, fuzzy broadcast reconciliation, a generic content catalogue or a second enrichment framework in this foundation.
 
 Owner checkout: `~/projects/teevee`.
 
 ## Resume instruction
-> Read `AGENTS.md`, this file, `docs/TONIGHT_PRODUCT_DEFINITION.md`, `docs/TONIGHT_VISUAL_CONVERGENCE.md`, `design/current/TONIGHT.md`, `docs/SEARCH_PRODUCT_DEFINITION.md`, `docs/PRODUCT.md`, `docs/UX.md`, `docs/ARCHITECTURE.md`, `docs/DATA.md`, `docs/ENGINEERING_QUALITY_POLICY.md` and `docs/BUILD_SPEC.md` before changing the repository. Phase 4 and Phase 5 (Kijktip, Guide Search and the first production Vanavond runtime) are CLOSED. Phase 6 Personal Features definition is the active next step. Preserve the accepted Guide/Search/Vanavond architecture, the 06:00 television-day model, provider-independent domain boundaries and the existing ProgrammePersonalState authority. Do not introduce direct mobile TMDB/raw-provider category logic or duplicate save/reminder persistence. Physical Android interaction validation remains deferred until Android hardware is available.
+> Read `AGENTS.md`, this file, `docs/PROGRAMME_EXTERNAL_IDENTITY_SOURCE_RESEARCH_2026-09-23.md`, `docs/TMDB_MATCHING_RESEARCH_2026-09-23.md`, `docs/TONIGHT_PRODUCT_DEFINITION.md`, `docs/TONIGHT_VISUAL_CONVERGENCE.md`, `design/current/TONIGHT.md`, `docs/SEARCH_PRODUCT_DEFINITION.md`, `docs/PRODUCT.md`, `docs/UX.md`, `docs/ARCHITECTURE.md`, `docs/DATA.md`, `docs/ENGINEERING_QUALITY_POLICY.md` and `docs/BUILD_SPEC.md` before changing the repository. Phase 4 and Phase 5 are CLOSED. Owner priority is the inter-phase Premium Artwork & Content Identity enrichment before Phase 6 Personal Features. Preserve the accepted Guide/Search/Vanavond architecture, the 06:00 television-day model, provider-independent domain boundaries and the existing ProgrammePersonalState authority. Do not introduce direct mobile TMDB/raw-provider category logic, broad content-catalogue abstractions or duplicate save/reminder persistence. Physical Android interaction validation remains deferred until Android hardware is available.
