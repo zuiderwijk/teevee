@@ -64,6 +64,59 @@ jobs:
         if: needs.classify.outputs.run_expo_export == 'true'
         run: npx expo export --platform all
 
+  guide-search-live-smoke:
+    if: github.event_name == 'pull_request' && github.head_ref == 'chore/guide-search-deployment-closeout'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Verify live channel Search
+        env:
+          GUIDE_SEARCH_URL: https://eokszvpityhtysbwdduy.supabase.co/functions/v1/guide-search
+        run: |
+          set -euo pipefail
+          response="$(curl --fail-with-body --silent --show-error \
+            --header 'Content-Type: application/json' \
+            --header 'Accept: application/json' \
+            --data '{"query":"NPO"}' \
+            "$GUIDE_SEARCH_URL")"
+          RESPONSE="$response" node <<'NODE'
+          const payload = JSON.parse(process.env.RESPONSE);
+          if (payload.status !== 'ok') throw new Error('channel Search status is not ok');
+          if (!Array.isArray(payload.channelMatches) || payload.channelMatches.length === 0) {
+            throw new Error('channel Search returned no channel matches');
+          }
+          if (!payload.channelMatches.some((channel) => channel.id === 'nl-npo-1')) {
+            throw new Error('channel Search did not return canonical NPO 1');
+          }
+          if (!['complete', 'partial', 'unavailable'].includes(payload.programmeCoverage)) {
+            throw new Error('channel Search returned invalid programme coverage');
+          }
+          NODE
+
+      - name: Verify live programme Search
+        env:
+          GUIDE_SEARCH_URL: https://eokszvpityhtysbwdduy.supabase.co/functions/v1/guide-search
+        run: |
+          set -euo pipefail
+          response="$(curl --fail-with-body --silent --show-error \
+            --header 'Content-Type: application/json' \
+            --header 'Accept: application/json' \
+            --data '{"query":"Goedemorgen Nederland"}' \
+            "$GUIDE_SEARCH_URL")"
+          RESPONSE="$response" node <<'NODE'
+          const payload = JSON.parse(process.env.RESPONSE);
+          if (payload.status !== 'ok') throw new Error('programme Search status is not ok');
+          if (!Array.isArray(payload.programmeMatches) || payload.programmeMatches.length === 0) {
+            throw new Error('programme Search returned no programme matches');
+          }
+          const match = payload.programmeMatches.find(
+            ({ programme, channel }) =>
+              programme?.title === 'Goedemorgen Nederland' &&
+              programme?.channelId === 'nl-npo-1' &&
+              channel?.id === 'nl-npo-1',
+          );
+          if (!match) throw new Error('programme Search did not return the canonical NPO 1 broadcast');
+          NODE
+
   android-native:
     needs: classify
     if: needs.classify.outputs.run_native == 'true'
