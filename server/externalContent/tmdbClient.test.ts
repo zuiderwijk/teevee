@@ -16,6 +16,18 @@ function jsonResponse(body: unknown, status = 200, headers?: HeadersInit): Respo
   });
 }
 
+function requestSession(bodies: Record<string, unknown>): TmdbRequestSession {
+  const fetcher = vi.fn(async (url: URL | RequestInfo) => {
+    const value = String(url);
+    const match = Object.entries(bodies).find(([needle]) => value.includes(needle));
+    if (!match) throw new Error(`unexpected URL ${value}`);
+    return jsonResponse(match[1]);
+  });
+  return new TmdbRequestSession(
+    new TmdbApiClient({ token: 'secret', fetcher, maxRetries: 0 }),
+  );
+}
+
 describe('TmdbApiClient', () => {
   it('keeps the bearer token inside the server request boundary and parses JSON', async () => {
     const fetcher = vi.fn(async (_url: URL | RequestInfo, init?: RequestInit) => {
@@ -159,6 +171,128 @@ describe('TmdbRequestSession', () => {
 
     await expect(session.seriesHasEpisode('200', 38, 188)).resolves.toBe(false);
     expect(fetcher).toHaveBeenCalledTimes(1);
+  });
+
+  it.each([
+    ['object', { results: {} }],
+    ['missing', {}],
+    ['null', { results: null }],
+  ])('rejects malformed movie-search results when %s', async (_case, payload) => {
+    const session = requestSession({ '/search/movie': payload });
+    await expect(session.searchMovieIds('Billy Elliot')).rejects.toMatchObject({ kind: 'malformed' });
+  });
+
+  it.each([
+    ['wrong-shaped', { results: 'not-an-array' }],
+    ['missing', {}],
+  ])('rejects malformed TV-search results when %s', async (_case, payload) => {
+    const session = requestSession({ '/search/tv': payload });
+    await expect(session.searchSeriesIds('Neighbours')).rejects.toMatchObject({ kind: 'malformed' });
+  });
+
+  it.each([
+    ['missing', {}],
+    ['wrong-shaped', { episodes: {} }],
+  ])('rejects HTTP 200 season payloads with %s episodes', async (_case, payload) => {
+    const session = requestSession({ '/tv/200/season/38': payload });
+    await expect(session.seriesHasEpisode('200', 38, 188)).rejects.toMatchObject({ kind: 'malformed' });
+  });
+
+  it('rejects a malformed movie credits container', async () => {
+    const session = requestSession({ '/movie/100': {
+      id: 100, title: 'Billy Elliot', original_title: 'Billy Elliot', release_date: '2000-09-29',
+      credits: null, alternative_titles: { titles: [] },
+    } });
+    await expect(session.getMovie('100')).rejects.toMatchObject({ kind: 'malformed' });
+  });
+
+  it('rejects malformed movie crew evidence', async () => {
+    const session = requestSession({ '/movie/100': {
+      id: 100, title: 'Billy Elliot', original_title: 'Billy Elliot', release_date: '2000-09-29',
+      credits: { crew: {}, cast: [] }, alternative_titles: { titles: [] },
+    } });
+    await expect(session.getMovie('100')).rejects.toMatchObject({ kind: 'malformed' });
+  });
+
+  it('rejects malformed movie cast evidence', async () => {
+    const session = requestSession({ '/movie/100': {
+      id: 100, title: 'Billy Elliot', original_title: 'Billy Elliot', release_date: '2000-09-29',
+      credits: { crew: [], cast: {} }, alternative_titles: { titles: [] },
+    } });
+    await expect(session.getMovie('100')).rejects.toMatchObject({ kind: 'malformed' });
+  });
+
+  it.each([
+    ['container', null],
+    ['titles', { titles: {} }],
+  ])('rejects malformed movie alternative-title %s', async (_case, alternativeTitles) => {
+    const session = requestSession({ '/movie/100': {
+      id: 100, title: 'Billy Elliot', original_title: 'Billy Elliot', release_date: '2000-09-29',
+      credits: { crew: [], cast: [] }, alternative_titles: alternativeTitles,
+    } });
+    await expect(session.getMovie('100')).rejects.toMatchObject({ kind: 'malformed' });
+  });
+
+  it.each([
+    ['aggregate-credits container', null],
+    ['aggregate cast', { cast: {} }],
+  ])('rejects malformed Series %s', async (_case, aggregateCredits) => {
+    const session = requestSession({ '/tv/200': {
+      id: 200, name: 'Neighbours', original_name: 'Neighbours',
+      aggregate_credits: aggregateCredits, alternative_titles: { results: [] },
+    } });
+    await expect(session.getSeries('200')).rejects.toMatchObject({ kind: 'malformed' });
+  });
+
+  it.each([
+    ['container', null],
+    ['results', { results: {} }],
+  ])('rejects malformed Series alternative-title %s', async (_case, alternativeTitles) => {
+    const session = requestSession({ '/tv/200': {
+      id: 200, name: 'Neighbours', original_name: 'Neighbours',
+      aggregate_credits: { cast: [] }, alternative_titles: alternativeTitles,
+    } });
+    await expect(session.getSeries('200')).rejects.toMatchObject({ kind: 'malformed' });
+  });
+
+  it.each([
+    ['wrong-shaped', { results: {} }],
+    ['missing', {}],
+  ])('rejects malformed person-search results when %s', async (_case, payload) => {
+    const session = requestSession({ '/search/person': payload });
+    await expect(session.getDirectedMovieCredits('Stephen Daldry')).rejects.toMatchObject({ kind: 'malformed' });
+  });
+
+  it('rejects malformed person movie-credit crew evidence', async () => {
+    const session = requestSession({
+      '/search/person': { results: [{ id: 10, name: 'Stephen Daldry' }] },
+      '/person/10/movie_credits': { crew: {} },
+    });
+    await expect(session.getDirectedMovieCredits('Stephen Daldry')).rejects.toMatchObject({ kind: 'malformed' });
+  });
+
+  it('accepts legitimate empty required arrays as valid empty evidence', async () => {
+    const session = requestSession({
+      '/search/movie': { results: [] },
+      '/search/tv': { results: [] },
+      '/search/person': { results: [] },
+      '/movie/100': {
+        id: 100, title: 'Billy Elliot', original_title: 'Billy Elliot', release_date: '2000-09-29',
+        credits: { crew: [], cast: [] }, alternative_titles: { titles: [] },
+      },
+      '/tv/200/season/38': { episodes: [] },
+      '/tv/200': {
+        id: 200, name: 'Neighbours', original_name: 'Neighbours',
+        aggregate_credits: { cast: [] }, alternative_titles: { results: [] },
+      },
+    });
+
+    await expect(session.searchMovieIds('Billy Elliot')).resolves.toEqual([]);
+    await expect(session.searchSeriesIds('Neighbours')).resolves.toEqual([]);
+    await expect(session.getDirectedMovieCredits('Stephen Daldry')).resolves.toEqual([]);
+    await expect(session.getMovie('100')).resolves.toMatchObject({ directors: [], cast: [], alternativeTitles: [] });
+    await expect(session.getSeries('200')).resolves.toMatchObject({ cast: [], alternativeTitles: [] });
+    await expect(session.seriesHasEpisode('200', 38, 188)).resolves.toBe(false);
   });
 
   it('deduplicates identical request-scope searches and candidate detail work', async () => {

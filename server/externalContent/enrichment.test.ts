@@ -138,6 +138,7 @@ describe('external content enrichment lifecycle', () => {
     ['timeout', new TmdbRequestError('timeout', 'TMDB request timed out')],
     ['429', new TmdbRequestError('rate-limited', 'TMDB rate limit exceeded', 429)],
     ['5xx', new TmdbRequestError('server', 'TMDB server unavailable', 503)],
+    ['malformed', new TmdbRequestError('malformed', 'TMDB required collection is invalid')],
   ])('keeps a stored canonical Guide write usable after TMDB %s failure', async (_kind, failure) => {
     const repository = new InMemoryScheduleRepository();
     const provider: EpgProvider = {
@@ -192,6 +193,7 @@ describe('external content enrichment lifecycle', () => {
 
     expect(enrichment.providerFailureCount).toBe(1);
     expect(externalRepository.writes).toHaveLength(0);
+    expect(externalRepository.repository.applyDecisions).not.toHaveBeenCalled();
     await expect(repository.getSchedule({
       from: '2026-09-24T18:00:00.000Z',
       to: '2026-09-24T20:00:00.000Z',
