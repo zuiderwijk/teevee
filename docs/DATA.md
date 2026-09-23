@@ -66,6 +66,12 @@ External data flows through:
 
 Provider-specific IDs, raw XMLTV, credentials and storage details stop at the server boundary.
 
+## TMDB commercial-use status
+
+Owner confirmation on 2026-09-23: the required commercial TMDB licensing for Teevee production API/data/image use is arranged. The TMDB commercial-use gate is **closed** for the Premium Artwork & Content Identity track.
+
+Confidential contract terms, commercial details and credentials are not stored in the repository. Production code must still implement credential ownership, rate-limit/retry/timeout/caching policy and any applicable attribution/branding obligations from the agreed contract. This does not alter the separate production EPG-provider redistribution-rights gate, channel-logo provenance requirements or rights for any non-TMDB artwork source.
+
 ## EPG identity evidence production boundary — issue #157 / PR #158
 
 The external-identity source research (#154) and TMDB matching research (#156) proved that the current XMLTV source contains a small evidence bundle that materially improves high-confidence Film/Series identity resolution without broadening canonical `Programme`.
