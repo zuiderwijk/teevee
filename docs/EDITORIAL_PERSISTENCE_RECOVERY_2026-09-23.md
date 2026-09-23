@@ -1,6 +1,6 @@
 # PR #127 Editorial Persistence Recovery Evidence — 2026-09-23
 
-Status: **Development evidence complete; return to Lead required. Do not merge or send to Independent QA yet.**
+Status: **MERGED AND DEPLOYED.** PR #127 merged as `6b11ee2fe4a5cbdf4012a680c2558b11b762d999`; the forward migration is applied to the hosted Teevee project and the historical recovery is verified live at the database boundary. The remaining historical iPhone browse-back is a device-only operational smoke, not an implementation blocker.
 
 ## Scope
 
@@ -49,7 +49,7 @@ A read-only inspection of the hosted Teevee database during this fix found that 
 
 ## Recovery contract
 
-The still-unapplied forward migration contains one allowlisted source-evidence tuple, but deliberately does **not** hardcode canonical programme ID.
+The deployed forward migration contains one allowlisted source-evidence tuple, but deliberately does **not** hardcode canonical programme ID.
 
 At migration application it resolves the captured evidence using a strict Tier-B subset:
 1. source = `tvgids`, signal type = `kijktip`;
@@ -97,7 +97,9 @@ Evidence:
 - smoke head: `e927eb320283742c5b1f403527b0bc33e7666f5f`;
 - CI run: **#961 / 35795611230**;
 - job: **editorial-migration-smoke / 106974086358 — SUCCESS**;
-- migration file under test: `supabase/migrations/20260922235737_preserve_started_editorial_signals.sql`;
+- migration file under test at review time: `supabase/migrations/20260923003000_preserve_started_editorial_signals.sql`;
+- tested migration blob: `c41b059f627406d12c684fa92a1e1179109d8dbe`;
+- after production deployment through the connected Supabase migration API, remote history recorded version `20260922235737`; the repository closeout renames the same byte-identical SQL blob to `supabase/migrations/20260922235737_preserve_started_editorial_signals.sql` so Git and hosted migration history remain aligned;
 - transaction: explicit `BEGIN` … `ROLLBACK`.
 
 Observed execution:
@@ -118,15 +120,32 @@ The assertion block executed all required cases:
 
 The temporary workflow job is removed before the final PR head. The reusable smoke SQL remains at `server/editorial/editorialMigrationSmoke.sql`.
 
-## Production migration state
+## Production deployment state
 
-The PR migration has **not** been applied to the hosted Teevee project.
+PR #127 merged to `main` as `6b11ee2fe4a5cbdf4012a680c2558b11b762d999` after Lead, owner physical iPhone and Independent QA PASS on exact head `b9867105fdf331dcd6a920c71d0f5e637e3b232c`.
 
-The hosted database remains on the pre-PR editorial migration history. No production DDL, data backfill or migration-history repair was performed during this Development session.
+The forward migration was then applied to hosted project `eokszvpityhtysbwdduy` using the exact merged SQL blob `c41b059f627406d12c684fa92a1e1179109d8dbe`. The connected migration API recorded:
 
-## Remaining gates
+- version: `20260922235737`;
+- name: `preserve_started_editorial_signals`.
 
-1. final exact-head CI;
-2. Lead exact-head review.
+Live read-only verification immediately after deployment confirmed:
 
-Do not merge and do not send to Independent QA from Development.
+- persisted TVgids signals: **58**;
+- `editorial_source_state.signal_count`: **58**;
+- orphan editorial signals: **0**;
+- owner-observed recovery rows for NPO 1 / `De slimste mens` / 22 September: **exactly 1**;
+- source freshness remained `2026-09-22T23:41:00.850Z`, proving the recovery did not rewrite `last_success_at`;
+- `teevee.replace_editorial_signal_snapshot(text,timestamptz,jsonb)` is live as **SECURITY INVOKER** with an empty `search_path` and contains the reviewed pre-upsert rekey/orphan/future-omission reconciliation order.
+
+No production programme identity or Guide contract was changed by deployment.
+
+## Remaining operational verification
+
+The visible Guide runtime was already physically accepted on iPhone before merge. One post-deployment device-only smoke remains:
+
+1. browse to NPO 1 / 22 September / `De slimste mens`;
+2. confirm the recovered Kijktip label is visible from the hosted signal;
+3. no design or persistence change is implied if this passes.
+
+Backend recovery itself is already verified live and is not pending this device smoke.
