@@ -272,6 +272,20 @@ export function tonightSavedAccessibilityLabel(item: TonightSavedItem): string {
   ].join(', ');
 }
 
+export type TonightKijktipTitleLayout = {
+  titleNumberOfLines: 2 | undefined;
+  ellipsizeMode: 'tail' | undefined;
+};
+
+export function tonightKijktipTitleLayout(
+  fontScale: number,
+): TonightKijktipTitleLayout {
+  const safeFontScale = Number.isFinite(fontScale) ? fontScale : 1;
+  return safeFontScale <= 1.35
+    ? { titleNumberOfLines: 2, ellipsizeMode: 'tail' }
+    : { titleNumberOfLines: undefined, ellipsizeMode: undefined };
+}
+
 export type TonightSportFallbackLayout = {
   titleNumberOfLines: 2 | undefined;
   mediaHeightMode: 'fixed' | 'minimum';
