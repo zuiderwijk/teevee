@@ -14,9 +14,20 @@ export type NormaliseProviderScheduleInput = {
   programmes: ExternalProgramme[];
 };
 
+export type NormalisedProgrammeObservation = {
+  programme: Programme;
+  classification: ProgrammeClassification;
+  /**
+   * Transient provider evidence for server-side enrichments. This object must never
+   * be serialized into Guide/mobile contracts or canonical Programme persistence.
+   */
+  externalProgramme: ExternalProgramme;
+};
+
 export type NormaliseProviderScheduleResult = {
   schedule: GuideSchedule;
   classifications: ProgrammeClassification[];
+  observations: NormalisedProgrammeObservation[];
   diagnostics: DataQualityDiagnostic[];
   resolvedChannelMappings: ChannelMapping[];
 };
@@ -142,6 +153,7 @@ export function normaliseProviderSchedule(
   const seenProviderProgrammes = new Set<string>();
   const programmes: Programme[] = [];
   const classificationsByProgrammeId = new Map<Programme['id'], ProgrammeClassification>();
+  const externalByProgrammeId = new Map<Programme['id'], ExternalProgramme>();
 
   for (const external of input.programmes) {
     const providerChannelId = nonEmptyText(external.channelId) ?? '';
@@ -255,6 +267,7 @@ export function normaliseProviderSchedule(
         programme: external,
       }),
     );
+    externalByProgrammeId.set(programme.id, external);
   }
 
   programmes.sort((left, right) => {
@@ -267,6 +280,23 @@ export function normaliseProviderSchedule(
 
   addOverlapDiagnostics(programmes, diagnostics);
 
+  const classifications = programmes.map((programme) => {
+    const classification = classificationsByProgrammeId.get(programme.id);
+    if (!classification) {
+      throw new Error(`Missing programme classification for ${programme.id}`);
+    }
+    return classification;
+  });
+
+  const observations = programmes.map((programme, index): NormalisedProgrammeObservation => {
+    const classification = classifications[index];
+    const externalProgramme = externalByProgrammeId.get(programme.id);
+    if (!classification || !externalProgramme) {
+      throw new Error(`Missing transient provider observation for ${programme.id}`);
+    }
+    return { programme, classification, externalProgramme };
+  });
+
   return {
     schedule: {
       generatedAt: new Date(generatedAtMs).toISOString(),
@@ -274,13 +304,8 @@ export function normaliseProviderSchedule(
       channels: [...input.canonicalChannels].sort((left, right) => left.sortOrder - right.sortOrder),
       programmes,
     },
-    classifications: programmes.map((programme) => {
-      const classification = classificationsByProgrammeId.get(programme.id);
-      if (!classification) {
-        throw new Error(`Missing programme classification for ${programme.id}`);
-      }
-      return classification;
-    }),
+    classifications,
+    observations,
     diagnostics,
     resolvedChannelMappings: mappingResolution.mappings,
   };
