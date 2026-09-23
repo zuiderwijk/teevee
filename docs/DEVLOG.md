@@ -1,5 +1,27 @@
 # Teevee Development Logboek
 
+## 23 september 2026 — PR #127 merged; editorial lifecycle migration deployed and live recovery verified
+
+PR #127 exact accepted head `b9867105fdf331dcd6a920c71d0f5e637e3b232c` passed the Lead exact-head gate, owner physical iPhone validation and Independent QA on the same SHA, then merged to `main` as `6b11ee2fe4a5cbdf4012a680c2558b11b762d999`.
+
+After merge, the reviewed editorial lifecycle SQL blob `c41b059f627406d12c684fa92a1e1179109d8dbe` was applied to hosted Teevee project `eokszvpityhtysbwdduy`. The connected Supabase migration API recorded remote version `20260922235737_preserve_started_editorial_signals`. The post-merge closeout therefore renames the repository migration to the same version without changing its SQL bytes, and updates the disposable PostgreSQL smoke/tests/evidence references accordingly. This keeps future migration replay aligned with hosted migration history without manually editing `supabase_migrations`.
+
+Immediate live verification after deployment:
+- 58 persisted TVgids editorial signals;
+- `editorial_source_state.signal_count = 58`;
+- 0 orphan editorial signals;
+- exactly 1 recovered Kijktip for NPO 1 / `De slimste mens` / 22 September;
+- `last_success_at = 2026-09-22T23:41:00.850Z` remained unchanged by recovery;
+- live `teevee.replace_editorial_signal_snapshot` is SECURITY INVOKER with empty `search_path` and the reviewed rekey → orphan → future-omission → upsert order.
+
+The backend recovery is therefore deployed and proven. The visible Kijktip runtime was already owner-accepted on iPhone before merge. One device-only post-deployment smoke remains: browse back to NPO 1 / 22 September / `De slimste mens` and confirm the recovered hosted signal is visible as a Kijktip label. Phase 5 Search remains formally paused only for that operational device check.
+
+The GitHub connector available to this session does not expose `push`-triggered workflow runs, so no exact-main Actions result is claimed here. PR-head CI #963 remains the verified implementation CI; the post-merge closeout branch receives its own normal PR CI before merge.
+
+**Next step:** complete the closeout PR CI/merge, then run the single historical iPhone browse-back smoke. After PASS, activate Phase 5 with Guide Search as the first slice.
+
+---
+
 ## 23 september 2026 — PR #127 Lead persistence blockers closed without UI changes
 
 Lead REQUIRED FIX #5785619629 accepted the current Guide UI/runtime and reopened only editorial persistence. The UI implementation is therefore untouched from reviewed head `c23609dc579438242c46fb5888ea0483b80b94e9`.
