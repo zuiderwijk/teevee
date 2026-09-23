@@ -310,6 +310,32 @@ describe('GuideScreen Search navigation handoff', () => {
     expect(getByTestId('mock-per-channel')).toBeDefined();
     expect(state.writtenPresentations).toEqual([]);
   });
+
+  it('lets a transient channel intent preempt an already loaded Nu & Straks presentation', async () => {
+    await act(async () => root.render(<GuideScreen />));
+    const frame = state.startupFrame;
+    state.startupFrame = null;
+    await act(async () => {
+      frame?.(0);
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
+    expect(getByTestId('mock-now-next')).toBeDefined();
+
+    await act(async () => {
+      publishGuideNavigationIntent({
+        type: 'per-channel',
+        channelId: 'nl-npo-1',
+        referenceAt: '2026-09-23T06:45:00.000Z',
+      });
+    });
+
+    expect(container.querySelector('[data-testid="mock-now-next"]')).toBeNull();
+    expect(getByTestId('mock-per-channel')).toBeDefined();
+    expect(getGuideNavigationRequest()).toBeNull();
+    expect(state.writtenPresentations).toEqual([]);
+  });
 });
 
 describe('GuideScreen Nu & Straks module boundary', () => {
