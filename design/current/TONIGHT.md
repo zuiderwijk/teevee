@@ -17,6 +17,8 @@ Production visual specification:
 
 The visual is canonical for the Vanavond module hierarchy, open-list/carousel composition, relative density and Film/Series poster direction. The programme titles, broadcaster mix, generated imagery and exact generated app-shell glyphs are illustrative; written product/specification rules and shared app-shell components remain authoritative.
 
+The generated board is **not** pixel-authoritative for exact media aspect ratios or standalone-shell chrome. In particular, any wider-looking Series thumbnail in the raster is superseded by the frozen **96 × 144 pt (2:3)** Series geometry in `docs/TONIGHT_VISUAL_CONVERGENCE.md`, and the written screen-header/date-context rules remain authoritative if the generated board omits or approximates them.
+
 ## Frozen production composition
 
 Vanavond is one finite vertical page:
