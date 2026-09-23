@@ -327,12 +327,16 @@ export class TmdbRequestSession implements TmdbGateway {
     const people = requiredArray(record(search, 'person search').results, 'person search results')
       .map((item) => {
         const person = record(item, 'person search result');
+        const name = requiredText(person.name, 'person search result name');
         return {
-          id: requiredId(person.id, 'person search result id'),
-          name: requiredText(person.name, 'person search result name'),
+          name,
+          id:
+            normaliseIdentityText(name) === target
+              ? requiredId(person.id, 'matching person search result id')
+              : null,
         };
       })
-      .filter((item) => normaliseIdentityText(item.name) === target)
+      .filter((item): item is { name: string; id: string } => item.id !== null)
       .slice(0, PERSON_RESULT_LIMIT);
 
     const result = new Map<string, TmdbDirectedMovieCredit>();

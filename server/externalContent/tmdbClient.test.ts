@@ -334,6 +334,20 @@ describe('TmdbRequestSession', () => {
     await expect(session.getSeries('200')).rejects.toMatchObject({ kind: 'malformed' });
   });
 
+  it('requires a person id only when the search result name actually matches', async () => {
+    const nonMatch = requestSession({
+      '/search/person': { results: [{ name: 'Someone Else' }] },
+    });
+    await expect(nonMatch.getDirectedMovieCredits('Stephen Daldry')).resolves.toEqual([]);
+
+    const malformedMatch = requestSession({
+      '/search/person': { results: [{ name: 'Stephen Daldry' }] },
+    });
+    await expect(malformedMatch.getDirectedMovieCredits('Stephen Daldry')).rejects.toMatchObject({
+      kind: 'malformed',
+    });
+  });
+
   it('rejects malformed person-search elements instead of filtering them out', async () => {
     const session = requestSession({
       '/search/person': { results: [{}] },
