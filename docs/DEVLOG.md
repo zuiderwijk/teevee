@@ -10,7 +10,7 @@ Development self-review corrected three candidate defects before handoff: the fi
 
 No product scope was broadened: no eager D-2..D+7 mobile Guide prefetch, title-only catalogue identity, recent-search history, raw-query logging, fuzzy/semantic/AI search, artwork dependency or new external state/cache dependency.
 
-**Verification:** final exact-head runtime-ui CI is still required after this documentation update. No physical-device acceptance is claimed. The 220 ms debounce remains a candidate calibration until physical iPhone evaluation.
+**Verification:** runtime candidate CI #1015 passed strict TypeScript, lint, 93 test files / 690 tests and iOS/Android/web exports. The final exact-head handoff run is recorded on PR #134 after this evidence-only documentation update. No physical-device acceptance is claimed. The 220 ms debounce remains a candidate calibration until physical iPhone evaluation.
 
 **Next step:** exact-head Lead review after green CI, then focused physical iPhone Search validation; Independent QA only after physical PASS.
 
