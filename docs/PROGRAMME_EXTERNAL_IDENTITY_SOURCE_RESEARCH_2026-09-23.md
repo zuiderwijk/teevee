@@ -134,7 +134,7 @@ Absence in this snapshot is not a universal XMLTV capability claim. It means the
 | rating | 0% | none today | none today | no current matching value |
 | new/premiere | 0% | none today | none today | no current matching value |
 | previously-shown/live | 0% in snapshot | no identity value | no identity value | retain tri-state classification semantics, not identity evidence |
-| programme `icon` | 100% | **not identity evidence** | **not identity evidence** | opaque `iptv-epg.org/images/... ` proxy URLs; no standard content/artwork identity |
+| programme `icon` | 100% | **not identity evidence** | **not identity evidence** | opaque `iptv-epg.org/images/...` proxy URLs; no standard content/artwork identity |
 | provider programme/content ID | 0% | unavailable | unavailable | do not invent one |
 
 The provider contains 74 distinct category values in this snapshot. This reinforces the existing classification conclusion that complete categories are useful structured evidence but remain provider vocabulary rather than public Teevee semantics.
@@ -491,7 +491,7 @@ If future provider retention/availability proves insufficient for replay, a smal
 
 ## 13. Programme icon
 
-The current source supplies an `<icon>` for all 3,372 mapped rows, but every URL is an opaque `iptv-epg.org/images/... ` resource.
+The current source supplies an `<icon>` for all 3,372 mapped rows, but every URL is an opaque `iptv-epg.org/images/...` resource.
 
 There is no:
 - embedded content ID;
