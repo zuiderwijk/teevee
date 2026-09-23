@@ -572,7 +572,11 @@ describe('programme detail production actions', () => {
     await act(async () => root.render(<ProgrammeDetail state={futureState} onClose={onClose} />));
     await click('programme-detail-save');
     expect(getByTestId('programme-detail-save').textContent).toBe('Bewaard');
+    expect(getByTestId('programme-detail-sheet').textContent).toContain(
+      'Bewaard in Jouw gids',
+    );
     expect(readProgrammePersonalState().saved['saved-detail']).toBeDefined();
+    expect(readProgrammePersonalState().hasUsedSave).toBe(true);
     expect(readProgrammePersonalState().hasUsedSave).toBe(true);
     expect(getByTestId('programme-detail-sheet').textContent).toContain(
       'Bewaard in Jouw gids',
