@@ -1,0 +1,265 @@
+name: Tonight classification audience revalidation
+
+on:
+  pull_request:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  live-classifier:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Create disposable exact-classifier probe
+        shell: bash
+        run: |
+          cat > server/classification/__classificationAudienceRevalidation.test.ts <<'EOF'
+          import { describe, expect, it } from 'vitest';
+
+          import {
+            isTonightFilmClassification,
+            isTonightSeriesClassification,
+            isTonightSportClassification,
+          } from '../../data/domain/programmeClassification.ts';
+          import { IPTV_EPG_NL_PROVIDER_CHANNEL_IDS } from '../epg/developmentChannelCatalog.ts';
+          import {
+            DEFAULT_DEVELOPMENT_XMLTV_URL,
+            parseXmltvDocument,
+          } from '../epg/xmltvProvider.ts';
+          import { classifyExternalProgramme } from './classifyProgramme.ts';
+
+          const GENERAL_SERIES_TARGETS = new Set([
+            'The Spencer Sisters',
+            'Best Medicine',
+            'Missie Aarde',
+            "Agatha Christie's Poirot",
+            'Aspe',
+          ]);
+
+          const CHILDREN_TARGETS = new Set([
+            'Bluey',
+            "Marvel's Spidey and His Amazing Friends",
+            'NOS Jeugdjournaal',
+          ]);
+
+          const PREVIOUS_AMBIGUITY_TARGETS = new Set([
+            'Sluipschutters',
+            'The Yorkshire Vet',
+            'LUBACH',
+            'Beste Kijkers',
+            'Top Gear',
+          ]);
+
+          function amsterdamHour(value: string): number {
+            return Number(
+              new Intl.DateTimeFormat('en-GB', {
+                timeZone: 'Europe/Amsterdam',
+                hour: '2-digit',
+                hour12: false,
+              }).format(new Date(value)),
+            );
+          }
+
+          function isTonight(value: string): boolean {
+            const hour = amsterdamHour(value);
+            return hour >= 19 || hour < 6;
+          }
+
+          function uniqueBy<T>(values: T[], key: (value: T) => string): T[] {
+            return [...new Map(values.map((value) => [key(value), value])).values()];
+          }
+
+          describe('disposable live audience/content-type revalidation', () => {
+            it('runs the exact classifier against the current mapped source', async () => {
+              const response = await fetch(DEFAULT_DEVELOPMENT_XMLTV_URL);
+              expect(response.ok).toBe(true);
+              const xml = await response.text();
+              const document = parseXmltvDocument(xml);
+              const mapped = new Set(IPTV_EPG_NL_PROVIDER_CHANNEL_IDS);
+
+              const rows = document.programmes
+                .map(({ programme }) => programme)
+                .filter(
+                  (programme) =>
+                    programme.channelId &&
+                    mapped.has(programme.channelId) &&
+                    programme.startAt &&
+                    isTonight(programme.startAt),
+                )
+                .map((programme, index) => ({
+                  programme,
+                  classification: classifyExternalProgramme({
+                    providerKey: 'development-xmltv',
+                    programmeId: `probe-${index}`,
+                    programme,
+                  }),
+                }));
+
+              const summary = rows.reduce(
+                (result, row) => {
+                  result.total += 1;
+                  result.contentType[row.classification.contentType] =
+                    (result.contentType[row.classification.contentType] ?? 0) + 1;
+                  if (row.classification.contentType === 'series') result.semanticSeries += 1;
+                  if (isTonightFilmClassification(row.classification)) result.filmEligible += 1;
+                  if (isTonightSeriesClassification(row.classification)) result.seriesEligible += 1;
+                  if (isTonightSportClassification(row.classification)) result.sportEligible += 1;
+                  return result;
+                },
+                {
+                  total: 0,
+                  filmEligible: 0,
+                  seriesEligible: 0,
+                  semanticSeries: 0,
+                  sportEligible: 0,
+                  contentType: {} as Record<string, number>,
+                },
+              );
+
+              const childrenAudience = rows.filter(
+                ({ classification }) => classification.audience === 'primarily-children',
+              );
+              const childrenDistribution = childrenAudience.reduce(
+                (result, { classification }) => {
+                  const key = `${classification.contentType}/${classification.confidence}`;
+                  result[key] = (result[key] ?? 0) + 1;
+                  return result;
+                },
+                {} as Record<string, number>,
+              );
+
+              const childrenAmbiguities = uniqueBy(
+                childrenAudience
+                  .filter(({ classification }) => classification.contentType === 'unknown')
+                  .map(({ programme, classification }) => ({
+                    title: programme.title,
+                    categories: programme.categories,
+                    episodeNumbers: programme.episodeNumbers,
+                    contentType: classification.contentType,
+                    audience: classification.audience,
+                    confidence: classification.confidence,
+                  })),
+                (item) => `${item.title}\u0000${JSON.stringify(item.categories)}`,
+              );
+
+              const targetRows = uniqueBy(
+                rows
+                  .filter(({ programme }) =>
+                    GENERAL_SERIES_TARGETS.has(programme.title ?? '') ||
+                    CHILDREN_TARGETS.has(programme.title ?? '') ||
+                    PREVIOUS_AMBIGUITY_TARGETS.has(programme.title ?? ''),
+                  )
+                  .map(({ programme, classification }) => ({
+                    title: programme.title,
+                    categories: programme.categories,
+                    episodeNumbers: programme.episodeNumbers,
+                    contentType: classification.contentType,
+                    seriesType: classification.seriesType,
+                    audience: classification.audience,
+                    sportType: classification.sportType,
+                    confidence: classification.confidence,
+                    seriesEligible: isTonightSeriesClassification(classification),
+                  })),
+                (item) => `${item.title}\u0000${JSON.stringify(item.categories)}`,
+              );
+
+              const sportRows = uniqueBy(
+                rows
+                  .filter(({ classification }) => classification.contentType === 'sport')
+                  .map(({ programme, classification }) => ({
+                    title: programme.title,
+                    categories: programme.categories,
+                    sportType: classification.sportType,
+                    confidence: classification.confidence,
+                    eligible: isTonightSportClassification(classification),
+                  })),
+                (item) =>
+                  `${item.title}\u0000${item.sportType}\u0000${JSON.stringify(item.categories)}`,
+              );
+
+              console.log('AUDIENCE_REVALIDATION_SOURCE_BYTES', xml.length);
+              console.log('AUDIENCE_REVALIDATION_SUMMARY', JSON.stringify(summary));
+              console.log(
+                'AUDIENCE_REVALIDATION_CHILDREN_DISTRIBUTION',
+                JSON.stringify({
+                  total: childrenAudience.length,
+                  byContentAndConfidence: childrenDistribution,
+                  ambiguousUniqueCount: childrenAmbiguities.length,
+                  ambiguousRows: childrenAmbiguities,
+                }),
+              );
+              console.log('AUDIENCE_REVALIDATION_TARGETS', JSON.stringify(targetRows));
+              console.log('AUDIENCE_REVALIDATION_SPORT', JSON.stringify(sportRows));
+
+              expect(summary.total).toBeGreaterThan(0);
+              expect(summary.filmEligible).toBeGreaterThan(0);
+              expect(summary.seriesEligible).toBeGreaterThan(0);
+              expect(summary.sportEligible).toBeGreaterThan(0);
+
+              for (const title of GENERAL_SERIES_TARGETS) {
+                const target = targetRows.find((row) => row.title === title);
+                if (target) {
+                  expect(target).toMatchObject({
+                    contentType: 'series',
+                    seriesType: 'scripted-episodic',
+                    audience: 'general-mainstream',
+                    confidence: 'high',
+                    seriesEligible: true,
+                  });
+                }
+              }
+
+              for (const title of ['Bluey', "Marvel's Spidey and His Amazing Friends"]) {
+                const target = targetRows.find((row) => row.title === title);
+                if (target) {
+                  expect(target).toMatchObject({
+                    contentType: 'series',
+                    seriesType: 'scripted-episodic',
+                    audience: 'primarily-children',
+                    confidence: 'high',
+                    seriesEligible: false,
+                  });
+                }
+              }
+
+              const jeugdjournaal = targetRows.find((row) => row.title === 'NOS Jeugdjournaal');
+              if (jeugdjournaal) {
+                expect(jeugdjournaal).toMatchObject({
+                  contentType: 'other',
+                  audience: 'primarily-children',
+                  confidence: 'high',
+                  seriesEligible: false,
+                });
+              }
+
+              for (const title of PREVIOUS_AMBIGUITY_TARGETS) {
+                const target = targetRows.find((row) => row.title === title);
+                if (target) {
+                  expect(target).toMatchObject({
+                    contentType: 'unknown',
+                    confidence: 'unknown',
+                    seriesEligible: false,
+                  });
+                }
+              }
+
+              for (const row of childrenAmbiguities) {
+                expect(row).toMatchObject({
+                  contentType: 'unknown',
+                  audience: 'primarily-children',
+                  confidence: 'unknown',
+                });
+              }
+            }, 30_000);
+          });
+          EOF
+      - name: Run exact implementation against live source
+        run: npx vitest run server/classification/__classificationAudienceRevalidation.test.ts --reporter=verbose
