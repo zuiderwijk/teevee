@@ -18,11 +18,10 @@ const smoke = readFileSync(
 );
 
 describe('external content reference migration contract', () => {
-  it('keeps the reference private, broadcast-keyed and cascade-owned by canonical Programme', () => {
+  it('keeps the reference private and broadcast-keyed without destructive schedule-refresh FK cascade', () => {
     expect(migration).toContain('create table teevee.programme_external_content_references');
-    expect(migration).toContain(
-      'programme_id text primary key references teevee.programmes(id) on update cascade on delete cascade',
-    );
+    expect(migration).toContain('programme_id text primary key');
+    expect(migration).not.toContain('references teevee.programmes');
     expect(migration).toContain(
       'alter table teevee.programme_external_content_references enable row level security',
     );
@@ -30,6 +29,20 @@ describe('external content reference migration contract', () => {
       'revoke all on teevee.programme_external_content_references from public, anon, authenticated',
     );
     expect(migration).not.toMatch(/unique\s*\([^)]*external_content_id/i);
+  });
+
+  it('enforces lifecycle ownership while preserving an exact delete/reinsert refresh', () => {
+    expect(migration).toContain(
+      'programme_external_content_reference_owner_before_write',
+    );
+    expect(migration).toContain(
+      'programme_external_content_reference_programme_ownership',
+    );
+    expect(migration).toContain('deferrable initially deferred');
+    expect(migration).toContain('p.channel_id = old.channel_id');
+    expect(migration).toContain('p.start_at = old.start_at');
+    expect(migration).toContain('p.end_at = old.end_at');
+    expect(migration).toContain('p.title = old.title');
   });
 
   it('persists only high-confidence TMDB Film/Series IDs and no provider evidence or artwork', () => {
@@ -58,6 +71,7 @@ describe('external content reference migration contract', () => {
   it('keeps executable lifecycle smoke for shared identity, idempotency, rekey, stale and delete ownership', () => {
     expect(smoke).toContain('Multiple concrete broadcasts may share one TMDB content identity');
     expect(smoke).toContain('Same-observation rerun is idempotent');
+    expect(smoke).toContain('normal authoritative refresh preserves');
     expect(smoke).toContain('correct/rekey');
     expect(smoke).toContain('late stale identity result was not rejected');
     expect(smoke).toContain('external reference survived canonical programme deletion');
