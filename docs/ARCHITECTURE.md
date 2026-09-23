@@ -1,6 +1,6 @@
 # Teevee Architecture
 
-Status: **Kijktip enrichment vertical slice before Phase 5 Search**. Phase 4 is closed. The provider-independent EPG path remains the core Guide authority; PR #126 adds optional editorial enrichment beside that path without making Guide availability depend on it. `docs/PROJECT_STATE.md` remains the canonical delivery status.
+Status: **Phase 5A — Guide Search architecture active**. Phase 4 and the Kijktip vertical slice are closed. The provider-independent EPG path remains the core Guide authority; optional editorial enrichment stays non-authoritative. `docs/PROJECT_STATE.md` remains the canonical delivery status and `docs/SEARCH_PRODUCT_DEFINITION.md` is the Phase 5A product contract.
 
 ## Architecture goals
 - one maintainable mobile codebase for iOS and Android;
@@ -34,6 +34,30 @@ Optional editorial enrichment is a parallel, non-authoritative lane:
 The two lanes meet only on canonical `Programme.id`. Editorial source identity never becomes EPG identity, `Programme` is not mutated, and enrichment failure cannot make a canonical schedule unavailable.
 
 Phase 3 proved this complete boundary on a physical iPhone: the Guide renders deterministic fixture data immediately, then replaces it with canonical hosted data when a complete hosted schedule is available. Unavailable/network-failed hosted reads keep the Guide usable rather than clearing the current state.
+
+## Phase 5A Guide Search architecture constraints
+
+Search must operate over the same canonical Teevee schedule store and D-2..D+7 television-day semantics as Guide, but it must not change the accepted mobile Guide loading architecture.
+
+Current runtime evidence:
+- mobile Guide keeps current/selected bounded windows, not the full ten-day horizon;
+- selected-day loading is on demand and a small session cache retains only visited windows;
+- public `guide-schedule` reads are deliberately bounded to one television day.
+
+Therefore Phase 5A requires a **provider-independent hosted Search read boundary** over canonical storage rather than eager full-horizon mobile schedule prefetch.
+
+Architecture requirements:
+- request/response types must expose canonical Teevee channel/programme identity only;
+- Search horizon derives from ADR 0008's current D-2..D+7 television-day windows;
+- only authoritative covered canonical data may contribute programme results;
+- partial/unavailable horizon state remains distinguishable from a true zero-result query;
+- lexical normalization/ranking is deterministic and testable;
+- results remain bounded and stale/out-of-order requests cannot replace newer-query state;
+- no generic title/series identity is added to `Programme`;
+- Search ranking/presentation fields remain outside canonical `Programme`;
+- Search → Programme Detail and Search → Per-zender use explicit navigation intent rather than implementation shortcuts that mutate unrelated preferences.
+
+The exact Search repository/API/SQL shape is the next architecture increment. UI implementation should consume that boundary rather than coupling directly to Supabase tables or the development provider.
 
 ## Provider boundary
 `EpgProvider` returns neutral external channel/programme records and schedule batches classified as:
