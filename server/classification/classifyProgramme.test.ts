@@ -27,15 +27,18 @@ function classify(
 
 describe('central provider-independent programme classification', () => {
   it('classifies explicit Film and recovers researched Drama-first feature-film false negatives from the full category set', () => {
-    const explicit = classify({ genre: 'Film', categories: ['Film'] });
+    const providerGenre = classify({ genre: 'Film' });
+    const explicit = classify({ categories: ['Film'] });
     const researchedFalseNegative = classify({
       title: 'The Martian',
       genre: 'Drama',
       categories: ['Drama', 'Film'],
     });
 
+    expect(providerGenre.contentType).toBe('film');
     expect(explicit.contentType).toBe('film');
     expect(researchedFalseNegative.contentType).toBe('film');
+    expect(isTonightFilmClassification(providerGenre)).toBe(true);
     expect(isTonightFilmClassification(explicit)).toBe(true);
     expect(isTonightFilmClassification(researchedFalseNegative)).toBe(true);
   });

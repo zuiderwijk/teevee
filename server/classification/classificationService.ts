@@ -15,12 +15,21 @@ export class RepositoryProgrammeClassificationApi
     input: ProgrammeClassificationApiRequest,
   ): Promise<ProgrammeClassificationApiResponse> {
     const request = parseProgrammeClassificationApiRequest(input);
-    return {
-      status: 'ok',
-      classifications:
-        await this.repository.getClassificationsForProgrammeIds(
-          request.programmeIds,
-        ),
-    };
+    const classifications =
+      await this.repository.getClassificationsForProgrammeIds(
+        request.programmeIds,
+      );
+    const requested = new Set(request.programmeIds);
+    if (
+      classifications.some(
+        (classification) => !requested.has(classification.programmeId),
+      )
+    ) {
+      throw new Error(
+        'Programme classification repository returned an unrequested programme',
+      );
+    }
+
+    return { status: 'ok', classifications };
   }
 }
