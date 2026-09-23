@@ -65,11 +65,9 @@ Dutch television viewers who want a high-quality guide experience. The MVP targe
 
 The working primary navigation baseline is Guide / Tonight / Search. Saved programmes/reminders do not require a permanent primary tab unless testing demonstrates a clear need.
 
-## Provisional default channel order
+## Next channel expansion target and default order
 
-Owner decision, 23 September 2026. This is the **provisional first-run/default ordering** for Teevee when the user has not yet created a personal channel order. A persisted user order always overrides this default.
-
-The ordering deliberately does not sort every channel mechanically by TVgids.nl pageviews. The top ten preserve the familiar Dutch provider convention where that mental model is strong; below that, observed TVgids.nl usage and coherent channel-family grouping weigh more heavily.
+Owner decision, 24 September 2026. The next dedicated channel-expansion iteration targets **49 channels** and fixes their first-run/default order. This supersedes the earlier provisional 30-channel ordering from 23 September 2026.
 
 1. NPO 1
 2. NPO 2
@@ -85,31 +83,47 @@ The ordering deliberately does not sort every channel mechanically by TVgids.nl 
 12. SBS9
 13. Paramount Network
 14. Ziggo Sport
-15. Discovery
-16. BBC One
-17. Comedy Central
-18. National Geographic
-19. BBC Two
-20. History
-21. 24Kitchen
-22. Ziggo Sport 2
-23. Ziggo Sport 3
-24. Ziggo Sport 4
-25. Ziggo Sport 5
-26. Ziggo Sport 6
-27. ESPN
-28. ESPN 2
-29. ESPN 3
-30. ESPN 4
+15. Ziggo Sport 2
+16. Ziggo Sport 3
+17. Ziggo Sport 4
+18. Ziggo Sport 5
+19. Ziggo Sport 6
+20. ESPN
+21. ESPN 2
+22. ESPN 3
+23. ESPN 4
+24. Viaplay TV
+25. RTL Z
+26. TLC
+27. Comedy Central
+28. 24Kitchen
+29. Eurosport 1
+30. Eurosport 2
+31. Discovery
+32. National Geographic
+33. History
+34. BBC NL
+35. BBC One
+36. BBC Two
+37. VRT 1
+38. VRT Canvas
+39. VTM
+40. Play
+41. Play Fictie
+42. VTM2
+43. VTM3
+44. VTM4
+45. Play Actie
+46. Play Reality
+47. Play Crime
+48. VTM Gold
+49. Ketnet
 
-Family rules behind this baseline:
-- **RTL 5 remains #5 and SBS6 #6**, despite SBS6 having higher observed TVgids.nl pageviews in the measured period; preserving the established 1–10 mental model is considered more valuable than a pure traffic sort.
-- **Ziggo Sport** is treated as a standalone high-value sports channel and therefore remains high in the general list at #14.
-- **Ziggo Sport 2–6** are kept together as one contiguous extension block lower in the list rather than being scattered individually by pageview rank.
-- **ESPN / ESPN 2–4** are likewise one contiguous family block. The ESPN block is provisionally placed after the Ziggo Sport extension block because the current TVgids.nl evidence set does not provide comparable ESPN usage data; this placement is not a claim that ESPN has lower user value.
-- Remaining long-tail channels beyond this baseline should keep a stable curated order until stronger comparable behavioral evidence exists; do not infer a ranking from missing data.
+A persisted user-defined order overrides this default. All Guide presentations must consume the same canonical default order; provider channel numbers and raw feed ordering are not product semantics.
 
-This order is a product default, not a provider identity contract. Provider channel numbers/IDs remain adapter concerns, and future user-controlled channel ordering/persistence remains authoritative once set.
+The source/mapping evidence, known alias/rename caveats and later implementation boundary are canonical in `docs/CHANNEL_EXPANSION_TARGET_2026-09-24.md`. In particular, STAR Channel and BBC NL still require explicit provider-identity verification, while the Belgian Play family is available under legacy provider names Play4/5/6/7.
+
+This is a queued product target, not a claim that the current 12-channel development runtime already implements the expanded catalog.
 
 ## Guide day and horizon
 Teevee uses a television-day model because television evenings routinely continue after midnight.
