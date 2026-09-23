@@ -50,7 +50,8 @@ function optionalString(value: unknown, field: string): string | undefined {
   return value.trim();
 }
 
-function parseChannel(value: unknown): Channel {
+export function parseGuideChannel(value: unknown): Channel {
+
   const input = record(value);
   if (!input) throw new Error('Schedule response channel must be an object');
   if (typeof input.sortOrder !== 'number' || !Number.isInteger(input.sortOrder)) {
@@ -74,7 +75,8 @@ function parseChannel(value: unknown): Channel {
   };
 }
 
-function parseProgramme(value: unknown): Programme {
+export function parseGuideProgramme(value: unknown): Programme {
+
   const input = record(value);
   if (!input) throw new Error('Schedule response programme must be an object');
 
@@ -124,8 +126,8 @@ export function parseGuideSchedule(value: unknown): GuideSchedule {
     throw new Error('Schedule response channels and programmes must be arrays');
   }
 
-  const channels = input.channels.map(parseChannel);
-  const programmes = input.programmes.map(parseProgramme);
+  const channels = input.channels.map(parseGuideChannel);
+  const programmes = input.programmes.map(parseGuideProgramme);
   const channelIds = new Set<string>();
   for (const channel of channels) {
     if (channelIds.has(channel.id)) throw new Error('Schedule response contains duplicate channel ids');
