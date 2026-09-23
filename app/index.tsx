@@ -3,6 +3,10 @@ import { type ComponentType, type ReactNode, useCallback, useEffect, useMemo, us
 import { detailReducer, initialDetailState, type ProgrammeSelection } from '@/features/guide/detailState';
 import { GuidePresentationSelector } from '@/features/guide/GuidePresentationSelector';
 import {
+  acknowledgeGuideNavigationRequest,
+  useGuideNavigationRequest,
+} from '@/features/guide/guideNavigationIntent';
+import {
   DEFAULT_GUIDE_PRESENTATION,
   type GuidePresentation,
 } from '@/features/guide/guidePresentation';
@@ -39,6 +43,7 @@ export default function GuideScreen() {
   const [nowNextLoading, setNowNextLoading] = useState(false);
   const [nowNextLoadFailed, setNowNextLoadFailed] = useState(false);
   const [detail, dispatch] = useReducer(detailReducer, initialDetailState);
+  const guideNavigationRequest = useGuideNavigationRequest();
 
   // Stable props are essential: selecting a programme must not rebuild the Guide.
   const openDetail = useCallback((selection: ProgrammeSelection) => {
@@ -46,8 +51,21 @@ export default function GuideScreen() {
   }, []);
   const closeDetail = useCallback(() => dispatch({ type: 'close' }), []);
 
-  const showPerChannel = presentation === 'per-channel';
-  const showNowNext = presentation === 'now-next' && nowNextComponent !== null;
+  const handleNavigationRequestHandled = useCallback((requestId: number) => {
+    // Search-to-Guide navigation is contextual. Keep Per zender active after the
+    // one-shot handoff is consumed, without rewriting the stored Guide preference.
+    requestedPresentationRef.current = 'per-channel';
+    setNowNextLoadFailed(false);
+    setPresentation('per-channel');
+    acknowledgeGuideNavigationRequest(requestId);
+  }, []);
+
+  const showPerChannel =
+    presentation === 'per-channel' || guideNavigationRequest !== null;
+  const showNowNext =
+    guideNavigationRequest === null &&
+    presentation === 'now-next' &&
+    nowNextComponent !== null;
   const NowNextComponent = nowNextComponent;
 
   const loadAndShowNowNext = useCallback(async () => {
@@ -129,6 +147,8 @@ export default function GuideScreen() {
       ) : showPerChannel ? (
         <PerChannelGuideView
           guideDataVersion={guideDataVersion}
+          navigationRequest={guideNavigationRequest}
+          onNavigationRequestHandled={handleNavigationRequestHandled}
           onSelectProgramme={openDetail}
           presentationNavigation={sharedPresentationNavigation}
         />

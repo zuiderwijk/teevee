@@ -2,6 +2,7 @@ import {
   parseGuideSearchApiRequest,
   parseGuideSearchApiResponse,
   type GuideSearchApi,
+  type GuideSearchApiOptions,
   type GuideSearchApiRequest,
   type GuideSearchApiResponse,
 } from './guideSearchContract.ts';
@@ -24,7 +25,10 @@ export class HostedGuideSearchClient implements GuideSearchApi {
     this.fetcher = options.fetcher ?? fetch;
   }
 
-  async search(request: GuideSearchApiRequest): Promise<GuideSearchApiResponse> {
+  async search(
+    request: GuideSearchApiRequest,
+    options: GuideSearchApiOptions = {},
+  ): Promise<GuideSearchApiResponse> {
     const parsedRequest = parseGuideSearchApiRequest(request);
     const response = await this.fetcher(this.endpoint, {
       method: 'POST',
@@ -33,6 +37,7 @@ export class HostedGuideSearchClient implements GuideSearchApi {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify(parsedRequest),
+      ...(options.signal ? { signal: options.signal } : {}),
     });
 
     let payload: unknown;

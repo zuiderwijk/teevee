@@ -2,7 +2,7 @@
 
 Last updated: 2026-09-23.
 Status: ACTIVE — **Phase 5A — Guide Search**.
-Current implementation priority: **implement the Phase 5A mobile Search UI/runtime against the deployed and live-verified Guide Search boundary**
+Current implementation priority: **gate the PR #134 mobile Guide Search implementation candidate: Lead exact-head review -> focused physical iPhone validation -> Independent QA**
 Current broader product phase: **Phase 5 — Search and Discovery**
 Previous phase: **Phase 4 — Core Guide MVP hardening — CLOSED**
 
@@ -62,6 +62,8 @@ Frozen first-slice boundaries:
 Guide Search architecture is defined by ADR 0009 and merged in PR #132 as `3c7ebcf906ff64bb2b6b71c04d177a20519eb2a0`. The mobile Guide runtime remains unchanged: Search uses a dedicated hosted `GuideSearchApi` / `GuideSearchRepository` boundary, server-owned D-2..D+7 windows, one bounded canonical-store Search RPC, explicit `complete | partial | unavailable` programme coverage, bounded canonical broadcast/channel results, optional Kijktip enrichment and transient Programme Detail / Per-zender navigation intents. No full-horizon mobile prefetch or title-only catalogue identity is introduced.
 
 The hosted boundary is **DEPLOYED AND LIVE VERIFIED**. Supabase recorded migration `20260923064120_create_guide_search_read_boundary` using the exact reviewed SQL blob `d232eacbf3b809d23ae9c4eeb9a15ea2ffc20380`. `guide-search` v1 and the shared-runtime `guide-schedule` v7 are ACTIVE and their deployed bundles match merge commit `3c7ebcf...` byte-for-byte. Production endpoint smoke CI #986 proved canonical channel Search (`NPO` → `nl-npo-1`) and concrete programme Search (`Goedemorgen Nederland` on NPO 1). Evidence: `docs/GUIDE_SEARCH_DEPLOYMENT_2026-09-23.md`.
+
+PR #134 is the current **mobile implementation candidate** and is not yet accepted/merged. It replaces the placeholder Search tab with one bounded live-query surface over the deployed `GuideSearchApi`: 220 ms candidate debounce, AbortController + request-version stale-response ownership, explicit loading/partial/unavailable/complete-no-match semantics, concrete channel/broadcast results, quiet Kijktip sibling metadata, exact-broadcast Programme Detail reuse, process-local query/result continuity, 06:00 television-day rollover refresh and a one-shot Search → Per-zender handoff that does not rewrite the persisted Guide presentation. The candidate adds no full-horizon Guide prefetch, Search history, raw-query logging, fuzzy/semantic search, artwork dependency or new external state/cache dependency.
 
 ## Frozen television-day and Guide-horizon semantics
 ADR 0008 is canonical:
@@ -201,7 +203,7 @@ Physical Android interaction acceptance remains OPEN/DEFERRED because no Android
 - physical Android validation.
 
 ## Current next step
-**Implement the Phase 5A mobile Search UI/runtime against the deployed `GuideSearchApi` boundary.** Use `docs/SEARCH_PRODUCT_DEFINITION.md` and ADR 0009 as authority. Own live-query debounce/cancellation and stale-response protection in the mobile Search runtime; render channel + concrete-broadcast results with explicit loading, no-match, partial-coverage and unavailable states; preserve query/results across Programme Detail round-trip; consume the transient Per-zender navigation intent without mutating unrelated preferences; meet Dynamic Type/accessibility/performance requirements. Then complete focused physical iPhone validation and Independent QA. Tonight remains deferred/provisional.
+**Gate PR #134 on its exact final head.** First perform Lead exact-head review against `docs/SEARCH_PRODUCT_DEFINITION.md`, ADR 0009 and the Engineering Quality Policy. If Lead passes, run focused physical iPhone validation of keyboard/input responsiveness, result density, live/partial/unavailable states, Programme Detail round-trip, Search → Per-zender channel/time handoff, light/dark/system appearance, representative Larger Text/Dynamic Type, VoiceOver semantics and perceived debounce/performance. Only after physical PASS send the same exact runtime head to Independent QA. Do not merge before those gates pass. Tonight remains deferred/provisional.
 
 Owner checkout: `~/projects/teevee`.
 

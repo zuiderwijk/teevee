@@ -28,6 +28,7 @@ import { useTeeveeTheme } from '@/theme/useTeeveeTheme';
 
 import { ChannelIdentity } from './ChannelIdentity';
 import type { ProgrammeSelection } from './detailState';
+import type { GuideNavigationRequest } from './guideNavigationIntent';
 import { GuideChrome } from './GuideChrome';
 import { GuideDaySelector } from './GuideDaySelector';
 import {
@@ -88,6 +89,8 @@ const TIME_COLUMN_CONTENT_WIDTH =
 type PerChannelGuideViewProps = {
   guideDataVersion: number;
   presentationNavigation: ReactNode;
+  navigationRequest?: GuideNavigationRequest | null;
+  onNavigationRequestHandled?: (requestId: number) => void;
   onSelectProgramme: (selection: ProgrammeSelection) => void;
 };
 
@@ -422,6 +425,8 @@ function MoonGlyph({ color, maskColor }: { color: string; maskColor: string }) {
 
 export const PerChannelGuideView = memo(function PerChannelGuideView({
   guideDataVersion,
+  navigationRequest = null,
+  onNavigationRequestHandled,
   onSelectProgramme,
   presentationNavigation,
 }: PerChannelGuideViewProps) {
@@ -643,6 +648,60 @@ export const PerChannelGuideView = memo(function PerChannelGuideView({
     },
     [collapseAnchorY, collapseEnabled, collapseProgress],
   );
+
+  useEffect(() => {
+    if (!navigationRequest) return;
+
+    const referenceMs = Date.parse(navigationRequest.intent.referenceAt);
+    if (!Number.isFinite(referenceMs)) {
+      onNavigationRequestHandled?.(navigationRequest.id);
+      return;
+    }
+
+    const targetIndex = channels.findIndex(
+      (channel) => channel.id === navigationRequest.intent.channelId,
+    );
+    if (targetIndex < 0) {
+      // Wait for the canonical channel catalogue rather than falling back to a
+      // different channel and acknowledging a handoff that was not completed.
+      return;
+    }
+
+    const targetDayStartMs = guideTelevisionDayStart(referenceMs);
+    const channelChanged =
+      selectedChannelId !== navigationRequest.intent.channelId;
+    const dayChanged = selectedDayStartMs !== targetDayStartMs;
+
+    pendingTargetTimeRef.current = referenceMs;
+    viewedTimeRef.current = referenceMs;
+    setStableAnchorTimeMs(referenceMs);
+
+    if (channelChanged) {
+      setSelectedChannelId(navigationRequest.intent.channelId);
+    }
+    if (dayChanged) {
+      selectDay(targetDayStartMs);
+    }
+
+    // Complete the one-shot handoff before acknowledging it. Avoid scheduling
+    // work that would be cancelled when the parent consumes the transient request.
+    centreSelectedChannel(targetIndex, false);
+    if (!channelChanged && !dayChanged) {
+      pendingTargetTimeRef.current = null;
+      scrollToTimestamp(referenceMs, false);
+    }
+
+    onNavigationRequestHandled?.(navigationRequest.id);
+  }, [
+    centreSelectedChannel,
+    channels,
+    navigationRequest,
+    onNavigationRequestHandled,
+    scrollToTimestamp,
+    selectDay,
+    selectedChannelId,
+    selectedDayStartMs,
+  ]);
 
   const syncViewedTimestamp = useCallback((y: number, progress: number) => {
     const scheduleOffset = perChannelScheduleOffsetForNativeOffset(y, progress);
