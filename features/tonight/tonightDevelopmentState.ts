@@ -119,6 +119,9 @@ function developmentEditorialData(
   nowMs: number,
 ): TonightRuntimeData | null {
   if (scenario !== 'kijktip-fallback' || !data) return data;
+  if (data.editorialSignals.some((signal) => signal.type === 'kijktip')) {
+    return data;
+  }
 
   const existingIds = new Set(
     data.editorialSignals.map((signal) => signal.programmeId),
