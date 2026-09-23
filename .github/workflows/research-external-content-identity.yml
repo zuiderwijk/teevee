@@ -211,8 +211,8 @@ jobs:
           multi_year_titles={k:sorted(v) for k,v in title_years.items() if len(v)>1}
           cross_channel_titles={k:sorted(v) for k,v in title_channels.items() if len(v)>1}
 
-          rich_films=sorted(films,key=lambda r:(bool(r["date"])+bool(r["roles"].get("director"))+bool(r["roles"].get("actor"))+bool(r["subtitle"])),reverse=True)[:15]
-          rich_series=sorted(series,key=lambda r:(bool(r["episode"])+bool(r["date"])+bool(r["roles"].get("actor"))+bool(r["subtitle"])),reverse=True)[:15]
+          rich_films=sorted(films,key=lambda r:(bool(r["date"])+bool(r["roles"].get("director"))+bool(r["roles"].get("actor"))+bool(r["subtitle"])),reverse=True)[:8]
+          rich_series=sorted(series,key=lambda r:(bool(r["episode"])+bool(r["date"])+bool(r["roles"].get("actor"))+bool(r["subtitle"])),reverse=True)[:8]
 
           def sample_row(r):
               return {
@@ -235,12 +235,12 @@ jobs:
               "programme_child_tags":child_tags,
               "coverage":{k:{"count":coverage[k],"pct":pct(coverage[k])} for k in sorted(coverage)},
               "multi_category":{"count":multi_categories,"pct":pct(multi_categories)},
-              "categories":{"unique":len(category_counts),"top":category_counts.most_common(80)},
+              "categories":{"unique":len(category_counts),"top":category_counts.most_common(25)},
               "date":{"shapes":date_shapes,"unique_values":len(date_values),"min":min(date_values) if date_values else None,"max":max(date_values) if date_values else None},
               "credits":{
                   "role_programme_coverage":{k:{"count":v,"pct":pct(v)} for k,v in credit_role_programmes.most_common()},
                   "role_entry_counts":credit_role_entries,
-                  "nonfiction_actor_examples":credits_examples_nonfiction_actor
+                  "nonfiction_actor_examples":credits_examples_nonfiction_actor[:8]
               },
               "episode":{
                   "systems":episode_systems,"shapes":episode_shapes,
@@ -248,8 +248,8 @@ jobs:
                   "explicit_se_programmes":explicit_se,"season_only_programmes":season_only
               },
               "values":{
-                  "language_top":language_values.most_common(20),"country_top":country_values.most_common(30),
-                  "rating_top":rating_values.most_common(30),"icon_hosts":icon_hosts
+                  "language_top":language_values.most_common(10),"country_top":country_values.most_common(15),
+                  "rating_top":rating_values.most_common(15),"icon_hosts":icon_hosts
               },
               "subset_coverage":{
                   "film_explicit":subset_metrics(films),
@@ -257,8 +257,8 @@ jobs:
                   "any_episode_num":subset_metrics(episodic)
               },
               "identity_collisions":{
-                  "titles_with_multiple_date_values":dict(list(sorted(multi_year_titles.items()))[:50]),
-                  "titles_seen_on_multiple_active_channels":dict(list(sorted(cross_channel_titles.items()))[:50]),
+                  "titles_with_multiple_date_values":dict(list(sorted(multi_year_titles.items()))[:12]),
+                  "titles_seen_on_multiple_active_channels":dict(list(sorted(cross_channel_titles.items()))[:12]),
                   "multi_year_title_count":len(multi_year_titles),
                   "cross_channel_title_count":len(cross_channel_titles)
               },
