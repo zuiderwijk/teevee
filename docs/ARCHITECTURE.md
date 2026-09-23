@@ -35,29 +35,29 @@ The two lanes meet only on canonical `Programme.id`. Editorial source identity n
 
 Phase 3 proved this complete boundary on a physical iPhone: the Guide renders deterministic fixture data immediately, then replaces it with canonical hosted data when a complete hosted schedule is available. Unavailable/network-failed hosted reads keep the Guide usable rather than clearing the current state.
 
-## Phase 5A Guide Search architecture constraints
+## Phase 5A Guide Search architecture
 
-Search must operate over the same canonical Teevee schedule store and D-2..D+7 television-day semantics as Guide, but it must not change the accepted mobile Guide loading architecture.
+ADR 0009 is canonical for the hosted Search read boundary.
 
-Current runtime evidence:
-- mobile Guide keeps current/selected bounded windows, not the full ten-day horizon;
-- selected-day loading is on demand and a small session cache retains only visited windows;
-- public `guide-schedule` reads are deliberately bounded to one television day.
+Search operates over the same canonical Teevee schedule store and D-2..D+7 television-day semantics as Guide **without changing the accepted mobile Guide loading architecture**.
 
-Therefore Phase 5A requires a **provider-independent hosted Search read boundary** over canonical storage rather than eager full-horizon mobile schedule prefetch.
+Implemented boundary:
+- mobile sends only the validated Search query to the public `guide-search` endpoint;
+- the server derives the exact ten ADR 0008 television-day windows from the current instant;
+- `GuideSearchRepository` receives those windows and returns bounded canonical matches rather than full schedules;
+- the Supabase implementation performs one service-role-only canonical-store RPC, `teevee_search_guide`;
+- authoritative programme scope is evaluated per active channel × television-day window;
+- `complete | partial | unavailable` remains distinct from result count;
+- channel Search remains available independently from programme-window coverage;
+- programme results are concrete `Programme` + `Channel` broadcasts; no generic title/series identity exists;
+- lexical matching is deterministic exact/prefix/substring after the frozen normalization rules;
+- programme/channel result counts are bounded at 24 each;
+- optional Kijktip enrichment is loaded only for returned programme IDs and fails open;
+- explicit transient navigation intents own Search → Programme Detail and Search → Per-zender handoff.
 
-Architecture requirements:
-- request/response types must expose canonical Teevee channel/programme identity only;
-- Search horizon derives from ADR 0008's current D-2..D+7 television-day windows;
-- only authoritative covered canonical data may contribute programme results;
-- partial/unavailable horizon state remains distinguishable from a true zero-result query;
-- lexical normalization/ranking is deterministic and testable;
-- results remain bounded and stale/out-of-order requests cannot replace newer-query state;
-- no generic title/series identity is added to `Programme`;
-- Search ranking/presentation fields remain outside canonical `Programme`;
-- Search → Programme Detail and Search → Per-zender use explicit navigation intent rather than implementation shortcuts that mutate unrelated preferences.
+The hosted implementation keeps the private `teevee` schema inaccessible to clients, exposes only a service-role RPC bridge to the Edge Function, and installs `unaccent` in the `extensions` schema. Mobile never receives provider/database identity or privileged credentials.
 
-The exact Search repository/API/SQL shape is the next architecture increment. UI implementation should consume that boundary rather than coupling directly to Supabase tables or the development provider.
+Search UI/runtime must consume this boundary. It must not reintroduce eager ten-day mobile prefetch, direct Supabase-table access, fuzzy/semantic/AI search, or preference mutation as a navigation shortcut.
 
 ## Provider boundary
 `EpgProvider` returns neutral external channel/programme records and schedule batches classified as:
