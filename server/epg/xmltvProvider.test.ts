@@ -74,6 +74,11 @@ describe('parseXmltvDocument', () => {
       genre: 'Nieuws',
       categories: ['Nieuws', 'Actualiteit'],
       episodeNumbers: [{ system: 'onscreen', value: 'S2 E3' }],
+      credits: {
+        director: ['Regisseur'],
+        actor: ['Nieuwslezer'],
+        producer: [],
+      },
       hasDirectorCredit: true,
       isLive: true,
     });
@@ -81,6 +86,106 @@ describe('parseXmltvDocument', () => {
       hasDirectorCredit: false,
       isRepeat: true,
     });
+  });
+
+  it('preserves proven YYYY production evidence and role-preserving Film credits', () => {
+    const parsed = parseXmltvDocument(`
+      <tv>
+        <channel id="film"><display-name>Film</display-name></channel>
+        <programme start="20260914200000 +0200" stop="20260914220000 +0200" channel="film">
+          <title>Billy Elliot</title>
+          <date>2000</date>
+          <category>Drama</category>
+          <category>Film</category>
+          <credits>
+            <director>Stephen Daldry</director>
+            <director>Regisseur &amp; Co</director>
+            <actor>Julie Walters</actor>
+            <actor>Jamie Bell</actor>
+            <producer>Jon Finn</producer>
+            <producer>Greg Brenman</producer>
+          </credits>
+        </programme>
+      </tv>
+    `);
+
+    expect(parsed.programmes[0]?.programme).toMatchObject({
+      productionDate: { raw: '2000', year: 2000 },
+      credits: {
+        director: ['Stephen Daldry', 'Regisseur & Co'],
+        actor: ['Julie Walters', 'Jamie Bell'],
+        producer: ['Jon Finn', 'Greg Brenman'],
+      },
+      hasDirectorCredit: true,
+    });
+  });
+
+  it('keeps non-YYYY date evidence opaque instead of pretending it is a universal calendar date', () => {
+    const parsed = parseXmltvDocument(`
+      <tv>
+        <channel id="date"><display-name>Date</display-name></channel>
+        <programme start="20260914200000 +0200" stop="20260914210000 +0200" channel="date">
+          <title>Future provider date shape</title>
+          <date>2026-09-14</date>
+        </programme>
+        <programme start="20260914210000 +0200" stop="20260914220000 +0200" channel="date">
+          <title>No date</title>
+        </programme>
+      </tv>
+    `);
+
+    expect(parsed.programmes[0]?.programme.productionDate).toEqual({
+      raw: '2026-09-14',
+    });
+    expect(parsed.programmes[1]?.programme.productionDate).toBeUndefined();
+  });
+
+  it('preserves actor as the provider role, filters empty names and deduplicates deterministically', () => {
+    const source = `
+      <tv>
+        <channel id="news"><display-name>News</display-name></channel>
+        <programme start="20260914200000 +0200" stop="20260914210000 +0200" channel="news">
+          <title>Hart van Nederland</title>
+          <credits>
+            <actor>Maarten Steendam</actor>
+            <actor> Maarten   Steendam </actor>
+            <actor>Sandra Schuurhof</actor>
+            <actor>Tom &amp; Jerry</actor>
+            <actor>   </actor>
+            <director></director>
+            <producer>Jos&#233; Producer</producer>
+            <producer>Jos&#xE9; Producer</producer>
+          </credits>
+        </programme>
+      </tv>
+    `;
+
+    const first = parseXmltvDocument(source);
+    const second = parseXmltvDocument(source);
+    const programme = first.programmes[0]?.programme;
+
+    expect(first).toEqual(second);
+    expect(programme?.credits).toEqual({
+      director: [],
+      actor: ['Maarten Steendam', 'Sandra Schuurhof', 'Tom & Jerry'],
+      producer: ['José Producer'],
+    });
+    expect(programme).not.toHaveProperty('cast');
+    expect(programme?.hasDirectorCredit).toBe(true);
+  });
+
+  it('leaves credit evidence absent when the provider supplies no credits block', () => {
+    const parsed = parseXmltvDocument(`
+      <tv>
+        <channel id="plain"><display-name>Plain</display-name></channel>
+        <programme start="20260914200000 +0200" stop="20260914210000 +0200" channel="plain">
+          <title>Plain programme</title>
+        </programme>
+      </tv>
+    `);
+
+    expect(parsed.programmes[0]?.programme.credits).toBeUndefined();
+    expect(parsed.programmes[0]?.programme.hasDirectorCredit).toBeUndefined();
   });
 
   it('keeps malformed external timestamps representable for downstream diagnostics', () => {
