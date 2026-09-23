@@ -1,6 +1,11 @@
-# Tonight / Vanavond — current provisional direction
+# Tonight / Vanavond — current provisional visual direction
 
-Status: **PROVISIONAL — NOT FROZEN**
+Status: **PROVISIONAL VISUAL — PRODUCT CONTRACT FROZEN**
+
+## Product authority
+- `docs/TONIGHT_PRODUCT_DEFINITION.md`
+- Product role, module hierarchy, time-window semantics, Jouw gids / Voor jou distinction and data gates come from that document.
+- Design may not reopen those product decisions merely because the older exploration image shows a different composition.
 
 ## Current exploration reference
 - `/Teevee/Vanavond: Teevee designvoorstel.png`
@@ -11,6 +16,7 @@ Status: **PROVISIONAL — NOT FROZEN**
 - May use more imagery than Guide.
 - Channel and start time remain immediately legible.
 - No news feed, infinite engagement feed or streaming-catalogue sprawl.
-- Exact module composition is still open.
+- Exact visual layout/card composition remains open.
+- The current image predates the canonical Vanavond product definition and is therefore reference material, not a module-composition specification.
 
-A new design thread may change this composition without treating the current image as owner-approved final UI, but should still start from this reference so exploration is deliberate rather than accidental regression.
+A new Design/UX thread should start from the canonical product definition plus this visual reference. Any newly generated visual remains exploration until owner approval and the normal visual-baseline acceptance protocol is completed.
