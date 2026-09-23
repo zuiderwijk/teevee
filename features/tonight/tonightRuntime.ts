@@ -9,12 +9,16 @@ import type { ProgrammeClassification } from '@/data/domain/programmeClassificat
 import {
   tonightClassificationCandidateProgrammeIds,
 } from '@/data/domain/tonight';
-import type { GuideScheduleApi } from '@/services/api/guideScheduleContract';
+import type {
+  GuideScheduleApi,
+  GuideScheduleApiResponse,
+} from '@/services/api/guideScheduleContract';
 import { HostedGuideScheduleClient } from '@/services/api/hostedGuideScheduleClient';
 import { HostedProgrammeClassificationClient } from '@/services/api/hostedProgrammeClassificationClient';
 import {
   PROGRAMME_CLASSIFICATION_MAX_IDS,
   type ProgrammeClassificationApi,
+  type ProgrammeClassificationApiResponse,
 } from '@/services/api/programmeClassificationContract';
 
 export type TonightRuntimeData = {
@@ -114,7 +118,7 @@ export class TonightRuntime {
     const from = new Date(televisionDayStartMs).toISOString();
     const to = new Date(guideTelevisionDayStart(televisionDayStartMs, 1)).toISOString();
 
-    let response;
+    let response: GuideScheduleApiResponse;
     try {
       response = await this.scheduleApi.getSchedule({ from, to });
     } catch {
@@ -168,7 +172,7 @@ export class TonightRuntime {
       return;
     }
 
-    let classificationResponse;
+    let classificationResponse: ProgrammeClassificationApiResponse;
     try {
       classificationResponse =
         await this.classificationApi.getClassifications({ programmeIds });
