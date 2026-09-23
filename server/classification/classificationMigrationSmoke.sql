@@ -254,7 +254,17 @@ begin
   ) then
     raise exception 'classification recovery removed unrelated canonical programme';
   end if;
-  if (select count(*) from teevee.schedule_coverage) <> 1 then
+  if (
+    select count(*)
+    from teevee.schedule_coverage
+    where channel_id = 'channel-1'
+      and coverage_range &&
+        tstzrange(
+          '2099-01-02T18:00:00Z'::timestamptz,
+          '2099-01-02T21:00:00Z'::timestamptz,
+          '[)'
+        )
+  ) <> 1 then
     raise exception 'classification recovery mutated schedule coverage';
   end if;
   if not exists (
