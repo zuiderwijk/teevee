@@ -272,6 +272,20 @@ export function tonightSavedAccessibilityLabel(item: TonightSavedItem): string {
   ].join(', ');
 }
 
+export type TonightSportFallbackLayout = {
+  titleNumberOfLines: 2 | undefined;
+  mediaHeightMode: 'fixed' | 'minimum';
+};
+
+export function tonightSportFallbackLayout(
+  fontScale: number,
+): TonightSportFallbackLayout {
+  const safeFontScale = Number.isFinite(fontScale) ? fontScale : 1;
+  return safeFontScale <= 1.35
+    ? { titleNumberOfLines: 2, mediaHeightMode: 'fixed' }
+    : { titleNumberOfLines: undefined, mediaHeightMode: 'minimum' };
+}
+
 export type TonightCardMetrics = {
   width: number;
   mediaHeight: number;
