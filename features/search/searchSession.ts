@@ -2,6 +2,7 @@ import { useSyncExternalStore } from 'react';
 
 import { normalizeGuideSearchText } from '@/data/domain/search';
 import {
+  GUIDE_SEARCH_MAX_QUERY_LENGTH,
   GUIDE_SEARCH_MIN_QUERY_LENGTH,
   type GuideSearchApi,
   type GuideSearchApiResponse,
@@ -31,7 +32,11 @@ export type GuideSearchSessionSnapshot = {
 type Listener = () => void;
 
 function searchableQuery(query: string): boolean {
-  return normalizeGuideSearchText(query).length >= GUIDE_SEARCH_MIN_QUERY_LENGTH;
+  const length = normalizeGuideSearchText(query).length;
+  return (
+    length >= GUIDE_SEARCH_MIN_QUERY_LENGTH &&
+    length <= GUIDE_SEARCH_MAX_QUERY_LENGTH
+  );
 }
 
 function isAbortError(error: unknown): boolean {
