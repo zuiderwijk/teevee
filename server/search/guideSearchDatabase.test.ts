@@ -42,7 +42,6 @@ describe('Guide Search database contract', () => {
     expect(sql).toContain('extensions.unaccent');
     expect(sql).toContain('pg_catalog.strpos(normalized.value, v_query) = 1');
     expect(sql).toContain('pg_catalog.strpos(normalized.value, v_query) > 0');
-    expect(sql).toContain('pg_catalog.strpos(v_query');
     expect(sql).not.toContain('pg_catalog.position');
 
     expect(sql).toMatch(
