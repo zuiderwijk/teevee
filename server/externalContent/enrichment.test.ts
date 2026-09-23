@@ -83,7 +83,7 @@ function tmdbGateway(): TmdbGateway {
 function captureRepository() {
   const writes: Parameters<ProgrammeExternalContentRepository['applyDecisions']>[0][] = [];
   const repository: ProgrammeExternalContentRepository = {
-    applyDecisions: vi.fn(async (input) => {
+    applyDecisions: vi.fn(async (input: Parameters<ProgrammeExternalContentRepository['applyDecisions']>[0]) => {
       writes.push(input);
       return {
         decisionCount: input.decisions.length,
@@ -144,7 +144,7 @@ describe('external content enrichment lifecycle', () => {
       key: 'development-xmltv',
       getChannels: vi.fn(async () => []),
       getSchedule: vi.fn(async () => ({
-        coverage: 'complete',
+        coverage: 'complete' as const,
         programmes: [{
           channelId: 'raw-one',
           startAt: '2026-09-24T18:00:00.000Z',
@@ -207,7 +207,7 @@ describe('external content enrichment lifecycle', () => {
       key: 'development-xmltv',
       getChannels: vi.fn(async () => []),
       getSchedule: vi.fn(async () => ({
-        coverage: 'partial',
+        coverage: 'partial' as const,
         programmes: [{
           channelId: 'raw-one',
           startAt: '2026-09-24T18:00:00.000Z',
