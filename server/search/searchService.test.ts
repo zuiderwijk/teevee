@@ -2,7 +2,10 @@ import { describe, expect, it, vi } from 'vitest';
 
 import type { ProgrammeEditorialSignalRepository } from '../editorial/editorialRepository';
 import { guideTelevisionDayHorizon } from '../../data/domain/guideTime';
-import type { GuideSearchRepository } from './searchRepository';
+import type {
+  GuideSearchRepository,
+  GuideSearchRepositoryRequest,
+} from './searchRepository';
 import { RepositoryGuideSearchApi } from './searchService';
 
 const NOW = Date.parse('2026-09-23T18:00:00Z');
@@ -29,7 +32,7 @@ function searchRepository(result = {
   channelMatches: [channel],
   programmeMatches: [{ programme, channel }],
 }) {
-  const search = vi.fn(async () => result);
+  const search = vi.fn(async (_request: GuideSearchRepositoryRequest) => result);
   return {
     repository: { search } satisfies GuideSearchRepository,
     search,
