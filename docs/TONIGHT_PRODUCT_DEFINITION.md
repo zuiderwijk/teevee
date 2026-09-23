@@ -1,6 +1,6 @@
 # Vanavond / Tonight — Product Definition
 
-Status: **CANONICAL PRODUCT CONTRACT CANDIDATE — product semantics frozen by this definition; becomes repository-canonical when merged**  
+Status: **CANONICAL PRODUCT CONTRACT — product semantics frozen**  
 Defined: 2026-09-23  
 Owner: Teevee product  
 Implementation status: **NOT STARTED — no production code in this increment**

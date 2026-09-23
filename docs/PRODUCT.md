@@ -60,7 +60,7 @@ Dutch television viewers who want a high-quality guide experience. The MVP targe
 
 ## Primary product surfaces
 - **Guide** — default destination, with Totaal, Per zender and Nu & Straks.
-- **Tonight / Vanavond** — finite decision-support for the active television evening, rooted in concrete linear-TV broadcasts. Product contract: `docs/TONIGHT_PRODUCT_DEFINITION.md`; visual composition remains open for Design/UX.
+- **Tonight / Vanavond** — finite decision-support for the active television evening, rooted in concrete linear-TV broadcasts. Product contract: `docs/TONIGHT_PRODUCT_DEFINITION.md`; accepted production visual/specification: `design/current/TONIGHT.md` + `docs/TONIGHT_VISUAL_CONVERGENCE.md`.
 - **Search** — direct programme-broadcast/channel retrieval answering when and where something is on television. Phase 5A canonical contract: `docs/SEARCH_PRODUCT_DEFINITION.md`.
 
 The working primary navigation baseline is Guide / Tonight / Search. Saved programmes/reminders do not require a permanent primary tab unless testing demonstrates a clear need.
