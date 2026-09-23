@@ -117,7 +117,7 @@ describe('temporary raw IPTV-EPG NL richness capture', () => {
 
         const title = firstText(block, 'title') ?? '';
         const iconTag = block.match(/<icon\\b[^>]*>/i)?.[0];
-        const iconSrc = iconTag ? attribute(iconTag, 'src') : undefined;
+        const iconSrc = (iconTag ? attribute(iconTag, 'src') : undefined) ?? firstText(block, 'icon');
         if (iconSrc) {
           iconUrls.set(iconSrc, (iconUrls.get(iconSrc) ?? 0) + 1);
           try {
