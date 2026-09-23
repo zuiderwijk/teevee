@@ -336,11 +336,61 @@ Artwork may enrich the card but is not structural.
 
 Because the section heading already says `Onze Kijktips`, cards do not need a second visible `Kijktip` label by default. Accessibility semantics may still expose editorial status where useful.
 
+## Category discovery channel scope
+
+Owner decision, 24 September 2026.
+
+`Films vanavond`, `Series vanavond` and `Sport vanavond` are decision-support modules, not exhaustive listings across the complete supported channel catalog. As Teevee expands toward 50–100 channels, these three modules therefore use a deliberately curated **Vanavond discovery channel scope**.
+
+This is an internal product eligibility set. Do **not** label it to users as `populaire zenders`: the set is curated for primary Vanavond relevance and is not a claim that every included channel is empirically more popular than every excluded channel.
+
+The frozen discovery-channel set is:
+
+1. NPO 1
+2. NPO 2
+3. NPO 3
+4. RTL 4
+5. RTL 5
+6. SBS6
+7. RTL 7
+8. Veronica
+9. Net5
+10. RTL 8
+11. STAR Channel
+12. SBS9
+13. Paramount Network
+14. Ziggo Sport
+15. Ziggo Sport 2
+16. Ziggo Sport 3
+17. Ziggo Sport 4
+18. Ziggo Sport 5
+19. Ziggo Sport 6
+20. ESPN
+21. ESPN 2
+22. ESPN 3
+23. ESPN 4
+24. Viaplay TV
+25. Eurosport 1
+26. Eurosport 2
+27. BBC NL
+28. BBC One
+
+Scope semantics:
+
+- **Films / Series / Sport:** a broadcast must be on one of these canonical channels in addition to satisfying the existing category, time-window and current-time eligibility rules.
+- **Jouw gids:** no channel-scope filter. Explicitly saved broadcasts remain eligible regardless of channel.
+- **Onze Kijktips:** no channel-scope filter. The editorial Kijktip signal itself remains the selection authority.
+- **Guide / Search:** unaffected; the channel scope is specific to the three Vanavond category-discovery modules.
+- **No user-facing `populaire zenders / alle zenders` toggle in this iteration.** The accepted Vanavond composition remains finite and control-light; adding an exhaustive mode would reintroduce Guide-like breadth into the discovery surface.
+- Do not create a separate mobile-only name list. Implementation must resolve this scope against stable Teevee-owned canonical channel identities so provider renames, legacy aliases and feed ordering cannot change eligibility.
+- When the expanded channel catalog is live, measure how many otherwise valid Film/Series/Sport broadcasts are excluded by this scope. A future broader mode such as `Mijn zenders` requires separate product evidence and design approval rather than being pre-emptively added now.
+
 ## 4. Films vanavond
 
 Eligibility target:
 
 - concrete canonical film broadcasts;
+- canonical channel is in the frozen **Vanavond discovery channel scope** above;
 - start in `[19:00, 06:00)`;
 - after 19:00, currently airing or future only;
 - chronological ordering;
@@ -367,6 +417,7 @@ This does not state that children's series are not series. They are deliberately
 Eligibility target:
 
 - concrete canonical scripted episodic series broadcasts within the general/mainstream scope;
+- canonical channel is in the frozen **Vanavond discovery channel scope** above;
 - start in `[19:00, 06:00)`;
 - after 19:00, currently airing or future only;
 - chronological ordering;
@@ -381,6 +432,7 @@ The module requires the central provider-independent classification mapping/enri
 Eligibility target:
 
 - concrete canonical sport broadcasts;
+- canonical channel is in the frozen **Vanavond discovery channel scope** above;
 - start in `[19:00, 06:00)`;
 - after 19:00, currently airing or future only;
 - chronological ordering;

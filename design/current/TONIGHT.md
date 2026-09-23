@@ -85,6 +85,14 @@ Save feedback from Programme Detail explicitly connects the action to this modul
 - module omitted completely when zero eligible items;
 - no section chevron.
 
+## Category discovery scope
+
+Films, Series and Sport use the owner-approved curated Vanavond discovery-channel scope from `docs/TONIGHT_PRODUCT_DEFINITION.md`.
+
+This is not surfaced as a filter, chip, segmented control or `populaire zenders / alle zenders` toggle in the accepted production composition. The carousel remains visually unchanged: eligibility is resolved before presentation.
+
+`Jouw gids` and `Onze Kijktips` are not constrained by this category scope.
+
 ## Artwork direction
 
 Artwork is enhancement, never a structural dependency.
