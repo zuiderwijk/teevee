@@ -170,13 +170,13 @@ export class RepositoryGuideSearchApi implements GuideSearchApi {
           : 'partial';
 
     const merged = mergeCanonicalSchedules(schedules);
-    const channelsById = new Map<string, Channel>();
-    for (const channel of [...this.canonicalChannels, ...merged.channels]) {
-      const existing = channelsById.get(channel.id);
-      if (existing && channelFingerprint(existing) !== channelFingerprint(channel)) {
-        throw new Error(`Conflicting canonical channel metadata for ${channel.id}`);
-      }
-      channelsById.set(channel.id, existing ?? channel);
+    const channelsById = new Map<string, Channel>(
+      this.canonicalChannels.map((channel) => [channel.id, channel]),
+    );
+    for (const channel of merged.channels) {
+      // Stored canonical metadata wins over the server-side fallback catalogue when
+      // authoritative schedule coverage is available.
+      channelsById.set(channel.id, channel);
     }
     const channels = [...channelsById.values()].sort(
       (left, right) =>
