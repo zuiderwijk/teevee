@@ -22,6 +22,27 @@ export type ExternalEpisodeNumber = {
   value: string;
 };
 
+/**
+ * Provider production-date evidence. `raw` is deliberately opaque: XMLTV allows
+ * provider-specific date semantics and Teevee must not pretend every value is an
+ * ISO calendar date. An adapter may expose `year` only when that interpretation is
+ * proven safe for its source.
+ */
+export type ExternalProductionDate = {
+  raw: string;
+  year?: number;
+};
+
+/**
+ * Role-preserving provider credit evidence. These names stay server-side and keep
+ * the source role exactly: in particular, `actor` is not reinterpreted as cast.
+ */
+export type ExternalProgrammeCredits = {
+  director: string[];
+  actor: string[];
+  producer: string[];
+};
+
 export type ExternalProgramme = {
   id?: string;
   channelId?: string;
@@ -35,9 +56,15 @@ export type ExternalProgramme = {
   /** Complete provider vocabulary, server-side only. */
   categories?: string[];
   episodeNumbers?: ExternalEpisodeNumber[];
+  /** Server-only provider production-date evidence; never canonical/mobile. */
+  productionDate?: ExternalProductionDate;
+  /** Server-only role-preserving provider credit names; never canonical/mobile. */
+  credits?: ExternalProgrammeCredits;
   /**
-   * Structured credit evidence only. Undefined means the provider supplied no
+   * Classification compatibility signal. Undefined means the provider supplied no
    * credits block; false means credits were present without a director credit.
+   * Kept separate from `credits.director` so richer parsing cannot silently change
+   * the already-reviewed classification contract.
    */
   hasDirectorCredit?: boolean;
   isLive?: boolean;
