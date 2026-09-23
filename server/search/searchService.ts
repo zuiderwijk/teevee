@@ -1,3 +1,4 @@
+import type { ProgrammeEditorialSignal } from '../../data/domain/editorial.ts';
 import type { ProgrammeEditorialSignalRepository } from '../editorial/editorialRepository.ts';
 import type { ScheduleRepository } from '../epg/scheduleRepository.ts';
 import type { Channel, GuideSchedule, Programme } from '../../data/domain/epg.ts';
@@ -132,6 +133,7 @@ export class RepositoryGuideSearchApi implements GuideSearchApi {
   constructor(
     private readonly scheduleRepository: ScheduleRepository,
     private readonly editorialRepository?: ProgrammeEditorialSignalRepository,
+    private readonly canonicalChannels: readonly Channel[] = [],
     private readonly now: () => number = () => Date.now(),
   ) {}
 
@@ -178,7 +180,20 @@ export class RepositoryGuideSearchApi implements GuideSearchApi {
         ? 'complete'
         : 'partial';
 
-    const { channels, programmes } = mergeCanonicalSchedules(schedules);
+    const merged = mergeCanonicalSchedules(schedules);
+    const channelsById = new Map<string, Channel>();
+    for (const channel of [...this.canonicalChannels, ...merged.channels]) {
+      const existing = channelsById.get(channel.id);
+      if (existing && channelFingerprint(existing) !== channelFingerprint(channel)) {
+        throw new Error(`Conflicting canonical channel metadata for ${channel.id}`);
+      }
+      channelsById.set(channel.id, existing ?? channel);
+    }
+    const channels = [...channelsById.values()].sort(
+      (left, right) =>
+        left.sortOrder - right.sortOrder || left.id.localeCompare(right.id),
+    );
+    const programmes = merged.programmes;
     const channelOrder = new Map(channels.map((channel) => [channel.id, channel.sortOrder]));
     const channelById = new Map(channels.map((channel) => [channel.id, channel]));
 
@@ -234,7 +249,7 @@ export class RepositoryGuideSearchApi implements GuideSearchApi {
       .slice(0, GUIDE_SEARCH_PROGRAMME_LIMIT)
       .map(({ programme, channel }) => ({ programme, channel }));
 
-    let editorialSignals = [];
+    let editorialSignals: ProgrammeEditorialSignal[] = [];
     if (this.editorialRepository && programmeMatches.length > 0) {
       try {
         editorialSignals = await this.editorialRepository.getSignalsForProgrammeIds(
