@@ -57,6 +57,8 @@ Implemented boundary:
 
 The hosted implementation keeps the private `teevee` schema inaccessible to clients, exposes only a service-role RPC bridge to the Edge Function, and installs `unaccent` in the `extensions` schema. Mobile never receives provider/database identity or privileged credentials.
 
+This boundary is **deployed and live-verified**. Hosted migration `20260923064120_create_guide_search_read_boundary` carries the reviewed SQL blob `d232eacbf3b809d23ae9c4eeb9a15ea2ffc20380`. `guide-search` v1 is ACTIVE as the public read boundary; its 12-file bundle matches PR #132 merge commit `3c7ebcf906ff64bb2b6b71c04d177a20519eb2a0` byte-for-byte. The existing `guide-schedule` public read was redeployed as v7 with the same shared hardened Edge helper and also matches that merge commit. Production endpoint smoke CI #986 proved both canonical channel retrieval and a concrete programme broadcast. Evidence: `docs/GUIDE_SEARCH_DEPLOYMENT_2026-09-23.md`.
+
 Search UI/runtime must consume this boundary. It must not reintroduce eager ten-day mobile prefetch, direct Supabase-table access, fuzzy/semantic/AI search, or preference mutation as a navigation shortcut.
 
 ## Provider boundary
