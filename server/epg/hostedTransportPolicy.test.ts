@@ -117,6 +117,25 @@ describe('parseHostedRefreshRequest', () => {
     });
   });
 
+  it('accepts bounded non-destructive classification recovery windows', () => {
+    expect(
+      parseHostedRefreshRequest(
+        {
+          mode: 'classification-recovery',
+          from: '2026-09-23T06:00:00+02:00',
+          to: '2026-09-24T06:00:00+02:00',
+          providerChannelIds: ['NPO1.nl'],
+        },
+        providerIds,
+      ),
+    ).toEqual({
+      mode: 'classification-recovery',
+      from: '2026-09-23T04:00:00.000Z',
+      to: '2026-09-24T04:00:00.000Z',
+      providerChannelIds: ['NPO1.nl'],
+    });
+  });
+
   it('deduplicates safe provider subsets and rejects unknown provider ids', () => {
     expect(
       parseHostedRefreshRequest(

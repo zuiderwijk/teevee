@@ -5,6 +5,7 @@ import type {
   Programme,
 } from '@/data/domain/epg';
 import type { ProgrammeClassification } from '@/data/domain/programmeClassification';
+import type { ProgrammeClassificationRecoveryRepository } from '../classification/classificationRecoveryRepository.ts';
 import type { ProgrammeClassificationRepository } from '../classification/classificationRepository.ts';
 
 import type {
@@ -153,11 +154,18 @@ function coveredFreshness(
  * It is intentionally not a production persistence choice.
  */
 export class InMemoryScheduleRepository
-  implements ScheduleRepository, ProgrammeClassificationRepository
+  implements
+    ScheduleRepository,
+    ProgrammeClassificationRepository,
+    ProgrammeClassificationRecoveryRepository
 {
   private readonly channels = new Map<Channel['id'], Channel>();
   private readonly programmes = new Map<Programme['id'], Programme>();
   private readonly classifications = new Map<Programme['id'], ProgrammeClassification>();
+  private readonly classificationObservedAtByProgramme = new Map<
+    Programme['id'],
+    number
+  >();
   private readonly coverageByChannel = new Map<Channel['id'], CoverageSegment[]>();
 
   async replaceWindow(input: ScheduleWindowWrite): Promise<ScheduleWindowWriteResult> {
@@ -223,6 +231,7 @@ export class InMemoryScheduleRepository
       if (!intersects(startMs, endMs, fromMs, toMs)) continue;
       this.programmes.delete(programmeId);
       this.classifications.delete(programmeId);
+      this.classificationObservedAtByProgramme.delete(programmeId);
       removedProgrammeCount += 1;
     }
 
@@ -236,6 +245,10 @@ export class InMemoryScheduleRepository
         this.classifications.set(
           programme.id,
           { ...classificationsByProgrammeId.get(programme.id)! },
+        );
+        this.classificationObservedAtByProgramme.set(
+          programme.id,
+          validated.generatedAtMs,
         );
       }
       storedProgrammeCount += 1;
@@ -254,6 +267,111 @@ export class InMemoryScheduleRepository
     }
 
     return { status: 'stored', removedProgrammeCount, storedProgrammeCount };
+  }
+
+  async recoverClassifications(input: {
+    from: string;
+    to: string;
+    observedAt: string;
+    channelIds: Channel['id'][];
+    programmes: Programme[];
+    classifications: ProgrammeClassification[];
+  }) {
+    const [fromMs, toMs] = windowBounds(input.from, input.to);
+    const observedAtMs = timestamp(input.observedAt, 'observedAt');
+    const channelIds = new Set(
+      input.channelIds.map((channelId) => channelId.trim()).filter(Boolean),
+    );
+    if (channelIds.size === 0) {
+      throw new Error('channelIds must contain at least one channel');
+    }
+
+    const programmesById = new Map<Programme['id'], Programme>();
+    for (const programme of input.programmes) {
+      if (programmesById.has(programme.id)) {
+        throw new Error(`Duplicate recovery programme id: ${programme.id}`);
+      }
+      const [startMs, endMs] = programmeBounds(programme);
+      if (
+        !channelIds.has(programme.channelId) ||
+        !intersects(startMs, endMs, fromMs, toMs)
+      ) {
+        throw new Error(
+          `Recovery programme ${programme.id} is outside the requested scope`,
+        );
+      }
+      programmesById.set(programme.id, programme);
+    }
+
+    const classificationsByProgrammeId = new Map(
+      input.classifications.map((classification) => [
+        classification.programmeId,
+        classification,
+      ]),
+    );
+    if (classificationsByProgrammeId.size !== input.classifications.length) {
+      throw new Error('Duplicate recovery programme classification programmeId');
+    }
+    for (const programmeId of programmesById.keys()) {
+      if (!classificationsByProgrammeId.has(programmeId)) {
+        throw new Error(`Missing recovery classification for ${programmeId}`);
+      }
+    }
+    for (const programmeId of classificationsByProgrammeId.keys()) {
+      if (!programmesById.has(programmeId)) {
+        throw new Error(
+          `Recovery classification references programme outside payload: ${programmeId}`,
+        );
+      }
+    }
+
+    let matchedProgrammeCount = 0;
+    let recoveredClassificationCount = 0;
+    let ignoredStaleCount = 0;
+
+    for (const candidate of programmesById.values()) {
+      const existing = this.programmes.get(candidate.id);
+      const exactMatch =
+        existing !== undefined &&
+        existing.channelId === candidate.channelId &&
+        timestamp(existing.startAt, 'existing.startAt') ===
+          timestamp(candidate.startAt, 'candidate.startAt') &&
+        timestamp(existing.endAt, 'existing.endAt') ===
+          timestamp(candidate.endAt, 'candidate.endAt') &&
+        existing.title === candidate.title;
+
+      if (!exactMatch || !existing) continue;
+      matchedProgrammeCount += 1;
+
+      const [startMs, endMs] = programmeBounds(existing);
+      const newerSchedule = hasNewerCoverage(
+        this.coverageByChannel.get(existing.channelId) ?? [],
+        startMs,
+        endMs,
+        observedAtMs,
+      );
+      const newerClassification =
+        (this.classificationObservedAtByProgramme.get(existing.id) ??
+          Number.NEGATIVE_INFINITY) > observedAtMs;
+      if (newerSchedule || newerClassification) {
+        ignoredStaleCount += 1;
+        continue;
+      }
+
+      this.classifications.set(existing.id, {
+        ...classificationsByProgrammeId.get(existing.id)!,
+      });
+      this.classificationObservedAtByProgramme.set(existing.id, observedAtMs);
+      recoveredClassificationCount += 1;
+    }
+
+    return {
+      candidateProgrammeCount: programmesById.size,
+      matchedProgrammeCount,
+      recoveredClassificationCount,
+      ignoredStaleCount,
+      unmatchedProgrammeCount: programmesById.size - matchedProgrammeCount,
+    };
   }
 
   async getClassificationsForProgrammeIds(

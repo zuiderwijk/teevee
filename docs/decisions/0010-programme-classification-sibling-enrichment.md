@@ -103,9 +103,24 @@ Consequences:
 
 The migration does not infer classifications from old canonical `genre` because that would recreate the research failure modes after the full provider evidence has already been discarded.
 
-After the migration and updated `epg-refresh` runtime are deployed from reviewed `main`, run one authoritative `guide-horizon` refresh. The normal D-3..D+8 provider ingest then recreates current retained broadcasts and their sibling classifications from full structured provider evidence.
+The preferred classification lifecycle remains the atomic classified authoritative schedule replacement above. When a provider window is complete, normal `epg-refresh` replacement stores the canonical broadcast and its classification sibling together and owns correction/deletion cleanup.
 
-This provider re-ingest is the classification backfill/recovery mechanism.
+However, **authoritative schedule replacement completeness is not the same as enrichment recovery eligibility**. A provider observation may be incomplete for the requested window and therefore unsafe to use as an ADR-0007 replacement, while still containing full structured evidence for individual concrete broadcasts that already exist in canonical storage.
+
+For bootstrap/recovery of an already-retained broadcast, Teevee therefore permits a separate bounded, service-owned classification recovery operation with these constraints:
+1. fetch provider evidence through the existing provider adapter and run the same normalisation + central classifier as normal ingest;
+2. never treat partial provider coverage as schedule authority;
+3. reconcile only to an **existing current canonical broadcast** using the regenerated canonical id plus exact channel, start, end and title equality;
+4. ambiguity/correction/missing provider rows fail closed and write nothing;
+5. take the same per-channel advisory locks as canonical schedule replacement;
+6. reject a recovery observation when newer canonical coverage or a newer classification already owns that broadcast;
+7. upsert only the classification sibling; never create/delete/update canonical programmes, channels, coverage or unrelated classifications;
+8. retain the existing FK/cascade lifecycle, so later authoritative rekey/deletion still removes any recovered obsolete sibling;
+9. repeated recovery is safe and idempotent.
+
+The exact equality guard is intentionally stricter than a title/start reconciliation heuristic. For the current XMLTV source, a start/end/title correction changes the regenerated canonical id when no stable provider programme id exists, so a partial corrected provider row remains unmatched until an authoritative refresh can safely replace the schedule. A future provider with stable IDs still must pass channel/start/end/title equality before recovery can attach evidence.
+
+This path is classification-specific rather than a generic enrichment framework, but the lifecycle principle is reusable for future sibling enrichments: non-destructive enrichment may be recoverable from exact current broadcast evidence even when the surrounding provider window is not authoritative enough to replace schedule state.
 
 ### Read/transport boundary
 
@@ -138,8 +153,8 @@ Rejected: provider coupling and future-provider swap would require mobile change
 ### Classify on every mobile render
 Rejected: repeats work, moves provider heuristics into the client and creates Guide performance coupling.
 
-### Independent asynchronous classification refresh
-Rejected for v1: unnecessary race/staleness lifecycle for deterministic ingest-owned evidence.
+### Unbounded independent asynchronous classification refresh
+Rejected: classification remains ingest/provider-evidence owned. The bounded recovery operation above is not a second snapshot lifecycle; it reuses the same provider interpreter/classifier, exact current canonical identity, channel serialization and stale-write ownership solely to repair missing/obsolete siblings without claiming schedule authority.
 
 ### Title-specific exceptions or LLM classification
 Rejected: brittle, non-deterministic and contrary to fail-closed/provider-independent ownership.
@@ -150,7 +165,8 @@ Positive:
 - Vanavond receives one stable semantic contract;
 - provider swaps are mapping changes at the server boundary;
 - canonical Programme identity remains clean;
-- correction/deletion lifecycle is atomic with schedule storage;
+- correction/deletion lifecycle remains atomic on normal schedule storage;
+- exact-match recovery can bootstrap retained siblings without destructive partial-window replacement;
 - Guide runtime/payload remains unchanged;
 - deterministic tests can cover research failure modes without live network data.
 
@@ -158,7 +174,7 @@ Costs:
 - EPG ingest now parses/preserves all source categories, episode numbers and minimal director-credit presence before canonicalization;
 - one classification row is stored per retained canonical programme;
 - `epg-refresh` and the new classification read Edge Function must be deployed after migration review/merge;
-- existing retained rows require one authoritative horizon refresh after deployment.
+- existing retained rows normally recover through authoritative horizon refresh; partial current-day gaps may require one reviewed bounded non-destructive recovery invocation.
 
 ## Deployment gate
 

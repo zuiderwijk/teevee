@@ -104,8 +104,14 @@ Persistence:
 
 Backfill/recovery:
 - existing retained rows cannot be safely reconstructed from first-category `Programme.genre`;
-- after reviewed migration/runtime deployment, one authoritative `epg-refresh` `guide-horizon` run re-fetches D-3..D+8 and rebuilds classifications from full provider evidence;
-- stale classifications are cleaned by the normal schedule replacement/cascade lifecycle rather than a separate cleanup cron.
+- the preferred path remains an authoritative classified `epg-refresh` replacement when provider coverage is complete;
+- **authoritative schedule replacement completeness != enrichment recovery eligibility**: a partial provider observation remains forbidden from replacing canonical schedule state, but exact current canonical broadcasts present in that observation may receive a classification sibling through the protected bounded recovery path;
+- recovery reuses the same provider adapter, normaliser and central classifier, then requires exact current `Programme.id + channelId + startAt + endAt + title` before persistence;
+- recovery takes the same per-channel advisory locks and ignores observations older than newer schedule coverage/classification state;
+- recovery mutates only `teevee.programme_classifications`; it never creates/deletes/updates programmes, channels, schedule coverage or unrelated classifications;
+- missing, corrected, ambiguous or stale provider rows fail closed and remain unclassified until stronger/current evidence exists;
+- later authoritative replacement/rekey/deletion retains ownership and cascade-cleans recovered siblings normally;
+- stale classifications are therefore still cleaned by normal schedule replacement/cascade lifecycle rather than a separate cleanup cron.
 
 Read/transport:
 - Guide `guide-schedule` payload remains unchanged;
@@ -131,6 +137,8 @@ Hosted deployment is complete and canonical:
 - live HTTP smoke run `35878911866`, job `107241960510`, proved real Film/Series/Sport reads, absence of raw provider-field leakage and the 256-ID request bound.
 
 Deployment evidence: `docs/TONIGHT_CLASSIFICATION_DEPLOYMENT_2026-09-23.md`.
+
+D0 bootstrap gap/recovery design evidence: `docs/TONIGHT_CLASSIFICATION_D0_RECOVERY_2026-09-23.md`. The recovery route is protected server infrastructure; it is not part of Guide/Vanavond mobile loading and does not relax mobile fail-closed eligibility.
 
 ## Vanavond mobile runtime boundary — issue #148 / PR #149
 

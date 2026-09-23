@@ -1,5 +1,21 @@
 # Teevee Development Logboek
 
+## 23 september 2026 — PR #152 D0 classification recovery implementation
+
+Post-merge physical Vanavond → Live validation showed that the accepted mobile fail-closed behavior exposed a hosted bootstrap gap: active D0 had **513 canonical programmes but only 5 classification siblings**; of 136 broadcasts starting in the Vanavond [19:00,06:00) category window, only 5 were classified and none were eligible Film/Series/Sport. D+1 was healthy at 520/520 full-day and 142/142 evening classification with 6 Film / 14 Series / 1 Sport eligible. Read-only hosted coverage timestamps prove D0 canonical state predates the classification rollout while D+1 was rebuilt by the classified post-deploy refresh.
+
+Issue #151 / PR #152 separates schedule authority from sibling-recovery eligibility without weakening ADR-0007. Provider fetch/normalisation is now independently observable; normal authoritative ingest still refuses partial coverage exactly as before. A new protected `classification-recovery` path runs the same provider normaliser and central classifier, then asks a service-role-only PostgreSQL RPC to attach semantics only to a **currently existing exact broadcast** matching canonical id + channel + start + end + title. The RPC uses the same per-channel advisory locks as schedule replacement and rejects observations older than newer overlapping coverage or a newer sibling. It changes only `teevee.programme_classifications`; programmes, channels, coverage and unrelated classifications are never replaced or deleted.
+
+This deliberately fails closed on start/end/title corrections. With the current XMLTV source there is no stable provider programme id, so the regenerated canonical id itself also changes on those corrections; a partial corrected row therefore cannot classify the stale canonical broadcast. Stable-provider-id fixtures prove that equal regenerated IDs still require exact end/title equality. Recovery additionally excludes channels with normalisation errors, deterministically deduplicates equivalent source rows and refuses overlapping programme candidates; the PostgreSQL RPC independently rejects overlapping payloads as defense in depth. Later complete authoritative replacement remains the owner of rekey/deletion and cascade-cleanup.
+
+Deterministic tests cover partial-window recovery without schedule mutation, retained programmes outside the provider returnset, Film/Series/Sport and explicit unknown semantics from the central classifier, missing provider rows, start correction/rekey, stable-provider-id corrections, same-title repeats, duplicate provider rows, overlapping provider candidates, channel normalisation errors, stale recovery, repeated idempotent execution, orphan cleanup, provider-field isolation and unchanged complete authoritative refresh behavior. Latest disposable PostgreSQL 17 workflow run `35919038820`, job `107377942252`, executed the real migrations plus the extended lifecycle smoke—including direct overlap rejection—and passed `BEGIN → DO → ROLLBACK`; the temporary workflow is removed from the final diff.
+
+ADR 0010 and DATA now explicitly record the durable rule **authoritative schedule replacement completeness != enrichment recovery eligibility**. Detailed live baseline and the post-review hosted procedure are in `docs/TONIGHT_CLASSIFICATION_D0_RECOVERY_2026-09-23.md`.
+
+**No hosted migration, Edge deployment or production recovery was executed.** Next gate is Technical Lead exact-head review of PR #152. Only after review/merge may the documented bounded D0 deployment/recovery sequence be considered.
+
+---
+
 ## 23 september 2026 — PR #149 final physical acceptance, Independent QA and merge
 
 The first production Vanavond runtime is closed. Exact accepted head `4f1d29e2e1843adec33b2417ef14e312887545fd` received owner **FINAL PHYSICAL REFINEMENT PASS** in PR comment #5801613712 after base/light composition, Jouw-gids states, corrected Kijktip density, Series ≥12, Alle modules, dark mode, maximum iOS Accessibility Text Size, horizontal/vertical/diagonal gesture arbitration, live save/unsave round-trip and VoiceOver had been physically accepted on iPhone.
