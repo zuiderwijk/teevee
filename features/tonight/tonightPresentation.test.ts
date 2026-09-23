@@ -344,6 +344,58 @@ describe('Tonight presentation selection', () => {
     );
   });
 
+  it('uses exact canonical timing for Jouw-gids membership after a resolved correction', () => {
+    const channel = channels()[0]!;
+    const movedOut: Programme = {
+      id: 'moved-out',
+      channelId: channel.id,
+      startAt: '2026-09-23T16:00:00+02:00',
+      endAt: '2026-09-23T17:00:00+02:00',
+      title: 'Canonical buiten avond',
+    };
+    const movedIn: Programme = {
+      id: 'moved-in',
+      channelId: channel.id,
+      startAt: '2026-09-23T18:10:00+02:00',
+      endAt: '2026-09-23T19:10:00+02:00',
+      title: 'Canonical in avond',
+    };
+    const state: ProgrammePersonalState = {
+      version: 2,
+      hasUsedSave: true,
+      saved: {
+        'moved-out': {
+          ...programmeSnapshot(movedOut),
+          startAt: '2026-09-23T18:10:00+02:00',
+          endAt: '2026-09-23T19:10:00+02:00',
+        },
+        'moved-in': {
+          ...programmeSnapshot(movedIn),
+          startAt: '2026-09-23T16:00:00+02:00',
+          endAt: '2026-09-23T17:00:00+02:00',
+        },
+      },
+      reminders: {},
+    };
+
+    const model = buildTonightViewModel({
+      schedule: {
+        generatedAt: '2026-09-23T12:00:00.000Z',
+        timezone: 'Europe/Amsterdam',
+        channels: [channel],
+        programmes: [movedOut, movedIn],
+      },
+      editorialSignals: [],
+      classifications: [],
+      personalState: state,
+      nowMs: Date.parse('2026-09-23T12:00:00+02:00'),
+    });
+
+    expect(model.saved.map(({ snapshot }) => snapshot.programmeId)).toEqual([
+      'moved-in',
+    ]);
+  });
+
   it('uses exact resolved canonical programme data over the local snapshot without title-only reconciliation', () => {
     const channel = channels()[0]!;
     const canonical: Programme = {
