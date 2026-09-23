@@ -96,8 +96,9 @@ Production policy:
 - at most one retry;
 - retry only network/timeout, 5xx and bounded 429 failures;
 - `Retry-After` is honored only inside a 1 s retry budget; larger values fail open instead of sleeping unbounded;
-- 4xx authentication/client failures, syntactically malformed JSON and schema-malformed required matching containers/collections are not retried;
-- required search results, season episodes, appended credit/cast/crew structures, alternative-title structures and director-filmography collections distinguish legitimate empty arrays from missing/null/wrong-shaped payloads; schema-malformed responses are operational failures and never deterministic negative evidence;
+- 4xx authentication/client failures, syntactically malformed JSON and schema-malformed required matching containers/collections or matching-critical element fields are not retried;
+- required search results, season episodes, appended credit/cast/crew structures, alternative-title structures and director-filmography collections distinguish legitimate empty arrays from missing/null/wrong-shaped payloads; their elements must also expose the fields the matcher uses to derive identity or semantic absence (for example positive candidate IDs, non-empty people/title/job strings and integer episode numbers); schema-malformed responses are operational failures and never deterministic negative evidence;
+- validation stays narrow: a crew item must expose a valid role before it can be skipped; director-specific name/content ID fields are required only when that role is actually `Director`, so irrelevant optional fields do not become artificial outages;
 - one enrichment invocation has a 20 s owner-controlled AbortSignal shared by TMDB HTTP work and the final external-content PostgREST persistence request;
 - candidate/detail/credits/alternative-title/season calls use request-scope Promise caching;
 - identical identity work in one provider observation is deduplicated;

@@ -146,7 +146,7 @@ TMDB request policy:
 - 429 `Retry-After` is honored only inside a 1 s retry budget;
 - 4xx and malformed JSON are non-retryable;
 - one enrichment run uses a shared owner AbortSignal capped at 20 s for both TMDB HTTP work and the external-content PostgREST persistence request;
-- required TMDB matching containers/collections are schema-strict: a valid empty array is legitimate empty evidence, while missing/null/wrong-shaped required structures are operational `malformed` failures and cannot create negative identity decisions;
+- required TMDB matching containers/collections **and the matching-critical fields of their elements** are schema-strict: a valid empty array is legitimate empty evidence, while missing/null/wrong-shaped required structures or required element fields are operational `malformed` failures and cannot create negative identity decisions; non-matching crew roles only require the fields needed to identify/skip that role, so optional irrelevant fields are not promoted into errors;
 - request-scope search/detail/credits/alternative-title/season caching;
 - identical work deduplication;
 - maximum three identity work items concurrently;
