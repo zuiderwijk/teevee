@@ -132,7 +132,7 @@ Do not reintroduce card-heavy programme presentation, redundant metadata or low-
 Build sequence:
 1. **DONE in PR #132** — Guide Search architecture boundary over the canonical hosted schedule store;
 2. **DONE** — hosted Search migration + Edge Function deployed and live-verified; evidence: `docs/GUIDE_SEARCH_DEPLOYMENT_2026-09-23.md`;
-3. **NEXT** — wire mobile Search UI/runtime for concrete programme broadcasts + channels against the frozen `GuideSearchApi` boundary;
+3. **IMPLEMENTED IN PR #134 / ACCEPTANCE PENDING** — mobile Search UI/runtime for concrete programme broadcasts + channels against the frozen `GuideSearchApi` boundary;
 4. focused physical iPhone validation and Independent QA;
 5. only then evaluate the next Phase 5 slice.
 
