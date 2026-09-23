@@ -28,10 +28,7 @@ import {
   type ProgrammeSelection,
 } from '@/features/guide/detailState';
 import { ProgrammeDetail } from '@/features/guide/ProgrammeDetail';
-import {
-  EMPTY_PROGRAMME_PERSONAL_STATE,
-  type ProgrammePersonalState,
-} from '@/features/guide/programmePersonalState';
+import type { ProgrammePersonalState } from '@/features/guide/programmePersonalState';
 import { useGuideClock } from '@/features/guide/useGuideClock';
 import { ChannelIdentity } from '@/features/guide/ChannelIdentity';
 import {
