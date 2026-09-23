@@ -1,5 +1,17 @@
 # Teevee Development Logboek
 
+## 23 september 2026 — PR #149 Sport Larger/Accessibility Text convergence correction
+
+Acc Design Refinement comment #5799845708 found one narrow deterministic mismatch on the Development-complete Vanavond runtime: the no-artwork Sport title used an unconditional two-line cap, so substantive programme text could still clip at Larger/Accessibility Text despite the existing wider Dynamic Type card metrics.
+
+Development changes only that fallback boundary. Standard text through `fontScale <= 1.35` remains the frozen compact Sport baseline: width 220, fixed media height 112 and maximum two visible title lines. Above 1.35 the existing Sport width scaling is retained, the landscape height becomes a minimum rather than a fixed ceiling, and the title no longer receives `numberOfLines=2`. The existing 15/19 Sport-title typography, 13/18 channel/time/`Nu` metadata, one-action card accessibility semantics and decorative/non-focusable media ownership remain unchanged. Film 108×162, Series 96×144 and Kijktip 168×94.5 are untouched; no artwork/TMDB work, ranking, filtering, module hierarchy or carousel interaction changed.
+
+Targeted deterministic coverage now proves the standard fixed/two-line baseline, uncapped Larger/Accessibility title wrapping, vertically growable minimum-height fallback, unchanged title/metadata typography, visible `Nu`/channel metadata, one programme action without duplicate fallback focus, frozen Film/Series geometry, Sport omission and horizontal Film/Series carousel semantics.
+
+**Next gate:** exact-head CI, then return the resulting PR head to Acc Design Refinement for the remaining physical iPhone matrix. Do not merge, deploy or send to Independent QA before physical convergence.
+
+---
+
 ## 23 september 2026 — PR #149 first production Vanavond runtime Development-complete candidate
 
 Issue #148 replaces the placeholder with the first real user-facing Vanavond runtime while preserving the proven Guide architecture. Vanavond owns its own process-local request state and performs one bounded active 06:00→06:00 canonical `guide-schedule` read. Kijktips are consumed from that response's existing editorial-signal sibling. Only current/future programmes starting in the frozen [19:00,06:00) classification window are sent to the separate bounded `programme-classifications` API; missing/ambiguous semantics fail closed. No Guide runtime state is installed or mutated, no D-2..D+7 prefetch occurs, and no card owns async/network work.
