@@ -157,7 +157,7 @@ begin
   with ranked_channels as (
     select
       c.*,
-      match.rank as match_rank
+      match_info.rank as match_rank
     from teevee.channels c
     cross join lateral (
       select min(
@@ -174,10 +174,10 @@ begin
           (teevee.normalize_guide_search_text(c.short_name)),
           (teevee.normalize_guide_search_text(c.name))
       ) as candidate(normalized)
-    ) match
+    ) match_info
     where c.is_active
-      and match.rank is not null
-    order by match.rank, c.sort_order, c.id
+      and match_info.rank is not null
+    order by match_info.rank, c.sort_order, c.id
     limit p_channel_limit
   )
   select pg_catalog.coalesce(
