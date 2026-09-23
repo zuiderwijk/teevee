@@ -83,6 +83,7 @@ describe('central provider-independent programme classification', () => {
       title: 'Aspe',
       categories: ['Misdaad'],
       episodeNumbers: [{ value: 'S2 E9' }],
+      hasDirectorCredit: true,
     });
 
     for (const classification of [explicit, generic, mystery, crime]) {
@@ -94,6 +95,73 @@ describe('central provider-independent programme classification', () => {
       });
       expect(isTonightSeriesClassification(classification)).toBe(true);
     }
+  });
+
+  it('fails closed for researched generic-series false positives using structured format/context evidence', () => {
+    const falsePositives = [
+      classify({
+        title: 'The Yorkshire Vet',
+        categories: ['Dieren', 'Medisch'],
+        episodeNumbers: [{ value: 'S19 E3' }],
+        hasDirectorCredit: true,
+      }),
+      classify({
+        title: 'Sluipschutters',
+        categories: ['Komedie', 'Entertainment'],
+        episodeNumbers: [{ value: 'S5 E3' }],
+      }),
+      classify({
+        title: 'LUBACH',
+        categories: ['Entertainment', 'Komedie'],
+        episodeNumbers: [{ value: 'S4 E17' }],
+      }),
+      classify({
+        title: 'Beste Kijkers',
+        categories: ['Entertainment', 'Komedie'],
+        episodeNumbers: [{ value: 'S13 E5' }],
+      }),
+      classify({
+        title: 'Top Gear',
+        categories: ["Auto's", 'Komedie'],
+        episodeNumbers: [{ value: 'S15 E1' }],
+        hasDirectorCredit: true,
+      }),
+      classify({
+        title: 'Het Interventie Team',
+        categories: ['Misdaad'],
+        episodeNumbers: [{ value: 'S4 E6' }],
+        hasDirectorCredit: false,
+      }),
+    ];
+
+    for (const classification of falsePositives) {
+      expect(isTonightSeriesClassification(classification)).toBe(false);
+    }
+  });
+
+  it('treats strong explicit scripted form as authoritative except when source format evidence conflicts', () => {
+    const scriptedWithBroadSubject = classify({
+      categories: ['Misdaaddrama', 'Entertainment'],
+      episodeNumbers: [{ value: 'S1 E3' }],
+    });
+    const sitcomWithSubject = classify({
+      categories: ['Sitcoms', 'Politiek'],
+      episodeNumbers: [{ value: 'S2 E7' }],
+    });
+    const realityConflict = classify({
+      categories: ['Dramaseries', 'Reality'],
+      episodeNumbers: [{ value: 'S10 E8' }],
+    });
+    const documentaryMiniseries = classify({
+      categories: ['Miniseries', 'Documentaire'],
+      episodeNumbers: [{ value: 'S1 E3' }],
+      hasDirectorCredit: true,
+    });
+
+    expect(isTonightSeriesClassification(scriptedWithBroadSubject)).toBe(true);
+    expect(isTonightSeriesClassification(sitcomWithSubject)).toBe(true);
+    expect(isTonightSeriesClassification(realityConflict)).toBe(false);
+    expect(isTonightSeriesClassification(documentaryMiniseries)).toBe(false);
   });
 
   it('classifies researched children scripted examples as series but excludes them from Series vanavond', () => {

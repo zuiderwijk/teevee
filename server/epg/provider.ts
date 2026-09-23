@@ -35,6 +35,11 @@ export type ExternalProgramme = {
   /** Complete provider vocabulary, server-side only. */
   categories?: string[];
   episodeNumbers?: ExternalEpisodeNumber[];
+  /**
+   * Structured credit evidence only. Undefined means the provider supplied no
+   * credits block; false means credits were present without a director credit.
+   */
+  hasDirectorCredit?: boolean;
   isLive?: boolean;
   isRepeat?: boolean;
 };

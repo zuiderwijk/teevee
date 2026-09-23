@@ -10,16 +10,20 @@ const DEVELOPMENT_XMLTV_PROVIDER_KEY = 'development-xmltv';
 
 const FILM_CATEGORIES = new Set(['Film']);
 
-const EXPLICIT_SERIES_CATEGORIES = new Set([
+/**
+ * These source categories are strong scripted-form evidence for the current XMLTV
+ * provider. Broader labels such as Miniseries are intentionally not treated as
+ * strong because the source also uses them for documentary/factual series.
+ */
+const EXPLICIT_SCRIPTED_SERIES_CATEGORIES = new Set([
   'Dramaseries',
   'Misdaaddrama',
   'Sitcoms',
   'Soap',
-  'Miniseries',
 ]);
 
 const SCRIPTED_SERIES_SUPPORT_CATEGORIES = new Set([
-  ...EXPLICIT_SERIES_CATEGORIES,
+  ...EXPLICIT_SCRIPTED_SERIES_CATEGORIES,
   'Actie',
   'Animatie',
   'Avontuur',
@@ -44,7 +48,11 @@ const CHILDREN_AUDIENCE_CATEGORIES = new Set([
   'Kids En Familie',
 ]);
 
-const NON_SCRIPTED_CATEGORIES = new Set([
+/**
+ * Strong format evidence that contradicts scripted episodic classification even
+ * when a provider also emits a nominal series label.
+ */
+const STRONG_NON_SCRIPTED_FORM_CATEGORIES = new Set([
   "Actualiteitenprogramma's",
   'Actualiteit',
   'Documentaire',
@@ -59,6 +67,46 @@ const NON_SCRIPTED_CATEGORIES = new Set([
   'Sporttalkshow',
   'Talkshow',
   'Weer',
+]);
+
+/**
+ * Broader factual/format context used only to gate generic-series inference.
+ * Strong explicit scripted-form labels may coexist with some of these subject
+ * categories (for example Sitcoms + Politiek), so they are not global vetoes.
+ */
+const GENERIC_SERIES_BLOCKER_CATEGORIES = new Set([
+  ...STRONG_NON_SCRIPTED_FORM_CATEGORIES,
+  "Auto's",
+  'Beeldende Kunst',
+  'Bouwen En Verbouwen',
+  'Business & Financial',
+  "Consumentenprogramma's",
+  'Culinair',
+  'Debat',
+  'Dieren',
+  'Doe Het Zelf',
+  'Entertainment',
+  'Exercise',
+  'Geschiedenis',
+  'Home & Garden',
+  'Landbouw',
+  'Mode',
+  'Muziek',
+  'Natuur',
+  'Natuur En Milieu',
+  'Politiek',
+  'Reizen',
+  'Religie',
+  'Samenleving',
+  'Shoppen',
+  'Technologie',
+  'Variété',
+  'Veiling',
+  'Wetenschap',
+]);
+
+const OTHER_CONTENT_CATEGORIES = new Set([
+  ...GENERIC_SERIES_BLOCKER_CATEGORIES,
 ]);
 
 const SPORT_ROOT_CATEGORIES = new Set(['Sport', 'Sports', 'Sporttalkshow']);
@@ -104,6 +152,13 @@ function trimmedUnique(values: readonly string[] | undefined): string[] {
 
 function hasAny(values: ReadonlySet<string>, categories: readonly string[]): boolean {
   return categories.some((category) => values.has(category));
+}
+
+function countAny(values: ReadonlySet<string>, categories: readonly string[]): number {
+  return categories.reduce(
+    (count, category) => count + Number(values.has(category)),
+    0,
+  );
 }
 
 function normalizedEvidenceText(value: string | undefined): string {
@@ -203,16 +258,50 @@ function developmentXmltvClassification(
   const film = hasAny(FILM_CATEGORIES, categories);
   const sport = hasAny(SPORT_ROOT_CATEGORIES, categories);
 
-  const hasExplicitSeriesCategory = hasAny(EXPLICIT_SERIES_CATEGORIES, categories);
-  const hasScriptedSupportCategory = hasAny(
+  const hasExplicitScriptedSeriesCategory = hasAny(
+    EXPLICIT_SCRIPTED_SERIES_CATEGORIES,
+    categories,
+  );
+  const hasStrongNonScriptedForm = hasAny(
+    STRONG_NON_SCRIPTED_FORM_CATEGORIES,
+    categories,
+  );
+  const hasGenericSeriesBlocker = hasAny(
+    GENERIC_SERIES_BLOCKER_CATEGORIES,
+    categories,
+  );
+  const scriptedSupportCount = countAny(
     SCRIPTED_SERIES_SUPPORT_CATEGORIES,
     categories,
   );
-  const hasNonScriptedCategory = hasAny(NON_SCRIPTED_CATEGORIES, categories);
   const hasSeasonEpisode = explicitSeasonEpisode(programme.episodeNumbers);
+  const hasChildrenAudience = hasAny(
+    CHILDREN_AUDIENCE_CATEGORIES,
+    categories,
+  );
+
+  const explicitScriptedSeries =
+    hasExplicitScriptedSeriesCategory && !hasStrongNonScriptedForm;
+
+  const childrenAnimatedSeries =
+    hasSeasonEpisode &&
+    hasChildrenAudience &&
+    categories.includes('Animatie') &&
+    !hasStrongNonScriptedForm;
+
+  const genericScriptedSeries =
+    hasSeasonEpisode &&
+    !hasChildrenAudience &&
+    !hasGenericSeriesBlocker &&
+    (
+      scriptedSupportCount >= 2 ||
+      (scriptedSupportCount >= 1 && programme.hasDirectorCredit === true)
+    );
+
   const series =
-    hasExplicitSeriesCategory ||
-    (hasSeasonEpisode && hasScriptedSupportCategory && !hasNonScriptedCategory);
+    explicitScriptedSeries ||
+    childrenAnimatedSeries ||
+    genericScriptedSeries;
 
   const targetFamilies = Number(film) + Number(series) + Number(sport);
   if (targetFamilies > 1) return base;
@@ -222,18 +311,16 @@ function developmentXmltvClassification(
   }
 
   if (series) {
-    const audience = hasAny(CHILDREN_AUDIENCE_CATEGORIES, categories)
+    const audience = hasChildrenAudience
       ? 'primarily-children'
-      : hasScriptedSupportCategory
-        ? 'general-mainstream'
-        : 'unknown';
+      : 'general-mainstream';
 
     return {
       ...base,
       contentType: 'series',
       seriesType: 'scripted-episodic',
       audience,
-      confidence: audience === 'unknown' ? 'unknown' : 'high',
+      confidence: 'high',
     };
   }
 
@@ -249,13 +336,15 @@ function developmentXmltvClassification(
 
   if (
     categories.length > 0 &&
-    (hasAny(CHILDREN_AUDIENCE_CATEGORIES, categories) ||
-      hasAny(NON_SCRIPTED_CATEGORIES, categories))
+    (
+      hasChildrenAudience ||
+      hasAny(OTHER_CONTENT_CATEGORIES, categories)
+    )
   ) {
     return {
       ...base,
       contentType: 'other',
-      audience: hasAny(CHILDREN_AUDIENCE_CATEGORIES, categories)
+      audience: hasChildrenAudience
         ? 'primarily-children'
         : 'unknown',
       confidence: 'high',

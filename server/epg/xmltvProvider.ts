@@ -85,6 +85,12 @@ function episodeNumbers(block: string): ExternalEpisodeNumber[] {
     })
     .filter((item): item is ExternalEpisodeNumber => item !== null);
 }
+function directorCreditEvidence(block: string): boolean | undefined {
+  const credits = block.match(/<credits\b[^>]*>[\s\S]*?<\/credits>/i)?.[0];
+  if (!credits) return undefined;
+  return /<director\b/i.test(credits);
+}
+
 function openingTag(block: string): string {
   const end = block.indexOf('>');
   return end >= 0 ? block.slice(0, end + 1) : block;
@@ -137,6 +143,7 @@ function parseProgramme(block: string): ParsedProgramme {
   const categories = elementTexts(block, 'category');
   const genre = categories[0];
   const parsedEpisodeNumbers = episodeNumbers(block);
+  const hasDirectorCredit = directorCreditEvidence(block);
   const isLive = /<live\b[^>]*\/>/i.test(block) ? true : undefined;
   const isRepeat = /<previously-shown\b[^>]*\/?\s*>/i.test(block) ? true : undefined;
 
@@ -151,6 +158,7 @@ function parseProgramme(block: string): ParsedProgramme {
       ...(genre ? { genre } : {}),
       ...(categories.length > 0 ? { categories } : {}),
       ...(parsedEpisodeNumbers.length > 0 ? { episodeNumbers: parsedEpisodeNumbers } : {}),
+      ...(hasDirectorCredit !== undefined ? { hasDirectorCredit } : {}),
       ...(isLive !== undefined ? { isLive } : {}),
       ...(isRepeat !== undefined ? { isRepeat } : {}),
     },

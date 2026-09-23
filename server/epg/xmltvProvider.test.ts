@@ -16,10 +16,15 @@ const xml = `<?xml version="1.0" encoding="UTF-8"?>
     <category>Nieuws</category>
     <category>Actualiteit</category>
     <episode-num system="onscreen">S2 E3</episode-num>
+    <credits>
+      <actor>Nieuwslezer</actor>
+      <director>Regisseur</director>
+    </credits>
     <live />
   </programme>
   <programme start="20260914190000 +0200" stop="20260914200000 +0200" channel="npo1.nl">
     <title>Programma twee</title>
+    <credits><actor>Presentator</actor></credits>
     <previously-shown />
   </programme>
   <programme start="20260914180000 +0200" stop="20260914183000 +0200" channel="rtl4.nl">
@@ -69,9 +74,13 @@ describe('parseXmltvDocument', () => {
       genre: 'Nieuws',
       categories: ['Nieuws', 'Actualiteit'],
       episodeNumbers: [{ system: 'onscreen', value: 'S2 E3' }],
+      hasDirectorCredit: true,
       isLive: true,
     });
-    expect(parsed.programmes[1]?.programme.isRepeat).toBe(true);
+    expect(parsed.programmes[1]?.programme).toMatchObject({
+      hasDirectorCredit: false,
+      isRepeat: true,
+    });
   });
 
   it('keeps malformed external timestamps representable for downstream diagnostics', () => {
