@@ -122,7 +122,7 @@ const SavedRow = memo(function SavedRow({
 }) {
   const theme = useTeeveeTheme();
   const source = item.programme ?? item.snapshot;
-  const startLabel = tonightProgrammeTimeLabel(source as Programme);
+  const startLabel = tonightProgrammeTimeLabel(source);
   const resolved =
     item.programme && item.channel
       ? { programme: item.programme, channel: item.channel }
@@ -162,7 +162,12 @@ const SavedRow = memo(function SavedRow({
           </Text>
         </View>
       )}
-      <View style={styles.savedProgrammeContent}>
+      <View
+        style={[
+          styles.savedProgrammeContent,
+          largeText ? styles.savedProgrammeContentStacked : null,
+        ]}
+      >
         <View style={styles.savedTitleLine}>
           <Text
             style={[
@@ -175,7 +180,7 @@ const SavedRow = memo(function SavedRow({
               },
             ]}
           >
-            {item.snapshot.title}
+            {source.title}
           </Text>
           {!largeText && current ? <NowCapsule colors={theme.colors} /> : null}
         </View>
@@ -806,6 +811,9 @@ const styles = StyleSheet.create({
     flex: 1,
     minWidth: 0,
     marginLeft: 16,
+  },
+  savedProgrammeContentStacked: {
+    marginLeft: 0,
   },
   savedTitleLine: {
     flexDirection: 'row',

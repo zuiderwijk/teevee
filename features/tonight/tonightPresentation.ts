@@ -94,11 +94,11 @@ function discoveryItems(
 }
 
 function savedTemporalState(
-  snapshot: SavedProgrammeRecord,
+  broadcast: Pick<Programme, 'startAt' | 'endAt'>,
   nowMs: number,
 ): TonightSavedItem['temporalState'] {
-  if (Date.parse(snapshot.endAt) <= nowMs) return 'ended';
-  if (Date.parse(snapshot.startAt) <= nowMs) return 'current';
+  if (Date.parse(broadcast.endAt) <= nowMs) return 'ended';
+  if (Date.parse(broadcast.startAt) <= nowMs) return 'current';
   return 'upcoming';
 }
 
@@ -125,6 +125,7 @@ function savedItems(
     )
     .map((snapshot) => {
       const programme = programmes.get(snapshot.programmeId) ?? null;
+      const source = programme ?? snapshot;
       const channel =
         channels.get(programme?.channelId ?? snapshot.channelId) ?? null;
       return {
@@ -132,12 +133,13 @@ function savedItems(
         programme,
         channel,
         channelLabel: channel?.displayName ?? 'Zender tijdelijk niet beschikbaar',
-        temporalState: savedTemporalState(snapshot, nowMs),
+        temporalState: savedTemporalState(source, nowMs),
       };
     })
     .sort(
       (left, right) =>
-        Date.parse(left.snapshot.startAt) - Date.parse(right.snapshot.startAt) ||
+        Date.parse(left.programme?.startAt ?? left.snapshot.startAt) -
+          Date.parse(right.programme?.startAt ?? right.snapshot.startAt) ||
         channelSortOrder(left.channel) - channelSortOrder(right.channel) ||
         left.snapshot.programmeId.localeCompare(right.snapshot.programmeId),
     );
@@ -210,7 +212,9 @@ export function buildTonightViewModel(input: {
   };
 }
 
-export function tonightProgrammeTimeLabel(programme: Programme): string {
+export function tonightProgrammeTimeLabel(
+  programme: Pick<Programme, 'startAt'>,
+): string {
   return timeFormatter.format(new Date(programme.startAt));
 }
 
@@ -233,10 +237,11 @@ export function tonightProgrammeAccessibilityLabel(input: {
 }
 
 export function tonightSavedAccessibilityLabel(item: TonightSavedItem): string {
-  const start = timeFormatter.format(new Date(item.snapshot.startAt));
-  const end = timeFormatter.format(new Date(item.snapshot.endAt));
+  const source = item.programme ?? item.snapshot;
+  const start = timeFormatter.format(new Date(source.startAt));
+  const end = timeFormatter.format(new Date(source.endAt));
   return [
-    item.snapshot.title,
+    source.title,
     item.channelLabel,
     `${start} tot ${end}`,
     ...(item.temporalState === 'current'
