@@ -148,11 +148,11 @@ begin
       )
     )
   );
-  set constraints programme_external_content_reference_programme_ownership immediate;
+  set constraints all immediate;
   if (select count(*) from teevee.programme_external_content_references) <> 2 then
     raise exception 'normal authoritative refresh did not preserve exact broadcast references';
   end if;
-  set constraints programme_external_content_reference_programme_ownership deferred;
+  set constraints all deferred;
 
   -- A real correction/rekey does not recreate the old exact broadcast tuple.
   -- Deferred ownership cleanup must remove the old references before commit.
@@ -175,7 +175,7 @@ begin
       )
     )
   );
-  set constraints programme_external_content_reference_programme_ownership immediate;
+  set constraints all immediate;
 
   if exists (
     select 1 from teevee.programme_external_content_references
@@ -184,7 +184,7 @@ begin
     raise exception 'canonical correction left dangling external references';
   end if;
 
-  set constraints programme_external_content_reference_programme_ownership deferred;
+  set constraints all deferred;
 
   -- Late result from the superseded observation cannot attach to either the old
   -- identity or the replacement broadcast.
@@ -241,7 +241,7 @@ begin
     ),
     '[]'::jsonb
   );
-  set constraints programme_external_content_reference_programme_ownership immediate;
+  set constraints all immediate;
   if (select count(*) from teevee.programme_external_content_references) <> 0 then
     raise exception 'external reference survived canonical programme deletion';
   end if;
