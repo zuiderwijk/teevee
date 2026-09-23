@@ -96,8 +96,9 @@ Production policy:
 - at most one retry;
 - retry only network/timeout, 5xx and bounded 429 failures;
 - `Retry-After` is honored only inside a 1 s retry budget; larger values fail open instead of sleeping unbounded;
-- 4xx authentication/client failures and malformed JSON are not retried;
-- one enrichment invocation has a 20 s owner-controlled budget and request cancellation;
+- 4xx authentication/client failures, syntactically malformed JSON and schema-malformed required matching containers/collections are not retried;
+- required search results, season episodes, appended credit/cast/crew structures, alternative-title structures and director-filmography collections distinguish legitimate empty arrays from missing/null/wrong-shaped payloads; schema-malformed responses are operational failures and never deterministic negative evidence;
+- one enrichment invocation has a 20 s owner-controlled AbortSignal shared by TMDB HTTP work and the final external-content PostgREST persistence request;
 - candidate/detail/credits/alternative-title/season calls use request-scope Promise caching;
 - identical identity work in one provider observation is deduplicated;
 - at most three identity work items execute concurrently;

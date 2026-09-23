@@ -145,7 +145,8 @@ TMDB request policy:
 - at most one retry for safe retryable network/timeout, 5xx or bounded 429 failures;
 - 429 `Retry-After` is honored only inside a 1 s retry budget;
 - 4xx and malformed JSON are non-retryable;
-- one enrichment run is owner-cancelled and capped at a 20 s budget;
+- one enrichment run uses a shared owner AbortSignal capped at 20 s for both TMDB HTTP work and the external-content PostgREST persistence request;
+- required TMDB matching containers/collections are schema-strict: a valid empty array is legitimate empty evidence, while missing/null/wrong-shaped required structures are operational `malformed` failures and cannot create negative identity decisions;
 - request-scope search/detail/credits/alternative-title/season caching;
 - identical work deduplication;
 - maximum three identity work items concurrently;
