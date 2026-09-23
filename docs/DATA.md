@@ -1,6 +1,6 @@
 # Teevee Programme Data Strategy
 
-Status: **Kijktip enrichment vertical slice is the current data implementation priority before Phase 5 Search**. Phase 3 proved the provider-independent hosted data path and Phase 4 closed the television-day-aware Guide runtime, D-2..D+7 navigation/horizon behaviour and production Guide convergence. Phase 5 Search and Discovery remains the next broader product phase, but Search is paused until the already-researched Kijktip enrichment path is fully implemented and accepted. The Phase 4 cache decision is unchanged: keep the current fixture-first + in-memory runtime fallback and do not introduce persistent mobile schedule caching without new measured evidence. Production **EPG** provider selection/rights remain a later release gate and release-like offline cold-start/persistent-cache validation remains Phase 9.
+Status: **Kijktip enrichment is merged and deployed; one post-deployment historical iPhone smoke remains before Phase 5 Search is formally activated.** Phase 3 proved the provider-independent hosted data path and Phase 4 closed the television-day-aware Guide runtime, D-2..D+7 navigation/horizon behaviour and production Guide convergence. The Kijktip path is now production-backed end-to-end at the backend boundary, including deterministic matching, private lifecycle persistence, typed hosted transport and Guide presentation wiring. The Phase 4 cache decision is unchanged: keep the current fixture-first + in-memory runtime fallback and do not introduce persistent mobile schedule caching without new measured evidence. Production **EPG** provider selection/rights remain a later release gate and release-like offline cold-start/persistent-cache validation remains Phase 9.
 
 ## Goal
 Teevee must support the complete core Guide without coupling the mobile experience to one EPG supplier. Replacing the temporary development source with an authorized Bindinc/TVgids or commercial provider must not require a Guide rewrite.
@@ -8,14 +8,13 @@ Teevee must support the complete core Guide without coupling the mobile experien
 ## Core rule
 The mobile client never consumes an external EPG feed directly.
 
-## Current Kijktip enrichment handoff
-The next data increment is the already-approved Kijktip vertical slice, not Search.
+## Kijktip enrichment deployment state
+The Kijktip vertical slice is merged. Its backend migration is deployed and live-verified; only the post-deployment historical iPhone browse-back remains as an operational device smoke before Phase 5 Search is formally activated.
 
 - **PR #120** completed empirical matching research and is canonical in `docs/TVGIDS_EDITORIAL_FEED_MATCHING_2026-09-22.md`: `tips.rss` is ingested server-side; matching is deterministic/fail-closed against canonical Teevee programmes; unresolved or ambiguous items do not create a Kijktip signal; the core `Programme` provider identity remains unchanged.
-- **PR #122** froze the Per-zender Kijktip production presentation.
-- **PR #123** froze the Nu & Straks Kijktip production presentation.
-- **PR #126 implements the first production enrichment increment** without visible UI: server-side RSS parsing/matching, private signal persistence, an independent protected refresh, optional typed hosted transport and separate mobile runtime signal state. The canonical `Programme` model remains unchanged.
-- The remaining vertical-slice work after PR #126 is the already-approved Per-zender/Nu & Straks presentation wiring and acceptance; Search stays paused until that is complete.
+- **PR #126** provides production server-side RSS parsing/matching, private signal persistence, an independent protected refresh, optional typed hosted transport and separate mobile runtime signal state.
+- **PR #127** wires those signals into the accepted Per-zender/Nu & Straks presentations and fixes editorial lifecycle persistence. Accepted head `b9867105fdf331dcd6a920c71d0f5e637e3b232c` merged as `6b11ee2fe4a5cbdf4012a680c2558b11b762d999` after Lead, owner physical iPhone and Independent QA PASS.
+- The exact reviewed persistence migration blob `c41b059f627406d12c684fa92a1e1179109d8dbe` is deployed to hosted project `eokszvpityhtysbwdduy` as remote migration `20260922235737_preserve_started_editorial_signals`. Live verification found 58 persisted signals, matching source-state count 58, zero orphans and exactly one recovered 22 September NPO 1 `De slimste mens` Kijktip.
 
 ### Production Kijktip editorial enrichment
 
@@ -48,7 +47,7 @@ Persistence/lifecycle:
 - for a canonical programme that is still **future** at the refresh timestamp, omission from a later successful TVgids snapshot remains authoritative and may retract/remove that Kijktip;
 - once `programme.start_at <= refreshedAt`, **simple omission** preserves the Kijktip as historical broadcast metadata; an explicit same-`sourceItemId` rematch is different evidence and safely rekeys that source item to the corrected canonical programme;
 - historical signals remain readable only while the canonical programme remains in Teevee's retained schedule store; orphan cleanup removes them after that canonical row leaves retention;
-- the unapplied PR #127 forward migration includes one deliberately narrow, idempotent historical recovery allowlist backed by **direct PR #120 `tips.rss` capture evidence**, not by article/title inference. It recovers the owner-observed NPO 1 `De slimste mens` broadcast of 22 September only when explicit channel + exact title + ±5-minute start still resolve to exactly one retained canonical candidate; ambiguity/missing evidence fails closed;
+- the deployed PR #127 forward migration includes one deliberately narrow, idempotent historical recovery allowlist backed by **direct PR #120 `tips.rss` capture evidence**, not by article/title inference. It recovered the owner-observed NPO 1 `De slimste mens` broadcast of 22 September only because explicit channel + exact title + ±5-minute start resolved to exactly one retained canonical candidate; ambiguity/missing evidence still fails closed;
 - the recovery URL is used solely because it was the GUID/link of that explicit `tips.rss` item. General TVgids news articles remain outside the Kijktip source contract;
 - `teevee.editorial_source_state` records latest successful refresh/freshness and prevents an older concurrent refresh from overwriting newer state; recovery may refresh only its diagnostic signal count and never rewrites freshness;
 - a failed feed fetch/decode/match/persistence run leaves previously persisted editorial state untouched;
@@ -59,7 +58,7 @@ Transport/runtime:
 - public `guide-schedule` reads stored signals only after a canonical schedule is available and catches editorial-store failures to `[]`;
 - serialized signals are runtime-validated separately and may reference only programmes inside that bounded schedule response;
 - D/D+1 mobile loading merges/deduplicates signal identity independently from schedule conflict semantics;
-- runtime stores signals beside, not inside, the installed canonical schedule; editorial-only updates do not remount the Guide while no Kijktip UI is present.
+- runtime stores signals beside, not inside, the installed canonical schedule; editorial-only updates do not replace/remount the canonical schedule, while Per-zender and Nu & Straks derive Kijktip presentation only from exact canonical programme IDs in the separate signal set.
 
 External data flows through:
 
