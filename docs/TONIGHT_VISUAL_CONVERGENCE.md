@@ -40,6 +40,7 @@ Vanavond is one finite vertically scrolling page. Module order is exactly:
 The page ends after the last present module.
 
 Do not add:
+- do not add a `populaire zenders / alle zenders` toggle, channel-scope filter or equivalent control to Films, Series or Sport; channel eligibility is product logic, not carousel chrome;
 - `Uitgelicht`;
 - `Verder vanavond`;
 - `Voor jou` placeholder;
