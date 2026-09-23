@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 
+import type { ExternalProgramme } from '../epg/provider.ts';
 import { matchFilmIdentity } from './filmMatcher.ts';
 import type {
   TmdbGateway,
@@ -49,7 +50,7 @@ function gateway(input: {
   };
 }
 
-function filmProgramme(overrides: Record<string, unknown> = {}) {
+function filmProgramme(overrides: Partial<ExternalProgramme> = {}): ExternalProgramme {
   return {
     productionDate: { raw: '2000', year: 2000 },
     credits: {
