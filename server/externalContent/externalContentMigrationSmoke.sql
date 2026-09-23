@@ -107,8 +107,7 @@ begin
     raise exception 'current unresolved decision did not clear old reference';
   end if;
 
-  -- Re-resolve, then correct/rekey the canonical Programme. FK ownership must
-  -- cascade the old reference before any asynchronous late result can arrive.
+  -- Re-resolve before exercising canonical replacement ownership.
   perform public.teevee_apply_programme_external_content_decisions(
     '2099-01-01T10:00:00Z',
     '2099-01-01T10:00:04Z',
@@ -123,6 +122,40 @@ begin
     )
   );
 
+  -- A normal authoritative refresh preserves references when the concrete
+  -- broadcast tuple is deleted and reinserted unchanged by ADR 0007 semantics.
+  perform public.teevee_replace_schedule_window(
+    '2099-01-01T18:00:00Z',
+    '2099-01-01T22:00:00Z',
+    '2099-01-01T10:01:00Z',
+    array['channel-1'],
+    jsonb_build_array(
+      jsonb_build_object(
+        'id','channel-1','name','Een','displayName','Een',
+        'sortOrder',0,'isActive',true
+      )
+    ),
+    jsonb_build_array(
+      jsonb_build_object(
+        'id','film-1','channelId','channel-1',
+        'startAt','2099-01-01T18:00:00Z','endAt','2099-01-01T20:00:00Z',
+        'title','Shared Film'
+      ),
+      jsonb_build_object(
+        'id','film-2','channelId','channel-1',
+        'startAt','2099-01-01T20:00:00Z','endAt','2099-01-01T22:00:00Z',
+        'title','Shared Film'
+      )
+    )
+  );
+  set constraints programme_external_content_reference_programme_ownership immediate;
+  if (select count(*) from teevee.programme_external_content_references) <> 2 then
+    raise exception 'normal authoritative refresh did not preserve exact broadcast references';
+  end if;
+  set constraints programme_external_content_reference_programme_ownership deferred;
+
+  -- A real correction/rekey does not recreate the old exact broadcast tuple.
+  -- Deferred ownership cleanup must remove the old references before commit.
   perform public.teevee_replace_schedule_window(
     '2099-01-01T18:00:00Z',
     '2099-01-01T22:00:00Z',
@@ -142,6 +175,7 @@ begin
       )
     )
   );
+  set constraints programme_external_content_reference_programme_ownership immediate;
 
   if exists (
     select 1 from teevee.programme_external_content_references
@@ -150,10 +184,12 @@ begin
     raise exception 'canonical correction left dangling external references';
   end if;
 
+  set constraints programme_external_content_reference_programme_ownership deferred;
+
   -- Late result from the superseded observation cannot attach to either the old
   -- identity or the replacement broadcast.
   v_result := public.teevee_apply_programme_external_content_decisions(
-    '2099-01-01T10:00:00Z',
+    '2099-01-01T10:01:00Z',
     '2099-01-01T10:06:00Z',
     jsonb_build_array(
       jsonb_build_object(
@@ -191,7 +227,7 @@ begin
     raise exception 'current corrected broadcast did not receive external identity';
   end if;
 
-  -- Authoritative deletion owns reference deletion via the canonical FK.
+  -- Authoritative deletion owns reference deletion via deferred programme ownership.
   perform public.teevee_replace_schedule_window(
     '2099-01-01T18:00:00Z',
     '2099-01-01T22:00:00Z',
@@ -205,6 +241,7 @@ begin
     ),
     '[]'::jsonb
   );
+  set constraints programme_external_content_reference_programme_ownership immediate;
   if (select count(*) from teevee.programme_external_content_references) <> 0 then
     raise exception 'external reference survived canonical programme deletion';
   end if;
