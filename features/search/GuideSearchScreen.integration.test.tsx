@@ -347,8 +347,12 @@ describe('GuideSearchScreen', () => {
 
     const input = getByTestId('guide-search-input') as HTMLInputElement;
     await act(async () => {
-      input.value = 'RTL';
-      input.dispatchEvent(new Event('change', { bubbles: true }));
+      const nativeValueSetter = Object.getOwnPropertyDescriptor(
+        HTMLInputElement.prototype,
+        'value',
+      )?.set;
+      nativeValueSetter?.call(input, 'RTL');
+      input.dispatchEvent(new Event('input', { bubbles: true }));
     });
     expect(sessionActions.setQuery).toHaveBeenCalledWith('RTL');
 
