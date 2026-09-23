@@ -127,7 +127,15 @@ Phase 4 exit requires physical validation of the D-2..D+7 horizon and television
 Do not reintroduce card-heavy programme presentation, redundant metadata or low-value controls merely to fill visual space. The accepted design target is premium utility with restrained chrome.
 
 ## Phase 5 — Search and Discovery
-The current project sequencing override is recorded in `docs/PROJECT_STATE.md`: complete and accept the Kijktip enrichment vertical slice before beginning Search. After that pre-Search priority is closed, Phase 5 starts with Search. Add Tonight only after its value and data requirements are clear. Tonight may use more imagery than Guide but must not become an editorial/news dependency or infinite engagement feed.
+**ACTIVE.** The Kijktip pre-Search vertical slice is closed. Phase 5 starts with **Phase 5A — Guide Search** using `docs/SEARCH_PRODUCT_DEFINITION.md` as canonical product authority.
+
+Build sequence:
+1. Guide Search architecture boundary over the canonical hosted schedule store;
+2. Search UI/runtime for concrete programme broadcasts + channels;
+3. focused physical iPhone validation and Independent QA;
+4. only then evaluate the next Phase 5 slice.
+
+Do not implement Search by eager D-2..D+7 mobile Guide prefetch or a title-only programme catalogue identity. Tonight remains deferred until its value and data requirements are clear; it may use more imagery than Guide but must not become an editorial/news dependency or infinite engagement feed.
 
 ## Phase 6 — Personal Features
 Deliver saved programmes/favourites, reminders and refined channel preferences. Keep identity optional unless cross-device requirements justify an account decision.
