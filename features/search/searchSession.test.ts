@@ -188,6 +188,47 @@ describe('GuideSearchSession', () => {
     expect(search).toHaveBeenCalledTimes(2);
   });
 
+  it('replaces an in-flight pre-06:00 request when the television day changes', async () => {
+    vi.setSystemTime(new Date('2026-09-23T03:59:30.000Z'));
+    const first = deferred<GuideSearchApiResponse>();
+    const second = deferred<GuideSearchApiResponse>();
+    const search = vi
+      .fn<GuideSearchApi['search']>()
+      .mockImplementationOnce(() => first.promise)
+      .mockImplementationOnce(() => second.promise);
+    const session = new GuideSearchSession({ search });
+
+    session.setQuery('slimste');
+    await vi.advanceTimersByTimeAsync(GUIDE_SEARCH_DEBOUNCE_MS);
+
+    expect(session.getSnapshot().phase).toBe('loading');
+    expect(search).toHaveBeenCalledTimes(1);
+    const firstSignal = search.mock.calls[0]?.[1]?.signal;
+    expect(firstSignal?.aborted).toBe(false);
+
+    vi.setSystemTime(new Date('2026-09-23T04:00:01.000Z'));
+    session.refreshForTelevisionDay(Date.now());
+
+    expect(firstSignal?.aborted).toBe(true);
+    expect(search).toHaveBeenCalledTimes(2);
+    expect(session.getSnapshot().phase).toBe('loading');
+
+    second.resolve(okResponse('Nieuwe dag'));
+    await vi.runAllTicks();
+
+    expect(session.getSnapshot().phase).toBe('ready');
+    expect(session.getSnapshot().response?.programmeMatches[0]?.programme.title).toBe(
+      'Nieuwe dag',
+    );
+
+    first.resolve(okResponse('Oude dag'));
+    await vi.runAllTicks();
+
+    expect(session.getSnapshot().response?.programmeMatches[0]?.programme.title).toBe(
+      'Nieuwe dag',
+    );
+  });
+
   it('retains query/results across subscriber teardown within the app session', async () => {
     const search = vi.fn<GuideSearchApi['search']>().mockResolvedValue(okResponse());
     const session = new GuideSearchSession({ search });
