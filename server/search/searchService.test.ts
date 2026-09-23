@@ -5,6 +5,7 @@ import { guideTelevisionDayHorizon } from '../../data/domain/guideTime';
 import type {
   GuideSearchRepository,
   GuideSearchRepositoryRequest,
+  GuideSearchRepositoryResult,
 } from './searchRepository';
 import { RepositoryGuideSearchApi } from './searchService';
 
@@ -27,11 +28,13 @@ const programme = {
   title: 'De slimste mens',
 };
 
-function searchRepository(result = {
-  programmeCoverage: 'complete' as const,
-  channelMatches: [channel],
-  programmeMatches: [{ programme, channel }],
-}) {
+function searchRepository(
+  result: GuideSearchRepositoryResult = {
+    programmeCoverage: 'complete',
+    channelMatches: [channel],
+    programmeMatches: [{ programme, channel }],
+  },
+) {
   const search = vi.fn(async (_request: GuideSearchRepositoryRequest) => result);
   return {
     repository: { search } satisfies GuideSearchRepository,
