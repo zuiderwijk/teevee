@@ -91,6 +91,8 @@ describe('temporary raw IPTV-EPG NL richness capture', () => {
       const episodeSystems = new Map<string, number>();
       const episodeSamples: Array<Record<string, unknown>> = [];
       const interestingSamples: Array<Record<string, unknown>> = [];
+      const iconUrls = new Map<string, number>();
+      const iconDomains = new Map<string, number>();
       const wantedTitle = /(Bluey|Spidey|The Resident|Big Bang|Flikken|Spencer Sisters|Poirot|Aspe|I, Robot|The Martian|The Grey|Andere Tijden Sport|Studio Sport|UEFA|World Championships)/i;
 
       for (const block of blocks) {
@@ -114,6 +116,17 @@ describe('temporary raw IPTV-EPG NL richness capture', () => {
         }
 
         const title = firstText(block, 'title') ?? '';
+        const iconTag = block.match(/<icon\\b[^>]*>/i)?.[0];
+        const iconSrc = iconTag ? attribute(iconTag, 'src') : undefined;
+        if (iconSrc) {
+          iconUrls.set(iconSrc, (iconUrls.get(iconSrc) ?? 0) + 1);
+          try {
+            const host = new URL(iconSrc).host || '(no-host)';
+            iconDomains.set(host, (iconDomains.get(host) ?? 0) + 1);
+          } catch {
+            iconDomains.set('(invalid-url)', (iconDomains.get('(invalid-url)') ?? 0) + 1);
+          }
+        }
         if (episodes.length && episodeSamples.length < 12) {
           episodeSamples.push({
             title,
@@ -151,6 +164,7 @@ describe('temporary raw IPTV-EPG NL richness capture', () => {
             new: hasTag(block, 'new'),
             premiere: hasTag(block, 'premiere'),
             programmeIcon: hasTag(block, 'icon'),
+            iconSrc: iconSrc ?? null,
             rating: firstText(block, 'rating') ?? null,
           });
         }
@@ -188,6 +202,11 @@ describe('temporary raw IPTV-EPG NL richness capture', () => {
         episodeNums: {
           systems: sortedMap(episodeSystems, 50),
           samples: episodeSamples,
+        },
+        programmeIcons: {
+          uniqueUrls: iconUrls.size,
+          topDomains: sortedMap(iconDomains, 20),
+          mostReused: sortedMap(iconUrls, 20),
         },
         samples: interestingSamples,
       };
