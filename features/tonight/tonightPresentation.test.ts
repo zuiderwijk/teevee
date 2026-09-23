@@ -13,6 +13,7 @@ import {
   buildTonightViewModel,
   tonightCardMetrics,
   tonightSavedAccessibilityLabel,
+  tonightSportFallbackLayout,
 } from './tonightPresentation';
 
 const channelNames = [
@@ -440,7 +441,7 @@ describe('Tonight presentation selection', () => {
     );
   });
 
-  it('keeps frozen no-artwork media geometry and expands cards at Larger Text', () => {
+  it('keeps frozen base media geometry and makes only Larger-Text Sport fallback vertically flexible', () => {
     expect(
       tonightCardMetrics({ kind: 'kijktip', contentWidth: 350, fontScale: 1 }),
     ).toEqual({ width: 168, mediaHeight: 94.5 });
@@ -450,15 +451,39 @@ describe('Tonight presentation selection', () => {
     expect(
       tonightCardMetrics({ kind: 'series', contentWidth: 350, fontScale: 1 }),
     ).toEqual({ width: 96, mediaHeight: 144 });
-    expect(
-      tonightCardMetrics({ kind: 'sport', contentWidth: 350, fontScale: 1 }),
-    ).toEqual({ width: 220, mediaHeight: 112 });
 
-    expect(
-      tonightCardMetrics({ kind: 'series', contentWidth: 350, fontScale: 1.5 }).width,
-    ).toBe(132);
+    const standardSport = tonightCardMetrics({
+      kind: 'sport',
+      contentWidth: 350,
+      fontScale: 1.35,
+    });
+    expect(standardSport).toEqual({ width: 220, mediaHeight: 112 });
+    expect(tonightSportFallbackLayout(1.35)).toEqual({
+      titleNumberOfLines: 2,
+      mediaHeightMode: 'fixed',
+    });
+
+    const largerSport = tonightCardMetrics({
+      kind: 'sport',
+      contentWidth: 350,
+      fontScale: 1.5,
+    });
+    expect(largerSport.width).toBeGreaterThan(220);
+    expect(largerSport.mediaHeight).toBeGreaterThan(112);
+    expect(tonightSportFallbackLayout(1.5)).toEqual({
+      titleNumberOfLines: undefined,
+      mediaHeightMode: 'minimum',
+    });
+    expect(tonightSportFallbackLayout(2)).toEqual({
+      titleNumberOfLines: undefined,
+      mediaHeightMode: 'minimum',
+    });
+
     expect(
       tonightCardMetrics({ kind: 'film', contentWidth: 350, fontScale: 1.8 }).width,
     ).toBeGreaterThan(142);
+    expect(
+      tonightCardMetrics({ kind: 'series', contentWidth: 350, fontScale: 1.5 }),
+    ).toEqual({ width: 132, mediaHeight: 198 });
   });
 });
