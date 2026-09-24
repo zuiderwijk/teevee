@@ -173,6 +173,40 @@ describe('TmdbRequestSession', () => {
     expect(fetcher).toHaveBeenCalledTimes(1);
   });
 
+  it('validates every season episode before deriving membership', async () => {
+    const malformed = requestSession({
+      '/tv/200/season/38': {
+        episodes: [
+          { episode_number: 188 },
+          {},
+        ],
+      },
+    });
+    await expect(malformed.seriesHasEpisode('200', 38, 188)).rejects.toMatchObject({
+      kind: 'malformed',
+    });
+
+    const matching = requestSession({
+      '/tv/200/season/38': {
+        episodes: [
+          { episode_number: 187 },
+          { episode_number: 188 },
+        ],
+      },
+    });
+    await expect(matching.seriesHasEpisode('200', 38, 188)).resolves.toBe(true);
+
+    const missing = requestSession({
+      '/tv/200/season/38': {
+        episodes: [
+          { episode_number: 187 },
+          { episode_number: 189 },
+        ],
+      },
+    });
+    await expect(missing.seriesHasEpisode('200', 38, 188)).resolves.toBe(false);
+  });
+
   it.each([
     ['object', { results: {} }],
     ['missing', {}],
@@ -423,6 +457,7 @@ describe('TmdbRequestSession', () => {
     ['number', 2000],
     ['array', []],
     ['invalid string', '2000'],
+    ['whitespace-padded date', ' 2000-09-29 '],
     ['invalid month', '2000-13-01'],
     ['invalid day', '2000-02-31'],
   ])('rejects malformed movie release_date when %s', async (_case, releaseDate) => {
@@ -465,6 +500,7 @@ describe('TmdbRequestSession', () => {
     ['number', 2000],
     ['array', []],
     ['invalid string', '2000-09'],
+    ['whitespace-padded date', ' 2000-09-29 '],
   ])('rejects malformed director-filmography release_date when %s', async (_case, releaseDate) => {
     const session = requestSession({
       '/search/person': { results: [{ id: 10, name: 'Stephen Daldry' }] },
