@@ -382,6 +382,32 @@ describe('parseXmltvScheduleStream', () => {
     ]);
   });
 
+  it('treats comments as opaque before interpreting CDATA-like or programme-closing text inside them', async () => {
+    const source = String.raw`<tv>
+      <channel id="one"><display-name>One</display-name></channel>
+      <programme start="20260914180000 +0200" stop="20260914190000 +0200" channel="one">
+        <title>Comment-safe scanner</title>
+        <!-- literal <![CDATA[ and </programme> markers are not structural -->
+        <desc>Still inside the programme.</desc>
+      </programme>
+      <programme start="20260914190000 +0200" stop="20260914200000 +0200" channel="one">
+        <title>Following programme</title>
+      </programme>
+    </tv>`;
+    const result = await parseXmltvScheduleStream(streamFromChunks(tinyChunks(source, 5)), [
+      {
+        from: new Date('2026-09-14T16:00:00Z'),
+        to: new Date('2026-09-14T18:00:00Z'),
+        channelIds: ['one'],
+      },
+    ]);
+
+    expect(result.batches[0]?.programmes.map(({ title }) => title)).toEqual([
+      'Comment-safe scanner',
+      'Following programme',
+    ]);
+    expect(result.batches[0]?.coverage).toBe('complete');
+  });
   it('preserves production date, complete categories, credits, episode numbers and live/repeat tri-state', async () => {
     const source = String.raw`<tv>
       <channel id="film"><display-name>Film</display-name></channel>
