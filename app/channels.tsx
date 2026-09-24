@@ -142,6 +142,7 @@ export default function ChannelsScreen() {
   const contentHeightRef = useRef(0);
   const viewportWindowYRef = useRef(0);
   const viewportHeightRef = useRef(0);
+  const visibleZoneContentYRef = useRef(0);
   const visibleListContentYRef = useRef(0);
   const dragPointerAbsoluteYRef = useRef(0);
   const autoScrollFrameRef = useRef<number | null>(null);
@@ -628,6 +629,9 @@ export default function ChannelsScreen() {
             <>
               <Animated.View
                 layout={zoneLayoutTransition}
+                onLayout={(event) => {
+                  visibleZoneContentYRef.current = event.nativeEvent.layout.y;
+                }}
                 style={styles.visibleZone}
               >
                 <ZoneHeader
@@ -641,10 +645,7 @@ export default function ChannelsScreen() {
                   testID="channels-visible-zone"
                   onLayout={(event) => {
                     visibleListContentYRef.current =
-                      event.nativeEvent.layout.y +
-                      CHANNEL_MANAGEMENT_METRICS.navigationHeight +
-                      CHANNEL_MANAGEMENT_METRICS.searchMinHeight +
-                      28;
+                      visibleZoneContentYRef.current + event.nativeEvent.layout.y;
                   }}
                 >
                   {visibleRows.map((channel, displayIndex) => {
