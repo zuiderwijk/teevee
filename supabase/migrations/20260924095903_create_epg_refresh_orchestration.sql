@@ -962,12 +962,12 @@ create or replace function public.teevee_complete_epg_refresh_job(
 language sql
 security invoker
 set search_path = ''
-as $
+as $bridge$
   select teevee.complete_epg_refresh_job(
     p_job_id, p_attempt_token, p_result, p_outcome, p_error,
     p_external_content_observation
   );
-$;
+$bridge$;
 
 create or replace function public.teevee_claim_epg_refresh_external_content_job(
   p_job_id bigint,
@@ -976,11 +976,11 @@ create or replace function public.teevee_claim_epg_refresh_external_content_job(
 language sql
 security invoker
 set search_path = ''
-as $
+as $bridge$
   select teevee.claim_epg_refresh_external_content_job(
     p_job_id, p_attempt_token
   );
-$;
+$bridge$;
 
 create or replace function public.teevee_complete_epg_refresh_external_content_job(
   p_job_id bigint,
@@ -992,11 +992,11 @@ create or replace function public.teevee_complete_epg_refresh_external_content_j
 language sql
 security invoker
 set search_path = ''
-as $
+as $bridge$
   select teevee.complete_epg_refresh_external_content_job(
     p_job_id, p_attempt_token, p_success, p_outcome, p_error
   );
-$;
+$bridge$;
 
 revoke execute on function teevee.recompute_epg_refresh_run(bigint)
   from public, anon, authenticated;
