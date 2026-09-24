@@ -75,11 +75,13 @@ describe('bounded EPG refresh orchestration migration', () => {
     expect(migration).not.toMatch(/grant execute[\s\S]*to authenticated/i);
   });
 
-  it('makes scheduled guide-horizon enqueue idempotent without changing the six-hour cron cadence', () => {
-    expect(migration).toContain("'cron:' ||");
-    expect(migration).toContain("'requestKey', v_request_key");
+  it('keeps the existing six-hour cron entrypoint untouched while adding only the recovery pump', () => {
     expect(migration).toContain("where request_key = p_request_key");
     expect(migration).toContain("where status in ('queued','running')");
+    expect(migration).not.toContain(
+      'create or replace function teevee.enqueue_development_epg_refresh()',
+    );
     expect(migration).not.toContain("cron.unschedule('teevee-development-epg-refresh')");
+    expect(migration).toContain("'teevee-development-epg-refresh-pump'");
   });
 });
