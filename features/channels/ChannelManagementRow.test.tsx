@@ -67,6 +67,19 @@ vi.mock('react-native', async () => {
     disabled?: boolean;
     onPress?: () => void;
     onLayout?: (event: { nativeEvent: { layout: { height: number } } }) => void;
+    style?: unknown;
+  };
+
+  const flattenStyle = (style: unknown): Record<string, unknown> => {
+    if (Array.isArray(style)) {
+      return style.reduce<Record<string, unknown>>(
+        (result, item) => ({ ...result, ...flattenStyle(item) }),
+        {},
+      );
+    }
+    return style && typeof style === 'object'
+      ? (style as Record<string, unknown>)
+      : {};
   };
 
   const childrenFor = (children: HostProps['children']) =>
@@ -86,6 +99,7 @@ vi.mock('react-native', async () => {
       props.accessible === false
         ? 'true'
         : undefined,
+    'data-style': JSON.stringify(flattenStyle(props.style)),
   });
 
   const View = forwardRef<HTMLDivElement, HostProps>((props, ref) =>
@@ -199,6 +213,22 @@ describe('ChannelManagementRow accessibility surface', () => {
     expect(focusStops[0]?.getAttribute('data-actions')).toContain(
       'Verplaats omlaag',
     );
+  });
+
+  it('gives the eye and drag handle the full measured row-height target', async () => {
+    await render();
+
+    const row = container.querySelector('[data-testid="channels-visible-npo"]');
+    const eye = container.querySelector('[data-testid="channels-visibility-npo"]');
+    const handle = container.querySelector('[data-testid="channels-drag-npo"]');
+    const rowStyle = JSON.parse(row?.getAttribute('data-style') ?? '{}');
+    const eyeStyle = JSON.parse(eye?.getAttribute('data-style') ?? '{}');
+    const handleStyle = JSON.parse(handle?.getAttribute('data-style') ?? '{}');
+
+    expect(rowStyle.minHeight).toBe(56);
+    expect(rowStyle.paddingVertical).toBeUndefined();
+    expect(eyeStyle).toMatchObject({ width: 48, alignSelf: 'stretch' });
+    expect(handleStyle).toMatchObject({ width: 48, alignSelf: 'stretch' });
   });
 
   it('omits reorder actions and the drag handle while management Search is active', async () => {
