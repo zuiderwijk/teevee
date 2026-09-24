@@ -1,6 +1,6 @@
 # ADR 0011 — Broadcast-keyed external content identity enrichment
 
-Status: **Proposed in issue #159 / PR #161; pending Technical Lead + Independent QA**  
+Status: **Accepted — PR #161 merged; production identity foundation deployed**  
 Date: 2026-09-24
 
 ## Context
@@ -118,6 +118,8 @@ Guide authority wins:
 - TMDB timeout, 429, 5xx, network, malformed response, matcher failure or external-reference persistence failure cannot roll back or change the already-stored Guide schedule;
 - operational TMDB failures do not create negative identity decisions;
 - unresolved/ambiguous deterministic matcher outcomes fail closed.
+
+Issue #167 / PR #172 preserves that sequencing across durable multi-invocation orchestration. A bounded Guide child may lifecycle-stage only the already-eligible internal tuple in private orchestration state after its canonical write. That staging is not canonical content, historical replay, a persistent provider cache or a public/mobile contract. No TMDB-capable child is dispatched while Guide work remains non-terminal. A failed Guide run discards its staged evidence without TMDB; a non-throwing incomplete run may later enrich only a canonical safe subset that was actually stored. Staged evidence is deleted when enrichment is terminal. Matching thresholds, persistence ownership and the 20 s owner budget remain unchanged.
 
 Missing identity is acceptable. Wrong identity is not.
 

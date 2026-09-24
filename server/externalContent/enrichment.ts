@@ -78,6 +78,16 @@ function eligibleObservation(
   return null;
 }
 
+export function selectExternalContentEnrichmentObservation(
+  stored: StoredProviderScheduleObservation,
+): StoredProviderScheduleObservation | null {
+  const programmes = stored.programmes.filter(
+    (item) => eligibleObservation(stored, item) !== null,
+  );
+  if (programmes.length === 0) return null;
+  return { ...stored, programmes };
+}
+
 async function match(
   input: EligibleObservation,
   gateway: TmdbGateway,

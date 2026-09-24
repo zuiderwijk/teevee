@@ -4,6 +4,7 @@ import type { Channel } from '@/data/domain/epg';
 
 import { InMemoryScheduleRepository } from './inMemoryScheduleRepository';
 import { ingestProviderSchedule } from './ingest';
+import { classifyEpgRefreshWorkItemAuthority } from './refreshAuthority.ts';
 import type {
   EpgProvider,
   ExternalProgramme,
@@ -160,6 +161,13 @@ describe('provider -> normalisation -> repository -> schedule API', () => {
       channelIds: ['channel-1'],
       reason: 'partial-provider-coverage',
     });
+    expect(classifyEpgRefreshWorkItemAuthority({
+      expectedCanonicalChannelIds: ['channel-1'],
+      write: ingestion.write,
+    })).toMatchObject({
+      status: 'incomplete',
+      reason: 'partial-provider-coverage',
+    });
     await expect(titles(repository)).resolves.toEqual(['Bestaand']);
   });
 
@@ -185,6 +193,14 @@ describe('provider -> normalisation -> repository -> schedule API', () => {
       expect.objectContaining({ severity: 'error', code: 'missing-title', channelId: 'channel-1' }),
     );
     expect(ingestion.write).toMatchObject({ status: 'stored', channelIds: ['channel-2'] });
+    expect(classifyEpgRefreshWorkItemAuthority({
+      expectedCanonicalChannelIds: ['channel-1', 'channel-2'],
+      write: ingestion.write,
+    })).toMatchObject({
+      status: 'incomplete',
+      reason: 'incomplete-channel-scope',
+      actualChannelIds: ['channel-2'],
+    });
     await expect(titles(repository)).resolves.toEqual(['Een oud', 'Twee nieuw']);
   });
 
@@ -233,7 +249,40 @@ describe('provider -> normalisation -> repository -> schedule API', () => {
       channelIds: ['channel-1'],
       reason: 'unattributed-provider-record',
     });
+    expect(classifyEpgRefreshWorkItemAuthority({
+      expectedCanonicalChannelIds: ['channel-1'],
+      write: ingestion.write,
+    })).toMatchObject({
+      status: 'incomplete',
+      reason: 'unattributed-provider-record',
+    });
     await expect(titles(repository)).resolves.toEqual(['Bewaard']);
+  });
+
+  it('classifies a channel-local fully blocked scope as durable incomplete', async () => {
+    const repository = new InMemoryScheduleRepository();
+    const ingestion = await ingest(
+      repository,
+      {
+        coverage: 'complete',
+        programmes: [programme('broken-one', 'raw-one', undefined)],
+      },
+      ['raw-one'],
+    );
+
+    expect(ingestion.write).toEqual({
+      status: 'skipped',
+      channelIds: [],
+      reason: 'no-safe-channel-scope',
+    });
+    expect(classifyEpgRefreshWorkItemAuthority({
+      expectedCanonicalChannelIds: ['channel-1'],
+      write: ingestion.write,
+    })).toMatchObject({
+      status: 'incomplete',
+      reason: 'no-safe-channel-scope',
+      actualChannelIds: [],
+    });
   });
 
   it('surfaces stale ingest rejection and keeps the newer canonical schedule intact', async () => {
@@ -263,6 +312,13 @@ describe('provider -> normalisation -> repository -> schedule API', () => {
         removedProgrammeCount: 0,
         storedProgrammeCount: 0,
       },
+    });
+    expect(classifyEpgRefreshWorkItemAuthority({
+      expectedCanonicalChannelIds: ['channel-1'],
+      write: stale.write,
+    })).toMatchObject({
+      status: 'requires-canonical-proof',
+      reason: 'ignored-stale-exact-scope',
     });
     await expect(titles(repository)).resolves.toEqual(['Nieuw']);
   });

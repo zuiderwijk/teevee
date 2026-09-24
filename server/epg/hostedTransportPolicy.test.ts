@@ -100,6 +100,85 @@ describe('parseHostedRefreshRequest', () => {
     ).toThrow('derives its own television-day windows');
   });
 
+  it('accepts an idempotency key for Guide-horizon orchestration', () => {
+    expect(
+      parseHostedRefreshRequest(
+        {
+          mode: 'guide-horizon',
+          requestKey: 'cron:2026-09-24T12',
+          providerChannelIds: ['RTL4.nl'],
+        },
+        providerIds,
+      ),
+    ).toEqual({
+      mode: 'guide-horizon',
+      providerChannelIds: ['RTL4.nl'],
+      requestKey: 'cron:2026-09-24T12',
+    });
+
+    expect(() =>
+      parseHostedRefreshRequest(
+        { mode: 'guide-horizon', requestKey: 'not allowed / key' },
+        providerIds,
+      ),
+    ).toThrow('requestKey is invalid');
+  });
+
+  it('accepts only database-owned work-item identity and rejects caller-owned scope', () => {
+    const attemptToken = '123e4567-e89b-42d3-a456-426614174000';
+    expect(
+      parseHostedRefreshRequest(
+        { mode: 'work-item', jobId: 17, attemptToken },
+        providerIds,
+      ),
+    ).toEqual({ mode: 'work-item', jobId: 17, attemptToken });
+
+    expect(() =>
+      parseHostedRefreshRequest(
+        {
+          mode: 'work-item',
+          jobId: 17,
+          attemptToken,
+          providerChannelIds: ['RTL4.nl'],
+        },
+        providerIds,
+      ),
+    ).toThrow('scope is database-owned');
+
+    expect(
+      parseHostedRefreshRequest(
+        { mode: 'external-content-work-item', jobId: 17, attemptToken },
+        providerIds,
+      ),
+    ).toEqual({ mode: 'external-content-work-item', jobId: 17, attemptToken });
+
+    expect(() =>
+      parseHostedRefreshRequest(
+        {
+          mode: 'external-content-work-item',
+          jobId: 17,
+          attemptToken,
+          sourceKey: 'iptv-epg-nl',
+        },
+        providerIds,
+      ),
+    ).toThrow('scope is database-owned');
+
+    expect(() =>
+      parseHostedRefreshRequest(
+        { mode: 'work-item', jobId: 0, attemptToken },
+        providerIds,
+      ),
+    ).toThrow('jobId must be a positive integer');
+
+    expect(() =>
+      parseHostedRefreshRequest(
+        { mode: 'work-item', jobId: 17, attemptToken: 'not-a-uuid' },
+        providerIds,
+      ),
+    ).toThrow('attemptToken must be a UUID');
+  });
+
   it('defaults to the allow-listed provider scope and canonicalises timestamps', () => {
     expect(
       parseHostedRefreshRequest(
@@ -118,16 +197,17 @@ describe('parseHostedRefreshRequest', () => {
   });
 
   it('deduplicates safe provider subsets and rejects unknown provider ids', () => {
-    expect(
-      parseHostedRefreshRequest(
-        {
-          from: '2026-09-14T00:00:00Z',
-          to: '2026-09-14T06:00:00Z',
-          providerChannelIds: [' RTL4.nl ', 'RTL4.nl'],
-        },
-        providerIds,
-      ).providerChannelIds,
-    ).toEqual(['RTL4.nl']);
+    const parsed = parseHostedRefreshRequest(
+      {
+        from: '2026-09-14T00:00:00Z',
+        to: '2026-09-14T06:00:00Z',
+        providerChannelIds: [' RTL4.nl ', 'RTL4.nl'],
+      },
+      providerIds,
+    );
+    expect(parsed.mode).toBe('window');
+    if (parsed.mode !== 'window') throw new Error('Expected window refresh request');
+    expect(parsed.providerChannelIds).toEqual(['RTL4.nl']);
 
     expect(() =>
       parseHostedRefreshRequest(
