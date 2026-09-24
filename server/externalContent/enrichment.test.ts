@@ -34,6 +34,17 @@ const filmClassification: ProgrammeClassification = {
   confidence: 'high',
 };
 
+const seriesClassification: ProgrammeClassification = {
+  programmeId: 'placeholder',
+  contentType: 'series',
+  seriesType: 'scripted-episodic',
+  audience: 'general-mainstream',
+  sportType: 'unknown',
+  liveStatus: 'unknown',
+  repeatStatus: 'unknown',
+  confidence: 'high',
+};
+
 function filmObservation(
   id: string,
   startAt: string,
@@ -59,6 +70,35 @@ function filmObservation(
         producer: [],
       },
       categories: ['Film'],
+    },
+  };
+}
+
+function seriesObservation(
+  id: string,
+  startAt: string,
+  endAt: string,
+): NormalisedProgrammeObservation {
+  const programme: Programme = {
+    id,
+    channelId: channel.id,
+    startAt,
+    endAt,
+    title: "Sullivan's Crossing",
+    genre: 'Serie',
+  };
+  return {
+    programme,
+    classification: { ...seriesClassification, programmeId: id },
+    externalProgramme: {
+      title: "Sullivan's Crossing",
+      credits: {
+        director: [],
+        actor: ['Morgan Kohan'],
+        producer: [],
+      },
+      episodeNumbers: [{ value: 'S4 E3' }],
+      categories: ['Serie'],
     },
   };
 }
@@ -286,6 +326,78 @@ describe('external content enrichment lifecycle', () => {
             cast: [{ name: 'Jamie Bell' }],
           },
           alternative_titles: { titles: [] },
+        }), {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' },
+        });
+      }
+      throw new Error(`unexpected URL ${value}`);
+    });
+    const gateway = new TmdbRequestSession(
+      new TmdbApiClient({ token: 'secret', fetcher, maxRetries: 0 }),
+    );
+    const capture = captureRepository();
+
+    const result = await enrichStoredExternalContent({
+      observations: [stored],
+      gateway,
+      repository: capture.repository,
+    });
+
+    expect(result).toMatchObject({
+      providerFailureCount: 1,
+      resolvedCount: 0,
+      unresolvedCount: 0,
+      ambiguousCount: 0,
+      persistedReferenceCount: 0,
+      clearedReferenceCount: 0,
+    });
+    expect(capture.repository.applyDecisions).not.toHaveBeenCalled();
+    expect(capture.writes).toHaveLength(0);
+  });
+
+  it('treats a trailing malformed season element as provider failure with no persistence write', async () => {
+    const stored: StoredProviderScheduleObservation = {
+      from: '2026-09-24T16:00:00.000Z',
+      to: '2026-09-25T02:00:00.000Z',
+      observedAt: '2026-09-24T10:00:00.000Z',
+      channelIds: [channel.id],
+      programmes: [
+        seriesObservation(
+          'programme-series-1',
+          '2026-09-24T18:00:00.000Z',
+          '2026-09-24T19:00:00.000Z',
+        ),
+      ],
+    };
+    const fetcher = vi.fn(async (url: URL | RequestInfo) => {
+      const value = String(url);
+      if (value.includes('/tv/200/season/4')) {
+        return new Response(JSON.stringify({
+          episodes: [
+            { episode_number: 3 },
+            {},
+          ],
+        }), {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' },
+        });
+      }
+      if (value.includes('/search/tv')) {
+        return new Response(JSON.stringify({ results: [{ id: 200 }] }), {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' },
+        });
+      }
+      if (value.includes('/tv/200')) {
+        return new Response(JSON.stringify({
+          id: 200,
+          name: "Sullivan's Crossing",
+          original_name: "Sullivan's Crossing",
+          aggregate_credits: {
+            cast: [{ name: 'Morgan Kohan' }],
+          },
+          alternative_titles: { results: [] },
         }), {
           status: 200,
           headers: { 'Content-Type': 'application/json' },
