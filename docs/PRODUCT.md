@@ -123,6 +123,8 @@ A persisted user-defined channel selection/order overrides this default. All Gui
 
 **Mijn zenders direction, owner-approved 24 September 2026:** Teevee keeps the complete supported channel catalog distinct from the user's visible Guide subset. A user may hide channels from their everyday Guide and reorder the remaining channels without making hidden channels disappear from Teevee. Search continues to search the full supported catalog and becomes a contextual recovery/education route: a hidden channel can still be found/opened, with an explicit optional path to add it to Mijn zenders. Search never silently mutates the user's persisted selection/order. Evidence and detailed contract: `docs/TVGIDS_APP_SEARCH_CHANNEL_EVIDENCE_2026-09-24.md`.
 
+**Catalog-growth rule:** when a genuinely new supported channel is introduced after a user has customised Mijn zenders, Teevee automatically makes that new channel visible and appends it after the user's current last selected channel. Existing order and hidden-channel choices remain untouched. Multiple new channels append in canonical/default order. Whether this automatic addition receives explicit UX messaging is intentionally left open.
+
 The source/mapping evidence, known alias/rename caveats and later implementation boundary are canonical in `docs/CHANNEL_EXPANSION_TARGET_2026-09-24.md`. In particular, STAR Channel and BBC NL still require explicit provider-identity verification, while the Belgian Play family is available under legacy provider names Play4/5/6/7.
 
 This is a queued product target, not a claim that the current 12-channel development runtime already implements the expanded catalog.

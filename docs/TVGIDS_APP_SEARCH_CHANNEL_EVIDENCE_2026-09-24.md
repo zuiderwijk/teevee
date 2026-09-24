@@ -166,6 +166,24 @@ Channel Search should own deterministic canonical aliases/normalisation such as 
 
 Do not push provider-specific aliases into mobile presentation code.
 
+## New-channel reconciliation — owner decision
+
+Owner decision, 24 September 2026.
+
+When Teevee adds a genuinely **new canonical supported channel** after a user already has a customised Mijn-zenders selection/order:
+
+- the new channel is **automatically selected/visible**;
+- it is appended **after the user's current last selected channel**;
+- the existing relative order of the user's channels is preserved exactly;
+- existing hidden channels remain hidden and must not be resurrected merely because the catalog is reconciled;
+- when multiple genuinely new channels arrive in one catalog update, append them as one block in their canonical/default catalog order.
+
+This is deliberately additive: catalog growth should not reset or reshuffle a user's established Guide, while a newly supported channel remains discoverable in the Guide without requiring the user to know that Teevee added it.
+
+The persistence/reconciliation design must be able to distinguish **newly introduced channel IDs** from **previously known but user-hidden channel IDs**. An implementation that stores only the selected IDs, with no way to retain the user's known/hidden state across catalog versions, is insufficient because it cannot make this distinction safely.
+
+Whether Teevee explicitly tells the user in the UX that new channels were added is **not yet decided**. That communication may be designed later and is not required to implement the reconciliation semantics.
+
 ## What remains open
 
 This decision intentionally does **not** freeze:
@@ -173,7 +191,7 @@ This decision intentionally does **not** freeze:
 - exact management-screen visual design;
 - exact “add to Mijn zenders” microcopy/iconography;
 - drag-and-drop vs another reorder interaction;
-- how new channels are introduced into an already-customised user selection after future catalog expansions;
+- whether/how the UX communicates that newly supported channels were appended automatically;
 - whether later behavioural evidence justifies additional personalisation prompts outside Search.
 
 Those belong to the dedicated channel-personalisation implementation increment.

@@ -84,6 +84,9 @@ Teevee separates the complete supported channel catalog from the subset/order th
 - when Search exposes a hidden channel, provide a quiet explicit personalisation affordance so the user can add it to the selected set;
 - after explicit addition, channel-order management may be offered as a secondary next step;
 - deterministic channel-management intents such as `zenders`, `zenderoverzicht` and `mijn zenders` may route directly to the management surface instead of producing a dead no-result state.
+- when the supported catalog gains a genuinely new channel, automatically select it and append it at the end of the existing personal order; never alter prior relative order or re-enable a channel the user had hidden;
+- when several new channels arrive together, append them in canonical/default catalog order;
+- whether to surface a “new channels added” explanation/notification is a later UX decision, not part of the persistence semantics.
 
 This makes Search both a recovery path and a contextual learning surface for personalisation. Avoid generic interruptive tutorials when the user's own query already creates a better teaching moment.
 
