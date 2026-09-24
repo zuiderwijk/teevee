@@ -427,7 +427,6 @@ const styles = StyleSheet.create({
     minWidth: 0,
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: CHANNEL_MANAGEMENT_METRICS.rowVerticalPadding,
     position: 'relative',
   },
   overlayRow: {
@@ -481,6 +480,7 @@ const styles = StyleSheet.create({
   logoBox: {
     width: CHANNEL_MANAGEMENT_METRICS.logoWidth,
     height: CHANNEL_MANAGEMENT_METRICS.logoHeight,
+    marginVertical: CHANNEL_MANAGEMENT_METRICS.rowVerticalPadding,
     alignItems: 'center',
     justifyContent: 'center',
     flexShrink: 0,
@@ -502,6 +502,7 @@ const styles = StyleSheet.create({
     flex: 1,
     minWidth: 0,
     marginLeft: CHANNEL_MANAGEMENT_METRICS.logoNameGap,
+    marginVertical: CHANNEL_MANAGEMENT_METRICS.rowVerticalPadding,
     fontSize: 15,
     lineHeight: 20,
   },
