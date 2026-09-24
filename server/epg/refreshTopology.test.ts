@@ -6,6 +6,7 @@ import {
   EPG_REFRESH_SOURCES,
   hostedRefreshProviderChannelIds,
   planGuideHorizonRefreshWorkItems,
+  resolveEpgRefreshWindowScope,
   resolveEpgRefreshWorkItemScope,
   scheduledEpgRefreshRequestKey,
   type EpgRefreshSourceConfig,
@@ -130,6 +131,26 @@ describe('EPG refresh topology', () => {
     expect(workItems).toHaveLength(12);
     expect(workItems.every(({ providerChannelIds }) =>
       providerChannelIds.length === 1 && providerChannelIds[0] === 'RTL4.nl')).toBe(true);
+  });
+
+  it('resolves manual windows to their unique provider source and rejects cross-source windows', () => {
+    const sources = [
+      source('nl', ['nl-1', 'nl-2'], 2),
+      source('be', ['be-1', 'be-2'], 2),
+    ];
+
+    const beScope = resolveEpgRefreshWindowScope({
+      providerChannelIds: ['be-2'],
+      sources,
+    });
+    expect(beScope.source.key).toBe('be');
+    expect(beScope.providerChannelIds).toEqual(['be-2']);
+    expect(beScope.canonicalChannels.map(({ id }) => id)).toEqual(['be-canonical-2']);
+
+    expect(() => resolveEpgRefreshWindowScope({
+      providerChannelIds: ['nl-1', 'be-1'],
+      sources,
+    })).toThrow('cannot span multiple provider sources');
   });
 
   it('resolves one claimed work item to only its source-owned canonical scope', () => {
