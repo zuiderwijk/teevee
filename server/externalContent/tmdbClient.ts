@@ -229,8 +229,11 @@ function optionalReleaseYear(value: unknown, label: string): number | null {
 
   const normalized = value.trim();
   if (!normalized) return null;
+  if (normalized !== value) {
+    throw new TmdbRequestError('malformed', `TMDB ${label} payload is invalid`);
+  }
 
-  const match = normalized.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  const match = value.match(/^(\d{4})-(\d{2})-(\d{2})$/);
   if (!match) {
     throw new TmdbRequestError('malformed', `TMDB ${label} payload is invalid`);
   }
@@ -454,17 +457,17 @@ export class TmdbRequestSession implements TmdbGateway {
       throw error;
     }
 
-    return requiredArray(
+    const episodeNumbers = requiredArray(
       record(payload, 'series season').episodes,
       'series season episodes',
-    ).some((item) => {
+    ).map((item) => {
       const episode = record(item, 'series episode');
-      return (
-        requiredNonNegativeInteger(
-          episode.episode_number,
-          'series episode number',
-        ) === episodeNumber
+      return requiredNonNegativeInteger(
+        episode.episode_number,
+        'series episode number',
       );
     });
+
+    return episodeNumbers.includes(episodeNumber);
   }
 }
