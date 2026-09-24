@@ -5,13 +5,13 @@ import type { IngestWriteResult } from './ingest.ts';
 export type EpgRefreshAuthorityResult =
   | {
       status: 'authoritative';
-      reason: 'stored-exact-scope' | 'newer-authority-exact-scope';
+      reason: 'stored-exact-scope';
       expectedChannelIds: Channel['id'][];
       actualChannelIds: Channel['id'][];
     }
   | {
       status: 'requires-canonical-proof';
-      reason: 'ignored-stale-exact-scope';
+      reason: 'ignored-stale-needs-exact-scope-proof';
       expectedChannelIds: Channel['id'][];
       actualChannelIds: Channel['id'][];
     }
@@ -41,13 +41,12 @@ function sameChannelScope(
 /**
  * Durable orchestration success is stricter than a non-throwing ingest.
  *
- * A child represents one exact database-owned channel/time scope. The child is only
- * authoritative when the whole expected canonical channel set was stored. An
- * ignored-stale response is only a candidate for success: ADR 0007 may reject a whole
- * multi-channel write because of one newer overlapping segment, so full canonical
- * same-or-newer coverage must be proven transactionally by the orchestration store.
- * Provider partial coverage, unattributed/no-safe input and channel-local data-quality
- * blocking remain durable incomplete outcomes rather than masquerading as horizon success.
+ * A stored write proves exact-scope authority when the actual stored channel set equals
+ * the database-owned expected child scope. \`ignored-stale\` is deliberately different:
+ * ADR 0007 rejects a whole multi-channel replacement when any target channel overlaps
+ * newer coverage, so echoed channel IDs prove only the attempted scope. Exact
+ * same-or-newer canonical coverage must therefore be proven atomically in Postgres
+ * before durable success.
  */
 export function classifyEpgRefreshWorkItemAuthority(input: {
   expectedCanonicalChannelIds: readonly Channel['id'][];
@@ -73,7 +72,7 @@ export function classifyEpgRefreshWorkItemAuthority(input: {
   if (input.write.status === 'ignored-stale' && exactScope) {
     return {
       status: 'requires-canonical-proof',
-      reason: 'ignored-stale-exact-scope',
+      reason: 'ignored-stale-needs-exact-scope-proof',
       expectedChannelIds,
       actualChannelIds,
     };
