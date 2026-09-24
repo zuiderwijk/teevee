@@ -217,6 +217,43 @@ export function planGuideHorizonRefreshWorkItems(input: {
   return workItems;
 }
 
+export function resolveEpgRefreshWindowScope(input: {
+  providerChannelIds: readonly string[];
+  sources?: readonly EpgRefreshSourceConfig[];
+}): {
+  source: EpgRefreshSourceConfig;
+  canonicalChannels: Channel[];
+  channelMappings: ChannelMapping[];
+  providerChannelIds: string[];
+} {
+  const sources = input.sources ?? EPG_REFRESH_SOURCES;
+  validateRefreshSources(sources);
+  const providerChannelIds = normalizedIds(input.providerChannelIds);
+  if (providerChannelIds.length === 0) {
+    throw new Error('EPG refresh window must contain at least one provider channel');
+  }
+
+  const sourceKeys = new Set<string>();
+  for (const providerChannelId of providerChannelIds) {
+    const owner = sources.find((source) =>
+      source.channelMappings.some((mapping) => mapping.providerChannelId === providerChannelId),
+    );
+    if (!owner) {
+      throw new Error(`Unsupported providerChannelIds value: ${providerChannelId}`);
+    }
+    sourceKeys.add(owner.key);
+  }
+  if (sourceKeys.size !== 1) {
+    throw new Error('EPG refresh window cannot span multiple provider sources');
+  }
+
+  return resolveEpgRefreshWorkItemScope({
+    sourceKey: [...sourceKeys][0]!,
+    providerChannelIds,
+    sources,
+  });
+}
+
 export function resolveEpgRefreshWorkItemScope(input: {
   sourceKey: string;
   providerChannelIds: readonly string[];
