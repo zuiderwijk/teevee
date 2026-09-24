@@ -149,7 +149,7 @@ create or replace function test_epg.replace_canonical_window(
 language sql
 security invoker
 set search_path = ''
-as $
+as $canonical$
   select teevee.replace_schedule_window(
     p_from,
     p_to,
@@ -170,7 +170,7 @@ as $
     ),
     '[]'::jsonb
   );
-$;
+$canonical$;
 
 grant execute on function test_epg.replace_canonical_window(
   timestamptz,timestamptz,timestamptz,text[]
