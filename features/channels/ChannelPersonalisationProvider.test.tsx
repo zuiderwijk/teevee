@@ -15,7 +15,7 @@ const storage = vi.hoisted(() => ({
     guidePresentation: 'per-channel' as const,
     appearance: 'system' as const,
   })),
-  write: vi.fn(() => true),
+  write: vi.fn((_preferences: unknown) => true),
 }));
 
 vi.mock('@/services/storage/appPreferencesStorage', () => ({
@@ -70,8 +70,22 @@ describe('ChannelPersonalisationProvider reorder persistence', () => {
     });
 
     expect(storage.write).toHaveBeenCalledTimes(1);
-    const persisted = storage.write.mock.calls[0]![0];
-    expect(persisted.channelPersonalisation?.selectedChannelIds.slice(0, 4)).toEqual([
+    expect(storage.write).toHaveBeenCalledWith(
+      expect.objectContaining({
+        channelPersonalisation: expect.objectContaining({
+          selectedChannelIds: expect.arrayContaining([
+            'nl-npo-1',
+            'nl-npo-2',
+            'nl-npo-3',
+            'nl-rtl-4',
+          ]),
+        }),
+      }),
+    );
+    const persisted = storage.write.mock.calls[0]?.[0] as
+      | { channelPersonalisation?: { selectedChannelIds: string[] } }
+      | undefined;
+    expect(persisted?.channelPersonalisation?.selectedChannelIds.slice(0, 4)).toEqual([
       'nl-npo-2',
       'nl-npo-3',
       'nl-npo-1',
