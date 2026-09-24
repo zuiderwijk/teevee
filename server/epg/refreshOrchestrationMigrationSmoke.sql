@@ -778,8 +778,68 @@ select public.teevee_complete_epg_refresh_external_content_job(
    join teevee.epg_refresh_runs r on r.id=j.run_id
    where r.request_key='cron:2026-09-24T12' and j.ordinal=1),
   (select token from test_epg.tokens where label='run-2-job-1-external-attempt-1'),
-  true,
-  '{"status":"completed","resolvedCount":1}'::jsonb,
+  'retryable-failure',
+  '{"externalContent":{"status":"unavailable","reason":"tmdb-secret-unavailable"}}'::jsonb,
+  'external-content:tmdb-secret-unavailable'
+);
+
+reset role;
+
+select test_epg.assert_true(
+  exists (
+    select 1
+    from teevee.epg_refresh_jobs j
+    join teevee.epg_refresh_runs r on r.id=j.run_id
+    where r.request_key='cron:2026-09-24T12'
+      and j.ordinal=1
+      and j.external_content_status='queued'
+      and j.external_content_observation is not null
+      and j.external_content_attempt_count=1
+      and j.external_content_last_error='external-content:tmdb-secret-unavailable'
+  ),
+  'owner-level unavailable queues retry and preserves staged evidence'
+);
+select test_epg.assert_true(
+  (select status from teevee.epg_refresh_runs where request_key='cron:2026-09-24T12') = 'incomplete',
+  'external-content failure never changes durable Guide authority'
+);
+
+update teevee.epg_refresh_jobs
+set external_content_available_at = pg_catalog.now() - interval '1 second'
+where run_id=(select id from teevee.epg_refresh_runs where request_key='cron:2026-09-24T12')
+  and ordinal=1;
+
+set role service_role;
+select teevee.pump_epg_refresh_jobs();
+
+insert into test_epg.tokens(label, token)
+select 'run-2-job-1-external-attempt-2', j.external_content_attempt_token
+from teevee.epg_refresh_jobs j
+join teevee.epg_refresh_runs r on r.id=j.run_id
+where r.request_key='cron:2026-09-24T12' and j.ordinal=1;
+
+insert into test_epg.results(label, payload)
+select 'run-2-job-1-external-claim-2',
+  public.teevee_claim_epg_refresh_external_content_job(
+    (select j.id from teevee.epg_refresh_jobs j
+     join teevee.epg_refresh_runs r on r.id=j.run_id
+     where r.request_key='cron:2026-09-24T12' and j.ordinal=1),
+    (select token from test_epg.tokens where label='run-2-job-1-external-attempt-2')
+  );
+
+select test_epg.assert_json_status(
+  (select payload from test_epg.results where label='run-2-job-1-external-claim-2'),
+  'claimed',
+  'deferred external-content retry can reclaim preserved staged evidence'
+);
+
+select public.teevee_complete_epg_refresh_external_content_job(
+  (select j.id from teevee.epg_refresh_jobs j
+   join teevee.epg_refresh_runs r on r.id=j.run_id
+   where r.request_key='cron:2026-09-24T12' and j.ordinal=1),
+  (select token from test_epg.tokens where label='run-2-job-1-external-attempt-2'),
+  'succeeded',
+  '{"externalContent":{"status":"completed","providerFailureCount":0,"persistenceFailureCount":0,"resolvedCount":1}}'::jsonb,
   null
 );
 
@@ -793,9 +853,253 @@ select test_epg.assert_true(
     where r.request_key='cron:2026-09-24T12'
       and j.ordinal=1
       and j.external_content_status='completed'
+      and j.external_content_attempt_count=2
       and j.external_content_observation is null
   ),
-  'terminal enrichment clears lifecycle-bound provider evidence'
+  'retry then success completes enrichment and clears lifecycle-bound staging'
+);
+select test_epg.assert_true(
+  (select status from teevee.epg_refresh_runs where request_key='cron:2026-09-24T12') = 'incomplete',
+  'successful enrichment retry still cannot upgrade incomplete Guide authority'
+);
+
+-- Create a separate authoritative Guide run whose external-content phase exhausts all
+-- three attempts across provider/persistence/owner-level operational failures.
+set role service_role;
+
+insert into test_epg.results(label, payload)
+select 'run-4-start-external-exhaustion', public.teevee_start_epg_refresh_run(
+  'manual:external-exhaustion',
+  '2026-09-24T19:00:00Z'::timestamptz,
+  '2026-09-24T19:00:00Z'::timestamptz,
+  jsonb_build_array(
+    jsonb_build_object(
+      'sourceKey','iptv-epg-nl',
+      'dayOffset',0,
+      'from','2026-09-24T04:00:00Z',
+      'to','2026-09-25T04:00:00Z',
+      'channelGroupKey','group-1',
+      'providerChannelIds',jsonb_build_array('RTL4.nl')
+    )
+  )
+);
+
+insert into test_epg.tokens(label, token)
+select 'run-4-guide-attempt-1', j.attempt_token
+from teevee.epg_refresh_jobs j
+join teevee.epg_refresh_runs r on r.id=j.run_id
+where r.request_key='manual:external-exhaustion' and j.ordinal=1;
+
+insert into test_epg.results(label, payload)
+select 'run-4-guide-claim-1', public.teevee_claim_epg_refresh_job(
+  (select j.id from teevee.epg_refresh_jobs j
+   join teevee.epg_refresh_runs r on r.id=j.run_id
+   where r.request_key='manual:external-exhaustion' and j.ordinal=1),
+  (select token from test_epg.tokens where label='run-4-guide-attempt-1')
+);
+
+select public.teevee_complete_epg_refresh_job(
+  (select j.id from teevee.epg_refresh_jobs j
+   join teevee.epg_refresh_runs r on r.id=j.run_id
+   where r.request_key='manual:external-exhaustion' and j.ordinal=1),
+  (select token from test_epg.tokens where label='run-4-guide-attempt-1'),
+  'succeeded',
+  '{"authority":{"status":"authoritative"}}'::jsonb,
+  null,
+  jsonb_build_object(
+    'from','2026-09-24T04:00:00.000Z',
+    'to','2026-09-25T04:00:00.000Z',
+    'observedAt','2026-09-24T19:00:00.000Z',
+    'channelIds',jsonb_build_array('channel-1'),
+    'programmes',jsonb_build_array(
+      jsonb_build_object(
+        'programme',jsonb_build_object(
+          'id','programme-exhaustion',
+          'channelId','channel-1',
+          'startAt','2026-09-24T20:00:00.000Z',
+          'endAt','2026-09-24T22:00:00.000Z',
+          'title','Retry Film'
+        ),
+        'classification',jsonb_build_object(
+          'programmeId','programme-exhaustion',
+          'contentType','film',
+          'seriesType','unknown',
+          'audience','unknown',
+          'sportType','unknown',
+          'liveStatus','unknown',
+          'repeatStatus','unknown',
+          'confidence','high'
+        ),
+        'externalProgramme',jsonb_build_object(
+          'title','Retry Film',
+          'productionDate',jsonb_build_object('raw','2022','year',2022),
+          'credits',jsonb_build_object(
+            'director',jsonb_build_array('Director'),
+            'actor',jsonb_build_array(),
+            'producer',jsonb_build_array()
+          )
+        )
+      )
+    )
+  )
+);
+
+reset role;
+
+select test_epg.assert_true(
+  (select status from teevee.epg_refresh_runs where request_key='manual:external-exhaustion') = 'completed',
+  'Guide authority is completed before external-content exhaustion testing'
+);
+select test_epg.assert_true(
+  exists (
+    select 1
+    from teevee.epg_refresh_jobs j
+    join teevee.epg_refresh_runs r on r.id=j.run_id
+    where r.request_key='manual:external-exhaustion'
+      and j.external_content_status='dispatched'
+      and j.external_content_observation is not null
+  ),
+  'authoritative Guide completion stages and dispatches deferred enrichment'
+);
+
+-- Attempt 1: provider failure.
+set role service_role;
+insert into test_epg.tokens(label, token)
+select 'run-4-external-attempt-1', j.external_content_attempt_token
+from teevee.epg_refresh_jobs j
+join teevee.epg_refresh_runs r on r.id=j.run_id
+where r.request_key='manual:external-exhaustion' and j.ordinal=1;
+
+select public.teevee_claim_epg_refresh_external_content_job(
+  (select j.id from teevee.epg_refresh_jobs j
+   join teevee.epg_refresh_runs r on r.id=j.run_id
+   where r.request_key='manual:external-exhaustion' and j.ordinal=1),
+  (select token from test_epg.tokens where label='run-4-external-attempt-1')
+);
+
+select public.teevee_complete_epg_refresh_external_content_job(
+  (select j.id from teevee.epg_refresh_jobs j
+   join teevee.epg_refresh_runs r on r.id=j.run_id
+   where r.request_key='manual:external-exhaustion' and j.ordinal=1),
+  (select token from test_epg.tokens where label='run-4-external-attempt-1'),
+  'retryable-failure',
+  '{"externalContent":{"status":"completed","providerFailureCount":1,"persistenceFailureCount":0}}'::jsonb,
+  'external-content:provider-failures'
+);
+reset role;
+
+select test_epg.assert_true(
+  exists (
+    select 1
+    from teevee.epg_refresh_jobs j
+    join teevee.epg_refresh_runs r on r.id=j.run_id
+    where r.request_key='manual:external-exhaustion'
+      and j.external_content_status='queued'
+      and j.external_content_attempt_count=1
+      and j.external_content_observation is not null
+  ),
+  'provider failure is retryable and preserves staged evidence'
+);
+
+update teevee.epg_refresh_jobs
+set external_content_available_at = pg_catalog.now() - interval '1 second'
+where run_id=(select id from teevee.epg_refresh_runs where request_key='manual:external-exhaustion');
+
+set role service_role;
+select teevee.pump_epg_refresh_jobs();
+
+-- Attempt 2: persistence failure.
+insert into test_epg.tokens(label, token)
+select 'run-4-external-attempt-2', j.external_content_attempt_token
+from teevee.epg_refresh_jobs j
+join teevee.epg_refresh_runs r on r.id=j.run_id
+where r.request_key='manual:external-exhaustion' and j.ordinal=1;
+
+select public.teevee_claim_epg_refresh_external_content_job(
+  (select j.id from teevee.epg_refresh_jobs j
+   join teevee.epg_refresh_runs r on r.id=j.run_id
+   where r.request_key='manual:external-exhaustion' and j.ordinal=1),
+  (select token from test_epg.tokens where label='run-4-external-attempt-2')
+);
+
+select public.teevee_complete_epg_refresh_external_content_job(
+  (select j.id from teevee.epg_refresh_jobs j
+   join teevee.epg_refresh_runs r on r.id=j.run_id
+   where r.request_key='manual:external-exhaustion' and j.ordinal=1),
+  (select token from test_epg.tokens where label='run-4-external-attempt-2'),
+  'retryable-failure',
+  '{"externalContent":{"status":"completed","providerFailureCount":0,"persistenceFailureCount":1}}'::jsonb,
+  'external-content:persistence-failures'
+);
+reset role;
+
+select test_epg.assert_true(
+  exists (
+    select 1
+    from teevee.epg_refresh_jobs j
+    join teevee.epg_refresh_runs r on r.id=j.run_id
+    where r.request_key='manual:external-exhaustion'
+      and j.external_content_status='queued'
+      and j.external_content_attempt_count=2
+      and j.external_content_observation is not null
+  ),
+  'persistence failure is retryable and preserves staged evidence'
+);
+
+update teevee.epg_refresh_jobs
+set external_content_available_at = pg_catalog.now() - interval '1 second'
+where run_id=(select id from teevee.epg_refresh_runs where request_key='manual:external-exhaustion');
+
+set role service_role;
+select teevee.pump_epg_refresh_jobs();
+
+-- Attempt 3: owner-level unavailable, exhausting the bounded retry budget.
+insert into test_epg.tokens(label, token)
+select 'run-4-external-attempt-3', j.external_content_attempt_token
+from teevee.epg_refresh_jobs j
+join teevee.epg_refresh_runs r on r.id=j.run_id
+where r.request_key='manual:external-exhaustion' and j.ordinal=1;
+
+select public.teevee_claim_epg_refresh_external_content_job(
+  (select j.id from teevee.epg_refresh_jobs j
+   join teevee.epg_refresh_runs r on r.id=j.run_id
+   where r.request_key='manual:external-exhaustion' and j.ordinal=1),
+  (select token from test_epg.tokens where label='run-4-external-attempt-3')
+);
+
+select public.teevee_complete_epg_refresh_external_content_job(
+  (select j.id from teevee.epg_refresh_jobs j
+   join teevee.epg_refresh_runs r on r.id=j.run_id
+   where r.request_key='manual:external-exhaustion' and j.ordinal=1),
+  (select token from test_epg.tokens where label='run-4-external-attempt-3'),
+  'retryable-failure',
+  '{"externalContent":{"status":"unavailable","reason":"external-content-enrichment-failed"}}'::jsonb,
+  'external-content:external-content-enrichment-failed'
+);
+reset role;
+
+select test_epg.assert_true(
+  exists (
+    select 1
+    from teevee.epg_refresh_jobs j
+    join teevee.epg_refresh_runs r on r.id=j.run_id
+    where r.request_key='manual:external-exhaustion'
+      and j.external_content_status='failed'
+      and j.external_content_attempt_count=3
+      and j.external_content_observation is null
+      and j.external_content_last_error='external-content:external-content-enrichment-failed'
+  ),
+  'max external-content attempts produce durable failure and clear staging'
+);
+select test_epg.assert_true(
+  (select status from teevee.epg_refresh_runs where request_key='manual:external-exhaustion') = 'completed',
+  'external-content exhaustion remains fail-open to completed canonical Guide authority'
+);
+select test_epg.assert_true(
+  (select external_content_status
+   from teevee.epg_refresh_runs
+   where request_key='manual:external-exhaustion') = 'failed',
+  'run exposes exhausted external-content lifecycle separately from Guide authority'
 );
 
 delete from vault.decrypted_secrets
