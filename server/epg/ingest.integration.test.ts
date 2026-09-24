@@ -318,7 +318,7 @@ describe('provider -> normalisation -> repository -> schedule API', () => {
       write: stale.write,
     })).toMatchObject({
       status: 'requires-canonical-proof',
-      reason: 'ignored-stale-needs-exact-scope-proof',
+      reason: 'ignored-stale-exact-scope',
     });
     await expect(titles(repository)).resolves.toEqual(['Nieuw']);
   });
