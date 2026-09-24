@@ -20,6 +20,7 @@ import {
   enrichStoredExternalContent,
   selectExternalContentEnrichmentObservation,
 } from '../../../server/externalContent/enrichment.ts';
+import { classifyDurableExternalContentOutcome } from '../../../server/externalContent/durableOutcome.ts';
 import { SupabaseProgrammeExternalContentRepository } from '../../../server/externalContent/supabaseProgrammeExternalContentRepository.ts';
 import {
   TmdbApiClient,
@@ -413,19 +414,29 @@ export default {
           req.signal,
         );
         const elapsedMs = Math.round(performance.now() - startedAt);
+        const durableOutcome = classifyDurableExternalContentOutcome(externalContent);
         const completion = await orchestration.completeExternalContentJob({
           jobId: claim.jobId,
           attemptToken: request.attemptToken,
-          success: true,
-          outcome: { externalContent, elapsedMs },
+          result: durableOutcome.result,
+          outcome: { externalContent, durableOutcome, elapsedMs },
+          ...(durableOutcome.result === 'retryable-failure'
+            ? { error: `external-content:${durableOutcome.reason}` }
+            : {}),
         });
         return Response.json({
-          status: 'completed',
+          status:
+            completion.externalContentStatus === 'completed'
+              ? 'completed'
+              : completion.externalContentStatus === 'failed'
+                ? 'failed'
+                : 'retry-scheduled',
           mode: request.mode,
           runId: claim.runId,
           jobId: claim.jobId,
           attempt: claim.attempt,
           externalContent,
+          durableOutcome,
           orchestration: completion,
           elapsedMs,
         });
@@ -437,7 +448,7 @@ export default {
           await orchestration.completeExternalContentJob({
             jobId: claim.jobId,
             attemptToken: request.attemptToken,
-            success: false,
+            result: 'retryable-failure',
             outcome: {
               elapsedMs: Math.round(performance.now() - startedAt),
             },
