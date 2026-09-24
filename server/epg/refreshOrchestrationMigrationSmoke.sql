@@ -456,44 +456,6 @@ select public.teevee_complete_epg_refresh_job(
 
 reset role;
 
-update teevee.epg_refresh_jobs
-set available_at = pg_catalog.now() - interval '1 second'
-where ordinal=1
-  and run_id=(select id from teevee.epg_refresh_runs where request_key='cron:2026-09-24T06');
-
-set role service_role;
-select teevee.pump_epg_refresh_jobs();
-
-insert into test_epg.tokens(label, token)
-select 'run-1-job-1-attempt-3', attempt_token
-from teevee.epg_refresh_jobs
-where ordinal=1
-  and run_id=(select id from teevee.epg_refresh_runs where request_key='cron:2026-09-24T06');
-
-insert into test_epg.results(label, payload)
-select 'run-1-job-1-claim-3', public.teevee_claim_epg_refresh_job(
-  (select id from teevee.epg_refresh_jobs
-   where ordinal=1
-     and run_id=(select id from teevee.epg_refresh_runs where request_key='cron:2026-09-24T06')),
-  (select token from test_epg.tokens where label='run-1-job-1-attempt-3')
-);
-
-select public.teevee_complete_epg_refresh_job(
-  (select id from teevee.epg_refresh_jobs
-   where ordinal=1
-     and run_id=(select id from teevee.epg_refresh_runs where request_key='cron:2026-09-24T06')),
-  (select token from test_epg.tokens where label='run-1-job-1-attempt-3'),
-  'failed',
-  '{"attempt":3}'::jsonb,
-  'synthetic exhausted failure'
-);
-
-reset role;
-
-select test_epg.assert_true(
-  (select status from teevee.epg_refresh_runs where request_key='cron:2026-09-24T06') = 'failed',
-  'parent becomes failed only after siblings finish and one child exhausts attempts'
-);
 select test_epg.assert_true(
   exists (
     select 1
@@ -502,8 +464,16 @@ select test_epg.assert_true(
     where r.request_key='cron:2026-09-24T12'
       and j.status='dispatched'
   ),
-  'terminal older run dispatches the queued newer scheduled bucket'
+  'a newer persisted bucket may run while an older job is intentionally in retry backoff'
 );
+
+-- Keep the old run retry unavailable while the already-dispatched newer bucket is
+-- exercised, making the smoke deterministic without requiring wall-clock sleeps.
+update teevee.epg_refresh_jobs
+set available_at = pg_catalog.now() + interval '10 minutes'
+where ordinal=1
+  and run_id=(select id from teevee.epg_refresh_runs where request_key='cron:2026-09-24T06')
+  and status='queued';
 
 set role service_role;
 
@@ -547,6 +517,45 @@ select test_epg.assert_true(
       and j.last_error='incomplete-authority:partial-provider-coverage'
   ),
   'incomplete child outcome and reason are durable'
+);
+
+update teevee.epg_refresh_jobs
+set available_at = pg_catalog.now() - interval '1 second'
+where ordinal=1
+  and run_id=(select id from teevee.epg_refresh_runs where request_key='cron:2026-09-24T06');
+
+set role service_role;
+select teevee.pump_epg_refresh_jobs();
+
+insert into test_epg.tokens(label, token)
+select 'run-1-job-1-attempt-3', attempt_token
+from teevee.epg_refresh_jobs
+where ordinal=1
+  and run_id=(select id from teevee.epg_refresh_runs where request_key='cron:2026-09-24T06');
+
+insert into test_epg.results(label, payload)
+select 'run-1-job-1-claim-3', public.teevee_claim_epg_refresh_job(
+  (select id from teevee.epg_refresh_jobs
+   where ordinal=1
+     and run_id=(select id from teevee.epg_refresh_runs where request_key='cron:2026-09-24T06')),
+  (select token from test_epg.tokens where label='run-1-job-1-attempt-3')
+);
+
+select public.teevee_complete_epg_refresh_job(
+  (select id from teevee.epg_refresh_jobs
+   where ordinal=1
+     and run_id=(select id from teevee.epg_refresh_runs where request_key='cron:2026-09-24T06')),
+  (select token from test_epg.tokens where label='run-1-job-1-attempt-3'),
+  'failed',
+  '{"attempt":3}'::jsonb,
+  'synthetic exhausted failure'
+);
+
+reset role;
+
+select test_epg.assert_true(
+  (select status from teevee.epg_refresh_runs where request_key='cron:2026-09-24T06') = 'failed',
+  'parent becomes failed after siblings finish and one child exhausts attempts'
 );
 
 delete from vault.decrypted_secrets
