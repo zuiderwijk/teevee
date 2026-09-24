@@ -74,6 +74,24 @@ describe('epg-refresh bounded orchestration entrypoint', () => {
     expect(externalBlock).not.toContain('ingestProviderSchedule');
   });
 
+  it('classifies deferred enrichment outcomes before durable completion', () => {
+    const externalStart = entrypoint.indexOf(
+      "if (request.mode === 'external-content-work-item')",
+    );
+    const manualStart = entrypoint.indexOf(
+      'const refreshStartedAt = new Date();',
+      externalStart,
+    );
+    const externalBlock = entrypoint.slice(externalStart, manualStart);
+
+    expect(entrypoint).toContain('classifyDurableExternalContentOutcome');
+    expect(externalBlock).toContain('const durableOutcome =');
+    expect(externalBlock).toContain('result: durableOutcome.result');
+    expect(externalBlock).toContain("'retry-scheduled'");
+    expect(externalBlock).not.toContain('success: true');
+    expect(externalBlock).not.toContain('success: false');
+  });
+
   it('uses cron authentication to derive a stable scheduled idempotency key', () => {
     expect(entrypoint).toContain("'cron-token'");
     expect(entrypoint).toContain("authKind === 'cron-token'");
