@@ -67,7 +67,9 @@ describe('bounded EPG refresh orchestration migration', () => {
 
   it('persists incomplete authority and dispatch-unavailable reasons durably', () => {
     expect(migration).toContain("v_status := 'incomplete'");
-    expect(migration).toContain("p_result not in ('succeeded','incomplete','failed')");
+    expect(migration).toContain(
+      "p_result not in ('succeeded','verify-stale-authority','incomplete','failed')",
+    );
     expect(migration).toContain("set status = 'incomplete'");
     expect(migration).toContain("'cron-token-unavailable'");
     expect(migration).toContain("available_at = pg_catalog.now() + interval '1 minute'");
