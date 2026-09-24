@@ -151,6 +151,31 @@ describe('EPG refresh topology', () => {
     ]);
   });
 
+  it('fails closed on ambiguous source, provider-channel or canonical-channel ownership', () => {
+    const nl = source('nl', ['nl-1', 'nl-2'], 2);
+
+    expect(() => hostedRefreshProviderChannelIds([
+      nl,
+      { ...source('nl', ['other-1'], 1) },
+    ])).toThrow('Duplicate EPG refresh source key: nl');
+
+    const duplicateProvider = source('be', ['nl-1'], 1);
+    expect(() => hostedRefreshProviderChannelIds([nl, duplicateProvider]))
+      .toThrow('Provider channel nl-1 is owned by multiple refresh sources');
+
+    const overlappingCanonical = source('be', ['be-1'], 1);
+    overlappingCanonical.canonicalChannels[0] = {
+      ...overlappingCanonical.canonicalChannels[0]!,
+      id: nl.canonicalChannels[0]!.id,
+    };
+    overlappingCanonical.channelMappings[0] = {
+      providerChannelId: 'be-1',
+      channelId: nl.canonicalChannels[0]!.id,
+    };
+    expect(() => hostedRefreshProviderChannelIds([nl, overlappingCanonical]))
+      .toThrow('is owned by multiple refresh sources');
+  });
+
   it('rejects unknown sources, cross-source channels and oversized groups', () => {
     const sources = [
       source('nl', ['nl-1', 'nl-2'], 1),
