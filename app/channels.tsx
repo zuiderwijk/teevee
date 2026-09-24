@@ -40,7 +40,6 @@ import {
   channelManagementSlotTop,
   channelManagementZones,
   clampChannelManagementScrollOffset,
-  commitChannelManagementDrop,
   reorderChannelIdsToIndex,
   type ChannelManagementFocusOutcome,
 } from '@/features/channels/channelManagement';
@@ -48,14 +47,16 @@ import {
   channelManagementDropHaptic,
   channelManagementPickHaptic,
 } from '@/features/channels/channelManagementHaptics';
+import {
+  clearChannelDragSessionIfCurrent,
+  createChannelDragSession,
+  planChannelDragTermination,
+  updateChannelDragSessionTarget,
+  type ChannelDragSession,
+  type ChannelDragTerminationKind,
+} from '@/features/channels/channelDragLifecycle';
 import { TEEVEE_FONT_FAMILIES } from '@/theme/typography';
 import { useTeeveeTheme } from '@/theme/useTeeveeTheme';
-
-type DragState = {
-  channelId: string;
-  targetIndex: number;
-  height: number;
-};
 
 function ZoneHeader({
   title,
@@ -123,12 +124,13 @@ export default function ChannelsScreen() {
   } = useChannelPersonalisationSettings();
 
   const [query, setQuery] = useState('');
-  const [dragState, setDragState] = useState<DragState | null>(null);
+  const [dragState, setDragState] = useState<ChannelDragSession | null>(null);
   const queryActive = channelManagementQueryActive(query);
 
   const selectedIdsRef = useRef<readonly string[]>(selectedChannelIds);
   const queryActiveRef = useRef(queryActive);
-  const dragStateRef = useRef<DragState | null>(null);
+  const dragStateRef = useRef<ChannelDragSession | null>(null);
+  const dragSessionTokenRef = useRef(0);
 
   useEffect(() => {
     selectedIdsRef.current = selectedChannelIds;
@@ -332,7 +334,7 @@ export default function ChannelsScreen() {
       );
       if (targetIndex === current.targetIndex) return;
 
-      const next = { ...current, targetIndex };
+      const next = updateChannelDragSessionTarget(current, targetIndex);
       dragStateRef.current = next;
       setDragState(next);
     },
@@ -392,14 +394,22 @@ export default function ChannelsScreen() {
     autoScrollFrameRef.current = requestAnimationFrame(tick);
   }, [stopAutoScroll, updateDragPointer]);
 
-  const clearDrag = useCallback(() => {
-    stopAutoScroll();
-    dragStateRef.current = null;
-    setDragState(null);
-  }, [stopAutoScroll]);
+  const clearDragSession = useCallback(
+    (sessionToken: number) => {
+      stopAutoScroll();
+      const current = dragStateRef.current;
+      const next = clearChannelDragSessionIfCurrent(current, sessionToken);
+      if (next === current) return false;
+      dragStateRef.current = next;
+      setDragState(next);
+      return true;
+    },
+    [stopAutoScroll],
+  );
 
   const settleOverlay = useCallback(
     (
+      sessionToken: number,
       channelId: string,
       targetIndex: number,
       order: readonly string[],
@@ -416,22 +426,23 @@ export default function ChannelsScreen() {
 
       if (motion.settleImmediately) {
         overlayTop.set(targetTop);
-        clearDrag();
         return;
       }
 
+      // Best-effort visual spring only. Gesture/session teardown is owned
+      // synchronously by terminateDragSession below and never waits on this.
       overlayTop.set(
         withSpring(
           targetTop,
           CHANNEL_MANAGEMENT_METRICS.dropSpring,
-          (finished) => {
-            if (finished) scheduleOnRN(clearDrag);
+          () => {
+            scheduleOnRN(clearDragSession, sessionToken);
           },
         ),
       );
     },
     [
-      clearDrag,
+      clearDragSession,
       motion.settleImmediately,
       overlayTop,
       rowMetrics.minHeight,
@@ -446,7 +457,12 @@ export default function ChannelsScreen() {
 
       const height =
         rowHeightsRef.current[channelId] ?? rowMetrics.minHeight;
-      const next = { channelId, targetIndex: from, height };
+      const next = createChannelDragSession({
+        token: (dragSessionTokenRef.current += 1),
+        channelId,
+        originalIndex: from,
+        height,
+      });
       dragStateRef.current = next;
       setDragState(next);
       dragPointerAbsoluteYRef.current = absoluteY;
@@ -465,41 +481,58 @@ export default function ChannelsScreen() {
     ],
   );
 
+  const terminateDragSession = useCallback(
+    (channelId: string, kind: ChannelDragTerminationKind) => {
+      const current = dragStateRef.current;
+      if (!current || current.channelId !== channelId) return false;
+
+      const order = [...selectedIdsRef.current];
+      const plan = planChannelDragTermination(current, order, kind);
+
+      // Terminal ownership is synchronous and independent of Reanimated.
+      // This immediately stops edge auto-scroll, removes provisional state and
+      // re-enables the parent ScrollView on the next React commit.
+      stopAutoScroll();
+
+      if (plan.persistToIndex !== null) {
+        moveChannelToIndex(plan.channelId, plan.persistToIndex);
+      }
+      if (plan.emitDropHaptic) {
+        void channelManagementDropHaptic();
+      }
+
+      settleOverlay(
+        plan.sessionToken,
+        plan.channelId,
+        plan.settleIndex,
+        order,
+      );
+      clearDragSession(plan.sessionToken);
+      return true;
+    },
+    [
+      clearDragSession,
+      moveChannelToIndex,
+      settleOverlay,
+      stopAutoScroll,
+    ],
+  );
+
   const endDrag = useCallback(
     (channelId: string, absoluteY: number) => {
       updateDragPointer(channelId, absoluteY);
-      const current = dragStateRef.current;
-      if (!current || current.channelId !== channelId) return;
-
-      stopAutoScroll();
-      const order = [...selectedIdsRef.current];
-      const changed = commitChannelManagementDrop(
-        order,
-        channelId,
-        current.targetIndex,
-        moveChannelToIndex,
-      );
-      if (changed) void channelManagementDropHaptic();
-      settleOverlay(channelId, current.targetIndex, order);
+      terminateDragSession(channelId, 'drop');
     },
-    [moveChannelToIndex, settleOverlay, stopAutoScroll, updateDragPointer],
+    [terminateDragSession, updateDragPointer],
   );
 
-  const cancelDrag = useCallback(
+  const finalizeDrag = useCallback(
     (channelId: string) => {
-      const current = dragStateRef.current;
-      if (!current || current.channelId !== channelId) return;
-
-      stopAutoScroll();
-      const order = [...selectedIdsRef.current];
-      const originalIndex = order.indexOf(channelId);
-      if (originalIndex < 0) {
-        clearDrag();
-        return;
-      }
-      settleOverlay(channelId, originalIndex, order);
+      // onEnd normally wins and clears the token before RNGH onFinalize.
+      // If onEnd was skipped/interrupted, finalize owns a safe cancel instead.
+      terminateDragSession(channelId, 'cancel');
     },
-    [clearDrag, settleOverlay, stopAutoScroll],
+    [terminateDragSession],
   );
 
   const handleVisibleZoneLayout = useCallback(
@@ -720,7 +753,7 @@ export default function ChannelsScreen() {
                         onDragStart={beginDrag}
                         onDragMove={updateDragPointer}
                         onDragEnd={endDrag}
-                        onDragCancel={cancelDrag}
+                        onDragFinalize={finalizeDrag}
                       />
                     );
                   })}
