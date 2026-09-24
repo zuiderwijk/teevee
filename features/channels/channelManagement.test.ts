@@ -1,6 +1,11 @@
 import { describe, expect, it, vi } from 'vitest';
 
 import type { Channel } from '@/data/domain/epg';
+import {
+  createChannelPersonalisationPreference,
+  setChannelVisibility,
+  visibleChannelIdsForPreference,
+} from '@/data/domain/channelPersonalisation';
 import { darkTheme, lightTheme } from '@/theme/tokens';
 
 import {
@@ -78,6 +83,45 @@ describe('channel management interaction contract', () => {
     );
     expect(zones.visible.map(({ id }) => id)).toEqual(['rtl-5', 'npo-1']);
     expect(zones.hidden.map(({ id }) => id)).toEqual(['rtl-4', 'bbc-nl']);
+  });
+
+  it('moves hide/show between zones and appends shown channels to the visible end', () => {
+    const initial = createChannelPersonalisationPreference(CATALOG);
+    const hiddenPreference = setChannelVisibility(
+      CATALOG,
+      initial,
+      'rtl-4',
+      false,
+    );
+    expect(
+      channelManagementZones(
+        CATALOG,
+        visibleChannelIdsForPreference(CATALOG, hiddenPreference),
+      ),
+    ).toMatchObject({
+      visible: [
+        { id: 'npo-1' },
+        { id: 'rtl-5' },
+        { id: 'bbc-nl' },
+      ],
+      hidden: [{ id: 'rtl-4' }],
+    });
+
+    const shownPreference = setChannelVisibility(
+      CATALOG,
+      hiddenPreference,
+      'rtl-4',
+      true,
+    );
+    expect(
+      visibleChannelIdsForPreference(CATALOG, shownPreference),
+    ).toEqual(['npo-1', 'rtl-5', 'bbc-nl', 'rtl-4']);
+    expect(
+      channelManagementZones(
+        CATALOG,
+        visibleChannelIdsForPreference(CATALOG, shownPreference),
+      ).hidden,
+    ).toEqual([]);
   });
 
   it('filters both zones locally using canonical Search aliases without changing order', () => {
