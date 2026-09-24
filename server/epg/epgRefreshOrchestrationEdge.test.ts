@@ -44,6 +44,30 @@ describe('epg-refresh bounded orchestration entrypoint', () => {
     expect(entrypoint).toContain('providerChannelIds: claim.providerChannelIds');
   });
 
+  it('keeps Guide canonical writes ahead of deferred TMDB work', () => {
+    const guideStart = entrypoint.indexOf("if (request.mode === 'work-item')");
+    const externalStart = entrypoint.indexOf(
+      "if (request.mode === 'external-content-work-item')",
+    );
+    const manualStart = entrypoint.indexOf(
+      'const refreshStartedAt = new Date();',
+      externalStart,
+    );
+
+    const guideBlock = entrypoint.slice(guideStart, externalStart);
+    const externalBlock = entrypoint.slice(externalStart, manualStart);
+
+    expect(guideBlock).toContain('selectExternalContentEnrichmentObservation');
+    expect(guideBlock).toContain('externalContentObservation');
+    expect(guideBlock).not.toContain('await enrichExternalContent(');
+
+    expect(externalBlock).toContain('claimExternalContentJob');
+    expect(externalBlock).toContain('await enrichExternalContent(');
+    expect(externalBlock).toContain('completeExternalContentJob');
+    expect(externalBlock).not.toContain('new XmltvEpgProvider');
+    expect(externalBlock).not.toContain('ingestProviderSchedule');
+  });
+
   it('uses cron authentication to derive a stable scheduled idempotency key', () => {
     expect(entrypoint).toContain("'cron-token'");
     expect(entrypoint).toContain("authKind === 'cron-token'");
