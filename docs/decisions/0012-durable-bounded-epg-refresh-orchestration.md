@@ -109,7 +109,11 @@ After Guide processing is terminal:
 - an `incomplete` run may enrich only authoritative stored safe subsets; the incomplete Guide authority is not upgraded by enrichment;
 - a `failed` run **does not run TMDB**. Any staged evidence is marked `skipped`, given reason `guide-run-failed-before-enrichment`, and deleted.
 
-Deferred enrichment then uses the unchanged ADR-0011 matcher/persistence pipeline and existing 20 s owner budget. TMDB remains fail-open relative to Guide: enrichment retry/failure state is separately observable and cannot roll back canonical schedule state.
+Deferred enrichment then uses the unchanged ADR-0011 matcher/persistence pipeline and existing **20 s owner budget per attempt**. Its durable success rule is operational, not semantic: `completed` is allowed only when the owner-level result is available **and** both `providerFailureCount` and `persistenceFailureCount` are zero. Legitimate matcher outcomes such as unresolved or ambiguous remain successful work and do not retry.
+
+Owner-level `unavailable` (including missing TMDB secret or owner timeout/catastrophic enrichment failure), any non-zero provider failure count, and any non-zero persistence failure count are `retryable-failure`. The same lifecycle-staged observation is retained across those attempts; replay is safe because matching is deterministic for the same evidence and broadcast-keyed persistence already owns freshness/idempotency. Attempts remain bounded at three and use the existing 30-second retry delay plus 8-minute lease. On retry success, staging is cleared and external-content becomes `completed`. On third-attempt failure, external-content becomes durably `failed` and staging is cleared so no later worker can consume stale lifecycle evidence.
+
+This failure lifecycle is **strictly fail-open relative to Guide**: it never changes `completed | incomplete | failed` Guide authority, never rolls back canonical schedule state, and never blocks a Guide child. The run exposes Guide authority and external-content lifecycle independently.
 
 ### Operational truth
 
@@ -117,7 +121,7 @@ Durable parent/child state is the refresh completion authority.
 
 pg_cron success means only that its enqueue SQL ran. pg_net/Edge transport, Guide authority and deferred external-content state are independently observable. Failures/incomplete authority are attributable to source, television day, channel group, attempt and request id. Distinct scheduled request keys are never discarded while older runs are active, and dispatch-unavailable reasons are persisted.
 
-The exact migration is behaviorally executed in normal CI against disposable **PostgreSQL 17**, with controlled Supabase-compatible stubs. The smoke exercises the migration itself: role boundaries, duplicate/stale attempts, lease recovery, retries/exhaustion, distinct buckets, Guide authority aggregation, Guide-before-TMDB ordering, failed-run suppression, staged-evidence cleanup and the 588-job worst-case envelope.
+The exact migration is behaviorally executed in normal CI against disposable **PostgreSQL 17**, with controlled Supabase-compatible stubs. The smoke exercises the migration itself: role boundaries, duplicate/stale attempts, lease recovery, retries/exhaustion, distinct buckets, Guide authority aggregation, Guide-before-TMDB ordering, failed-run suppression, owner-level unavailable retry, provider/persistence failure retry, retry-to-success, external-content max-attempt failure with staging cleanup, Guide-authority isolation and the 588-job worst-case envelope.
 
 ## Deployment ordering
 
