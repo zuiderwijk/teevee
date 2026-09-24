@@ -185,7 +185,7 @@ async function render(
         onDragStart={() => undefined}
         onDragMove={() => undefined}
         onDragEnd={() => undefined}
-        onDragCancel={() => undefined}
+        onDragFinalize={() => undefined}
         {...overrides}
       />,
     );
