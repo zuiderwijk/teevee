@@ -371,7 +371,12 @@ function findBlockEnd(
 async function consumeXmltvBlocks(
   body: ReadableStream<Uint8Array>,
   stats: XmltvStreamingStats,
-  onBlock: (tag: XmltvBlockTag, block: string) => void,
+  onBlock: (
+    tag: XmltvBlockTag,
+    source: string,
+    startIndex: number,
+    endIndex: number,
+  ) => void,
 ): Promise<void> {
   const reader = body.getReader();
   const decoder = new TextDecoder();
@@ -398,7 +403,7 @@ async function consumeXmltvBlocks(
         break;
       }
 
-      onBlock(start.tag, buffer.slice(start.index, end));
+      onBlock(start.tag, buffer, start.index, end);
       consumedUntil = end;
     }
 
@@ -514,18 +519,21 @@ export async function parseXmltvScheduleStream(
     maxBufferedChars: 0,
   };
 
-  await consumeXmltvBlocks(body, stats, (tag, block) => {
+  await consumeXmltvBlocks(body, stats, (tag, source, startIndex, endIndex) => {
+    const openingEnd = source.indexOf('>', startIndex);
+    if (openingEnd < 0 || openingEnd >= endIndex) return;
+    const tagText = source.slice(startIndex, openingEnd + 1);
+
     if (tag === 'channel') {
       stats.channelBlocksScanned += 1;
-      const id = attribute(openingTag(block), 'id');
+      const id = attribute(tagText, 'id');
       if (!needsAllChannels && (!id || !requestedChannelUnion.has(id))) return;
-      const channel = parseChannel(block);
+      const channel = parseChannel(source.slice(startIndex, endIndex));
       if (channel) channels.push(channel);
       return;
     }
 
     stats.programmeBlocksScanned += 1;
-    const tagText = openingTag(block);
     const channelId = attribute(tagText, 'channel');
     if (!channelId) return;
 
@@ -537,7 +545,7 @@ export async function parseXmltvScheduleStream(
     const matchingQueries = channelQueries.filter((query) => timesIntersectQuery(times, query));
     if (matchingQueries.length === 0) return;
 
-    const parsed = parseProgramme(block);
+    const parsed = parseProgramme(source.slice(startIndex, endIndex));
     stats.programmeBlocksMaterialised += 1;
     for (const query of matchingQueries) query.programmes.push(parsed);
   });
@@ -578,9 +586,9 @@ async function parseXmltvChannelStream(
     programmeBlocksMaterialised: 0,
     maxBufferedChars: 0,
   };
-  await consumeXmltvBlocks(body, stats, (tag, block) => {
+  await consumeXmltvBlocks(body, stats, (tag, source, startIndex, endIndex) => {
     if (tag !== 'channel') return;
-    const channel = parseChannel(block);
+    const channel = parseChannel(source.slice(startIndex, endIndex));
     if (channel) channels.push(channel);
   });
   return channels;
