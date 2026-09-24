@@ -72,6 +72,21 @@ function partition<T>(values: readonly T[], size: number): T[][] {
   return groups;
 }
 
+export function scheduledEpgRefreshRequestKey(instantMs: number): string {
+  if (!Number.isFinite(instantMs) || !Number.isFinite(new Date(instantMs).getTime())) {
+    throw new Error('scheduled refresh request key requires a valid timestamp');
+  }
+  const instant = new Date(instantMs);
+  const bucketHour = Math.floor(instant.getUTCHours() / 6) * 6;
+  const bucket = new Date(Date.UTC(
+    instant.getUTCFullYear(),
+    instant.getUTCMonth(),
+    instant.getUTCDate(),
+    bucketHour,
+  ));
+  return `cron:${bucket.toISOString().slice(0, 13)}`;
+}
+
 export function hostedRefreshProviderChannelIds(
   sources: readonly EpgRefreshSourceConfig[] = EPG_REFRESH_SOURCES,
 ): string[] {
