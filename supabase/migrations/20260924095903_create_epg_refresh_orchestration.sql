@@ -158,8 +158,10 @@ begin
   end if;
 
   -- Recover Edge executions that never reached completion (CPU kill, timeout, network
-  -- loss). The attempt token is cleared so a late request from the expired attempt
-  -- cannot claim or complete the new lease.
+  -- loss). The 8-minute lease exceeds Supabase's current 400-second paid hosted worker
+  -- maximum, so natural expiry cannot race a still-live worker. The attempt token is
+  -- cleared so a late transport delivery from the expired attempt cannot claim/complete
+  -- the replacement lease.
   update teevee.epg_refresh_jobs
     set status = case when attempt_count >= max_attempts then 'failed' else 'queued' end,
         available_at = case
@@ -518,7 +520,7 @@ begin
   if v_job.status <> 'running' then
     raise exception 'EPG refresh job is not running';
   end if;
-  if p_result not in ('succeeded','incomplete','failed') then
+  if p_result is null or p_result not in ('succeeded','incomplete','failed') then
     raise exception 'EPG refresh job result is invalid';
   end if;
 
