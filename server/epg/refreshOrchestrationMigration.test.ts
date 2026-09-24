@@ -35,12 +35,29 @@ describe('bounded EPG refresh orchestration migration', () => {
     expect(migration).toContain("status in ('dispatched','running')");
     expect(migration).toContain("lease_expires_at <= pg_catalog.now()");
     expect(migration).toContain("lease_expires_at > pg_catalog.now()");
-    expect(migration).toContain("interval '3 minutes'");
+    expect(migration).toContain("interval '8 minutes'");
     expect(migration).toContain("interval '30 seconds'");
     expect(migration).toContain('attempt_count >= max_attempts');
+    expect(migration).toContain("status in ('queued','running','completed','incomplete','failed')");
+    expect(migration).toContain("status in ('queued','dispatched','running','succeeded','incomplete','failed')");
     expect(migration).toContain("'work-item lease expired before terminal completion'");
     expect(migration).toContain("'teevee-development-epg-refresh-pump'");
     expect(migration).toContain("'* * * * *'");
+  });
+
+  it('persists incomplete authority and dispatch-unavailable reasons durably', () => {
+    expect(migration).toContain("v_status := 'incomplete'");
+    expect(migration).toContain("p_result not in ('succeeded','incomplete','failed')");
+    expect(migration).toContain("set status = 'incomplete'");
+    expect(migration).toContain("'cron-token-unavailable'");
+    expect(migration).toContain("available_at = pg_catalog.now() + interval '1 minute'");
+  });
+
+  it('does not coalesce distinct scheduled request keys into arbitrary active runs', () => {
+    expect(migration).toContain('where request_key = p_request_key');
+    expect(migration).not.toMatch(
+      /select \*[\s\S]{0,160}from teevee\.epg_refresh_runs[\s\S]{0,120}where status in \('queued','running'\)[\s\S]{0,220}'reused',true/,
+    );
   });
 
   it('dispatches only opaque job identity to Edge and stores the real scope server-side', () => {
