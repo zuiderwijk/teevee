@@ -52,6 +52,89 @@ export const EPG_REFRESH_SOURCES = [
   },
 ] as const satisfies readonly EpgRefreshSourceConfig[];
 
+function requiredConfigText(value: string, label: string): string {
+  const normalized = value.trim();
+  if (!normalized) throw new Error(`${label} must not be empty`);
+  return normalized;
+}
+
+function validateRefreshSources(sources: readonly EpgRefreshSourceConfig[]): void {
+  if (sources.length === 0) throw new Error('At least one EPG refresh source is required');
+
+  const sourceKeys = new Set<string>();
+  const providerChannelOwners = new Map<string, string>();
+  const canonicalChannelOwners = new Map<string, string>();
+
+  for (const source of sources) {
+    const sourceKey = requiredConfigText(source.key, 'EPG refresh source key');
+    requiredConfigText(source.providerKey, `EPG refresh provider key for ${sourceKey}`);
+    requiredConfigText(source.url, `EPG refresh source URL for ${sourceKey}`);
+    if (!Number.isInteger(source.maxProviderChannelsPerWorkItem) ||
+        source.maxProviderChannelsPerWorkItem < 1) {
+      throw new Error(`EPG refresh source ${sourceKey} has invalid channel-group capacity`);
+    }
+    if (sourceKeys.has(sourceKey)) {
+      throw new Error(`Duplicate EPG refresh source key: ${sourceKey}`);
+    }
+    sourceKeys.add(sourceKey);
+
+    const canonicalIds = new Set<string>();
+    for (const channel of source.canonicalChannels) {
+      const channelId = requiredConfigText(channel.id, `Canonical channel id for ${sourceKey}`);
+      if (canonicalIds.has(channelId)) {
+        throw new Error(`Duplicate canonical channel ${channelId} in source ${sourceKey}`);
+      }
+      canonicalIds.add(channelId);
+
+      const owner = canonicalChannelOwners.get(channelId);
+      if (owner) {
+        throw new Error(
+          `Canonical channel ${channelId} is owned by multiple refresh sources: ${owner}, ${sourceKey}`,
+        );
+      }
+      canonicalChannelOwners.set(channelId, sourceKey);
+    }
+
+    const sourceProviderIds = new Set<string>();
+    const sourceMappedCanonicalIds = new Set<string>();
+    for (const mapping of source.channelMappings) {
+      const providerChannelId = requiredConfigText(
+        mapping.providerChannelId,
+        `Provider channel id for ${sourceKey}`,
+      );
+      const canonicalChannelId = requiredConfigText(
+        mapping.channelId,
+        `Mapped canonical channel id for ${sourceKey}`,
+      );
+      if (!canonicalIds.has(canonicalChannelId)) {
+        throw new Error(
+          `Source ${sourceKey} mapping references unknown canonical channel ${canonicalChannelId}`,
+        );
+      }
+      if (sourceProviderIds.has(providerChannelId)) {
+        throw new Error(
+          `Duplicate provider channel ${providerChannelId} in source ${sourceKey}`,
+        );
+      }
+      if (sourceMappedCanonicalIds.has(canonicalChannelId)) {
+        throw new Error(
+          `Canonical channel ${canonicalChannelId} has multiple provider mappings in source ${sourceKey}`,
+        );
+      }
+      sourceProviderIds.add(providerChannelId);
+      sourceMappedCanonicalIds.add(canonicalChannelId);
+
+      const providerOwner = providerChannelOwners.get(providerChannelId);
+      if (providerOwner) {
+        throw new Error(
+          `Provider channel ${providerChannelId} is owned by multiple refresh sources: ${providerOwner}, ${sourceKey}`,
+        );
+      }
+      providerChannelOwners.set(providerChannelId, sourceKey);
+    }
+  }
+}
+
 function normalizedIds(values: readonly string[]): string[] {
   return [...new Set(values.map((value) => value.trim()).filter(Boolean))];
 }
@@ -90,6 +173,7 @@ export function scheduledEpgRefreshRequestKey(instantMs: number): string {
 export function hostedRefreshProviderChannelIds(
   sources: readonly EpgRefreshSourceConfig[] = EPG_REFRESH_SOURCES,
 ): string[] {
+  validateRefreshSources(sources);
   return normalizedIds(sources.flatMap(sourceProviderChannelIds));
 }
 
@@ -99,6 +183,7 @@ export function planGuideHorizonRefreshWorkItems(input: {
   sources?: readonly EpgRefreshSourceConfig[];
 }): EpgRefreshWorkItemPlan[] {
   const sources = input.sources ?? EPG_REFRESH_SOURCES;
+  validateRefreshSources(sources);
   const requested = new Set(normalizedIds(input.requestedProviderChannelIds));
   const allowed = new Set(hostedRefreshProviderChannelIds(sources));
 
@@ -143,6 +228,7 @@ export function resolveEpgRefreshWorkItemScope(input: {
   providerChannelIds: string[];
 } {
   const sources = input.sources ?? EPG_REFRESH_SOURCES;
+  validateRefreshSources(sources);
   const source = sources.find(({ key }) => key === input.sourceKey);
   if (!source) throw new Error(`Unsupported EPG refresh source: ${input.sourceKey}`);
 
