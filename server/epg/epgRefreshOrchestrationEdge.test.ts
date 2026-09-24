@@ -45,6 +45,10 @@ describe('epg-refresh bounded orchestration entrypoint', () => {
   });
 
   it('keeps Guide canonical writes ahead of deferred TMDB work', () => {
+    const executeStart = entrypoint.indexOf('async function executeClaimedWorkItem');
+    const fetchStart = entrypoint.indexOf('export default', executeStart);
+    const executeBlock = entrypoint.slice(executeStart, fetchStart);
+
     const guideStart = entrypoint.indexOf("if (request.mode === 'work-item')");
     const externalStart = entrypoint.indexOf(
       "if (request.mode === 'external-content-work-item')",
@@ -53,11 +57,13 @@ describe('epg-refresh bounded orchestration entrypoint', () => {
       'const refreshStartedAt = new Date();',
       externalStart,
     );
-
     const guideBlock = entrypoint.slice(guideStart, externalStart);
     const externalBlock = entrypoint.slice(externalStart, manualStart);
 
-    expect(guideBlock).toContain('selectExternalContentEnrichmentObservation');
+    expect(executeBlock).toContain('selectExternalContentEnrichmentObservation');
+    expect(executeBlock).toContain('externalContentObservation');
+    expect(executeBlock).not.toContain('await enrichExternalContent(');
+
     expect(guideBlock).toContain('externalContentObservation');
     expect(guideBlock).not.toContain('await enrichExternalContent(');
 
