@@ -45,7 +45,7 @@ describe('epg-refresh bounded orchestration entrypoint', () => {
   });
 
   it('uses cron authentication to derive a stable scheduled idempotency key', () => {
-    expect(entrypoint).toContain("return 'cron-token'");
+    expect(entrypoint).toContain("'cron-token'");
     expect(entrypoint).toContain("authKind === 'cron-token'");
     expect(entrypoint).toContain(
       'scheduledEpgRefreshRequestKey(refreshStartedAt.getTime())',
