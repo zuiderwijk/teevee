@@ -199,7 +199,7 @@ describe('channel management interaction contract', () => {
       channelId: 'c',
     });
     expect(channelManagementFocusAfterShow(['a'], 'a')).toEqual({
-      type: 'visible-heading',
+      type: 'hidden-heading',
     });
   });
 
