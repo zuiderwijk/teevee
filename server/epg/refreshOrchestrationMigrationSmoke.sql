@@ -628,9 +628,44 @@ select public.teevee_complete_epg_refresh_job(
    where r.request_key='cron:2026-09-24T12' and j.ordinal=1),
   (select token from test_epg.tokens where label='run-2-job-1-attempt-1'),
   'incomplete',
-  '{"authority":{"status":"incomplete","reason":"partial-provider-coverage"}}'::jsonb,
-  'incomplete-authority:partial-provider-coverage',
-  null
+  '{"authority":{"status":"incomplete","reason":"incomplete-channel-scope"}}'::jsonb,
+  'incomplete-authority:incomplete-channel-scope',
+  jsonb_build_object(
+    'from','2026-09-24T04:00:00.000Z',
+    'to','2026-09-25T04:00:00.000Z',
+    'observedAt','2026-09-24T12:17:00.000Z',
+    'channelIds',jsonb_build_array('channel-1'),
+    'programmes',jsonb_build_array(
+      jsonb_build_object(
+        'programme',jsonb_build_object(
+          'id','programme-run-2-staged',
+          'channelId','channel-1',
+          'startAt','2026-09-24T19:00:00.000Z',
+          'endAt','2026-09-24T21:00:00.000Z',
+          'title','Incomplete Safe Film'
+        ),
+        'classification',jsonb_build_object(
+          'programmeId','programme-run-2-staged',
+          'contentType','film',
+          'seriesType','unknown',
+          'audience','unknown',
+          'sportType','unknown',
+          'liveStatus','unknown',
+          'repeatStatus','unknown',
+          'confidence','high'
+        ),
+        'externalProgramme',jsonb_build_object(
+          'title','Incomplete Safe Film',
+          'productionDate',jsonb_build_object('raw','2021','year',2021),
+          'credits',jsonb_build_object(
+            'director',jsonb_build_array('Director'),
+            'actor',jsonb_build_array(),
+            'producer',jsonb_build_array()
+          )
+        )
+      )
+    )
+  )
 );
 
 reset role;
@@ -646,7 +681,7 @@ select test_epg.assert_true(
     join teevee.epg_refresh_runs r on r.id=j.run_id
     where r.request_key='cron:2026-09-24T12'
       and j.status='incomplete'
-      and j.last_error='incomplete-authority:partial-provider-coverage'
+      and j.last_error='incomplete-authority:incomplete-channel-scope'
   ),
   'incomplete child outcome and reason are durable'
 );
@@ -697,30 +732,43 @@ select test_epg.assert_true(
     join teevee.epg_refresh_runs r on r.id=j.run_id
     where r.request_key='cron:2026-09-24T06'
       and j.ordinal=2
+      and j.external_content_status='skipped'
+      and j.external_content_observation is null
+      and j.external_content_last_error='guide-run-failed-before-enrichment'
+  ),
+  'failed Guide run discards staged identity evidence without issuing TMDB work'
+);
+select test_epg.assert_true(
+  exists (
+    select 1
+    from teevee.epg_refresh_jobs j
+    join teevee.epg_refresh_runs r on r.id=j.run_id
+    where r.request_key='cron:2026-09-24T12'
+      and j.ordinal=1
       and j.external_content_status='dispatched'
   ),
-  'deferred external content dispatches only after all canonical Guide work is terminal'
+  'non-throwing incomplete Guide run may enrich its authoritative stored subset after Guide is terminal'
 );
 
 set role service_role;
 
 insert into test_epg.tokens(label, token)
-select 'run-1-job-2-external-attempt-1', j.external_content_attempt_token
+select 'run-2-job-1-external-attempt-1', j.external_content_attempt_token
 from teevee.epg_refresh_jobs j
 join teevee.epg_refresh_runs r on r.id=j.run_id
-where r.request_key='cron:2026-09-24T06' and j.ordinal=2;
+where r.request_key='cron:2026-09-24T12' and j.ordinal=1;
 
 insert into test_epg.results(label, payload)
-select 'run-1-job-2-external-claim-1',
+select 'run-2-job-1-external-claim-1',
   public.teevee_claim_epg_refresh_external_content_job(
     (select j.id from teevee.epg_refresh_jobs j
      join teevee.epg_refresh_runs r on r.id=j.run_id
-     where r.request_key='cron:2026-09-24T06' and j.ordinal=2),
-    (select token from test_epg.tokens where label='run-1-job-2-external-attempt-1')
+     where r.request_key='cron:2026-09-24T12' and j.ordinal=1),
+    (select token from test_epg.tokens where label='run-2-job-1-external-attempt-1')
   );
 
 select test_epg.assert_json_status(
-  (select payload from test_epg.results where label='run-1-job-2-external-claim-1'),
+  (select payload from test_epg.results where label='run-2-job-1-external-claim-1'),
   'claimed',
   'deferred external-content worker claims database-owned staged evidence'
 );
@@ -728,8 +776,8 @@ select test_epg.assert_json_status(
 select public.teevee_complete_epg_refresh_external_content_job(
   (select j.id from teevee.epg_refresh_jobs j
    join teevee.epg_refresh_runs r on r.id=j.run_id
-   where r.request_key='cron:2026-09-24T06' and j.ordinal=2),
-  (select token from test_epg.tokens where label='run-1-job-2-external-attempt-1'),
+   where r.request_key='cron:2026-09-24T12' and j.ordinal=1),
+  (select token from test_epg.tokens where label='run-2-job-1-external-attempt-1'),
   true,
   '{"status":"completed","resolvedCount":1}'::jsonb,
   null
@@ -742,8 +790,8 @@ select test_epg.assert_true(
     select 1
     from teevee.epg_refresh_jobs j
     join teevee.epg_refresh_runs r on r.id=j.run_id
-    where r.request_key='cron:2026-09-24T06'
-      and j.ordinal=2
+    where r.request_key='cron:2026-09-24T12'
+      and j.ordinal=1
       and j.external_content_status='completed'
       and j.external_content_observation is null
   ),
