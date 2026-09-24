@@ -1,4 +1,8 @@
 import {
+  parseChannelPersonalisationPreference,
+  type ChannelPersonalisationPreference,
+} from '@/data/domain/channelPersonalisation';
+import {
   DEFAULT_GUIDE_PRESENTATION,
   isGuidePresentation,
   type GuidePresentation,
@@ -13,6 +17,7 @@ export type AppPreferences = {
   version: typeof APP_PREFERENCES_VERSION;
   guidePresentation: GuidePresentation;
   appearance: AppearancePreference;
+  channelPersonalisation?: ChannelPersonalisationPreference;
 };
 
 export const DEFAULT_APP_PREFERENCES: AppPreferences = {
@@ -30,6 +35,10 @@ export function parseAppPreferences(value: unknown): AppPreferences {
 
   const candidate = value as Record<string, unknown>;
 
+  const channelPersonalisation = parseChannelPersonalisationPreference(
+    candidate.channelPersonalisation,
+  );
+
   return {
     version: APP_PREFERENCES_VERSION,
     guidePresentation: isGuidePresentation(candidate.guidePresentation)
@@ -38,6 +47,7 @@ export function parseAppPreferences(value: unknown): AppPreferences {
     appearance: isAppearancePreference(candidate.appearance)
       ? candidate.appearance
       : DEFAULT_APP_PREFERENCES.appearance,
+    ...(channelPersonalisation ? { channelPersonalisation } : {}),
   };
 }
 
@@ -73,4 +83,18 @@ export function withAppearancePreference(
     ...preferences,
     appearance,
   };
+}
+
+export function withChannelPersonalisation(
+  preferences: AppPreferences,
+  channelPersonalisation: ChannelPersonalisationPreference | null,
+): AppPreferences {
+  const {
+    channelPersonalisation: _currentChannelPersonalisation,
+    ...withoutChannelPersonalisation
+  } = preferences;
+
+  return channelPersonalisation
+    ? { ...withoutChannelPersonalisation, channelPersonalisation }
+    : withoutChannelPersonalisation;
 }
