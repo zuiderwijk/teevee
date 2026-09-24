@@ -226,12 +226,254 @@ export function parseXmltvDocument(xml: string): ParsedDocument {
   return { channels, programmes };
 }
 
-function requestedIds(input: ProviderScheduleQuery, document: ParsedDocument): string[] {
-  const source = input.channelIds ?? document.channels.map(({ id }) => id);
+export type XmltvStreamingStats = {
+  channelBlocksScanned: number;
+  programmeBlocksScanned: number;
+  programmeTimestampHeadersParsed: number;
+  programmeBlocksMaterialised: number;
+  maxBufferedChars: number;
+};
+
+export type XmltvScheduleStreamResult = {
+  channels: ExternalChannel[];
+  batches: ProviderScheduleBatch[];
+  stats: XmltvStreamingStats;
+};
+
+type PreparedScheduleQuery = {
+  fromMs: number;
+  toMs: number;
+  requestedChannelIds: string[] | null;
+  requestedChannelSet: Set<string> | null;
+  programmes: ParsedProgramme[];
+};
+
+type XmltvBlockTag = 'channel' | 'programme';
+
+type BlockStart =
+  | { kind: 'block'; index: number; tag: XmltvBlockTag }
+  | { kind: 'incomplete'; index: number }
+  | null;
+
+function normalizedRequestedIds(channelIds: readonly string[] | undefined): string[] | null {
+  if (channelIds === undefined) return null;
   const ids = new Set<string>();
-  for (const id of source) {
+  for (const id of channelIds) {
     const trimmed = id.trim();
     if (trimmed) ids.add(trimmed);
+  }
+  return [...ids];
+}
+
+function prepareScheduleQuery(input: ProviderScheduleQuery): PreparedScheduleQuery {
+  const fromMs = input.from.getTime();
+  const toMs = input.to.getTime();
+  if (!Number.isFinite(fromMs) || !Number.isFinite(toMs) || toMs <= fromMs) {
+    throw new Error('XMLTV schedule query must contain a valid [from,to) range');
+  }
+
+  const requestedChannelIds = normalizedRequestedIds(input.channelIds);
+  return {
+    fromMs,
+    toMs,
+    requestedChannelIds,
+    requestedChannelSet:
+      requestedChannelIds === null ? null : new Set(requestedChannelIds),
+    programmes: [],
+  };
+}
+
+function findNextBlockStart(lowerSource: string, fromIndex: number): BlockStart {
+  let cursor = fromIndex;
+
+  while (cursor < lowerSource.length) {
+    const index = lowerSource.indexOf('<', cursor);
+    if (index < 0) return null;
+
+    if (lowerSource.startsWith('<!--', index)) {
+      const end = lowerSource.indexOf('-->', index + 4);
+      if (end < 0) return { kind: 'incomplete', index };
+      cursor = end + 3;
+      continue;
+    }
+
+    if (lowerSource.startsWith('<?', index)) {
+      const end = lowerSource.indexOf('?>', index + 2);
+      if (end < 0) return { kind: 'incomplete', index };
+      cursor = end + 2;
+      continue;
+    }
+
+    for (const tag of ['channel', 'programme'] as const) {
+      const prefix = `<${tag}`;
+      if (!lowerSource.startsWith(prefix, index)) continue;
+      const boundary = lowerSource[index + prefix.length];
+      if (boundary === undefined) return { kind: 'incomplete', index };
+      if (/\s|>/.test(boundary)) return { kind: 'block', index, tag };
+    }
+
+    const remaining = lowerSource.length - index;
+    if (remaining < '<programme'.length) {
+      return { kind: 'incomplete', index };
+    }
+    cursor = index + 1;
+  }
+
+  return null;
+}
+
+function findBlockEnd(
+  source: string,
+  lowerSource: string,
+  startIndex: number,
+  tag: XmltvBlockTag,
+): number | null {
+  const openingEnd = source.indexOf('>', startIndex);
+  if (openingEnd < 0) return null;
+
+  const closingPrefix = `</${tag}`;
+  let cursor = openingEnd + 1;
+
+  // Walk monotonically through markup starts inside this top-level block. CDATA and
+  // comments are skipped as opaque regions before interpreting any closing-tag text
+  // they may contain. Because cursor only advances, scan cost is proportional to the
+  // consumed XML instead of rescanning the remaining network chunk per programme.
+  while (cursor < source.length) {
+    const markupIndex = lowerSource.indexOf('<', cursor);
+    if (markupIndex < 0) return null;
+
+    if (lowerSource.startsWith('<![cdata[', markupIndex)) {
+      const cdataEnd = lowerSource.indexOf(']]>', markupIndex + 9);
+      if (cdataEnd < 0) return null;
+      cursor = cdataEnd + 3;
+      continue;
+    }
+
+    if (lowerSource.startsWith('<!--', markupIndex)) {
+      const commentEnd = lowerSource.indexOf('-->', markupIndex + 4);
+      if (commentEnd < 0) return null;
+      cursor = commentEnd + 3;
+      continue;
+    }
+
+    if (lowerSource.startsWith(closingPrefix, markupIndex)) {
+      const boundary = lowerSource[markupIndex + closingPrefix.length];
+      if (boundary === undefined) return null;
+      if (/\s|>/.test(boundary)) {
+        const closingEnd = source.indexOf('>', markupIndex + closingPrefix.length);
+        return closingEnd < 0 ? null : closingEnd + 1;
+      }
+    }
+
+    cursor = markupIndex + 1;
+  }
+
+  return null;
+}
+
+function asciiLowercaseXmlSyntax(value: string): string {
+  return value.replace(/[A-Z]/g, (character) => character.toLowerCase());
+}
+
+async function consumeXmltvBlocks(
+  body: ReadableStream<Uint8Array>,
+  stats: XmltvStreamingStats,
+  onBlock: (
+    tag: XmltvBlockTag,
+    source: string,
+    startIndex: number,
+    endIndex: number,
+  ) => void,
+): Promise<void> {
+  const reader = body.getReader();
+  const decoder = new TextDecoder();
+  let buffer = '';
+  let lowerBuffer = '';
+
+  const append = (text: string) => {
+    buffer += text;
+    lowerBuffer += asciiLowercaseXmlSyntax(text);
+    stats.maxBufferedChars = Math.max(stats.maxBufferedChars, buffer.length);
+  };
+
+  const drain = (final: boolean) => {
+    let consumedUntil = 0;
+
+    while (consumedUntil < buffer.length) {
+      const start = findNextBlockStart(lowerBuffer, consumedUntil);
+      if (!start) {
+        consumedUntil = buffer.length;
+        break;
+      }
+      if (start.kind === 'incomplete') {
+        consumedUntil = start.index;
+        break;
+      }
+
+      const end = findBlockEnd(buffer, lowerBuffer, start.index, start.tag);
+      if (end === null) {
+        consumedUntil = start.index;
+        break;
+      }
+
+      onBlock(start.tag, buffer, start.index, end);
+      consumedUntil = end;
+    }
+
+    if (consumedUntil > 0) {
+      buffer = buffer.slice(consumedUntil);
+      lowerBuffer = lowerBuffer.slice(consumedUntil);
+    }
+    if (final) {
+      buffer = '';
+      lowerBuffer = '';
+    }
+  };
+
+  try {
+    for (;;) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      append(decoder.decode(value, { stream: true }));
+      drain(false);
+    }
+    append(decoder.decode());
+    drain(true);
+  } finally {
+    reader.releaseLock();
+  }
+}
+
+function queryRequestsChannel(query: PreparedScheduleQuery, channelId: string): boolean {
+  return query.requestedChannelSet === null || query.requestedChannelSet.has(channelId);
+}
+
+function programmeTimes(tag: string): { startMs: number | null; endMs: number | null } {
+  const startAt = parseXmltvTimestamp(attribute(tag, 'start'));
+  const endAt = parseXmltvTimestamp(attribute(tag, 'stop'));
+  return {
+    startMs: startAt ? Date.parse(startAt) : null,
+    endMs: endAt ? Date.parse(endAt) : null,
+  };
+}
+
+function timesIntersectQuery(
+  times: ReturnType<typeof programmeTimes>,
+  query: PreparedScheduleQuery,
+): boolean {
+  return (
+    times.startMs !== null &&
+    times.endMs !== null &&
+    times.startMs < query.toMs &&
+    times.endMs > query.fromMs
+  );
+}
+
+function uniqueChannelIds(channels: readonly ExternalChannel[]): string[] {
+  const ids = new Set<string>();
+  for (const channel of channels) {
+    const id = channel.id.trim();
+    if (id) ids.add(id);
   }
   return [...ids];
 }
@@ -266,20 +508,114 @@ function hasContinuousCoverage(
   return coveredUntil >= toMs;
 }
 
-function intersectsQuery(programme: ParsedProgramme, fromMs: number, toMs: number): boolean {
-  return (
-    programme.startMs !== null &&
-    programme.endMs !== null &&
-    programme.startMs < toMs &&
-    programme.endMs > fromMs
+/**
+ * Incrementally consumes one XMLTV response body and materialises full programme
+ * evidence only for requested channel/window intersections. The scanner retains at
+ * most the unread tail/current top-level XMLTV block plus the requested result set;
+ * it never constructs a feed-wide ParsedProgramme[].
+ */
+export async function parseXmltvScheduleStream(
+  body: ReadableStream<Uint8Array>,
+  inputs: readonly ProviderScheduleQuery[],
+): Promise<XmltvScheduleStreamResult> {
+  if (inputs.length === 0) {
+    throw new Error('XMLTV schedule stream requires at least one query');
+  }
+
+  const queries = inputs.map(prepareScheduleQuery);
+  const needsAllChannels = queries.some(({ requestedChannelIds }) => requestedChannelIds === null);
+  const requestedChannelUnion = new Set(
+    queries.flatMap(({ requestedChannelIds }) => requestedChannelIds ?? []),
   );
+  const channels: ExternalChannel[] = [];
+  const stats: XmltvStreamingStats = {
+    channelBlocksScanned: 0,
+    programmeBlocksScanned: 0,
+    programmeTimestampHeadersParsed: 0,
+    programmeBlocksMaterialised: 0,
+    maxBufferedChars: 0,
+  };
+
+  await consumeXmltvBlocks(body, stats, (tag, source, startIndex, endIndex) => {
+    const openingEnd = source.indexOf('>', startIndex);
+    if (openingEnd < 0 || openingEnd >= endIndex) return;
+    const tagText = source.slice(startIndex, openingEnd + 1);
+
+    if (tag === 'channel') {
+      stats.channelBlocksScanned += 1;
+      const id = attribute(tagText, 'id');
+      if (!needsAllChannels && (!id || !requestedChannelUnion.has(id))) return;
+      const channel = parseChannel(source.slice(startIndex, endIndex));
+      if (channel) channels.push(channel);
+      return;
+    }
+
+    stats.programmeBlocksScanned += 1;
+    const channelId = attribute(tagText, 'channel');
+    if (!channelId) return;
+
+    const channelQueries = queries.filter((query) => queryRequestsChannel(query, channelId));
+    if (channelQueries.length === 0) return;
+
+    stats.programmeTimestampHeadersParsed += 1;
+    const times = programmeTimes(tagText);
+    const matchingQueries = channelQueries.filter((query) => timesIntersectQuery(times, query));
+    if (matchingQueries.length === 0) return;
+
+    const parsed = parseProgramme(source.slice(startIndex, endIndex));
+    stats.programmeBlocksMaterialised += 1;
+    for (const query of matchingQueries) query.programmes.push(parsed);
+  });
+
+  const discoveredChannelIds = uniqueChannelIds(channels);
+  const batches = queries.map((query): ProviderScheduleBatch => {
+    const channelIds = query.requestedChannelIds ?? discoveredChannelIds;
+    const channelSet = new Set(channelIds);
+    const programmes =
+      query.requestedChannelIds === null
+        ? query.programmes.filter(
+            ({ programme }) => programme.channelId && channelSet.has(programme.channelId),
+          )
+        : query.programmes;
+    const complete =
+      channelIds.length > 0 &&
+      channelIds.every((channelId) =>
+        hasContinuousCoverage(programmes, channelId, query.fromMs, query.toMs),
+      );
+
+    return {
+      coverage: complete ? 'complete' : 'partial',
+      programmes: programmes.map(({ programme }) => programme),
+    };
+  });
+
+  return { channels, batches, stats };
+}
+
+async function parseXmltvChannelStream(
+  body: ReadableStream<Uint8Array>,
+): Promise<ExternalChannel[]> {
+  const channels: ExternalChannel[] = [];
+  const stats: XmltvStreamingStats = {
+    channelBlocksScanned: 0,
+    programmeBlocksScanned: 0,
+    programmeTimestampHeadersParsed: 0,
+    programmeBlocksMaterialised: 0,
+    maxBufferedChars: 0,
+  };
+  await consumeXmltvBlocks(body, stats, (tag, source, startIndex, endIndex) => {
+    if (tag !== 'channel') return;
+    const channel = parseChannel(source.slice(startIndex, endIndex));
+    if (channel) channels.push(channel);
+  });
+  return channels;
 }
 
 export class XmltvEpgProvider implements EpgProvider {
   readonly key: string;
   private readonly url: string;
   private readonly fetcher: typeof fetch;
-  private documentPromise: Promise<ParsedDocument> | null = null;
+  private channelsPromise: Promise<ExternalChannel[]> | null = null;
 
   constructor(options: XmltvProviderOptions = {}) {
     this.key = options.key?.trim() || 'development-xmltv';
@@ -287,46 +623,32 @@ export class XmltvEpgProvider implements EpgProvider {
     this.fetcher = options.fetcher ?? fetch;
   }
 
-  private document(): Promise<ParsedDocument> {
-    this.documentPromise ??= (async () => {
-      const response = await this.fetcher(this.url, {
-        headers: { Accept: 'application/xml,text/xml;q=0.9,*/*;q=0.1' },
-      });
-      if (!response.ok) {
-        throw new Error(`XMLTV provider request failed with HTTP ${response.status}`);
-      }
-      return parseXmltvDocument(await response.text());
-    })();
-    return this.documentPromise;
+  private async responseBody(): Promise<ReadableStream<Uint8Array>> {
+    const response = await this.fetcher(this.url, {
+      headers: { Accept: 'application/xml,text/xml;q=0.9,*/*;q=0.1' },
+    });
+    if (!response.ok) {
+      throw new Error(`XMLTV provider request failed with HTTP ${response.status}`);
+    }
+    if (!response.body) {
+      throw new Error('XMLTV provider response body is unavailable');
+    }
+    return response.body;
   }
 
   async getChannels(): Promise<ExternalChannel[]> {
-    return (await this.document()).channels;
+    // Hosted refresh never calls this path. It is intentionally isolated so channel
+    // discovery cannot force getSchedule() back to feed-wide programme materialisation.
+    this.channelsPromise ??= this.responseBody().then(parseXmltvChannelStream);
+    return this.channelsPromise;
   }
 
   async getSchedule(input: ProviderScheduleQuery): Promise<ProviderScheduleBatch> {
-    const fromMs = input.from.getTime();
-    const toMs = input.to.getTime();
-    if (!Number.isFinite(fromMs) || !Number.isFinite(toMs) || toMs <= fromMs) {
-      throw new Error('XMLTV schedule query must contain a valid [from,to) range');
-    }
+    return (await this.getSchedules([input]))[0]!;
+  }
 
-    const document = await this.document();
-    const channelIds = requestedIds(input, document);
-    const requested = new Set(channelIds);
-    const programmes = document.programmes
-      .filter(({ programme }) => programme.channelId && requested.has(programme.channelId))
-      .filter((programme) => intersectsQuery(programme, fromMs, toMs));
-
-    const complete =
-      channelIds.length > 0 &&
-      channelIds.every((channelId) =>
-        hasContinuousCoverage(document.programmes, channelId, fromMs, toMs),
-      );
-
-    return {
-      coverage: complete ? 'complete' : 'partial',
-      programmes: programmes.map(({ programme }) => programme),
-    };
+  async getSchedules(inputs: ProviderScheduleQuery[]): Promise<ProviderScheduleBatch[]> {
+    const result = await parseXmltvScheduleStream(await this.responseBody(), inputs);
+    return result.batches;
   }
 }

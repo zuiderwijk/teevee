@@ -54,14 +54,28 @@ export async function refreshGuideHorizon(input: {
   const anchorMs = input.anchorMs ?? observedAt.getTime();
   const windows = guideRefreshWindows(anchorMs);
   const results: GuideHorizonRefreshResult[] = [];
+  const providerBatches = input.provider.getSchedules
+    ? await input.provider.getSchedules(
+        windows.map((window) => ({
+          from: new Date(window.from),
+          to: new Date(window.to),
+          channelIds: input.providerChannelIds,
+        })),
+      )
+    : null;
 
-  for (const window of windows) {
+  if (providerBatches && providerBatches.length !== windows.length) {
+    throw new Error('Provider session returned an unexpected guide-horizon batch count');
+  }
+
+  for (const [index, window] of windows.entries()) {
     const result = await ingestProviderSchedule({
       provider: input.provider,
       repository: input.repository,
       canonicalChannels: input.canonicalChannels,
       channelMappings: input.channelMappings,
       providerChannelIds: input.providerChannelIds,
+      ...(providerBatches ? { providerBatch: providerBatches[index]! } : {}),
       from: new Date(window.from),
       to: new Date(window.to),
       clock: () => observedAt,

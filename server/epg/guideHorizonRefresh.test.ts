@@ -102,4 +102,52 @@ describe('refreshGuideHorizon', () => {
       }),
     ).resolves.toEqual({ status: 'unavailable' });
   });
+
+  it('uses one provider bulk session for all guide-horizon windows when supported', async () => {
+    const anchor = Date.parse('2026-09-21T19:00:00Z');
+    const repository = new InMemoryScheduleRepository();
+    const getSchedule = vi.fn(async () => {
+      throw new Error('single-window provider path should not be called');
+    });
+    const getSchedules = vi.fn(async (queries: ProviderScheduleQuery[]) =>
+      queries.map(
+        (query): ProviderScheduleBatch => ({
+          coverage: 'complete',
+          programmes: [
+            {
+              id: 'raw-' + query.from.toISOString(),
+              channelId: 'raw-one',
+              startAt: query.from.toISOString(),
+              endAt: query.to.toISOString(),
+              title: 'Doorlopend',
+            },
+          ],
+        }),
+      ),
+    );
+    const provider: EpgProvider = {
+      key: 'bulk-horizon-fixture',
+      getChannels: vi.fn(async () => [{ id: 'raw-one', name: 'Raw One' }]),
+      getSchedule,
+      getSchedules,
+    };
+
+    const results = await refreshGuideHorizon({
+      provider,
+      repository,
+      canonicalChannels: [channel],
+      channelMappings: [{ providerChannelId: 'raw-one', channelId: 'channel-1' }],
+      providerChannelIds: ['raw-one'],
+      anchorMs: anchor,
+      clock: () => new Date('2026-09-21T19:05:00Z'),
+    });
+
+    expect(getSchedules).toHaveBeenCalledTimes(1);
+    expect(getSchedules.mock.calls[0]?.[0]).toHaveLength(12);
+    expect(getSchedule).not.toHaveBeenCalled();
+    expect(provider.getChannels).not.toHaveBeenCalled();
+    expect(results).toHaveLength(12);
+    expect(results.every(({ result }) => result.write.status === 'stored')).toBe(true);
+  });
+
 });

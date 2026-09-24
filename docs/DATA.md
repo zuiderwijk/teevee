@@ -1,6 +1,6 @@
 # Teevee Programme Data Strategy
 
-Status: **Phase 5 data/runtime foundations are merged; owner-priority inter-phase Premium Artwork & Content Identity enrichment is active before Phase 6 Personal Features. PR #158 provider evidence is merged; issue #159 / PR #161 is the current TMDB Film/Series identity foundation review candidate.** Phase 3 proved the provider-independent hosted data path, Phase 4 closed the television-day-aware Guide runtime and D-2..D+7 navigation/horizon behaviour, Kijktip is merged/deployed/physically verified, Phase 5A Guide Search is closed, PR #144 / issue #142 established the provider-independent Film/Series/Sport classification sibling, and PR #149 consumes those deployed lanes without changing Guide loading. Issue #157 / PR #158 adds only the typed server-side provider evidence required by the already-completed external-identity research; Phase 5 remains closed. The Phase 4 cache decision is unchanged: keep the current fixture-first + in-memory runtime fallback and do not introduce persistent mobile schedule caching without new measured evidence. Production **EPG** provider selection/rights remain a later release gate and release-like offline cold-start/persistent-cache validation remains Phase 9.
+Status: **Phase 5 data/runtime foundations are merged; owner-priority inter-phase Premium Artwork & Content Identity enrichment is active before Phase 6 Personal Features. PR #161 is merged/deployed at the database/runtime layer, while issue #167 / PR #168 is the active production-blocking EPG resource correction required before hosted TMDB activation can proceed.** Phase 3 proved the provider-independent hosted data path, Phase 4 closed the television-day-aware Guide runtime and D-2..D+7 navigation/horizon behaviour, Kijktip is merged/deployed/physically verified, Phase 5A Guide Search is closed, PR #144 / issue #142 established the provider-independent Film/Series/Sport classification sibling, and PR #149 consumes those deployed lanes without changing Guide loading. Issue #157 / PR #158 adds only the typed server-side provider evidence required by the already-completed external-identity research; Phase 5 remains closed. The Phase 4 cache decision is unchanged: keep the current fixture-first + in-memory runtime fallback and do not introduce persistent mobile schedule caching without new measured evidence. Production **EPG** provider selection/rights remain a later release gate and release-like offline cold-start/persistent-cache validation remains Phase 9.
 
 ## Goal
 Teevee must support the complete core Guide without coupling the mobile experience to one EPG supplier. Replacing the temporary development source with an authorized Bindinc/TVgids or commercial provider must not require a Guide rewrite.
@@ -226,7 +226,7 @@ Read/transport:
 - later Vanavond can read one bounded evening schedule and request those programme classifications; it must not eagerly preload D-2..D+7 or classify in a mobile render path.
 
 Performance:
-- category/episode/credit-role parsing happens once per fetched XMLTV document; `XmltvEpgProvider` already memoizes that document within one refresh invocation;
+- XMLTV schedule parsing is incremental: every top-level programme block is scanned once, but full category/episode/date/credit/title evidence is materialised only after requested provider channel and `[from,to)` intersection are known; guide-horizon shares one provider bulk session across its independent windows;
 - classification is O(number of categories + episode-number evidence) per normalized programme, with one precomputed director-presence boolean and description normalization only after structured Sport evidence;
 - persistence adds one compact sibling row per retained programme inside the existing replacement transaction;
 - classification reads are primary-key bounded and are not called by Guide;
@@ -345,6 +345,7 @@ interface EpgProvider {
     to: Date;
     channelIds?: string[];
   }): Promise<ProviderScheduleBatch>;
+  getSchedules?(inputs: ProviderScheduleQuery[]): Promise<ProviderScheduleBatch[]>;
 }
 ```
 
@@ -361,8 +362,12 @@ The development adapter:
 - requires an explicit numeric timezone offset in XMLTV timestamps;
 - normalises valid timestamps to UTC ISO;
 - leaves malformed timestamps representable for downstream diagnostics;
-- filters programmes by `[from,to)` intersection;
-- declares `complete` only when every requested channel continuously covers the full requested range;
+- consumes `response.body` incrementally instead of calling `response.text()` for schedule reads;
+- safely reassembles complete top-level `channel` / `programme` blocks across arbitrary network chunk boundaries, including CDATA/comment handling for closing-tag text;
+- applies requested provider-channel filtering before programme timestamp parsing and applies `[from,to)` intersection before full programme evidence materialisation;
+- retains only requested channel evidence, requested-window programme objects and the current unread/top-level XML block rather than a feed-wide `ParsedProgramme[]`;
+- declares `complete` only when every requested channel continuously covers the full requested range; gaps/no-programme remain `partial`;
+- keeps `getChannels()` isolated as the explicit all-channel discovery path; hosted refresh does not call it;
 - uses an injectable `fetch` boundary so automated tests are deterministic.
 
 Normal PR CI never calls the live feed.
@@ -468,12 +473,13 @@ Those bounded windows are compatible with individual television-day requests. Ph
 - provider IDs stay behind the server boundary;
 - anonymous/authenticated callers cannot refresh/write;
 - partial provider coverage never destructively overwrites canonical data;
-- trusted refresh may use the server secret-key route or the validated scheduled-refresh token.
+- trusted refresh may use the server secret-key route or the validated scheduled-refresh token;
+- issue #167 production evidence is explicit: both a full `guide-horizon` request and an RTL4-only four-hour `window` request failed with HTTP 546 / `WORKER_RESOURCE_LIMIT` while the pre-#168 adapter materialised the complete Netherlands XMLTV document before filtering; worker shutdown was `reason=CPUTime` at 2144 ms / 182,785,670 B and 2165 ms / 181,521,784 B respectively, and external-content references remained 0.
 
 ### Automatic development refresh
 A server-side `pg_cron` + `pg_net` job runs every six hours. The cron requests one protected `guide-horizon` refresh; the Edge Function derives independent **06:00 Europe/Amsterdam television-day windows** from D-3 through D+8. D-2..D+7 remains the selectable product horizon; D-3/D+8 are backend safety buffers only.
 
-The XMLTV document is fetched and parsed once per refresh request, then reused across the independent windows. Each window still passes through the normal provider `complete | partial` classification and ADR 0007 replacement semantics. Partial windows are skipped and therefore cannot fabricate canonical coverage or erase previously retained authoritative history.
+With the #167 correction, one XMLTV response body is fetched and incrementally scanned once per guide-horizon invocation. The optional provider bulk-session returns one independently classified batch per D-3..D+8 television-day window from that single scan; each window still passes through normal `complete | partial` authority and ADR 0007 replacement semantics. Partial windows are skipped and therefore cannot fabricate canonical coverage or erase previously retained authoritative history. Single-window refreshes use the same bounded streaming parser for only their requested provider channel/time scope.
 
 The dedicated cron token is generated/stored encrypted in Supabase Vault; the real Supabase secret key stays inside the Edge Function environment.
 

@@ -2,7 +2,7 @@
 
 Last updated: 2026-09-24.
 Status: ACTIVE — **Inter-phase Premium Artwork & Content Identity enrichment**.
-Current implementation priority: **PR #161 is merged and its reviewed database/Edge foundation is deployed; complete the first scheduled hosted TMDB enrichment smoke, then continue Premium Artwork & Content Identity without reopening the accepted identity/persistence architecture absent regression evidence**
+Current implementation priority: **Issue #167 / PR #168 — remove the production-blocking Supabase Edge resource failure by bounding XMLTV parsing/materialisation before channel/window filtering; do not resume TMDB activation smoke until this server-only correction passes review, merge, exact-main CI and hosted narrow/full refresh verification**
 Current broader product phase: **Phase 6 — Personal Features, intentionally deferred behind the owner-priority inter-phase enrichment**
 Previous phase: **Phase 5 — Search and Discovery — CLOSED**
 
@@ -48,7 +48,9 @@ Matching remains precision-first: Film requires year ±1 + director overlap and 
 
 There is deliberately **no D0 historical bootstrap**. External identity forward-fills from authoritative complete current/future windows and remains attached as a broadcast ages into D0. Existing retained broadcasts may therefore have a temporary post-deploy warm-up gap. PR #152 remains owner-blocked evidence only: its dormant recovery migration/RPC is superseded for external-identity bootstrap and is not called by PR #161. Because that migration already exists in hosted history, any eventual retirement must be a separate forward cleanup after caller verification.
 
-The remaining rollout check is operational rather than architectural: the deployment completed after the 00:17 UTC six-hourly EPG run, so the external-content table is initially empty. The management SQL connection is intentionally read-only and cannot assume `service_role` or decrypt the Vault cron token; no security boundary is weakened to force a smoke. The first real v10 enrichment observation must therefore be verified after the next normal 06:17 UTC guide-horizon refresh. No physical owner-test gate applies to PR #161 because it adds no user-visible artwork/UI.
+PR #161's database/runtime deployment remains valid, but its first hosted activation smoke exposed a separate EPG provider-resource blocker tracked as issue #167. Both a full `{"mode":"guide-horizon"}` invocation and an intentionally narrow RTL4-only four-hour `window` invocation failed with HTTP 546 / `WORKER_RESOURCE_LIMIT`, while external-content references remained 0. Worker shutdown evidence was `reason=CPUTime`: 2144 ms / 182,785,670 B for guide-horizon and 2165 ms / 181,521,784 B for the narrow RTL4 window. The essentially identical CPU cost proves that horizon size and TMDB fan-out are not the root cause: the then-current XMLTV adapter called `response.text()`, materialised the full Netherlands channel/programme document and only then applied requested channel/time filtering.
+
+PR #168 is the active server-only correction candidate. Its implementation keeps canonical Programme, classification, TMDB matching/persistence, ADR 0011 ownership and the 20 s external-content budget unchanged while replacing feed-wide schedule materialisation with a chunk-safe streaming scanner. Full programme evidence is decoded only after requested provider channel and time-window intersection is known, and guide-horizon uses one provider bulk session so D-3..D+8 keeps independent complete/partial authority without twelve upstream re-fetches/re-parses. No hosted deployment or physical-device gate applies during Development; after review/merge/exact-main CI, production proof must run narrow RTL4 first, then full guide-horizon, then a normal cron run.
 
 ## Kijktip enrichment vertical slice — merged and deployed
 The inter-phase Kijktip vertical slice is implementation-complete and merged. Do not reopen its accepted product, matching, persistence or Guide-presentation contracts without concrete regression evidence.
@@ -287,7 +289,7 @@ Physical Android interaction acceptance remains OPEN/DEFERRED because no Android
 - physical Android validation.
 
 ## Current next step
-**Complete Technical Lead review and Independent QA for issue #159 / PR #161 — TMDB Film/Series external-content identity production foundation.** Do not deploy or merge before both gates pass. After merge, deploy only from reviewed canonical `main`, verify the migration/Edge runtime and production secret ownership, then use the resulting private external identity as the prerequisite for a separate artwork-selection/transport increment. Do not add artwork UI, fuzzy historical reconciliation, TMDB episode identity or a generic content catalogue in PR #161.
+**Complete Technical Lead review and Independent QA for issue #167 / PR #168 — bounded XMLTV ingest under the hosted Supabase Edge CPU limit.** Do not deploy or merge before both gates pass. After merge, require exact-main CI, deploy `epg-refresh` only from reviewed canonical `main`, then prove the production path in order: narrow RTL4 four-hour smoke → full `guide-horizon` smoke → external-content reference/failure/orphan verification → normal scheduled cron as independent operational proof. Do not resume artwork-selection/transport work until this blocker and the first hosted TMDB activation smoke are closed.
 
 Owner checkout: `~/projects/teevee`.
 

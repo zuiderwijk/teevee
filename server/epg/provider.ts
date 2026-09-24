@@ -94,6 +94,11 @@ export interface EpgProvider {
   readonly key: string;
   getChannels(): Promise<ExternalChannel[]>;
   getSchedule(input: ProviderScheduleQuery): Promise<ProviderScheduleBatch>;
+  /**
+   * Optional provider-session bulk read. Implementations may use this to consume one
+   * upstream observation once while preserving independent coverage per requested window.
+   */
+  getSchedules?(inputs: ProviderScheduleQuery[]): Promise<ProviderScheduleBatch[]>;
 }
 
 /** Explicit provider -> Teevee channel identity mapping. */
