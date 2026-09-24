@@ -253,6 +253,69 @@ describe('external content enrichment lifecycle', () => {
     expect(capture.writes).toHaveLength(0);
   });
 
+  it('treats malformed TMDB release_date as provider failure with no negative persistence write', async () => {
+    const stored: StoredProviderScheduleObservation = {
+      from: '2026-09-24T16:00:00.000Z',
+      to: '2026-09-25T02:00:00.000Z',
+      observedAt: '2026-09-24T10:00:00.000Z',
+      channelIds: [channel.id],
+      programmes: [
+        filmObservation(
+          'programme-1',
+          '2026-09-24T18:00:00.000Z',
+          '2026-09-24T20:00:00.000Z',
+        ),
+      ],
+    };
+    const fetcher = vi.fn(async (url: URL | RequestInfo) => {
+      const value = String(url);
+      if (value.includes('/search/movie')) {
+        return new Response(JSON.stringify({ results: [{ id: 100 }] }), {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' },
+        });
+      }
+      if (value.includes('/movie/100')) {
+        return new Response(JSON.stringify({
+          id: 100,
+          title: 'Billy Elliot',
+          original_title: 'Billy Elliot',
+          release_date: {},
+          credits: {
+            crew: [{ job: 'Director', name: 'Stephen Daldry' }],
+            cast: [{ name: 'Jamie Bell' }],
+          },
+          alternative_titles: { titles: [] },
+        }), {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' },
+        });
+      }
+      throw new Error(`unexpected URL ${value}`);
+    });
+    const gateway = new TmdbRequestSession(
+      new TmdbApiClient({ token: 'secret', fetcher, maxRetries: 0 }),
+    );
+    const capture = captureRepository();
+
+    const result = await enrichStoredExternalContent({
+      observations: [stored],
+      gateway,
+      repository: capture.repository,
+    });
+
+    expect(result).toMatchObject({
+      providerFailureCount: 1,
+      resolvedCount: 0,
+      unresolvedCount: 0,
+      ambiguousCount: 0,
+      persistedReferenceCount: 0,
+      clearedReferenceCount: 0,
+    });
+    expect(capture.repository.applyDecisions).not.toHaveBeenCalled();
+    expect(capture.writes).toHaveLength(0);
+  });
+
   it('never treats partial provider coverage as an authoritative enrichment observation', async () => {
     const repository = new InMemoryScheduleRepository();
     const provider: EpgProvider = {

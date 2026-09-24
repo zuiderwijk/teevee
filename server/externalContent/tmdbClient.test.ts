@@ -397,6 +397,102 @@ describe('TmdbRequestSession', () => {
     });
   });
 
+  it.each([
+    ['missing', undefined],
+    ['null', null],
+    ['empty', ''],
+    ['whitespace', '   '],
+  ])('keeps movie release_date %s as legitimate unknown year', async (_case, releaseDate) => {
+    const movie = {
+      id: 100,
+      title: 'Billy Elliot',
+      original_title: 'Billy Elliot',
+      credits: { crew: [], cast: [] },
+      alternative_titles: { titles: [] },
+      ...(releaseDate !== undefined ? { release_date: releaseDate } : {}),
+    };
+    const session = requestSession({ '/movie/100': movie });
+
+    await expect(session.getMovie('100')).resolves.toMatchObject({
+      releaseYear: null,
+    });
+  });
+
+  it.each([
+    ['object', {}],
+    ['number', 2000],
+    ['array', []],
+    ['invalid string', '2000'],
+    ['invalid month', '2000-13-01'],
+    ['invalid day', '2000-02-31'],
+  ])('rejects malformed movie release_date when %s', async (_case, releaseDate) => {
+    const session = requestSession({ '/movie/100': {
+      id: 100,
+      title: 'Billy Elliot',
+      original_title: 'Billy Elliot',
+      release_date: releaseDate,
+      credits: { crew: [], cast: [] },
+      alternative_titles: { titles: [] },
+    } });
+
+    await expect(session.getMovie('100')).rejects.toMatchObject({
+      kind: 'malformed',
+    });
+  });
+
+  it.each([
+    ['missing', undefined],
+    ['null', null],
+    ['empty', ''],
+  ])('keeps director-filmography release_date %s as optional unknown year', async (_case, releaseDate) => {
+    const credit = {
+      id: 100,
+      job: 'Director',
+      ...(releaseDate !== undefined ? { release_date: releaseDate } : {}),
+    };
+    const session = requestSession({
+      '/search/person': { results: [{ id: 10, name: 'Stephen Daldry' }] },
+      '/person/10/movie_credits': { crew: [credit] },
+    });
+
+    await expect(session.getDirectedMovieCredits('Stephen Daldry')).resolves.toEqual([
+      { id: '100', releaseYear: null },
+    ]);
+  });
+
+  it.each([
+    ['object', {}],
+    ['number', 2000],
+    ['array', []],
+    ['invalid string', '2000-09'],
+  ])('rejects malformed director-filmography release_date when %s', async (_case, releaseDate) => {
+    const session = requestSession({
+      '/search/person': { results: [{ id: 10, name: 'Stephen Daldry' }] },
+      '/person/10/movie_credits': {
+        crew: [{ id: 100, job: 'Director', release_date: releaseDate }],
+      },
+    });
+
+    await expect(session.getDirectedMovieCredits('Stephen Daldry')).rejects.toMatchObject({
+      kind: 'malformed',
+    });
+  });
+
+  it('parses a valid TMDB release_date year without changing Film year semantics', async () => {
+    const session = requestSession({ '/movie/100': {
+      id: 100,
+      title: 'Billy Elliot',
+      original_title: 'Billy Elliot',
+      release_date: '2000-09-29',
+      credits: { crew: [], cast: [] },
+      alternative_titles: { titles: [] },
+    } });
+
+    await expect(session.getMovie('100')).resolves.toMatchObject({
+      releaseYear: 2000,
+    });
+  });
+
   it('accepts legitimate empty required arrays as valid empty evidence', async () => {
     const session = requestSession({
       '/search/movie': { results: [] },

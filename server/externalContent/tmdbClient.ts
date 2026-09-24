@@ -221,9 +221,34 @@ function requiredNonNegativeInteger(value: unknown, label: string): number {
   return value as number;
 }
 
-function year(value: unknown): number | null {
-  const match = text(value).match(/^(\d{4})-/);
-  return match ? Number(match[1]) : null;
+function optionalReleaseYear(value: unknown, label: string): number | null {
+  if (value === undefined || value === null) return null;
+  if (typeof value !== 'string') {
+    throw new TmdbRequestError('malformed', `TMDB ${label} payload is invalid`);
+  }
+
+  const normalized = value.trim();
+  if (!normalized) return null;
+
+  const match = normalized.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (!match) {
+    throw new TmdbRequestError('malformed', `TMDB ${label} payload is invalid`);
+  }
+
+  const releaseYear = Number(match[1]);
+  const month = Number(match[2]);
+  const day = Number(match[3]);
+  if (
+    releaseYear < 1 ||
+    month < 1 ||
+    month > 12 ||
+    day < 1 ||
+    day > new Date(Date.UTC(releaseYear, month, 0)).getUTCDate()
+  ) {
+    throw new TmdbRequestError('malformed', `TMDB ${label} payload is invalid`);
+  }
+
+  return releaseYear;
 }
 
 function names(values: unknown, label: string): string[] {
@@ -305,7 +330,7 @@ export class TmdbRequestSession implements TmdbGateway {
       title: requiredText(movie.title, 'movie title'),
       originalTitle: requiredText(movie.original_title, 'movie original title'),
       alternativeTitles: alternativeMovieTitles(movie.alternative_titles),
-      releaseYear: year(movie.release_date),
+      releaseYear: optionalReleaseYear(movie.release_date, 'movie release_date'),
       directors,
       cast: names(credits.cast, 'movie credits cast'),
     };
@@ -357,7 +382,7 @@ export class TmdbRequestSession implements TmdbGateway {
         const movieId = requiredId(item.id, 'person directed movie id');
         result.set(movieId, {
           id: movieId,
-          releaseYear: year(item.release_date),
+          releaseYear: optionalReleaseYear(item.release_date, 'person movie credit release_date'),
         });
       }
     }
