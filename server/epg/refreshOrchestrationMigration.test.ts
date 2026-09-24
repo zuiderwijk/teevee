@@ -92,6 +92,8 @@ describe('bounded EPG refresh orchestration migration', () => {
       'teevee.complete_epg_refresh_external_content_job',
     );
     expect(migration).toContain('external_content_observation = null');
+    expect(migration).toContain("'guide-run-failed-before-enrichment'");
+    expect(migration).toContain("v_external_content_status := 'skipped'");
   });
 
   it('accepts the approved 49-channel worst-case durable run envelope', () => {
