@@ -147,7 +147,7 @@ export type ChannelManagementRowProps = {
   onDragStart?: (channelId: string, absoluteY: number) => void;
   onDragMove?: (channelId: string, absoluteY: number) => void;
   onDragEnd?: (channelId: string, absoluteY: number) => void;
-  onDragCancel?: (channelId: string) => void;
+  onDragFinalize?: (channelId: string) => void;
 };
 
 export function ChannelManagementRow({
@@ -169,7 +169,7 @@ export function ChannelManagementRow({
   onDragStart,
   onDragMove,
   onDragEnd,
-  onDragCancel,
+  onDragFinalize,
 }: ChannelManagementRowProps) {
   const theme = useTeeveeTheme();
   const hidden = !visible;
@@ -219,14 +219,14 @@ export function ChannelManagementRow({
             scheduleOnRN(onDragEnd, channel.id, event.absoluteY);
           }
         })
-        .onFinalize((_event, success) => {
-          if (!success && onDragCancel) {
-            scheduleOnRN(onDragCancel, channel.id);
+        .onFinalize(() => {
+          if (onDragFinalize) {
+            scheduleOnRN(onDragFinalize, channel.id);
           }
         }),
     [
       channel.id,
-      onDragCancel,
+      onDragFinalize,
       onDragEnd,
       onDragMove,
       onDragStart,
