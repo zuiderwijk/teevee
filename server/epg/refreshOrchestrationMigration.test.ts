@@ -66,7 +66,8 @@ describe('bounded EPG refresh orchestration migration', () => {
   });
 
   it('dispatches only opaque job identity to Edge and stores the real scope server-side', () => {
-    expect(migration).toContain("'mode', 'work-item'");
+    expect(migration).toContain("when v_phase = 'guide' then 'work-item'");
+    expect(migration).toContain("else 'external-content-work-item'");
     expect(migration).toContain("'jobId', v_job.id");
     expect(migration).toContain("'attemptToken', v_attempt_token");
     expect(migration).not.toMatch(
