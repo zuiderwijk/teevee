@@ -308,6 +308,9 @@ export default {
               ? 'succeeded'
               : 'incomplete',
           outcome: execution.outcome,
+          ...(execution.authority.status === 'incomplete'
+            ? { error: `incomplete-authority:${execution.authority.reason}` }
+            : {}),
         });
         return Response.json({
           status:
