@@ -35,7 +35,7 @@ A run owns:
 - durable queued/running/completed/failed status;
 - the exact child set created by the server-side planner.
 
-Authenticated scheduled guide-horizon calls derive a stable six-hour request key. Manual service-key calls receive a unique key unless an explicit safe key is provided. An existing active/idempotent run is reused rather than duplicated.
+Authenticated scheduled guide-horizon calls derive a stable six-hour request key. Manual service-key calls receive a unique key unless an explicit safe key is provided. Only an **exact duplicate request key** reuses its existing run. A distinct six-hour bucket is always persisted as its own queued run even while older work is active; it is never silently coalesced into another run. This preserves durable evidence for every scheduled bucket and its anchor/observation ownership.
 
 ### Child scope
 
@@ -54,7 +54,7 @@ The caller cannot supply or enlarge child source/window/channel scope.
 
 Current operational concurrency is one active child globally.
 
-A successful child immediately dispatches the next available child. A low-frequency recovery pump exists to recover queued retries and leases whose Edge execution died before terminal completion. It is not the primary throughput mechanism.
+A successful, incomplete or exhausted child immediately allows the next available child to continue. A low-frequency recovery pump exists to recover queued retries and leases whose Edge execution died before terminal completion. It is not the primary throughput mechanism. Dispatch-unavailable conditions such as a missing Vault cron token are persisted on the queued run/job rather than existing only in transient SQL output.
 
 Each source config owns `maxProviderChannelsPerWorkItem`. The current NL source may use 12 because the exact production shape measured 1145 ms CPU including persistence/TMDB. This value is operational capacity evidence, not product semantics and not a promise that 49 channels fit one invocation.
 
@@ -64,10 +64,12 @@ Future source/channel expansion changes configuration and measurements, not orch
 
 Every dispatch has a lease, bounded attempt count and unique attempt token.
 
+The lease is **8 minutes**. Supabase's current paid hosted Edge limit is 400 seconds wall-clock, so the lease deliberately exceeds the maximum possible worker lifetime by 80 seconds. The recovery pump therefore cannot dispatch a replacement while the previous hosted worker can still be alive, even if pg_net timed out or the client disconnected. This is the single-flight liveness invariant; changing the hosted maximum requires revalidating the lease before rollout.
+
 - duplicate delivery of the same active token performs no second work;
 - an expired/old token cannot claim or complete a replacement attempt;
 - handled failures may return the job to queued state after a bounded delay;
-- worker kills/timeouts are recovered only after lease expiry;
+- worker kills/timeouts are recovered only after the 8-minute lease expiry, when the old hosted worker must already be dead;
 - retries keep the original parent observation timestamp.
 
 A child may have committed canonical schedule state before its Edge process dies. Retrying the same observation is safe under ADR 0007; if newer authoritative coverage already exists, the older retry is ignored-stale rather than rolling data backwards.
@@ -76,18 +78,24 @@ A child may have committed canonical schedule state before its Edge process dies
 
 Every child still runs the existing provider adapter → normalization/classification → ADR-0007 replacement path.
 
-- `complete`/ `partial` provider authority remains per exact child channel/time scope;
+Durable orchestration authority is stricter than "ingest did not throw":
+
+- child `succeeded` requires either `stored` for **exactly the whole expected canonical channel set**, or `ignored-stale` for that exact set because newer authority already owns it;
+- provider partial coverage, unattributed records, no-safe-channel scope, or a channel-local blocked subset are terminal child `incomplete` outcomes;
+- parent `completed` means every child succeeded authoritatively;
+- parent `incomplete` means no child exhausted to `failed`, but at least one child is terminal incomplete;
+- parent `failed` means at least one child exhausted retries; queued/running siblings continue before terminal parent recomputation;
 - partial provider coverage never becomes destructive canonical authority;
 - classification ownership remains ingest-owned under ADR 0010;
 - external-content enrichment remains post-write/fail-open under ADR 0011;
-- only a successfully stored authoritative observation is eligible for external-content matching;
+- only a successfully stored observation is eligible for external-content matching; a safe stored subset may be enriched while the enclosing child remains durably incomplete;
 - the existing 20 s external-content owner budget and matcher thresholds remain unchanged.
 
 ### Operational truth
 
 Durable parent/child state is the refresh completion authority.
 
-pg_cron success means only that its enqueue SQL ran. pg_net/Edge transport and every child terminal state remain independently observable. Failures are attributable to source, television day, channel group, attempt and request id.
+pg_cron success means only that its enqueue SQL ran. pg_net/Edge transport and every child terminal state remain independently observable. Failures and incomplete authority are attributable to source, television day, channel group, attempt and request id. Distinct scheduled request keys are never discarded while older runs are active, and dispatch-unavailable reasons are persisted on the affected run/job.
 
 ## Deployment ordering
 
@@ -115,7 +123,8 @@ Positive:
 Costs:
 - full horizon completion becomes asynchronous;
 - durable orchestration state and one recovery cron are added;
-- current serial execution favors resource safety over minimum completion latency.
+- current serial execution favors resource safety over minimum completion latency;
+- crash recovery may wait up to the 8-minute lease so replacement dispatch cannot overlap a still-live hosted worker.
 
 ## Non-decisions
 
