@@ -335,24 +335,28 @@ function findBlockEnd(
   let cursor = openingEnd + 1;
 
   while (cursor < source.length) {
-    const cdataIndex = lowerSource.indexOf('<![cdata[', cursor);
-    const commentIndex = lowerSource.indexOf('<!--', cursor);
     const closingIndex = lowerSource.indexOf(closingPrefix, cursor);
-    const candidates = [cdataIndex, commentIndex, closingIndex].filter((index) => index >= 0);
-    if (candidates.length === 0) return null;
+    if (closingIndex < 0) return null;
 
-    const nextIndex = Math.min(...candidates);
-    if (nextIndex === cdataIndex) {
-      const cdataEnd = lowerSource.indexOf(']]>', cdataIndex + 9);
-      if (cdataEnd < 0) return null;
-      cursor = cdataEnd + 3;
+    // Search only inside this candidate block. Looking for CDATA/comments in the
+    // entire remaining network chunk for every programme makes large chunks
+    // quadratic; this keeps the structural scan proportional to consumed XML.
+    const beforeClosing = lowerSource.slice(cursor, closingIndex);
+    const cdataStart = beforeClosing.lastIndexOf('<![cdata[');
+    const cdataEnd = beforeClosing.lastIndexOf(']]>');
+    if (cdataStart > cdataEnd) {
+      const end = lowerSource.indexOf(']]>', closingIndex + closingPrefix.length);
+      if (end < 0) return null;
+      cursor = end + 3;
       continue;
     }
 
-    if (nextIndex === commentIndex) {
-      const commentEnd = lowerSource.indexOf('-->', commentIndex + 4);
-      if (commentEnd < 0) return null;
-      cursor = commentEnd + 3;
+    const commentStart = beforeClosing.lastIndexOf('<!--');
+    const commentEnd = beforeClosing.lastIndexOf('-->');
+    if (commentStart > commentEnd) {
+      const end = lowerSource.indexOf('-->', closingIndex + closingPrefix.length);
+      if (end < 0) return null;
+      cursor = end + 3;
       continue;
     }
 
