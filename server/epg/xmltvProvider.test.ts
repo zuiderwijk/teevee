@@ -408,6 +408,31 @@ describe('parseXmltvScheduleStream', () => {
     ]);
     expect(result.batches[0]?.coverage).toBe('complete');
   });
+  it('keeps source and scan-buffer indices aligned across Unicode uppercase programme text', async () => {
+    const source = String.raw`<tv>
+      <channel id="one"><display-name>One</display-name></channel>
+      <programme start="20260914180000 +0200" stop="20260914190000 +0200" channel="one">
+        <title>İstanbul Één</title>
+        <desc>Unicode content must not shift structural indices.</desc>
+      </programme>
+      <programme start="20260914190000 +0200" stop="20260914200000 +0200" channel="one">
+        <title>Volgende</title>
+      </programme>
+    </tv>`;
+    const result = await parseXmltvScheduleStream(streamFromChunks([source]), [
+      {
+        from: new Date('2026-09-14T16:00:00Z'),
+        to: new Date('2026-09-14T18:00:00Z'),
+        channelIds: ['one'],
+      },
+    ]);
+
+    expect(result.batches[0]?.programmes.map(({ title }) => title)).toEqual([
+      'İstanbul Één',
+      'Volgende',
+    ]);
+    expect(result.batches[0]?.coverage).toBe('complete');
+  });
   it('preserves production date, complete categories, credits, episode numbers and live/repeat tri-state', async () => {
     const source = String.raw`<tv>
       <channel id="film"><display-name>Film</display-name></channel>
