@@ -123,7 +123,7 @@ export type EpgRefreshExternalContentClaimResult =
 
 export type CompleteEpgRefreshExternalContentResult = {
   jobId: number;
-  externalContentStatus: 'queued' | 'completed' | 'failed';
+  externalContentStatus: 'queued' | 'completed' | 'skipped' | 'failed';
   runId: number;
   runStatus: EpgRefreshRunLifecycle;
 };
@@ -219,6 +219,7 @@ function parseExternalContentCompleteResult(
   if (
     externalContentStatus !== 'queued' &&
     externalContentStatus !== 'completed' &&
+    externalContentStatus !== 'skipped' &&
     externalContentStatus !== 'failed'
   ) {
     throw new Error('externalContentStatus is invalid');
