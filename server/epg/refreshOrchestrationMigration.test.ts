@@ -23,6 +23,8 @@ describe('bounded EPG refresh orchestration migration', () => {
     expect(migration).toContain('day_offset integer not null');
     expect(migration).toContain('channel_group_key text not null');
     expect(migration).toContain('provider_channel_ids text[] not null');
+    expect(migration).toContain('external_content_status text not null');
+    expect(migration).toContain('external_content_observation jsonb');
     expect(migration).toContain(
       'unique (run_id, source_key, day_offset, channel_group_key)',
     );
@@ -41,6 +43,9 @@ describe('bounded EPG refresh orchestration migration', () => {
     expect(migration).toContain("status in ('queued','running','completed','incomplete','failed')");
     expect(migration).toContain("status in ('queued','dispatched','running','succeeded','incomplete','failed')");
     expect(migration).toContain("'work-item lease expired before terminal completion'");
+    expect(migration).toContain(
+      "'external-content lease expired before terminal completion'",
+    );
     expect(migration).toContain("'teevee-development-epg-refresh-pump'");
     expect(migration).toContain("'* * * * *'");
   });
@@ -71,6 +76,28 @@ describe('bounded EPG refresh orchestration migration', () => {
     expect(migration).toContain('v_job.attempt_token is distinct from p_attempt_token');
   });
 
+  it('defers TMDB-capable work until canonical Guide work is fully terminal', () => {
+    expect(migration).toContain("'external-content-work-item'");
+    expect(migration).toContain(
+      "where status in ('queued','dispatched','running')",
+    );
+    expect(migration).toContain(
+      "external_content_status = 'queued'",
+    );
+    expect(migration).toContain(
+      'teevee.claim_epg_refresh_external_content_job',
+    );
+    expect(migration).toContain(
+      'teevee.complete_epg_refresh_external_content_job',
+    );
+    expect(migration).toContain('external_content_observation = null');
+  });
+
+  it('accepts the approved 49-channel worst-case durable run envelope', () => {
+    expect(migration).toContain('jsonb_array_length(p_jobs) > 1024');
+    expect(migration).toContain('jobs must contain 1..1024 work items');
+  });
+
   it('preserves one run observation timestamp across independently claimed children', () => {
     expect(migration).toContain('observed_at timestamptz not null');
     expect(migration).toContain("select observed_at");
@@ -84,6 +111,8 @@ describe('bounded EPG refresh orchestration migration', () => {
     expect(migration).toContain('public.teevee_start_epg_refresh_run');
     expect(migration).toContain('public.teevee_claim_epg_refresh_job');
     expect(migration).toContain('public.teevee_complete_epg_refresh_job');
+    expect(migration).toContain('public.teevee_claim_epg_refresh_external_content_job');
+    expect(migration).toContain('public.teevee_complete_epg_refresh_external_content_job');
     expect(migration).toContain('from public, anon, authenticated');
     expect(migration).toContain('to service_role');
     expect(migration).toContain("from vault.decrypted_secrets");
