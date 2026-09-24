@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import type { Channel } from '../../data/domain/epg.ts';
 import type { ChannelMapping } from './provider.ts';
 import {
+  EPG_REFRESH_MAX_WORK_ITEMS_PER_RUN,
   EPG_REFRESH_SOURCES,
   hostedRefreshProviderChannelIds,
   planGuideHorizonRefreshWorkItems,
@@ -106,6 +107,30 @@ describe('EPG refresh topology', () => {
         providerChannelIds: ['be-3'],
       }),
     ]);
+  });
+
+  it('fits the approved 49-channel multi-source catalog at group size one', () => {
+    const nlIds = Array.from({ length: 30 }, (_, index) => `nl-${index + 1}`);
+    const beIds = Array.from({ length: 19 }, (_, index) => `be-${index + 1}`);
+    const sources = [
+      source('nl', nlIds, 1),
+      source('be', beIds, 1),
+    ];
+
+    const workItems = planGuideHorizonRefreshWorkItems({
+      anchorMs: Date.parse('2026-09-24T09:00:00Z'),
+      requestedProviderChannelIds: hostedRefreshProviderChannelIds(sources),
+      sources,
+    });
+
+    expect(workItems).toHaveLength(49 * 12);
+    expect(workItems).toHaveLength(588);
+    expect(workItems.length).toBeLessThanOrEqual(EPG_REFRESH_MAX_WORK_ITEMS_PER_RUN);
+    expect(workItems.every(({ providerChannelIds }) => providerChannelIds.length === 1))
+      .toBe(true);
+    expect(new Set(workItems.map(({ sourceKey }) => sourceKey))).toEqual(
+      new Set(['nl', 'be']),
+    );
   });
 
   it('keeps Amsterdam DST television-day boundaries in every source/group child', () => {
