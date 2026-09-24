@@ -34,6 +34,7 @@ describe('SupabaseEpgRefreshOrchestrationRepository', () => {
           to: '2026-09-22T04:00:00Z',
           channelGroupKey: 'group-1',
           providerChannelIds: ['NPO1.nl'],
+          canonicalChannelIds: ['nl-npo-1'],
         },
         {
           sourceKey: 'iptv-epg-nl',
@@ -42,6 +43,7 @@ describe('SupabaseEpgRefreshOrchestrationRepository', () => {
           to: '2026-09-23T04:00:00Z',
           channelGroupKey: 'group-1',
           providerChannelIds: ['NPO1.nl'],
+          canonicalChannelIds: ['nl-npo-1'],
         },
       ],
     })).resolves.toEqual({
@@ -70,6 +72,7 @@ describe('SupabaseEpgRefreshOrchestrationRepository', () => {
       to: '2026-09-25T04:00:00.000Z',
       channelGroupKey: `group-${index + 1}`,
       providerChannelIds: [`provider-${index + 1}`],
+      canonicalChannelIds: [`canonical-${index + 1}`],
     }));
     const client = new FakeRpcClient([{
       data: { runId: 43, status: 'running', jobCount: 588, reused: false },
@@ -101,6 +104,7 @@ describe('SupabaseEpgRefreshOrchestrationRepository', () => {
         to: '2026-09-25T04:00:00Z',
         channelGroupKey: 'group-1',
         providerChannelIds: ['RTL4.nl', 'RTL5.nl'],
+        canonicalChannelIds: ['nl-rtl-4', 'nl-rtl-5'],
       },
       error: null,
     }]);
@@ -121,6 +125,7 @@ describe('SupabaseEpgRefreshOrchestrationRepository', () => {
       to: '2026-09-25T04:00:00.000Z',
       channelGroupKey: 'group-1',
       providerChannelIds: ['RTL4.nl', 'RTL5.nl'],
+      canonicalChannelIds: ['nl-rtl-4', 'nl-rtl-5'],
     });
     expect(client.calls[0]).toEqual({
       functionName: 'teevee_claim_epg_refresh_job',
@@ -165,6 +170,38 @@ describe('SupabaseEpgRefreshOrchestrationRepository', () => {
         p_attempt_token: 'attempt-token',
         p_result: 'succeeded',
         p_outcome: { writeStatus: 'stored', programmeCount: 42 },
+        p_error: null,
+        p_external_content_observation: null,
+      },
+    });
+  });
+
+  it('passes stale authority verification as a database-owned completion result', async () => {
+    const client = new FakeRpcClient([{
+      data: { jobId: 7, jobStatus: 'succeeded', runId: 41, runStatus: 'completed' },
+      error: null,
+    }]);
+    const repository = new SupabaseEpgRefreshOrchestrationRepository(client);
+
+    await expect(repository.completeJob({
+      jobId: 7,
+      attemptToken: 'attempt-token',
+      result: 'verify-stale-authority',
+      outcome: { writeStatus: 'ignored-stale' },
+    })).resolves.toEqual({
+      jobId: 7,
+      jobStatus: 'succeeded',
+      runId: 41,
+      runStatus: 'completed',
+    });
+
+    expect(client.calls[0]).toEqual({
+      functionName: 'teevee_complete_epg_refresh_job',
+      args: {
+        p_job_id: 7,
+        p_attempt_token: 'attempt-token',
+        p_result: 'verify-stale-authority',
+        p_outcome: { writeStatus: 'ignored-stale' },
         p_error: null,
         p_external_content_observation: null,
       },
