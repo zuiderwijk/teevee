@@ -72,6 +72,21 @@ describe('GuideSearchSession', () => {
     expect(search).not.toHaveBeenCalled();
   });
 
+  it('keeps deterministic channel-management intents out of hosted transport', async () => {
+    const search = vi.fn<GuideSearchApi['search']>();
+    const session = new GuideSearchSession({ search });
+
+    session.setQuery('mijn zenders');
+
+    expect(session.getSnapshot()).toEqual({
+      query: 'mijn zenders',
+      phase: 'idle',
+      response: null,
+    });
+    await vi.advanceTimersByTimeAsync(GUIDE_SEARCH_DEBOUNCE_MS * 2);
+    expect(search).not.toHaveBeenCalled();
+  });
+
   it('keeps an overlong query out of transport instead of reporting availability failure', async () => {
     const search = vi.fn<GuideSearchApi['search']>();
     const session = new GuideSearchSession({ search });
