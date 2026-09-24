@@ -1,6 +1,7 @@
 import { Tabs } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaView, StyleSheet, Text, View } from 'react-native';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
 import { AppScreenErrorBoundary } from '@/components/AppScreenErrorBoundary';
 import { AppTabIcon } from '@/components/AppTabIcon';
@@ -100,15 +101,20 @@ function FontAwareApp() {
 
 export default function RootLayout() {
   return (
-    <AppearancePreferenceProvider>
-      <ChannelPersonalisationProvider>
-        <FontAwareApp />
-      </ChannelPersonalisationProvider>
-    </AppearancePreferenceProvider>
+    <GestureHandlerRootView style={styles.gestureRoot}>
+      <AppearancePreferenceProvider>
+        <ChannelPersonalisationProvider>
+          <FontAwareApp />
+        </ChannelPersonalisationProvider>
+      </AppearancePreferenceProvider>
+    </GestureHandlerRootView>
   );
 }
 
 const styles = StyleSheet.create({
+  gestureRoot: {
+    flex: 1,
+  },
   fontFailureRoot: {
     flex: 1,
   },
