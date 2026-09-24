@@ -18,12 +18,17 @@ create table teevee.epg_refresh_runs (
   started_at timestamptz,
   completed_at timestamptz,
   last_error text,
+  external_content_status text not null default 'pending',
+  external_content_completed_at timestamptz,
+  external_content_last_error text,
   constraint epg_refresh_runs_request_key_nonempty
     check (length(btrim(request_key)) > 0 and length(request_key) <= 128),
   constraint epg_refresh_runs_status
     check (status in ('queued','running','completed','incomplete','failed')),
   constraint epg_refresh_runs_job_count
-    check (job_count > 0)
+    check (job_count > 0),
+  constraint epg_refresh_runs_external_content_status
+    check (external_content_status in ('pending','running','completed','failed'))
 );
 
 create table teevee.epg_refresh_jobs (
@@ -47,6 +52,18 @@ create table teevee.epg_refresh_jobs (
   finished_at timestamptz,
   last_error text,
   outcome jsonb,
+  external_content_status text not null default 'not-required',
+  external_content_observation jsonb,
+  external_content_attempt_count integer not null default 0,
+  external_content_max_attempts integer not null default 3,
+  external_content_attempt_token uuid,
+  external_content_request_id bigint,
+  external_content_available_at timestamptz not null default pg_catalog.now(),
+  external_content_lease_expires_at timestamptz,
+  external_content_started_at timestamptz,
+  external_content_finished_at timestamptz,
+  external_content_last_error text,
+  external_content_outcome jsonb,
   constraint epg_refresh_jobs_ordinal check (ordinal > 0),
   constraint epg_refresh_jobs_source_key_nonempty check (length(btrim(source_key)) > 0),
   constraint epg_refresh_jobs_window check (to_at > from_at and to_at - from_at <= interval '25 hours'),
@@ -56,6 +73,12 @@ create table teevee.epg_refresh_jobs (
     check (status in ('queued','dispatched','running','succeeded','incomplete','failed')),
   constraint epg_refresh_jobs_attempt_count check (attempt_count >= 0),
   constraint epg_refresh_jobs_max_attempts check (max_attempts between 1 and 10),
+  constraint epg_refresh_jobs_external_content_status
+    check (external_content_status in ('not-required','queued','dispatched','running','completed','failed')),
+  constraint epg_refresh_jobs_external_content_attempt_count
+    check (external_content_attempt_count >= 0),
+  constraint epg_refresh_jobs_external_content_max_attempts
+    check (external_content_max_attempts between 1 and 10),
   unique (run_id, ordinal),
   unique (run_id, source_key, day_offset, channel_group_key)
 );
@@ -64,6 +87,13 @@ create index epg_refresh_jobs_dispatch_idx
   on teevee.epg_refresh_jobs(status, available_at, run_id, ordinal);
 create index epg_refresh_jobs_run_idx
   on teevee.epg_refresh_jobs(run_id, ordinal);
+create index epg_refresh_jobs_external_content_dispatch_idx
+  on teevee.epg_refresh_jobs(
+    external_content_status,
+    external_content_available_at,
+    run_id,
+    ordinal
+  );
 
 alter table teevee.epg_refresh_runs enable row level security;
 alter table teevee.epg_refresh_jobs enable row level security;
@@ -87,7 +117,9 @@ set search_path = ''
 as $$
 declare
   v_status text;
+  v_external_content_status text;
   v_error text;
+  v_external_content_error text;
 begin
   if exists (
     select 1
@@ -95,13 +127,21 @@ begin
     where j.run_id = p_run_id
       and j.status in ('queued','dispatched','running')
   ) then
-    update teevee.epg_refresh_runs
-      set status = 'running',
-          started_at = coalesce(started_at, pg_catalog.now()),
-          completed_at = null
-    where id = p_run_id
-    returning status into v_status;
-    return v_status;
+    v_status := 'running';
+  elsif exists (
+    select 1
+    from teevee.epg_refresh_jobs j
+    where j.run_id = p_run_id and j.status = 'failed'
+  ) then
+    v_status := 'failed';
+  elsif exists (
+    select 1
+    from teevee.epg_refresh_jobs j
+    where j.run_id = p_run_id and j.status = 'incomplete'
+  ) then
+    v_status := 'incomplete';
+  else
+    v_status := 'completed';
   end if;
 
   select min(j.last_error)
@@ -111,25 +151,54 @@ begin
     and j.status in ('failed','incomplete')
     and j.last_error is not null;
 
-  if exists (
-    select 1 from teevee.epg_refresh_jobs j
-    where j.run_id = p_run_id and j.status = 'failed'
-  ) then
-    v_status := 'failed';
+  if v_status = 'running' then
+    v_external_content_status := 'pending';
   elsif exists (
-    select 1 from teevee.epg_refresh_jobs j
-    where j.run_id = p_run_id and j.status = 'incomplete'
+    select 1
+    from teevee.epg_refresh_jobs j
+    where j.run_id = p_run_id
+      and j.external_content_status in ('queued','dispatched','running')
   ) then
-    v_status := 'incomplete';
+    v_external_content_status := 'running';
+  elsif exists (
+    select 1
+    from teevee.epg_refresh_jobs j
+    where j.run_id = p_run_id
+      and j.external_content_status = 'failed'
+  ) then
+    v_external_content_status := 'failed';
   else
-    v_status := 'completed';
+    v_external_content_status := 'completed';
   end if;
+
+  select min(j.external_content_last_error)
+    into v_external_content_error
+  from teevee.epg_refresh_jobs j
+  where j.run_id = p_run_id
+    and j.external_content_status = 'failed'
+    and j.external_content_last_error is not null;
 
   update teevee.epg_refresh_runs
     set status = v_status,
-        completed_at = coalesce(completed_at, pg_catalog.now()),
+        started_at = coalesce(started_at, pg_catalog.now()),
+        completed_at = case
+          when v_status in ('completed','incomplete','failed')
+            then coalesce(completed_at, pg_catalog.now())
+          else null
+        end,
         last_error = case
           when v_status in ('failed','incomplete') then v_error
+          else null
+        end,
+        external_content_status = v_external_content_status,
+        external_content_completed_at = case
+          when v_external_content_status in ('completed','failed')
+            then coalesce(external_content_completed_at, pg_catalog.now())
+          else null
+        end,
+        external_content_last_error = case
+          when v_external_content_status = 'failed'
+            then v_external_content_error
           else null
         end
   where id = p_run_id;
