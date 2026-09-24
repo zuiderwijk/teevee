@@ -38,6 +38,8 @@ export type EpgRefreshWorkItemPlan = {
  * 1145 ms CPU in hosted v12 including canonical persistence and TMDB enrichment.
  * Keep this as an operational tuning value, never as an assumption in contracts.
  */
+export const EPG_REFRESH_MAX_WORK_ITEMS_PER_RUN = 1024;
+
 export const IPTV_EPG_NL_OPERATIONAL_MAX_PROVIDER_CHANNELS_PER_WORK_ITEM = 12;
 
 export const EPG_REFRESH_SOURCES = [
@@ -222,6 +224,11 @@ export function planGuideHorizonRefreshWorkItems(input: {
 
   if (workItems.length === 0) {
     throw new Error('Guide-horizon refresh plan contains no work items');
+  }
+  if (workItems.length > EPG_REFRESH_MAX_WORK_ITEMS_PER_RUN) {
+    throw new Error(
+      `Guide-horizon refresh plan exceeds ${EPG_REFRESH_MAX_WORK_ITEMS_PER_RUN} work items`,
+    );
   }
   return workItems;
 }
