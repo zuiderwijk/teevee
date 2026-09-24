@@ -98,18 +98,18 @@ Programme Search, D-2..D+7 horizon ownership, debounce/race semantics, exact-bro
 
 ## Management surface
 
-`Mijn zenders` is a dedicated small app-shell screen, reachable from Settings and management Search intents.
+`Mijn zenders` is a dedicated compact utility screen, reachable from Settings and management Search intents. Owner acceptance #5819111859 freezes the two-zone interaction specification in PR comment #5819090800.
 
-The screen supports:
+The management surface has two zones:
 
-- hide/show;
-- deterministic reorder;
-- light/dark/system through existing theme primitives;
-- Dynamic Type-compatible wrapping;
-- minimum touch targets;
-- explicit accessibility labels/states.
+- **Mijn zenders** contains only visible channels in persisted Guide order. Rows expose an eye control and a handle-only drag interaction. Reorder is provisional while dragging and persists exactly once after a successful changed-position drop through the arbitrary-index canonical-ID operation.
+- **Verborgen zenders** contains only hidden channels in canonical/default order. Rows use a quieter eye-off treatment, never expose a drag handle, and showing a channel appends it directly after the current final visible channel.
 
-Reordering uses discrete up/down controls rather than introducing a new drag/reorder dependency or gesture owner. This keeps the first production implementation deterministic across iOS/Android, robust under larger text, and non-conflicting with existing Guide gestures.
+There is no save/done flow: visibility changes and successful drops persist immediately. When only one visible channel remains, its visibility control stays present but disabled and the screen explains that one channel must remain visible.
+
+The screen includes management-local `Zoek een zender`. Filtering runs only over the canonical catalogue, filters both zones and never calls hosted Guide Search. While a query is active, visibility remains available but drag/reorder is disabled and handles are omitted. Clearing the query restores the complete two-zone layout. No bulk show/hide action is part of this increment.
+
+The accepted drag contract uses the existing gesture/Reanimated stack rather than a draggable-list dependency: 220 ms handle long-press, 8 pt preactivation movement tolerance, edge-only auto-scroll after activation, a visible insertion slot, reduced-motion handling, one pick haptic and one changed-drop haptic. Accessibility deliberately does not depend on drag: each channel row is one screen-reader focus stop with hide/show and one-step move custom actions as applicable; the sighted eye and handle are hidden as duplicate accessibility descendants.
 
 ## Out of scope
 
@@ -127,7 +127,8 @@ Required iPhone validation after automated gates:
 6. open it from Search and verify Per zender shows it without re-adding it;
 7. return to Search, use `Toevoegen`, and verify it becomes visible exactly once, appended to current selected order;
 8. use `mijn zenders` or `zendervolgorde` Search and verify the management route;
-9. validate default and accessibility Dynamic Type, light/dark/system, VoiceOver labels/actions, touch targets and Guide gestures;
-10. verify a hidden active/current channel preference change produces coherent deterministic Guide fallback rather than index drift.
+9. physically converge handle-only drag: short press vs 220 ms activation, scroll-before-activation, neighbor movement, first/last drop and 72-pt edge auto-scroll on a long (~49-channel) list;
+10. validate hide/show zone transitions, dark/system, Larger Text through maximum Accessibility Text, VoiceOver custom actions/focus and persistence after restart;
+11. verify a hidden active/current channel preference change produces coherent deterministic Guide fallback rather than index drift.
 
 Android physical validation remains under the project-wide hardware gate; automated Android export/build validation remains required.
