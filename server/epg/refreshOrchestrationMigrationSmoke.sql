@@ -163,7 +163,7 @@ select test_epg.assert_true(
   )
   and not has_function_privilege(
     'anon',
-    'public.teevee_complete_epg_refresh_job(bigint,uuid,text,jsonb,text)',
+    'public.teevee_complete_epg_refresh_job(bigint,uuid,text,jsonb,text,jsonb)',
     'EXECUTE'
   ),
   'anon must have no orchestration RPC execute privileges'
@@ -181,7 +181,7 @@ select test_epg.assert_true(
   )
   and not has_function_privilege(
     'authenticated',
-    'public.teevee_complete_epg_refresh_job(bigint,uuid,text,jsonb,text)',
+    'public.teevee_complete_epg_refresh_job(bigint,uuid,text,jsonb,text,jsonb)',
     'EXECUTE'
   ),
   'authenticated must have no orchestration RPC execute privileges'
@@ -199,7 +199,7 @@ select test_epg.assert_true(
   )
   and has_function_privilege(
     'service_role',
-    'public.teevee_complete_epg_refresh_job(bigint,uuid,text,jsonb,text)',
+    'public.teevee_complete_epg_refresh_job(bigint,uuid,text,jsonb,text,jsonb)',
     'EXECUTE'
   ),
   'service_role must own the public orchestration RPC execute boundary'
@@ -425,6 +425,7 @@ begin
       v_old_token,
       'succeeded',
       '{}'::jsonb,
+      null,
       null
     );
     raise exception 'ASSERTION FAILED: stale completion unexpectedly succeeded';
@@ -447,7 +448,8 @@ select public.teevee_complete_epg_refresh_job(
   (select token from test_epg.tokens where label='run-1-job-1-attempt-2'),
   'failed',
   '{"attempt":2}'::jsonb,
-  'synthetic transient failure'
+  'synthetic transient failure',
+  null
 );
 
 reset role;
@@ -506,11 +508,55 @@ select public.teevee_complete_epg_refresh_job(
   (select token from test_epg.tokens where label='run-1-job-2-attempt-1'),
   'succeeded',
   '{"authority":"exact"}'::jsonb,
-  null
+  null,
+  jsonb_build_object(
+    'from','2026-09-25T04:00:00.000Z',
+    'to','2026-09-26T04:00:00.000Z',
+    'observedAt','2026-09-24T06:17:00.000Z',
+    'channelIds',jsonb_build_array('channel-1'),
+    'programmes',jsonb_build_array(
+      jsonb_build_object(
+        'programme',jsonb_build_object(
+          'id','programme-staged',
+          'channelId','channel-1',
+          'startAt','2026-09-25T18:00:00.000Z',
+          'endAt','2026-09-25T20:00:00.000Z',
+          'title','Staged Film'
+        ),
+        'classification',jsonb_build_object(
+          'programmeId','programme-staged',
+          'contentType','film',
+          'seriesType','unknown',
+          'audience','unknown',
+          'sportType','unknown',
+          'liveStatus','unknown',
+          'repeatStatus','unknown',
+          'confidence','high'
+        ),
+        'externalProgramme',jsonb_build_object(
+          'title','Staged Film',
+          'productionDate',jsonb_build_object('raw','2020','year',2020),
+          'credits',jsonb_build_object(
+            'director',jsonb_build_array('Director'),
+            'actor',jsonb_build_array(),
+            'producer',jsonb_build_array()
+          )
+        )
+      )
+    )
+  )
 );
 
 reset role;
 
+select test_epg.assert_true(
+  not exists (
+    select 1
+    from net.requests
+    where body->>'mode' = 'external-content-work-item'
+  ),
+  'TMDB-capable work must not dispatch while canonical Guide work remains non-terminal'
+);
 select test_epg.assert_true(
   exists (
     select 1
@@ -553,7 +599,8 @@ select public.teevee_complete_epg_refresh_job(
   (select token from test_epg.tokens where label='run-2-job-1-attempt-1'),
   'incomplete',
   '{"authority":{"status":"incomplete","reason":"partial-provider-coverage"}}'::jsonb,
-  'incomplete-authority:partial-provider-coverage'
+  'incomplete-authority:partial-provider-coverage',
+  null
 );
 
 reset role;
@@ -603,7 +650,8 @@ select public.teevee_complete_epg_refresh_job(
   (select token from test_epg.tokens where label='run-1-job-1-attempt-3'),
   'failed',
   '{"attempt":3}'::jsonb,
-  'synthetic exhausted failure'
+  'synthetic exhausted failure',
+  null
 );
 
 reset role;
@@ -611,6 +659,65 @@ reset role;
 select test_epg.assert_true(
   (select status from teevee.epg_refresh_runs where request_key='cron:2026-09-24T06') = 'failed',
   'parent becomes failed after siblings finish and one child exhausts attempts'
+);
+select test_epg.assert_true(
+  exists (
+    select 1
+    from teevee.epg_refresh_jobs j
+    join teevee.epg_refresh_runs r on r.id=j.run_id
+    where r.request_key='cron:2026-09-24T06'
+      and j.ordinal=2
+      and j.external_content_status='dispatched'
+  ),
+  'deferred external content dispatches only after all canonical Guide work is terminal'
+);
+
+set role service_role;
+
+insert into test_epg.tokens(label, token)
+select 'run-1-job-2-external-attempt-1', j.external_content_attempt_token
+from teevee.epg_refresh_jobs j
+join teevee.epg_refresh_runs r on r.id=j.run_id
+where r.request_key='cron:2026-09-24T06' and j.ordinal=2;
+
+insert into test_epg.results(label, payload)
+select 'run-1-job-2-external-claim-1',
+  public.teevee_claim_epg_refresh_external_content_job(
+    (select j.id from teevee.epg_refresh_jobs j
+     join teevee.epg_refresh_runs r on r.id=j.run_id
+     where r.request_key='cron:2026-09-24T06' and j.ordinal=2),
+    (select token from test_epg.tokens where label='run-1-job-2-external-attempt-1')
+  );
+
+select test_epg.assert_json_status(
+  (select payload from test_epg.results where label='run-1-job-2-external-claim-1'),
+  'claimed',
+  'deferred external-content worker claims database-owned staged evidence'
+);
+
+select public.teevee_complete_epg_refresh_external_content_job(
+  (select j.id from teevee.epg_refresh_jobs j
+   join teevee.epg_refresh_runs r on r.id=j.run_id
+   where r.request_key='cron:2026-09-24T06' and j.ordinal=2),
+  (select token from test_epg.tokens where label='run-1-job-2-external-attempt-1'),
+  true,
+  '{"status":"completed","resolvedCount":1}'::jsonb,
+  null
+);
+
+reset role;
+
+select test_epg.assert_true(
+  exists (
+    select 1
+    from teevee.epg_refresh_jobs j
+    join teevee.epg_refresh_runs r on r.id=j.run_id
+    where r.request_key='cron:2026-09-24T06'
+      and j.ordinal=2
+      and j.external_content_status='completed'
+      and j.external_content_observation is null
+  ),
+  'terminal enrichment clears lifecycle-bound provider evidence'
 );
 
 delete from vault.decrypted_secrets
@@ -656,6 +763,58 @@ select test_epg.assert_true(
       and j.last_error='cron-token-unavailable'
   ),
   'missing Vault token leaves a durable queued job error'
+);
+
+set role service_role;
+
+insert into test_epg.results(label, payload)
+select 'run-49-channel-boundary', public.teevee_start_epg_refresh_run(
+  'manual:49-channel-boundary',
+  '2026-09-24T20:00:00Z'::timestamptz,
+  '2026-09-24T20:00:00Z'::timestamptz,
+  (
+    select jsonb_agg(
+      jsonb_build_object(
+        'sourceKey', case when within_day <= 30 then 'nl' else 'be' end,
+        'dayOffset', day_offset,
+        'from','2026-09-24T04:00:00Z',
+        'to','2026-09-25T04:00:00Z',
+        'channelGroupKey','group-' || within_day,
+        'providerChannelIds',jsonb_build_array(
+          case when within_day <= 30
+            then 'nl-' || within_day
+            else 'be-' || (within_day - 30)
+          end
+        )
+      )
+      order by ordinal
+    )
+    from (
+      select
+        ordinal,
+        ((ordinal - 1) / 49) - 3 as day_offset,
+        ((ordinal - 1) % 49) + 1 as within_day
+      from generate_series(1, 588) as series(ordinal)
+    ) generated
+  )
+);
+
+reset role;
+
+select test_epg.assert_true(
+  exists (
+    select 1
+    from teevee.epg_refresh_runs
+    where request_key='manual:49-channel-boundary'
+      and job_count=588
+  )
+  and (
+    select count(*)
+    from teevee.epg_refresh_jobs j
+    join teevee.epg_refresh_runs r on r.id=j.run_id
+    where r.request_key='manual:49-channel-boundary'
+  ) = 588,
+  'durable orchestration accepts the 49-channel x 12-day x group-size-one boundary'
 );
 
 select 'EPG orchestration migration lifecycle smoke PASS' as result;
