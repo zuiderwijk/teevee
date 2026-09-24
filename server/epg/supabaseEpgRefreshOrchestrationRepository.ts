@@ -41,7 +41,7 @@ function stringArray(value: unknown, label: string): string[] {
   return value.map((item, index) => requiredText(item, `${label}[${index}]`));
 }
 
-export type EpgRefreshRunLifecycle = 'queued' | 'running' | 'completed' | 'failed';
+export type EpgRefreshRunLifecycle = 'queued' | 'running' | 'completed' | 'incomplete' | 'failed';
 
 export type StartEpgRefreshRunResult = {
   runId: number;
@@ -73,13 +73,19 @@ export type EpgRefreshWorkItemClaimResult =
 
 export type CompleteEpgRefreshWorkItemResult = {
   jobId: number;
-  jobStatus: 'queued' | 'succeeded' | 'failed';
+  jobStatus: 'queued' | 'succeeded' | 'incomplete' | 'failed';
   runId: number;
   runStatus: EpgRefreshRunLifecycle;
 };
 
 function parseRunLifecycle(value: unknown, label: string): EpgRefreshRunLifecycle {
-  if (value === 'queued' || value === 'running' || value === 'completed' || value === 'failed') {
+  if (
+    value === 'queued' ||
+    value === 'running' ||
+    value === 'completed' ||
+    value === 'incomplete' ||
+    value === 'failed'
+  ) {
     return value;
   }
   throw new Error(`${label} is invalid`);
@@ -128,7 +134,12 @@ function parseClaimResult(value: unknown): EpgRefreshWorkItemClaimResult {
 function parseCompleteResult(value: unknown): CompleteEpgRefreshWorkItemResult {
   const payload = record(value, 'Supabase complete_epg_refresh_job');
   const jobStatus = payload.jobStatus;
-  if (jobStatus !== 'queued' && jobStatus !== 'succeeded' && jobStatus !== 'failed') {
+  if (
+    jobStatus !== 'queued' &&
+    jobStatus !== 'succeeded' &&
+    jobStatus !== 'incomplete' &&
+    jobStatus !== 'failed'
+  ) {
     throw new Error('jobStatus is invalid');
   }
 
@@ -174,14 +185,14 @@ export class SupabaseEpgRefreshOrchestrationRepository {
   async completeJob(input: {
     jobId: number;
     attemptToken: string;
-    success: boolean;
+    result: 'succeeded' | 'incomplete' | 'failed';
     outcome?: Record<string, unknown>;
     error?: string;
   }): Promise<CompleteEpgRefreshWorkItemResult> {
     const response = await this.client.rpc<unknown>('teevee_complete_epg_refresh_job', {
       p_job_id: positiveInteger(input.jobId, 'jobId'),
       p_attempt_token: requiredText(input.attemptToken, 'attemptToken'),
-      p_success: input.success,
+      p_result: input.result,
       p_outcome: input.outcome ?? null,
       p_error: input.error?.trim() || null,
     });
