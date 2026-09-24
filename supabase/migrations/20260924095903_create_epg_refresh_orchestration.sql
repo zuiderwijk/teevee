@@ -21,7 +21,7 @@ create table teevee.epg_refresh_runs (
   constraint epg_refresh_runs_request_key_nonempty
     check (length(btrim(request_key)) > 0 and length(request_key) <= 128),
   constraint epg_refresh_runs_status
-    check (status in ('queued','running','completed','failed')),
+    check (status in ('queued','running','completed','incomplete','failed')),
   constraint epg_refresh_runs_job_count
     check (job_count > 0)
 );
@@ -53,7 +53,7 @@ create table teevee.epg_refresh_jobs (
   constraint epg_refresh_jobs_group_key_nonempty check (length(btrim(channel_group_key)) > 0),
   constraint epg_refresh_jobs_provider_channels check (cardinality(provider_channel_ids) > 0),
   constraint epg_refresh_jobs_status
-    check (status in ('queued','dispatched','running','succeeded','failed')),
+    check (status in ('queued','dispatched','running','succeeded','incomplete','failed')),
   constraint epg_refresh_jobs_attempt_count check (attempt_count >= 0),
   constraint epg_refresh_jobs_max_attempts check (max_attempts between 1 and 10),
   unique (run_id, ordinal),
@@ -108,7 +108,7 @@ begin
     into v_error
   from teevee.epg_refresh_jobs j
   where j.run_id = p_run_id
-    and j.status = 'failed'
+    and j.status in ('failed','incomplete')
     and j.last_error is not null;
 
   if exists (
@@ -116,6 +116,11 @@ begin
     where j.run_id = p_run_id and j.status = 'failed'
   ) then
     v_status := 'failed';
+  elsif exists (
+    select 1 from teevee.epg_refresh_jobs j
+    where j.run_id = p_run_id and j.status = 'incomplete'
+  ) then
+    v_status := 'incomplete';
   else
     v_status := 'completed';
   end if;
@@ -123,7 +128,10 @@ begin
   update teevee.epg_refresh_runs
     set status = v_status,
         completed_at = coalesce(completed_at, pg_catalog.now()),
-        last_error = case when v_status = 'failed' then v_error else null end
+        last_error = case
+          when v_status in ('failed','incomplete') then v_error
+          else null
+        end
   where id = p_run_id;
 
   return v_status;
@@ -211,7 +219,21 @@ begin
   limit 1;
 
   if v_cron_token is null or length(btrim(v_cron_token)) = 0 then
-    return jsonb_build_object('status','unavailable','reason','cron-token-unavailable');
+    update teevee.epg_refresh_jobs
+      set last_error = 'cron-token-unavailable',
+          available_at = pg_catalog.now() + interval '1 minute'
+    where id = v_job.id;
+
+    update teevee.epg_refresh_runs
+      set last_error = 'cron-token-unavailable'
+    where id = v_job.run_id;
+
+    return jsonb_build_object(
+      'status','unavailable',
+      'reason','cron-token-unavailable',
+      'runId',v_job.run_id,
+      'jobId',v_job.id
+    );
   end if;
 
   v_attempt_token := extensions.gen_random_uuid();
@@ -235,7 +257,7 @@ begin
         attempt_count = attempt_count + 1,
         attempt_token = v_attempt_token,
         request_id = v_request_id,
-        lease_expires_at = pg_catalog.now() + interval '3 minutes',
+        lease_expires_at = pg_catalog.now() + interval '8 minutes',
         last_error = null
   where id = v_job.id;
 
@@ -301,24 +323,6 @@ begin
     into v_existing
   from teevee.epg_refresh_runs
   where request_key = p_request_key
-  limit 1;
-
-  if found then
-    v_dispatch := teevee.dispatch_next_epg_refresh_job();
-    select status into v_status from teevee.epg_refresh_runs where id = v_existing.id;
-    return jsonb_build_object(
-      'runId',v_existing.id,
-      'status',v_status,
-      'jobCount',v_existing.job_count,
-      'reused',true
-    );
-  end if;
-
-  select *
-    into v_existing
-  from teevee.epg_refresh_runs
-  where status in ('queued','running')
-  order by created_at
   limit 1;
 
   if found then
@@ -430,7 +434,7 @@ begin
   if not found then
     return jsonb_build_object('status','stale-attempt','jobId',p_job_id);
   end if;
-  if v_job.status in ('succeeded','failed') then
+  if v_job.status in ('succeeded','incomplete','failed') then
     return jsonb_build_object('status','terminal','jobId',p_job_id);
   end if;
   if v_job.attempt_token is distinct from p_attempt_token then
@@ -448,7 +452,7 @@ begin
   update teevee.epg_refresh_jobs
     set status = 'running',
         started_at = coalesce(started_at, pg_catalog.now()),
-        lease_expires_at = pg_catalog.now() + interval '3 minutes'
+        lease_expires_at = pg_catalog.now() + interval '8 minutes'
   where id = p_job_id;
 
   select observed_at
@@ -475,7 +479,7 @@ $$;
 create or replace function teevee.complete_epg_refresh_job(
   p_job_id bigint,
   p_attempt_token uuid,
-  p_success boolean,
+  p_result text,
   p_outcome jsonb,
   p_error text
 ) returns jsonb
@@ -502,7 +506,7 @@ begin
     raise exception 'Stale EPG refresh job attempt';
   end if;
 
-  if v_job.status in ('succeeded','failed') then
+  if v_job.status in ('succeeded','incomplete','failed') then
     select status into v_run_status from teevee.epg_refresh_runs where id = v_job.run_id;
     return jsonb_build_object(
       'jobId',v_job.id,
@@ -514,13 +518,28 @@ begin
   if v_job.status <> 'running' then
     raise exception 'EPG refresh job is not running';
   end if;
+  if p_result not in ('succeeded','incomplete','failed') then
+    raise exception 'EPG refresh job result is invalid';
+  end if;
 
-  if p_success then
+  if p_result = 'succeeded' then
     update teevee.epg_refresh_jobs
       set status = 'succeeded',
           lease_expires_at = null,
           finished_at = pg_catalog.now(),
           last_error = null,
+          outcome = p_outcome
+    where id = p_job_id
+    returning status into v_job_status;
+  elsif p_result = 'incomplete' then
+    update teevee.epg_refresh_jobs
+      set status = 'incomplete',
+          lease_expires_at = null,
+          finished_at = pg_catalog.now(),
+          last_error = left(
+            coalesce(nullif(btrim(p_error),''),'work-item incomplete authority'),
+            1000
+          ),
           outcome = p_outcome
     where id = p_job_id
     returning status into v_job_status;
@@ -597,7 +616,7 @@ $$;
 create or replace function public.teevee_complete_epg_refresh_job(
   p_job_id bigint,
   p_attempt_token uuid,
-  p_success boolean,
+  p_result text,
   p_outcome jsonb,
   p_error text
 ) returns jsonb
@@ -606,7 +625,7 @@ security invoker
 set search_path = ''
 as $$
   select teevee.complete_epg_refresh_job(
-    p_job_id, p_attempt_token, p_success, p_outcome, p_error
+    p_job_id, p_attempt_token, p_result, p_outcome, p_error
   );
 $$;
 
@@ -618,7 +637,7 @@ revoke execute on function teevee.start_epg_refresh_run(text,timestamptz,timesta
   from public, anon, authenticated;
 revoke execute on function teevee.claim_epg_refresh_job(bigint,uuid)
   from public, anon, authenticated;
-revoke execute on function teevee.complete_epg_refresh_job(bigint,uuid,boolean,jsonb,text)
+revoke execute on function teevee.complete_epg_refresh_job(bigint,uuid,text,jsonb,text)
   from public, anon, authenticated;
 revoke execute on function teevee.pump_epg_refresh_jobs()
   from public, anon, authenticated;
@@ -626,7 +645,7 @@ revoke execute on function public.teevee_start_epg_refresh_run(text,timestamptz,
   from public, anon, authenticated;
 revoke execute on function public.teevee_claim_epg_refresh_job(bigint,uuid)
   from public, anon, authenticated;
-revoke execute on function public.teevee_complete_epg_refresh_job(bigint,uuid,boolean,jsonb,text)
+revoke execute on function public.teevee_complete_epg_refresh_job(bigint,uuid,text,jsonb,text)
   from public, anon, authenticated;
 
 grant execute on function teevee.recompute_epg_refresh_run(bigint) to service_role;
@@ -634,14 +653,14 @@ grant execute on function teevee.dispatch_next_epg_refresh_job() to service_role
 grant execute on function teevee.start_epg_refresh_run(text,timestamptz,timestamptz,jsonb)
   to service_role;
 grant execute on function teevee.claim_epg_refresh_job(bigint,uuid) to service_role;
-grant execute on function teevee.complete_epg_refresh_job(bigint,uuid,boolean,jsonb,text)
+grant execute on function teevee.complete_epg_refresh_job(bigint,uuid,text,jsonb,text)
   to service_role;
 grant execute on function teevee.pump_epg_refresh_jobs() to service_role;
 grant execute on function public.teevee_start_epg_refresh_run(text,timestamptz,timestamptz,jsonb)
   to service_role;
 grant execute on function public.teevee_claim_epg_refresh_job(bigint,uuid)
   to service_role;
-grant execute on function public.teevee_complete_epg_refresh_job(bigint,uuid,boolean,jsonb,text)
+grant execute on function public.teevee_complete_epg_refresh_job(bigint,uuid,text,jsonb,text)
   to service_role;
 
 -- The existing six-hour teevee-development-epg-refresh job remains unchanged.
