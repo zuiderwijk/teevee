@@ -96,6 +96,21 @@ describe('bounded EPG refresh orchestration migration', () => {
     expect(migration).toContain("v_external_content_status := 'skipped'");
   });
 
+  it('retains staged evidence across retryable enrichment failures and clears it only terminally', () => {
+    expect(migration).toContain(
+      "p_result is null or p_result not in ('succeeded','retryable-failure')",
+    );
+    expect(migration).toContain("if p_result = 'succeeded' then");
+    expect(migration).toContain("external_content_status = 'queued'");
+    expect(migration).toContain(
+      '-- Keep staged provider evidence for the next bounded attempt.',
+    );
+    expect(migration).toContain(
+      '-- Retry budget is exhausted: no later worker may consume stale staging.',
+    );
+    expect(migration).toContain('external_content_observation = null');
+  });
+
   it('accepts the approved 49-channel worst-case durable run envelope', () => {
     expect(migration).toContain('jsonb_array_length(p_jobs) > 1024');
     expect(migration).toContain('jobs must contain 1..1024 work items');
