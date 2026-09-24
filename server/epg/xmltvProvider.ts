@@ -304,7 +304,7 @@ function findNextBlockStart(lowerSource: string, fromIndex: number): BlockStart 
     }
 
     for (const tag of ['channel', 'programme'] as const) {
-      const prefix = \`<\${tag}\`;
+      const prefix = `<${tag}`;
       if (!lowerSource.startsWith(prefix, index)) continue;
       const boundary = lowerSource[index + prefix.length];
       if (boundary === undefined) return { kind: 'incomplete', index };
@@ -330,7 +330,7 @@ function findBlockEnd(
   const openingEnd = source.indexOf('>', startIndex);
   if (openingEnd < 0) return null;
 
-  const closingPrefix = \`</\${tag}\`;
+  const closingPrefix = `</${tag}`;
   let cursor = openingEnd + 1;
 
   while (cursor < source.length) {
@@ -599,7 +599,7 @@ export class XmltvEpgProvider implements EpgProvider {
       headers: { Accept: 'application/xml,text/xml;q=0.9,*/*;q=0.1' },
     });
     if (!response.ok) {
-      throw new Error(\`XMLTV provider request failed with HTTP \${response.status}\`);
+      throw new Error(`XMLTV provider request failed with HTTP ${response.status}`);
     }
     if (!response.body) {
       throw new Error('XMLTV provider response body is unavailable');
