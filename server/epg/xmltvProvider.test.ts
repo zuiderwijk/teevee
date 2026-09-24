@@ -343,13 +343,13 @@ describe('parseXmltvScheduleStream', () => {
   });
 
   it('keeps CDATA closing-tag text opaque to the top-level scanner', async () => {
-    const source = String.raw\`<tv>
+    const source = String.raw`<tv>
       <channel id="one"><display-name>One</display-name></channel>
       <programme start="20260914180000 +0200" stop="20260914190000 +0200" channel="one">
         <title>CDATA test</title>
         <desc><![CDATA[Literal </programme> text &amp; more]]></desc>
       </programme>
-    </tv>\`;
+    </tv>`;
     const result = await parseXmltvScheduleStream(streamFromChunks(tinyChunks(source, 5)), [
       {
         from: new Date('2026-09-14T16:00:00Z'),
@@ -367,7 +367,7 @@ describe('parseXmltvScheduleStream', () => {
   });
 
   it('preserves production date, complete categories, credits, episode numbers and live/repeat tri-state', async () => {
-    const source = String.raw\`<tv>
+    const source = String.raw`<tv>
       <channel id="film"><display-name>Film</display-name></channel>
       <programme start="20260914200000 +0200" stop="20260914220000 +0200" channel="film">
         <title>Billy &amp; Elliot</title>
@@ -386,7 +386,7 @@ describe('parseXmltvScheduleStream', () => {
         <live />
         <previously-shown />
       </programme>
-    </tv>\`;
+    </tv>`;
     const streamed = await parseXmltvScheduleStream(streamFromChunks(tinyChunks(source, 7)), [
       {
         from: new Date('2026-09-14T18:00:00Z'),
@@ -413,12 +413,12 @@ describe('parseXmltvScheduleStream', () => {
   });
 
   it('requires explicit timezone offsets and does not retain malformed-timestamp programmes in a bounded schedule', async () => {
-    const source = String.raw\`<tv>
+    const source = String.raw`<tv>
       <channel id="one"><display-name>One</display-name></channel>
       <programme start="20260914180000" stop="20260914190000 +0200" channel="one">
         <title>Ambiguous start</title>
       </programme>
-    </tv>\`;
+    </tv>`;
     const result = await parseXmltvScheduleStream(streamFromChunks(tinyChunks(source, 4)), [
       {
         from: new Date('2026-09-14T16:00:00Z'),
@@ -433,13 +433,13 @@ describe('parseXmltvScheduleStream', () => {
   });
 
   it('retains a programme that overlaps the requested window by one side and excludes touching non-overlaps', async () => {
-    const source = String.raw\`<tv>
+    const source = String.raw`<tv>
       <channel id="one"><display-name>One</display-name></channel>
       <programme start="20260914150000 +0000" stop="20260914160000 +0000" channel="one"><title>Ends at from</title></programme>
       <programme start="20260914153000 +0000" stop="20260914163000 +0000" channel="one"><title>Overlaps from</title></programme>
       <programme start="20260914163000 +0000" stop="20260914173000 +0000" channel="one"><title>Overlaps to</title></programme>
       <programme start="20260914170000 +0000" stop="20260914180000 +0000" channel="one"><title>Starts at to</title></programme>
-    </tv>\`;
+    </tv>`;
     const result = await parseXmltvScheduleStream(streamFromChunks(tinyChunks(source, 11)), [
       {
         from: new Date('2026-09-14T16:00:00Z'),
@@ -456,7 +456,7 @@ describe('parseXmltvScheduleStream', () => {
   });
 
   it('preserves complete, gap, no-programme and multi-channel coverage semantics independently', async () => {
-    const source = String.raw\`<tv>
+    const source = String.raw`<tv>
       <channel id="one"><display-name>One</display-name></channel>
       <channel id="two"><display-name>Two</display-name></channel>
       <channel id="empty"><display-name>Empty</display-name></channel>
@@ -464,7 +464,7 @@ describe('parseXmltvScheduleStream', () => {
       <programme start="20260914170000 +0000" stop="20260914180000 +0000" channel="one"><title>One B</title></programme>
       <programme start="20260914160000 +0000" stop="20260914164500 +0000" channel="two"><title>Two A</title></programme>
       <programme start="20260914170000 +0000" stop="20260914180000 +0000" channel="two"><title>Two B</title></programme>
-    </tv>\`;
+    </tv>`;
     const from = new Date('2026-09-14T16:00:00Z');
     const to = new Date('2026-09-14T18:00:00Z');
     const result = await parseXmltvScheduleStream(streamFromChunks(tinyChunks(source, 13)), [
