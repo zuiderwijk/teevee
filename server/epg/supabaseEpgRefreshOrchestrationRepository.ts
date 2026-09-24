@@ -1,3 +1,4 @@
+import type { StoredProviderScheduleObservation } from './ingest.ts';
 import type { EpgRefreshWorkItemPlan } from './refreshTopology.ts';
 import type { ScheduleRpcClient } from './supabaseScheduleRepository.ts';
 
@@ -41,6 +42,37 @@ function stringArray(value: unknown, label: string): string[] {
   return value.map((item, index) => requiredText(item, `${label}[${index}]`));
 }
 
+function storedObservation(value: unknown): StoredProviderScheduleObservation {
+  const payload = record(value, 'externalContentObservation');
+  const programmes = payload.programmes;
+  if (!Array.isArray(programmes) || programmes.length === 0) {
+    throw new Error('externalContentObservation programmes must be a non-empty array');
+  }
+  for (const [index, item] of programmes.entries()) {
+    const observation = record(item, `externalContentObservation.programmes[${index}]`);
+    record(observation.programme, `externalContentObservation.programmes[${index}].programme`);
+    record(
+      observation.classification,
+      `externalContentObservation.programmes[${index}].classification`,
+    );
+    record(
+      observation.externalProgramme,
+      `externalContentObservation.programmes[${index}].externalProgramme`,
+    );
+  }
+
+  return {
+    from: timestamp(payload.from, 'externalContentObservation.from'),
+    to: timestamp(payload.to, 'externalContentObservation.to'),
+    observedAt: timestamp(payload.observedAt, 'externalContentObservation.observedAt'),
+    channelIds: stringArray(
+      payload.channelIds,
+      'externalContentObservation.channelIds',
+    ),
+    programmes: programmes as StoredProviderScheduleObservation['programmes'],
+  };
+}
+
 export type EpgRefreshRunLifecycle = 'queued' | 'running' | 'completed' | 'incomplete' | 'failed';
 
 export type StartEpgRefreshRunResult = {
@@ -70,6 +102,28 @@ export type EpgRefreshWorkItemClaimResult =
       status: 'duplicate' | 'stale-attempt' | 'terminal';
       jobId: number;
     };
+
+export type ClaimedEpgRefreshExternalContentWorkItem = {
+  status: 'claimed';
+  runId: number;
+  jobId: number;
+  attempt: number;
+  externalContentObservation: StoredProviderScheduleObservation;
+};
+
+export type EpgRefreshExternalContentClaimResult =
+  | ClaimedEpgRefreshExternalContentWorkItem
+  | {
+      status: 'duplicate' | 'stale-attempt' | 'terminal';
+      jobId: number;
+    };
+
+export type CompleteEpgRefreshExternalContentResult = {
+  jobId: number;
+  externalContentStatus: 'queued' | 'completed' | 'failed';
+  runId: number;
+  runStatus: EpgRefreshRunLifecycle;
+};
 
 export type CompleteEpgRefreshWorkItemResult = {
   jobId: number;
@@ -131,6 +185,49 @@ function parseClaimResult(value: unknown): EpgRefreshWorkItemClaimResult {
   };
 }
 
+function parseExternalContentClaimResult(
+  value: unknown,
+): EpgRefreshExternalContentClaimResult {
+  const payload = record(value, 'Supabase claim_epg_refresh_external_content_job');
+  const status = payload.status;
+  const jobId = positiveInteger(payload.jobId, 'jobId');
+
+  if (status === 'duplicate' || status === 'stale-attempt' || status === 'terminal') {
+    return { status, jobId };
+  }
+  if (status !== 'claimed') {
+    throw new Error('Supabase claim_epg_refresh_external_content_job status is invalid');
+  }
+
+  return {
+    status: 'claimed',
+    runId: positiveInteger(payload.runId, 'runId'),
+    jobId,
+    attempt: positiveInteger(payload.attempt, 'attempt'),
+    externalContentObservation: storedObservation(payload.externalContentObservation),
+  };
+}
+
+function parseExternalContentCompleteResult(
+  value: unknown,
+): CompleteEpgRefreshExternalContentResult {
+  const payload = record(value, 'Supabase complete_epg_refresh_external_content_job');
+  const externalContentStatus = payload.externalContentStatus;
+  if (
+    externalContentStatus !== 'queued' &&
+    externalContentStatus !== 'completed' &&
+    externalContentStatus !== 'failed'
+  ) {
+    throw new Error('externalContentStatus is invalid');
+  }
+  return {
+    jobId: positiveInteger(payload.jobId, 'jobId'),
+    externalContentStatus,
+    runId: positiveInteger(payload.runId, 'runId'),
+    runStatus: parseRunLifecycle(payload.runStatus, 'runStatus'),
+  };
+}
+
 function parseCompleteResult(value: unknown): CompleteEpgRefreshWorkItemResult {
   const payload = record(value, 'Supabase complete_epg_refresh_job');
   const jobStatus = payload.jobStatus;
@@ -188,6 +285,7 @@ export class SupabaseEpgRefreshOrchestrationRepository {
     result: 'succeeded' | 'incomplete' | 'failed';
     outcome?: Record<string, unknown>;
     error?: string;
+    externalContentObservation?: StoredProviderScheduleObservation;
   }): Promise<CompleteEpgRefreshWorkItemResult> {
     const response = await this.client.rpc<unknown>('teevee_complete_epg_refresh_job', {
       p_job_id: positiveInteger(input.jobId, 'jobId'),
@@ -195,8 +293,49 @@ export class SupabaseEpgRefreshOrchestrationRepository {
       p_result: input.result,
       p_outcome: input.outcome ?? null,
       p_error: input.error?.trim() || null,
+      p_external_content_observation: input.externalContentObservation ?? null,
     });
     if (response.error) throw rpcError('complete_epg_refresh_job', response.error);
     return parseCompleteResult(response.data);
+  }
+
+  async claimExternalContentJob(input: {
+    jobId: number;
+    attemptToken: string;
+  }): Promise<EpgRefreshExternalContentClaimResult> {
+    const response = await this.client.rpc<unknown>(
+      'teevee_claim_epg_refresh_external_content_job',
+      {
+        p_job_id: positiveInteger(input.jobId, 'jobId'),
+        p_attempt_token: requiredText(input.attemptToken, 'attemptToken'),
+      },
+    );
+    if (response.error) {
+      throw rpcError('claim_epg_refresh_external_content_job', response.error);
+    }
+    return parseExternalContentClaimResult(response.data);
+  }
+
+  async completeExternalContentJob(input: {
+    jobId: number;
+    attemptToken: string;
+    success: boolean;
+    outcome?: Record<string, unknown>;
+    error?: string;
+  }): Promise<CompleteEpgRefreshExternalContentResult> {
+    const response = await this.client.rpc<unknown>(
+      'teevee_complete_epg_refresh_external_content_job',
+      {
+        p_job_id: positiveInteger(input.jobId, 'jobId'),
+        p_attempt_token: requiredText(input.attemptToken, 'attemptToken'),
+        p_success: input.success,
+        p_outcome: input.outcome ?? null,
+        p_error: input.error?.trim() || null,
+      },
+    );
+    if (response.error) {
+      throw rpcError('complete_epg_refresh_external_content_job', response.error);
+    }
+    return parseExternalContentCompleteResult(response.data);
   }
 }
