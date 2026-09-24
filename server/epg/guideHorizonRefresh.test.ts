@@ -145,6 +145,7 @@ describe('refreshGuideHorizon', () => {
     expect(getSchedules).toHaveBeenCalledTimes(1);
     expect(getSchedules.mock.calls[0]?.[0]).toHaveLength(12);
     expect(getSchedule).not.toHaveBeenCalled();
+    expect(provider.getChannels).not.toHaveBeenCalled();
     expect(results).toHaveLength(12);
     expect(results.every(({ result }) => result.write.status === 'stored')).toBe(true);
   });
