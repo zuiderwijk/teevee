@@ -18,6 +18,7 @@ import {
   channelPersonalisationEqual,
   hiddenChannelIdsForPreference,
   moveSelectedChannel,
+  moveSelectedChannelToIndex,
   reconcileChannelPersonalisation,
   setChannelVisibility,
   visibleChannelIdsForPreference,
@@ -46,6 +47,7 @@ export type ChannelPersonalisationContextValue = {
   setChannelVisible: (channelId: string, visible: boolean) => void;
   addChannel: (channel: Channel) => void;
   moveChannel: (channelId: string, delta: -1 | 1) => void;
+  moveChannelToIndex: (channelId: string, toIndex: number) => void;
   observeCanonicalCatalog: (channels: readonly Channel[]) => void;
 };
 
@@ -64,6 +66,7 @@ const DEFAULT_CONTEXT: ChannelPersonalisationContextValue = {
   setChannelVisible: noop,
   addChannel: noop,
   moveChannel: noop,
+  moveChannelToIndex: noop,
   observeCanonicalCatalog: noop,
 };
 
@@ -249,6 +252,26 @@ export function ChannelPersonalisationProvider({
     [commit],
   );
 
+  const moveChannelToIndex = useCallback(
+    (channelId: string, toIndex: number) => {
+      const current = stateRef.current;
+      const preference = moveSelectedChannelToIndex(
+        current.catalog,
+        current.preference,
+        channelId,
+        toIndex,
+      );
+      if (channelPersonalisationEqual(preference, current.preference)) return;
+      persistPreference(preference);
+      commit({
+        ...current,
+        preference,
+        needsInitialPersistence: false,
+      });
+    },
+    [commit],
+  );
+
   const selectedChannelIds = useMemo(
     () => visibleChannelIdsForPreference(state.catalog, state.preference),
     [state.catalog, state.preference],
@@ -278,12 +301,14 @@ export function ChannelPersonalisationProvider({
       setChannelVisible,
       addChannel,
       moveChannel,
+      moveChannelToIndex,
       observeCanonicalCatalog,
     }),
     [
       addChannel,
       hiddenChannelIds,
       moveChannel,
+      moveChannelToIndex,
       observeCanonicalCatalog,
       selectedChannelIds,
       selectedSet,
