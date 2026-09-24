@@ -132,6 +132,15 @@ function validateRefreshSources(sources: readonly EpgRefreshSourceConfig[]): voi
       }
       providerChannelOwners.set(providerChannelId, sourceKey);
     }
+
+    if (sourceMappedCanonicalIds.size !== canonicalIds.size) {
+      const missingCanonicalIds = [...canonicalIds].filter(
+        (channelId) => !sourceMappedCanonicalIds.has(channelId),
+      );
+      throw new Error(
+        `Source ${sourceKey} is missing provider mappings for canonical channels: ${missingCanonicalIds.join(', ')}`,
+      );
+    }
   }
 }
 
