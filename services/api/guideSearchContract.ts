@@ -4,7 +4,10 @@ import type {
   GuideSearchProgrammeCoverage,
   GuideSearchProgrammeMatch,
 } from '../../data/domain/search.ts';
-import { normalizeGuideSearchText } from '../../data/domain/search.ts';
+import {
+  canonicalGuideSearchQuery,
+  normalizeGuideSearchText,
+} from '../../data/domain/search.ts';
 import { parseProgrammeEditorialSignals } from './editorialSignalContract.ts';
 import {
   parseGuideChannel,
@@ -56,7 +59,7 @@ export function parseGuideSearchApiRequest(value: unknown): GuideSearchApiReques
     throw new Error('Search request query must be a string');
   }
 
-  const query = input.query.trim();
+  const query = canonicalGuideSearchQuery(input.query);
   const normalized = normalizeGuideSearchText(query);
   if (normalized.length < GUIDE_SEARCH_MIN_QUERY_LENGTH) {
     throw new Error(
