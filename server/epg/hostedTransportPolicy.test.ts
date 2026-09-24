@@ -178,16 +178,17 @@ describe('parseHostedRefreshRequest', () => {
   });
 
   it('deduplicates safe provider subsets and rejects unknown provider ids', () => {
-    expect(
-      parseHostedRefreshRequest(
-        {
-          from: '2026-09-14T00:00:00Z',
-          to: '2026-09-14T06:00:00Z',
-          providerChannelIds: [' RTL4.nl ', 'RTL4.nl'],
-        },
-        providerIds,
-      ).providerChannelIds,
-    ).toEqual(['RTL4.nl']);
+    const parsed = parseHostedRefreshRequest(
+      {
+        from: '2026-09-14T00:00:00Z',
+        to: '2026-09-14T06:00:00Z',
+        providerChannelIds: [' RTL4.nl ', 'RTL4.nl'],
+      },
+      providerIds,
+    );
+    expect(parsed.mode).toBe('window');
+    if (parsed.mode !== 'window') throw new Error('Expected window refresh request');
+    expect(parsed.providerChannelIds).toEqual(['RTL4.nl']);
 
     expect(() =>
       parseHostedRefreshRequest(
