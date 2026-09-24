@@ -258,6 +258,22 @@ describe('XmltvEpgProvider', () => {
     expect(fetcher).toHaveBeenCalledTimes(1);
   });
 
+  it('preserves all-channel query semantics when channelIds are omitted', async () => {
+    const provider = new XmltvEpgProvider({ fetcher: vi.fn(async () => response()) });
+    const result = await provider.getSchedule({
+      from: new Date('2026-09-14T16:00:00.000Z'),
+      to: new Date('2026-09-14T18:00:00.000Z'),
+    });
+
+    expect(result.coverage).toBe('partial');
+    expect(result.programmes.map(({ title }) => title)).toEqual([
+      'Nieuws & Actualiteiten',
+      'Programma twee',
+      'RTL vroeg',
+      'RTL laat',
+    ]);
+  });
+
   it('returns only programmes intersecting the explicit [from,to) query', async () => {
     const provider = new XmltvEpgProvider({ fetcher: vi.fn(async () => response()) });
     const result = await provider.getSchedule({
