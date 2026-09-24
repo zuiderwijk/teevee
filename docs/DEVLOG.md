@@ -1,5 +1,14 @@
 # Teevee Development Logboek
 
+## 24 september 2026 — Issue #170 Mijn zenders + Search bridge
+
+Issue #170 establishes channel personalisation before the separate 49-channel production expansion. Teevee now stores one local, versioned Mijn-zenders preference with both previously known canonical IDs and visible selected IDs in user order. That distinction lets catalogue growth append genuinely new channels while preserving deliberate hidden choices. The existing app-preferences infrastructure remains the only persistence owner; there is no account/cloud profile, server preference table, schedule cache or new state-management dependency.
+
+All three Guide presentations consume one shared canonical-ID projection. Totaal, Per zender and Nu & Straks therefore share selection/order without mutating canonical schedule data. Synthetic fixture IDs remain outside preference history. Per zender can hold one hidden channel as transient Search context; opening such a result never persists it.
+
+Search remains full-catalog. PR #173 adds finite channel-management intents, safe provider-independent channel aliases at the shared Search boundary, hidden-channel indication and an explicit add action. The new Mijn-zenders screen provides show/hide plus deterministic up/down ordering with existing theme/accessibility primitives. The exact 49-channel activation, provider mapping expansion, issue #167 orchestration/cron acceptance and TMDB paths are unchanged.
+
+Architecture/contract: `docs/CHANNEL_PERSONALISATION.md` and ADR 0013.
 
 ## 24 september 2026 — Issue #167 residual full-horizon CPU ownership -> durable bounded orchestration
 
