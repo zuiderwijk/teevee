@@ -97,6 +97,7 @@ export type ClaimedEpgRefreshWorkItem = {
   to: string;
   channelGroupKey: string;
   providerChannelIds: string[];
+  canonicalChannelIds: string[];
 };
 
 export type EpgRefreshWorkItemClaimResult =
@@ -185,6 +186,7 @@ function parseClaimResult(value: unknown): EpgRefreshWorkItemClaimResult {
     to: timestamp(payload.to, 'to'),
     channelGroupKey: requiredText(payload.channelGroupKey, 'channelGroupKey'),
     providerChannelIds: stringArray(payload.providerChannelIds, 'providerChannelIds'),
+    canonicalChannelIds: stringArray(payload.canonicalChannelIds, 'canonicalChannelIds'),
   };
 }
 
@@ -291,7 +293,7 @@ export class SupabaseEpgRefreshOrchestrationRepository {
   async completeJob(input: {
     jobId: number;
     attemptToken: string;
-    result: 'succeeded' | 'incomplete' | 'failed';
+    result: 'succeeded' | 'verify-stale-authority' | 'incomplete' | 'failed';
     outcome?: Record<string, unknown>;
     error?: string;
     externalContentObservation?: StoredProviderScheduleObservation;
