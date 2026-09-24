@@ -11,6 +11,7 @@ import {
   parseHostedRefreshRequest,
 } from '../../../server/epg/hostedTransportPolicy.ts';
 import { ingestProviderSchedule } from '../../../server/epg/ingest.ts';
+import { classifyEpgRefreshWorkItemAuthority } from '../../../server/epg/refreshAuthority.ts';
 import { SupabaseEpgRefreshOrchestrationRepository } from '../../../server/epg/supabaseEpgRefreshOrchestrationRepository.ts';
 import { SupabaseRestRpcClient } from '../../../server/epg/supabaseRestRpcClient.ts';
 import { SupabaseScheduleRepository } from '../../../server/epg/supabaseScheduleRepository.ts';
@@ -147,8 +148,9 @@ function diagnosticCounts(result) {
   );
 }
 
-function workItemOutcome(claim, result, externalContent, elapsedMs) {
+function workItemOutcome(claim, result, authority, externalContent, elapsedMs) {
   return {
+    authority,
     sourceKey: claim.sourceKey,
     dayOffset: claim.dayOffset,
     from: claim.from,
@@ -183,6 +185,10 @@ async function executeClaimedWorkItem({ claim, secretKey, ownerSignal, startedAt
     to: new Date(claim.to),
     clock: () => new Date(claim.observedAt),
   });
+  const authority = classifyEpgRefreshWorkItemAuthority({
+    expectedCanonicalChannelIds: scope.canonicalChannels.map(({ id }) => id),
+    write: result.write,
+  });
   const externalContent = await enrichExternalContent(
     result.storedObservation ? [result.storedObservation] : [],
     secretKey,
@@ -191,9 +197,10 @@ async function executeClaimedWorkItem({ claim, secretKey, ownerSignal, startedAt
   const elapsedMs = Math.round(performance.now() - startedAt);
   return {
     result,
+    authority,
     externalContent,
     elapsedMs,
-    outcome: workItemOutcome(claim, result, externalContent, elapsedMs),
+    outcome: workItemOutcome(claim, result, authority, externalContent, elapsedMs),
   };
 }
 
@@ -296,11 +303,17 @@ export default {
         const completion = await orchestration.completeJob({
           jobId: claim.jobId,
           attemptToken: request.attemptToken,
-          success: true,
+          result:
+            execution.authority.status === 'authoritative'
+              ? 'succeeded'
+              : 'incomplete',
           outcome: execution.outcome,
         });
         return Response.json({
-          status: 'completed',
+          status:
+            execution.authority.status === 'authoritative'
+              ? 'completed'
+              : 'incomplete',
           mode: request.mode,
           runId: claim.runId,
           jobId: claim.jobId,
@@ -311,6 +324,7 @@ export default {
           to: claim.to,
           channelGroupKey: claim.channelGroupKey,
           providerChannelIds: claim.providerChannelIds,
+          authority: execution.authority,
           write: execution.result.write,
           programmeCount: execution.result.schedule.programmes.length,
           diagnosticCounts: diagnosticCounts(execution.result),
@@ -325,7 +339,7 @@ export default {
           await orchestration.completeJob({
             jobId: claim.jobId,
             attemptToken: request.attemptToken,
-            success: false,
+            result: 'failed',
             outcome: {
               sourceKey: claim.sourceKey,
               dayOffset: claim.dayOffset,
