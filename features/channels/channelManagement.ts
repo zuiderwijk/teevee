@@ -68,7 +68,8 @@ export type ChannelManagementAccessibilityAction = {
 
 export type ChannelManagementFocusOutcome =
   | { type: 'channel'; channelId: string }
-  | { type: 'visible-heading' };
+  | { type: 'visible-heading' }
+  | { type: 'hidden-heading' };
 
 export type ChannelManagementMotionProfile = {
   pickedScale: number;
@@ -311,12 +312,12 @@ export function channelManagementFocusAfterShow(
   shownChannelId: string,
 ): ChannelManagementFocusOutcome {
   const index = hiddenChannelIds.indexOf(shownChannelId);
-  if (index < 0) return { type: 'visible-heading' };
+  if (index < 0) return { type: 'hidden-heading' };
 
   const next = hiddenChannelIds[index + 1] ?? hiddenChannelIds[index - 1];
   return next
     ? { type: 'channel', channelId: next }
-    : { type: 'visible-heading' };
+    : { type: 'hidden-heading' };
 }
 
 export function channelManagementMotionProfile(
