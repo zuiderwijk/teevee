@@ -163,14 +163,17 @@ describe('EPG refresh topology', () => {
     expect(() => hostedRefreshProviderChannelIds([nl, duplicateProvider]))
       .toThrow('Provider channel nl-1 is owned by multiple refresh sources');
 
-    const overlappingCanonical = source('be', ['be-1'], 1);
-    overlappingCanonical.canonicalChannels[0] = {
-      ...overlappingCanonical.canonicalChannels[0]!,
-      id: nl.canonicalChannels[0]!.id,
-    };
-    overlappingCanonical.channelMappings[0] = {
-      providerChannelId: 'be-1',
-      channelId: nl.canonicalChannels[0]!.id,
+    const be = source('be', ['be-1'], 1);
+    const overlappingCanonical: EpgRefreshSourceConfig = {
+      ...be,
+      canonicalChannels: [{
+        ...be.canonicalChannels[0]!,
+        id: nl.canonicalChannels[0]!.id,
+      }],
+      channelMappings: [{
+        providerChannelId: 'be-1',
+        channelId: nl.canonicalChannels[0]!.id,
+      }],
     };
     expect(() => hostedRefreshProviderChannelIds([nl, overlappingCanonical]))
       .toThrow('is owned by multiple refresh sources');
