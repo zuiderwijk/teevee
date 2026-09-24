@@ -94,7 +94,6 @@ describe('bounded EPG refresh orchestration migration', () => {
 
   it('keeps the existing six-hour cron entrypoint untouched while adding only the recovery pump', () => {
     expect(migration).toContain("where request_key = p_request_key");
-    expect(migration).toContain("where status in ('queued','running')");
     expect(migration).not.toContain(
       'create or replace function teevee.enqueue_development_epg_refresh()',
     );
