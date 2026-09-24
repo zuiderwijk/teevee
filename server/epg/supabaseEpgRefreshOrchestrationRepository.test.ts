@@ -242,7 +242,7 @@ describe('SupabaseEpgRefreshOrchestrationRepository', () => {
     await expect(repository.completeExternalContentJob({
       jobId: 7,
       attemptToken: 'attempt-token',
-      success: true,
+      result: 'succeeded',
       outcome: { externalContent: { status: 'completed' } },
     })).resolves.toEqual({
       jobId: 7,
@@ -260,9 +260,56 @@ describe('SupabaseEpgRefreshOrchestrationRepository', () => {
       args: {
         p_job_id: 7,
         p_attempt_token: 'attempt-token',
-        p_success: true,
+        p_result: 'succeeded',
         p_outcome: { externalContent: { status: 'completed' } },
         p_error: null,
+      },
+    });
+  });
+
+  it('queues retryable deferred external-content failures through the typed RPC boundary', async () => {
+    const client = new FakeRpcClient([{
+      data: {
+        jobId: 7,
+        externalContentStatus: 'queued',
+        runId: 41,
+        runStatus: 'completed',
+      },
+      error: null,
+    }]);
+    const repository = new SupabaseEpgRefreshOrchestrationRepository(client);
+
+    await expect(repository.completeExternalContentJob({
+      jobId: 7,
+      attemptToken: 'attempt-token',
+      result: 'retryable-failure',
+      outcome: {
+        externalContent: {
+          status: 'unavailable',
+          reason: 'tmdb-secret-unavailable',
+        },
+      },
+      error: 'tmdb-secret-unavailable',
+    })).resolves.toEqual({
+      jobId: 7,
+      externalContentStatus: 'queued',
+      runId: 41,
+      runStatus: 'completed',
+    });
+
+    expect(client.calls[0]).toEqual({
+      functionName: 'teevee_complete_epg_refresh_external_content_job',
+      args: {
+        p_job_id: 7,
+        p_attempt_token: 'attempt-token',
+        p_result: 'retryable-failure',
+        p_outcome: {
+          externalContent: {
+            status: 'unavailable',
+            reason: 'tmdb-secret-unavailable',
+          },
+        },
+        p_error: 'tmdb-secret-unavailable',
       },
     });
   });
