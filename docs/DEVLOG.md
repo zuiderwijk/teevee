@@ -27,10 +27,11 @@ Production was inspected read-only through the connected Supabase project during
 
 No production migration, cron change or Edge deployment is performed during Development. The orchestration migration is deployment-decoupled: applying it before the Edge deploy does not change the existing six-hour v12 enqueue function; it only creates private run/job state, protected RPCs and an idle recovery pump. The new Edge derives a stable six-hour idempotency key for authenticated cron-origin guide-horizon calls.
 
----
 Production closeout followed merge of PR #172 as `f66c3967d81a76113e8c29a0e9e6ffb58bae105d` and exact-main CI #1375 / run `36023646968` SUCCESS. Hosted migration history was reconciled to canonical `20260924001500_create_programme_external_content_reference` and `20260924095903_create_epg_refresh_orchestration` timestamps without replaying migration SQL, then the exact merged orchestration runtime was deployed as `epg-refresh` v13. A protected manual horizon run proved 12 durable bounded Guide children, no HTTP 546/resource kill, exact fail-closed provider authority, Guide-before-TMDB ordering, clean staging and zero dangling references.
 
 The final independent acceptance gate passed on the first normal six-hour cron at **2026-09-24 18:17 UTC** (pg_cron run 208). Durable run 2 completed Guide at 18:17:33Z and deferred external content at 18:17:47Z: **5 Guide jobs succeeded, 7 were correctly terminal `incomplete` for the known temporary-provider partial horizon, 0 failed**. The v13 execution recorded **0 HTTP 546 responses, 0 CPUTime shutdowns, max worker CPU 1282 ms and max memory ~14.8 MiB**; 5/5 applicable external-content jobs completed, staging remaining was 0, hosted references were 160 with 0 dangling. Issue #167 was closed as completed. The D-2..D+7 production guarantee remains a separate provider-selection/rights/SLA gate; no orchestration work remains open.
+
+---
 
 ## 24 september 2026 — Issue #167 bounded streaming XMLTV ingest
 
