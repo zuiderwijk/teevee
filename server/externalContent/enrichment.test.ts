@@ -6,7 +6,10 @@ import { InMemoryScheduleRepository } from '../epg/inMemoryScheduleRepository.ts
 import { ingestProviderSchedule, type StoredProviderScheduleObservation } from '../epg/ingest.ts';
 import type { NormalisedProgrammeObservation } from '../epg/normalise.ts';
 import type { EpgProvider } from '../epg/provider.ts';
-import { enrichStoredExternalContent } from './enrichment.ts';
+import {
+  enrichStoredExternalContent,
+  selectExternalContentEnrichmentObservation,
+} from './enrichment.ts';
 import {
   TmdbApiClient,
   TmdbRequestError,
@@ -141,6 +144,59 @@ function captureRepository() {
   };
   return { repository, writes };
 }
+
+describe('external content enrichment staging', () => {
+  it('keeps only current eligible Film/Series observations for deferred enrichment', () => {
+    const eligibleFilm = filmObservation(
+      'programme-film',
+      '2026-09-24T18:00:00.000Z',
+      '2026-09-24T20:00:00.000Z',
+    );
+    const endedFilm = filmObservation(
+      'programme-ended',
+      '2026-09-24T08:00:00.000Z',
+      '2026-09-24T09:00:00.000Z',
+    );
+    const ineligible = seriesObservation(
+      'programme-ineligible',
+      '2026-09-24T19:00:00.000Z',
+      '2026-09-24T20:00:00.000Z',
+    );
+    ineligible.classification = {
+      ...ineligible.classification,
+      contentType: 'other',
+      confidence: 'high',
+    };
+
+    const selected = selectExternalContentEnrichmentObservation({
+      from: '2026-09-24T04:00:00.000Z',
+      to: '2026-09-25T04:00:00.000Z',
+      observedAt: '2026-09-24T10:00:00.000Z',
+      channelIds: [channel.id],
+      programmes: [eligibleFilm, endedFilm, ineligible],
+    });
+
+    expect(selected?.programmes.map(({ programme }) => programme.id)).toEqual([
+      'programme-film',
+    ]);
+  });
+
+  it('returns null when no external-content work should be staged', () => {
+    expect(selectExternalContentEnrichmentObservation({
+      from: '2026-09-24T04:00:00.000Z',
+      to: '2026-09-25T04:00:00.000Z',
+      observedAt: '2026-09-24T10:00:00.000Z',
+      channelIds: [channel.id],
+      programmes: [
+        filmObservation(
+          'programme-ended',
+          '2026-09-24T08:00:00.000Z',
+          '2026-09-24T09:00:00.000Z',
+        ),
+      ],
+    })).toBeNull();
+  });
+});
 
 describe('external content enrichment lifecycle', () => {
   it('deduplicates identical identity work while allowing repeated broadcasts to share one TMDB identity', async () => {
