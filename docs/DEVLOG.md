@@ -1,6 +1,20 @@
 # Teevee Development Logboek
 
 
+## 24 september 2026 — Issue #167 bounded streaming XMLTV ingest
+
+Post-deploy activation of PR #161 exposed a provider-ingest resource blocker in hosted \`epg-refresh\` v10. A full \`{"mode":"guide-horizon"}\` request failed with HTTP 546 / \`WORKER_RESOURCE_LIMIT\`. A deliberately narrow RTL4-only four-hour \`window\` request failed identically, while \`programme_external_content_references\` remained at 0. Because the narrow request removes almost all horizon and TMDB fan-out, the failure isolated the pre-filter XMLTV path: \`XmltvEpgProvider\` called \`response.text()\`, built a feed-wide \`ParsedDocument\` with every Netherlands programme and rich evidence, and only afterwards filtered provider channel IDs and time intersection.
+
+PR #168 replaces schedule reads with a dependency-free incremental scanner over \`response.body\`. Top-level \`channel\` and \`programme\` blocks are reassembled safely across arbitrary stream chunks; closing-tag-like text inside CDATA/comments is ignored by the block scanner. For programme blocks, the adapter reads only the opening tag first, rejects irrelevant provider channels before timestamp parsing, rejects out-of-window broadcasts before full title/category/date/episode/credit/live/repeat decoding, and retains only requested schedule evidence plus the current unread XML block. The existing full-document parser remains only as a deterministic semantic reference/test helper; hosted \`getSchedule()\` no longer uses it.
+
+The provider contract gains one optional \`getSchedules()\` bulk-session method. \`refreshGuideHorizon()\` uses it when available so the twelve D-3..D+8 television-day windows are derived from one upstream XMLTV fetch/scan while each window keeps its own \`complete | partial\` authority and normal ADR-0007 write semantics. Providers without bulk support retain the previous per-window \`getSchedule()\` fallback. Hosted refresh does not call \`getChannels()\`; all-channel discovery stays isolated and cannot force schedule ingest back to feed-wide programme materialisation.
+
+Deterministic regressions cover XMLTV timestamps/timezone offsets, channel and programme tags split over tiny chunks, CDATA/entities, production date, complete categories, credits, episode numbers, live/repeat tri-state, malformed timestamps, requested channel/window filtering, boundary overlap, complete/gap/no-programme/multi-channel coverage, all-channel compatibility and deterministic ordering across different chunking. A large synthetic feed contains 250 irrelevant channels × 20 programmes plus 50 same-channel wrong-window programmes and one requested broadcast; the scanner observes all 5,051 programme blocks but parses timestamp headers for only the 51 requested-channel rows and fully materialises exactly one requested-window programme, with the unread raw buffer remaining a small fraction of the full document.
+
+Canonical \`Programme\`, normalization/classification rules, Film/Series TMDB thresholds, external-content persistence/ADR-0011 ownership, the 20 s TMDB owner budget, Guide mobile/runtime and hosted authorization are unchanged. No new XML dependency, migration, database write, hosted Edge deployment or physical-device gate is introduced by this Development increment. Final exact-head CI and independent review remain required before merge/deployment; final CI evidence is recorded on PR #168.
+
+---
+
 ## 24 september 2026 — PR #161 TMDB Film/Series external content identity foundation
 
 Issue #159 / PR #161 implements the smallest production server foundation that can bind a concrete canonical broadcast to a high-confidence TMDB Film/Series content identity without changing `Programme`, Guide transport or mobile. Proposed ADR 0011 records the durable boundary.
