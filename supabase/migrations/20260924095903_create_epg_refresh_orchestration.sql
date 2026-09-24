@@ -766,7 +766,7 @@ create or replace function teevee.claim_epg_refresh_external_content_job(
 language plpgsql
 security invoker
 set search_path = ''
-as $
+as $teevee$
 declare
   v_job teevee.epg_refresh_jobs%rowtype;
 begin
@@ -814,7 +814,7 @@ begin
     'externalContentObservation',v_job.external_content_observation
   );
 end;
-$;
+$teevee$;
 
 create or replace function teevee.complete_epg_refresh_external_content_job(
   p_job_id bigint,
@@ -826,7 +826,7 @@ create or replace function teevee.complete_epg_refresh_external_content_job(
 language plpgsql
 security invoker
 set search_path = ''
-as $
+as $teevee$
 declare
   v_job teevee.epg_refresh_jobs%rowtype;
   v_external_content_status text;
@@ -914,7 +914,7 @@ begin
     'runStatus',v_run_status
   );
 end;
-$;
+$teevee$;
 
 create or replace function teevee.pump_epg_refresh_jobs()
 returns jsonb
@@ -956,16 +956,47 @@ create or replace function public.teevee_complete_epg_refresh_job(
   p_attempt_token uuid,
   p_result text,
   p_outcome jsonb,
+  p_error text,
+  p_external_content_observation jsonb
+) returns jsonb
+language sql
+security invoker
+set search_path = ''
+as $
+  select teevee.complete_epg_refresh_job(
+    p_job_id, p_attempt_token, p_result, p_outcome, p_error,
+    p_external_content_observation
+  );
+$;
+
+create or replace function public.teevee_claim_epg_refresh_external_content_job(
+  p_job_id bigint,
+  p_attempt_token uuid
+) returns jsonb
+language sql
+security invoker
+set search_path = ''
+as $
+  select teevee.claim_epg_refresh_external_content_job(
+    p_job_id, p_attempt_token
+  );
+$;
+
+create or replace function public.teevee_complete_epg_refresh_external_content_job(
+  p_job_id bigint,
+  p_attempt_token uuid,
+  p_success boolean,
+  p_outcome jsonb,
   p_error text
 ) returns jsonb
 language sql
 security invoker
 set search_path = ''
-as $$
-  select teevee.complete_epg_refresh_job(
-    p_job_id, p_attempt_token, p_result, p_outcome, p_error
+as $
+  select teevee.complete_epg_refresh_external_content_job(
+    p_job_id, p_attempt_token, p_success, p_outcome, p_error
   );
-$$;
+$;
 
 revoke execute on function teevee.recompute_epg_refresh_run(bigint)
   from public, anon, authenticated;
@@ -975,7 +1006,11 @@ revoke execute on function teevee.start_epg_refresh_run(text,timestamptz,timesta
   from public, anon, authenticated;
 revoke execute on function teevee.claim_epg_refresh_job(bigint,uuid)
   from public, anon, authenticated;
-revoke execute on function teevee.complete_epg_refresh_job(bigint,uuid,text,jsonb,text)
+revoke execute on function teevee.complete_epg_refresh_job(bigint,uuid,text,jsonb,text,jsonb)
+  from public, anon, authenticated;
+revoke execute on function teevee.claim_epg_refresh_external_content_job(bigint,uuid)
+  from public, anon, authenticated;
+revoke execute on function teevee.complete_epg_refresh_external_content_job(bigint,uuid,boolean,jsonb,text)
   from public, anon, authenticated;
 revoke execute on function teevee.pump_epg_refresh_jobs()
   from public, anon, authenticated;
@@ -983,7 +1018,11 @@ revoke execute on function public.teevee_start_epg_refresh_run(text,timestamptz,
   from public, anon, authenticated;
 revoke execute on function public.teevee_claim_epg_refresh_job(bigint,uuid)
   from public, anon, authenticated;
-revoke execute on function public.teevee_complete_epg_refresh_job(bigint,uuid,text,jsonb,text)
+revoke execute on function public.teevee_complete_epg_refresh_job(bigint,uuid,text,jsonb,text,jsonb)
+  from public, anon, authenticated;
+revoke execute on function public.teevee_claim_epg_refresh_external_content_job(bigint,uuid)
+  from public, anon, authenticated;
+revoke execute on function public.teevee_complete_epg_refresh_external_content_job(bigint,uuid,boolean,jsonb,text)
   from public, anon, authenticated;
 
 grant execute on function teevee.recompute_epg_refresh_run(bigint) to service_role;
@@ -991,14 +1030,22 @@ grant execute on function teevee.dispatch_next_epg_refresh_job() to service_role
 grant execute on function teevee.start_epg_refresh_run(text,timestamptz,timestamptz,jsonb)
   to service_role;
 grant execute on function teevee.claim_epg_refresh_job(bigint,uuid) to service_role;
-grant execute on function teevee.complete_epg_refresh_job(bigint,uuid,text,jsonb,text)
+grant execute on function teevee.complete_epg_refresh_job(bigint,uuid,text,jsonb,text,jsonb)
+  to service_role;
+grant execute on function teevee.claim_epg_refresh_external_content_job(bigint,uuid)
+  to service_role;
+grant execute on function teevee.complete_epg_refresh_external_content_job(bigint,uuid,boolean,jsonb,text)
   to service_role;
 grant execute on function teevee.pump_epg_refresh_jobs() to service_role;
 grant execute on function public.teevee_start_epg_refresh_run(text,timestamptz,timestamptz,jsonb)
   to service_role;
 grant execute on function public.teevee_claim_epg_refresh_job(bigint,uuid)
   to service_role;
-grant execute on function public.teevee_complete_epg_refresh_job(bigint,uuid,text,jsonb,text)
+grant execute on function public.teevee_complete_epg_refresh_job(bigint,uuid,text,jsonb,text,jsonb)
+  to service_role;
+grant execute on function public.teevee_claim_epg_refresh_external_content_job(bigint,uuid)
+  to service_role;
+grant execute on function public.teevee_complete_epg_refresh_external_content_job(bigint,uuid,boolean,jsonb,text)
   to service_role;
 
 -- The existing six-hour teevee-development-epg-refresh job remains unchanged.
