@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
 
 import {
+  canonicalGuideSearchQuery,
+  guideSearchChannelManagementIntent,
   guideSearchMatchKind,
   guideSearchMatchRank,
   guideSearchPerChannelIntent,
@@ -17,6 +19,34 @@ describe('Guide Search lexical semantics', () => {
       'boer zoekt vrouws',
     );
     expect(normalizeGuideSearchText('A & B')).toBe('a en b');
+  });
+
+  it('normalises only the bounded canonical channel aliases', () => {
+    expect(canonicalGuideSearchQuery('RTL8')).toBe('RTL 8');
+    expect(canonicalGuideSearchQuery('RTL7')).toBe('RTL 7');
+    expect(canonicalGuideSearchQuery('RTLZ')).toBe('RTL Z');
+    expect(canonicalGuideSearchQuery('NPO1')).toBe('NPO 1');
+    expect(canonicalGuideSearchQuery('ESPN1')).toBe('ESPN');
+    expect(canonicalGuideSearchQuery('VRT1')).toBe('VRT 1');
+    expect(canonicalGuideSearchQuery('BBCNL')).toBe('BBC NL');
+    expect(canonicalGuideSearchQuery('BBC.NL')).toBe('BBC NL');
+    expect(canonicalGuideSearchQuery('NPO 2')).toBe('NPO 2');
+  });
+
+  it('resolves only the approved channel-management navigation intents', () => {
+    for (const query of [
+      'zenders',
+      'alle zenders',
+      'zenderoverzicht',
+      'mijn zenders',
+      'zenders instellen',
+      'zenders toevoegen',
+      'zendervolgorde',
+    ]) {
+      expect(guideSearchChannelManagementIntent(query)).toBe('manage-channels');
+    }
+    expect(guideSearchChannelManagementIntent('zender')).toBeNull();
+    expect(guideSearchChannelManagementIntent('mijn favoriete zenders')).toBeNull();
   });
 
   it('classifies only exact, prefix and substring matches', () => {
