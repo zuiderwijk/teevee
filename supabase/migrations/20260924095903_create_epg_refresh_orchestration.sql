@@ -41,6 +41,7 @@ create table teevee.epg_refresh_jobs (
   to_at timestamptz not null,
   channel_group_key text not null,
   provider_channel_ids text[] not null,
+  canonical_channel_ids text[] not null,
   status text not null default 'queued',
   attempt_count integer not null default 0,
   max_attempts integer not null default 3,
@@ -69,6 +70,9 @@ create table teevee.epg_refresh_jobs (
   constraint epg_refresh_jobs_window check (to_at > from_at and to_at - from_at <= interval '25 hours'),
   constraint epg_refresh_jobs_group_key_nonempty check (length(btrim(channel_group_key)) > 0),
   constraint epg_refresh_jobs_provider_channels check (cardinality(provider_channel_ids) > 0),
+  constraint epg_refresh_jobs_canonical_channels check (cardinality(canonical_channel_ids) > 0),
+  constraint epg_refresh_jobs_channel_scope_cardinality
+    check (cardinality(provider_channel_ids) = cardinality(canonical_channel_ids)),
   constraint epg_refresh_jobs_status
     check (status in ('queued','dispatched','running','succeeded','incomplete','failed')),
   constraint epg_refresh_jobs_attempt_count check (attempt_count >= 0),
@@ -479,6 +483,7 @@ declare
   v_from timestamptz;
   v_to timestamptz;
   v_provider_ids text[];
+  v_canonical_ids text[];
   v_job_count integer;
   v_dispatch jsonb;
   v_status text;
@@ -573,12 +578,35 @@ begin
       raise exception 'Refresh job providerChannelIds must not contain duplicates';
     end if;
 
+    if jsonb_typeof(v_job->'canonicalChannelIds') is distinct from 'array'
+       or jsonb_array_length(v_job->'canonicalChannelIds') < 1 then
+      raise exception 'Refresh job canonicalChannelIds must be a non-empty array';
+    end if;
+    select array_agg(btrim(value) order by btrim(value))
+      into v_canonical_ids
+    from jsonb_array_elements_text(v_job->'canonicalChannelIds');
+    if exists (
+      select 1 from unnest(v_canonical_ids) value
+      where length(value) = 0
+    ) then
+      raise exception 'Refresh job canonicalChannelIds must not contain blanks';
+    end if;
+    if cardinality(v_canonical_ids) <> (
+      select count(distinct channel_id)::integer
+      from unnest(v_canonical_ids) as canonical_ids(channel_id)
+    ) then
+      raise exception 'Refresh job canonicalChannelIds must not contain duplicates';
+    end if;
+    if cardinality(v_canonical_ids) <> cardinality(v_provider_ids) then
+      raise exception 'Refresh job canonicalChannelIds must match providerChannelIds cardinality';
+    end if;
+
     insert into teevee.epg_refresh_jobs(
       run_id, ordinal, source_key, day_offset, from_at, to_at,
-      channel_group_key, provider_channel_ids
+      channel_group_key, provider_channel_ids, canonical_channel_ids
     ) values (
       v_run_id, v_ordinal::integer, v_source_key, v_day_offset, v_from, v_to,
-      v_group_key, v_provider_ids
+      v_group_key, v_provider_ids, v_canonical_ids
     );
   end loop;
 
@@ -652,7 +680,8 @@ begin
     'from',v_job.from_at,
     'to',v_job.to_at,
     'channelGroupKey',v_job.channel_group_key,
-    'providerChannelIds',to_jsonb(v_job.provider_channel_ids)
+    'providerChannelIds',to_jsonb(v_job.provider_channel_ids),
+    'canonicalChannelIds',to_jsonb(v_job.canonical_channel_ids)
   );
 end;
 $$;
@@ -674,6 +703,11 @@ declare
   v_job_status text;
   v_run_status text;
   v_dispatch jsonb;
+  v_channel_id text;
+  v_observed_at timestamptz;
+  v_duration_seconds numeric;
+  v_authoritative_channel_count integer := 0;
+  v_outcome jsonb;
 begin
   select *
     into v_job
@@ -700,7 +734,8 @@ begin
   if v_job.status <> 'running' then
     raise exception 'EPG refresh job is not running';
   end if;
-  if p_result is null or p_result not in ('succeeded','incomplete','failed') then
+  if p_result is null
+     or p_result not in ('succeeded','verify-stale-authority','incomplete','failed') then
     raise exception 'EPG refresh job result is invalid';
   end if;
   if p_external_content_observation is not null
@@ -710,6 +745,74 @@ begin
   if p_result = 'failed' and p_external_content_observation is not null then
     raise exception 'Failed Guide work cannot stage external-content evidence';
   end if;
+  if p_result = 'verify-stale-authority' and p_external_content_observation is not null then
+    raise exception 'Ignored-stale Guide work cannot stage external-content evidence';
+  end if;
+
+  v_outcome := coalesce(p_outcome, '{}'::jsonb);
+
+  if p_result = 'verify-stale-authority' then
+    -- Use the exact canonical child scope persisted by the trusted planner. Lock in
+    -- the same sorted per-channel order as ADR-0007 schedule replacement, then prove
+    -- complete gap-free coverage at the parent observation or newer before terminal
+    -- completion. The proof and job state transition commit atomically.
+    foreach v_channel_id in array v_job.canonical_channel_ids loop
+      perform pg_catalog.pg_advisory_xact_lock(
+        pg_catalog.hashtextextended(v_channel_id, 0)
+      );
+    end loop;
+
+    select observed_at
+      into v_observed_at
+    from teevee.epg_refresh_runs
+    where id = v_job.run_id;
+
+    v_duration_seconds := extract(epoch from (v_job.to_at - v_job.from_at));
+
+    select count(*)::integer
+      into v_authoritative_channel_count
+    from (
+      select c.channel_id
+      from teevee.schedule_coverage c
+      where c.channel_id = any(v_job.canonical_channel_ids)
+        and c.coverage_range && tstzrange(v_job.from_at, v_job.to_at, '[)')
+        and c.generated_at >= v_observed_at
+      group by c.channel_id
+      having sum(
+        extract(
+          epoch from (
+            least(c.to_at, v_job.to_at) - greatest(c.from_at, v_job.from_at)
+          )
+        )
+      ) >= v_duration_seconds
+    ) covered;
+
+    if v_authoritative_channel_count = cardinality(v_job.canonical_channel_ids) then
+      p_result := 'succeeded';
+      p_error := null;
+      v_outcome := v_outcome || jsonb_build_object(
+        'staleAuthorityProof',
+        jsonb_build_object(
+          'status','complete-same-or-newer',
+          'requiredGeneratedAt',v_observed_at,
+          'expectedChannelCount',cardinality(v_job.canonical_channel_ids),
+          'authoritativeChannelCount',v_authoritative_channel_count
+        )
+      );
+    else
+      p_result := 'incomplete';
+      p_error := 'ignored-stale-without-complete-same-or-newer-authority';
+      v_outcome := v_outcome || jsonb_build_object(
+        'staleAuthorityProof',
+        jsonb_build_object(
+          'status','incomplete',
+          'requiredGeneratedAt',v_observed_at,
+          'expectedChannelCount',cardinality(v_job.canonical_channel_ids),
+          'authoritativeChannelCount',v_authoritative_channel_count
+        )
+      );
+    end if;
+  end if;
 
   if p_result = 'succeeded' then
     update teevee.epg_refresh_jobs
@@ -717,7 +820,7 @@ begin
           lease_expires_at = null,
           finished_at = pg_catalog.now(),
           last_error = null,
-          outcome = p_outcome,
+          outcome = v_outcome,
           external_content_status = case
             when p_external_content_observation is null then 'not-required'
             else 'queued'
@@ -736,7 +839,7 @@ begin
             coalesce(nullif(btrim(p_error),''),'work-item incomplete authority'),
             1000
           ),
-          outcome = p_outcome,
+          outcome = v_outcome,
           external_content_status = case
             when p_external_content_observation is null then 'not-required'
             else 'queued'
@@ -754,7 +857,7 @@ begin
           attempt_token = null,
           request_id = null,
           last_error = left(coalesce(nullif(btrim(p_error),''),'work-item failed'),1000),
-          outcome = p_outcome
+          outcome = v_outcome
     where id = p_job_id
     returning status into v_job_status;
   else
@@ -763,7 +866,7 @@ begin
           lease_expires_at = null,
           finished_at = pg_catalog.now(),
           last_error = left(coalesce(nullif(btrim(p_error),''),'work-item failed'),1000),
-          outcome = p_outcome
+          outcome = v_outcome
     where id = p_job_id
     returning status into v_job_status;
   end if;
@@ -892,7 +995,7 @@ begin
           external_content_lease_expires_at = null,
           external_content_finished_at = pg_catalog.now(),
           external_content_last_error = null,
-          external_content_outcome = p_outcome,
+          external_content_outcome = v_outcome,
           external_content_observation = null
     where id = p_job_id
     returning external_content_status into v_external_content_status;
@@ -907,7 +1010,7 @@ begin
             coalesce(nullif(btrim(p_error),''),'external-content work-item failed'),
             1000
           ),
-          external_content_outcome = p_outcome
+          external_content_outcome = v_outcome
           -- Keep staged provider evidence for the next bounded attempt.
     where id = p_job_id
     returning external_content_status into v_external_content_status;
@@ -920,7 +1023,7 @@ begin
             coalesce(nullif(btrim(p_error),''),'external-content work-item failed'),
             1000
           ),
-          external_content_outcome = p_outcome,
+          external_content_outcome = v_outcome,
           -- Retry budget is exhausted: no later worker may consume stale staging.
           external_content_observation = null
     where id = p_job_id
