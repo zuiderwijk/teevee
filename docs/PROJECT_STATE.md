@@ -2,7 +2,7 @@
 
 Last updated: 2026-09-24.
 Status: ACTIVE — **Inter-phase Premium Artwork & Content Identity enrichment**.
-Current implementation priority: **Build the minimum provider-independent external-content/artwork enrichment foundation before starting Phase 6 Personal Features; keep canonical Programme and core Guide independent from enrichment**
+Current implementation priority: **Complete Technical Lead + Independent QA review of issue #159 / PR #161, the minimum TMDB Film/Series external-content identity production foundation; no hosted deployment or artwork UI yet**
 Current broader product phase: **Phase 6 — Personal Features, intentionally deferred behind the owner-priority inter-phase enrichment**
 Previous phase: **Phase 5 — Search and Discovery — CLOSED**
 
@@ -17,7 +17,7 @@ Previous phase: **Phase 5 — Search and Discovery — CLOSED**
 - Deterministic fixtures remain mandatory after real data is introduced.
 - Core Guide cannot depend on artwork/enrichment.
 - `docs/VISUAL_BASELINE.md` plus `design/current/` select the accepted visual references. New visual exploration is not canonical until explicitly approved and merged.
-- Relevant durable architecture contracts are ADR 0001 through ADR 0010; ADR 0010 is canonical for the classification sibling boundary.
+- Relevant durable architecture contracts are ADR 0001 through ADR 0011; ADR 0010 is canonical for the classification sibling boundary and proposed ADR 0011 records the broadcast-keyed external-content identity lifecycle pending review.
 - **Queued owner-approved next iteration:** expand the canonical channel catalog to the exact 49-channel set/order in `docs/CHANNEL_EXPANSION_TARGET_2026-09-24.md`. This is not the current implementation priority and must not interrupt the active external-content/artwork foundation.
 - **Vanavond category discovery scope:** Films/Series/Sport are intentionally limited to the owner-approved 28-channel set in `docs/TONIGHT_PRODUCT_DEFINITION.md`; Jouw gids and Onze Kijktips are not channel-filtered, and no `populaire zenders / alle zenders` toggle is part of the accepted composition.
 
@@ -38,15 +38,17 @@ Canonical research:
 - PR #156 / `docs/TMDB_MATCHING_RESEARCH_2026-09-23.md` proves a narrow fail-closed matcher can resolve **44/45 Film** and **49/50 Series** reviewed broadcasts at high confidence, with zero known false-positive external IDs in the reviewed accepted tier;
 - the product owner confirms the required commercial TMDB licensing for Teevee production use is arranged; the licensing gate is **CLOSED**. Production credential ownership, rate-limit/retry/caching design and compliance with the agreed TMDB contract terms remain implementation requirements.
 
-Issue #157 / PR #158 is the first production foundation increment. It adds only typed transient server/provider evidence:
-- opaque raw production-date evidence with optional exact-YYYY `year`;
-- source-role-preserving `director[]`, `actor[]`, `producer[]`;
-- existing categories/episode/description/live/repeat evidence unchanged.
+PR #158 is merged on canonical main and supplies the minimum typed transient provider evidence needed by external matching without changing canonical `Programme`, Guide transport or mobile.
 
-Canonical `Programme`, Guide schedule transport and mobile contracts remain unchanged. The existing classification algorithm keeps using only its reviewed evidence, including the separate `hasDirectorCredit` compatibility signal; richer credit names do not change Film/Series/Sport semantics.
+Issue #159 / PR #161 is the active production increment. Its proposed ADR 0011 keeps content identity as a private broadcast-keyed sibling instead of changing `Programme.id` or introducing a generic catalogue. Matching uses the same provider observation that creates the canonical broadcast/classification and runs only after an authoritative schedule write. Guide-horizon canonical writes finish before TMDB work starts; timeout, 429/5xx, network, malformed payload or external-reference persistence failure therefore cannot roll back the Guide.
 
-Evidence remains transient in this increment. PR #152 is **not** a foundation dependency and remains owner-blocked; its recovery execution is used only as lifecycle evidence. Its observed **512 candidates / 319 exact matched / 193 unmatched** proves that future external-identity bootstrap for already-retained broadcasts cannot rely solely on later provider refetch plus exact-current broadcast reconciliation. The next external-identity production increment must explicitly solve bootstrap/replay ownership without title hacks, canonical-genre authority, mobile heuristics or a premature generic enrichment framework.
+The proposed private `teevee.programme_external_content_references` row stores only canonical programme ownership, `tmdb`, Film/Series media type, high-confidence external content ID, matcher version and freshness timestamps. The write RPC shares canonical channel advisory locking, requires exact current broadcast fields and same-observation authoritative coverage, and rejects newer schedule/reference state. ADR-0007-aware database ownership uses private `SECURITY INVOKER` ownership helpers: it preserves a reference when normal schedule replacement deletes/reinserts the exact same broadcast tuple, while a deferred programme-side cleanup removes the old reference on a real rekey/correction/delete before commit; repeated broadcasts may share one TMDB content identity.
 
+Matching remains precision-first: Film requires year ±1 + director overlap and stronger people evidence for alternative/localized-title-only acceptance; Series uses full title first, cast support and coherent S/E when available, with only the empirically-proven stronger base-title/numbering-disagreement fallbacks. No TMDB episode ID is produced.
+
+There is deliberately **no D0 historical bootstrap**. External identity forward-fills from authoritative complete current/future windows and remains attached as a broadcast ages into D0. Existing retained broadcasts may therefore have a temporary post-deploy warm-up gap. PR #152 remains owner-blocked evidence only: its dormant recovery migration/RPC is superseded for external-identity bootstrap and is not called by PR #161. Because that migration already exists in hosted migration history, any eventual retirement must be a separate forward cleanup after caller verification.
+
+PR #161 is High risk because it adds a migration/trust-boundary path. It must not be merged or deployed before Technical Lead review and Independent QA. There is no physical owner-test gate for this increment because it adds no user-visible artwork/UI.
 
 ## Kijktip enrichment vertical slice — merged and deployed
 The inter-phase Kijktip vertical slice is implementation-complete and merged. Do not reopen its accepted product, matching, persistence or Guide-presentation contracts without concrete regression evidence.
@@ -285,7 +287,7 @@ Physical Android interaction acceptance remains OPEN/DEFERRED because no Android
 - physical Android validation.
 
 ## Current next step
-**Complete issue #157 / PR #158 — EPG identity evidence production foundation — then design the narrow server-side external-content identity increment before Phase 6 Personal Features.** The follow-up must use the empirically reviewed high-confidence Film/Series rules, keep Guide/mobile independent from raw provider/TMDB vocabulary, solve bootstrap/replay ownership for already-retained broadcasts, and implement against the now-cleared TMDB commercial-use basis without storing contractual terms or credentials in the repository. Do not add artwork UI, fuzzy broadcast reconciliation, a generic content catalogue or a second enrichment framework in this foundation.
+**Complete Technical Lead review and Independent QA for issue #159 / PR #161 — TMDB Film/Series external-content identity production foundation.** Do not deploy or merge before both gates pass. After merge, deploy only from reviewed canonical `main`, verify the migration/Edge runtime and production secret ownership, then use the resulting private external identity as the prerequisite for a separate artwork-selection/transport increment. Do not add artwork UI, fuzzy historical reconciliation, TMDB episode identity or a generic content catalogue in PR #161.
 
 Owner checkout: `~/projects/teevee`.
 

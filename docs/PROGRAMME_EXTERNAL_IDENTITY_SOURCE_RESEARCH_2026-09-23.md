@@ -45,6 +45,12 @@ Recommendation:
 
 Final research verdict: **PASS TO TMDB MATCHING RESEARCH**.
 
+### External-content production successor
+
+Issue #159 / PR #161 consumes the PR #158 transient evidence in the **same authoritative provider observation** and writes only a minimal private broadcast-keyed TMDB reference after canonical schedule storage succeeds. Proposed ADR 0011 records the lifecycle.
+
+The #152/Cold Pursuit evidence is now resolved architecturally by choosing forward-fill/warm-up rather than historical fuzzy reconciliation: partial/stale observations cannot attach external identity, and the persistence RPC requires same-observation authoritative coverage. The dormant #152 classification recovery RPC is not an external-content bootstrap dependency.
+
 ### Production follow-up
 
 Issue #157 / PR #158 implements the minimum production parser/domain-boundary follow-up proven necessary by this research and the completed TMDB matching research (#156):

@@ -36,6 +36,28 @@ describe('SupabaseRestRpcClient', () => {
     );
   });
 
+  it('passes an optional owner AbortSignal to the PostgREST request', async () => {
+    const controller = new AbortController();
+    const fetcher = vi.fn(async (_url: URL | RequestInfo, init?: RequestInit) => {
+      expect(init?.signal).toBe(controller.signal);
+      return response({ ok: true });
+    });
+    const client = new SupabaseRestRpcClient({
+      baseUrl: 'https://teevee.supabase.co',
+      apiKey: 'sb_secret_test',
+      fetcher,
+      signal: controller.signal,
+    });
+
+    await expect(
+      client.rpc('teevee_apply_programme_external_content_decisions', {}),
+    ).resolves.toEqual({
+      data: { ok: true },
+      error: null,
+    });
+    expect(fetcher).toHaveBeenCalledTimes(1);
+  });
+
   it('preserves null successful RPC responses', async () => {
     const client = new SupabaseRestRpcClient({
       baseUrl: 'https://teevee.supabase.co',

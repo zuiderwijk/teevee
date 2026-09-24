@@ -1,7 +1,10 @@
 import type { Channel, GuideSchedule } from '@/data/domain/epg';
 
 import type { DataQualityDiagnostic } from './diagnostics';
-import { normaliseProviderSchedule } from './normalise.ts';
+import {
+  normaliseProviderSchedule,
+  type NormalisedProgrammeObservation,
+} from './normalise.ts';
 import type { ChannelMapping, EpgProvider } from './provider';
 import type { ScheduleRepository, ScheduleWindowWriteResult } from './scheduleRepository';
 
@@ -28,10 +31,24 @@ export type IngestWriteResult =
         | 'no-safe-channel-scope';
     };
 
+export type StoredProviderScheduleObservation = {
+  from: string;
+  to: string;
+  observedAt: string;
+  channelIds: Channel['id'][];
+  programmes: NormalisedProgrammeObservation[];
+};
+
 export type IngestProviderScheduleResult = {
   schedule: GuideSchedule;
   diagnostics: DataQualityDiagnostic[];
   write: IngestWriteResult;
+  /**
+   * Present only after an authoritative canonical write was stored. It carries the
+   * exact transient provider evidence from that same observation for server-only
+   * post-write enrichments and is never part of Guide transport.
+   */
+  storedObservation: StoredProviderScheduleObservation | null;
 };
 
 export type IngestProviderScheduleInput = {
@@ -128,6 +145,7 @@ export async function ingestProviderSchedule(
         channelIds: safeChannelIds,
         reason: 'partial-provider-coverage',
       },
+      storedObservation: null,
     };
   }
 
@@ -144,6 +162,7 @@ export async function ingestProviderSchedule(
         channelIds: safeChannelIds,
         reason: 'unattributed-provider-record',
       },
+      storedObservation: null,
     };
   }
 
@@ -156,6 +175,7 @@ export async function ingestProviderSchedule(
         channelIds: [],
         reason: 'no-safe-channel-scope',
       },
+      storedObservation: null,
     };
   }
 
@@ -172,12 +192,31 @@ export async function ingestProviderSchedule(
       schedule: normalised.schedule,
       diagnostics: normalised.diagnostics,
       write: { status: 'ignored-stale', channelIds: safeChannelIds, result },
+      storedObservation: null,
     };
   }
+
+  const safeChannels = new Set(safeChannelIds);
+  const storedProgrammes = normalised.observations.filter(({ programme }) => {
+    const startMs = Date.parse(programme.startAt);
+    const endMs = Date.parse(programme.endAt);
+    return (
+      safeChannels.has(programme.channelId) &&
+      startMs < toMs &&
+      endMs > fromMs
+    );
+  });
 
   return {
     schedule: normalised.schedule,
     diagnostics: normalised.diagnostics,
     write: { status: 'stored', channelIds: safeChannelIds, result },
+    storedObservation: {
+      from: new Date(fromMs).toISOString(),
+      to: new Date(toMs).toISOString(),
+      observedAt: normalised.schedule.generatedAt,
+      channelIds: safeChannelIds,
+      programmes: storedProgrammes,
+    },
   };
 }
