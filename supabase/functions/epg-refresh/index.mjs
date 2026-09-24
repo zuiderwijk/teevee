@@ -142,6 +142,15 @@ async function parseJsonBody(req) {
   }
 }
 
+function sameCanonicalScope(left, right) {
+  const normalizedLeft = [...new Set(left)].sort();
+  const normalizedRight = [...new Set(right)].sort();
+  return (
+    normalizedLeft.length === normalizedRight.length &&
+    normalizedLeft.every((value, index) => value === normalizedRight[index])
+  );
+}
+
 function diagnosticCounts(result) {
   return result.diagnostics.reduce(
     (counts, diagnostic) => {
@@ -186,6 +195,11 @@ async function executeClaimedWorkItem({ claim, secretKey, startedAt }) {
     sourceKey: claim.sourceKey,
     providerChannelIds: claim.providerChannelIds,
   });
+  const resolvedCanonicalChannelIds = scope.canonicalChannels.map(({ id }) => id);
+  if (!sameCanonicalScope(claim.canonicalChannelIds, resolvedCanonicalChannelIds)) {
+    throw new Error('Claimed canonical channel scope does not match source mapping');
+  }
+
   const provider = new XmltvEpgProvider({
     key: scope.source.providerKey,
     url: scope.source.url,
@@ -201,7 +215,7 @@ async function executeClaimedWorkItem({ claim, secretKey, startedAt }) {
     clock: () => new Date(claim.observedAt),
   });
   const authority = classifyEpgRefreshWorkItemAuthority({
-    expectedCanonicalChannelIds: scope.canonicalChannels.map(({ id }) => id),
+    expectedCanonicalChannelIds: claim.canonicalChannelIds,
     write: result.write,
   });
   const externalContentObservation = result.storedObservation
@@ -324,7 +338,9 @@ export default {
           result:
             execution.authority.status === 'authoritative'
               ? 'succeeded'
-              : 'incomplete',
+              : execution.authority.status === 'requires-canonical-proof'
+                ? 'verify-stale-authority'
+                : 'incomplete',
           outcome: execution.outcome,
           ...(execution.authority.status === 'incomplete'
             ? { error: `incomplete-authority:${execution.authority.reason}` }
@@ -335,9 +351,9 @@ export default {
         });
         return Response.json({
           status:
-            execution.authority.status === 'authoritative'
+            completion.jobStatus === 'succeeded'
               ? 'completed'
-              : 'incomplete',
+              : completion.jobStatus,
           mode: request.mode,
           runId: claim.runId,
           jobId: claim.jobId,
@@ -348,6 +364,7 @@ export default {
           to: claim.to,
           channelGroupKey: claim.channelGroupKey,
           providerChannelIds: claim.providerChannelIds,
+          canonicalChannelIds: claim.canonicalChannelIds,
           authority: execution.authority,
           write: execution.result.write,
           programmeCount: execution.result.schedule.programmes.length,
