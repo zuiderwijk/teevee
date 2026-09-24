@@ -62,6 +62,31 @@ describe('SupabaseEpgRefreshOrchestrationRepository', () => {
     });
   });
 
+  it('accepts the approved 588-work-item worst-case run envelope', async () => {
+    const jobs = Array.from({ length: 588 }, (_, index) => ({
+      sourceKey: index % 2 === 0 ? 'nl' : 'be',
+      dayOffset: (index % 12) - 3,
+      from: '2026-09-24T04:00:00.000Z',
+      to: '2026-09-25T04:00:00.000Z',
+      channelGroupKey: `group-${index + 1}`,
+      providerChannelIds: [`provider-${index + 1}`],
+    }));
+    const client = new FakeRpcClient([{
+      data: { runId: 43, status: 'running', jobCount: 588, reused: false },
+      error: null,
+    }]);
+    const repository = new SupabaseEpgRefreshOrchestrationRepository(client);
+
+    await expect(repository.startRun({
+      requestKey: 'cron:2026-09-24T18',
+      observedAt: '2026-09-24T18:17:00Z',
+      anchorAt: '2026-09-24T18:17:00Z',
+      jobs,
+    })).resolves.toMatchObject({ runId: 43, jobCount: 588 });
+
+    expect(client.calls[0]?.args.p_jobs).toHaveLength(588);
+  });
+
   it('claims only database-owned work-item scope', async () => {
     const client = new FakeRpcClient([{
       data: {
