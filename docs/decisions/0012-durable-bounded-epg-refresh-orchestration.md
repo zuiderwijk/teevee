@@ -73,7 +73,7 @@ The lease is **8 minutes**. Supabase's current paid hosted Edge limit is 400 sec
 - worker kills/timeouts are recovered only after the 8-minute lease expiry;
 - Guide retries keep the original parent observation timestamp.
 
-A Guide child may have committed canonical schedule state before its Edge process dies. Retrying the same observation is safe under ADR 0007; if newer authoritative coverage already exists, the older retry is `ignored-stale` rather than rolling data backwards.
+A Guide child may have committed canonical schedule state before its Edge process dies. Retrying the same observation is safe under ADR 0007; if any newer overlapping canonical coverage exists, the older retry may return `ignored-stale`. That result is only a stale-write rejection signal and does **not** by itself prove that the whole child scope is authoritative.
 
 ### Guide authority
 
@@ -81,7 +81,10 @@ Every Guide child still runs the existing provider adapter → normalization/cla
 
 Durable orchestration authority is stricter than “ingest did not throw”:
 
-- child `succeeded` requires either `stored` for **exactly the whole expected canonical channel set**, or `ignored-stale` for that exact set because newer authority already owns it;
+- child `succeeded` directly from ingest requires `stored` for **exactly the whole expected canonical channel set**;
+- an exact-channel-set `ignored-stale` result enters a separate **canonical proof** path rather than success. The orchestration database owns the child's persisted canonical channel IDs and, in the same transaction that would terminally complete the job, acquires the same sorted per-channel advisory locks as ADR 0007. It then requires every expected canonical channel to have gap-free coverage across the complete child `[from,to)` window using only coverage rows with `generated_at >= parent observed_at`;
+- same-observation coverage committed by an earlier attempt is valid, and newer segments are valid. If even one channel is missing, has a gap, or is only covered by older freshness, the child becomes terminal `incomplete` with `ignored-stale-without-complete-same-or-newer-authority`;
+- the proof and terminal job-state transition are atomic under the canonical channel locks. After those locks release, ADR 0007 prevents an older writer from reducing the proven freshness; a same-observation write preserves qualifying freshness and a newer write can only strengthen it;
 - provider partial coverage, unattributed records, no-safe-channel scope, or a channel-local blocked subset are terminal child `incomplete` outcomes;
 - parent `completed` means every Guide child succeeded authoritatively;
 - parent `incomplete` means no child exhausted to `failed`, but at least one child is terminal incomplete;
@@ -121,7 +124,7 @@ Durable parent/child state is the refresh completion authority.
 
 pg_cron success means only that its enqueue SQL ran. pg_net/Edge transport, Guide authority and deferred external-content state are independently observable. Failures/incomplete authority are attributable to source, television day, channel group, attempt and request id. Distinct scheduled request keys are never discarded while older runs are active, and dispatch-unavailable reasons are persisted.
 
-The exact migration is behaviorally executed in normal CI against disposable **PostgreSQL 17**, with controlled Supabase-compatible stubs. The smoke exercises the migration itself: role boundaries, duplicate/stale attempts, lease recovery, retries/exhaustion, distinct buckets, Guide authority aggregation, Guide-before-TMDB ordering, failed-run suppression, owner-level unavailable retry, provider/persistence failure retry, retry-to-success, external-content max-attempt failure with staging cleanup, Guide-authority isolation and the 588-job worst-case envelope.
+The exact migration is behaviorally executed in normal CI against disposable **PostgreSQL 17**, with controlled Supabase-compatible stubs. The smoke now also executes the **real canonical schedule-store migration / ADR-0007 writer** before the orchestration migration. It exercises role boundaries, duplicate/stale attempts, lease recovery, retries/exhaustion, distinct buckets, Guide authority aggregation, mixed-scope stale rejection, partial newer overlap, same-observation retry authority, stale rollback safety, disjoint channel-group isolation, Guide-before-TMDB ordering, failed-run suppression, owner-level unavailable retry, provider/persistence failure retry, retry-to-success, external-content max-attempt failure with staging cleanup, Guide-authority isolation and the 588-job worst-case envelope.
 
 ## Deployment ordering
 
