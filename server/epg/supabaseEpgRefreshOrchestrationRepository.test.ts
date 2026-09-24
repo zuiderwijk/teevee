@@ -125,7 +125,7 @@ describe('SupabaseEpgRefreshOrchestrationRepository', () => {
     await expect(repository.completeJob({
       jobId: 7,
       attemptToken: 'attempt-token',
-      success: true,
+      result: 'succeeded',
       outcome: { writeStatus: 'stored', programmeCount: 42 },
     })).resolves.toEqual({
       jobId: 7,
@@ -138,10 +138,31 @@ describe('SupabaseEpgRefreshOrchestrationRepository', () => {
       args: {
         p_job_id: 7,
         p_attempt_token: 'attempt-token',
-        p_success: true,
+        p_result: 'succeeded',
         p_outcome: { writeStatus: 'stored', programmeCount: 42 },
         p_error: null,
       },
+    });
+  });
+
+  it('parses durable incomplete child/run outcomes', async () => {
+    const repository = new SupabaseEpgRefreshOrchestrationRepository(
+      new FakeRpcClient([{
+        data: { jobId: 9, jobStatus: 'incomplete', runId: 42, runStatus: 'incomplete' },
+        error: null,
+      }]),
+    );
+
+    await expect(repository.completeJob({
+      jobId: 9,
+      attemptToken: 'attempt-token',
+      result: 'incomplete',
+      outcome: { authority: { status: 'incomplete' } },
+    })).resolves.toEqual({
+      jobId: 9,
+      jobStatus: 'incomplete',
+      runId: 42,
+      runStatus: 'incomplete',
     });
   });
 
