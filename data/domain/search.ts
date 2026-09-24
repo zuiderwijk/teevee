@@ -87,7 +87,7 @@ const GUIDE_SEARCH_CHANNEL_ALIASES = new Map<string, string>([
   ['espn1', 'ESPN'],
   ['vrt1', 'VRT 1'],
   ['bbcnl', 'BBC NL'],
-  ['bbc.nl', 'BBC NL'],
+  ['bbc nl', 'BBC NL'],
 ]);
 
 const GUIDE_SEARCH_CHANNEL_MANAGEMENT_INTENTS = new Set([
