@@ -517,6 +517,12 @@ describe('parseXmltvScheduleStream', () => {
         );
       }
     }
+    for (let programmeIndex = 0; programmeIndex < 50; programmeIndex += 1) {
+      programmeBlocks.push(
+        '<programme start="20260923100000 +0000" stop="20260923110000 +0000" channel="wanted">' +
+          '<title>Wanted channel, wrong window</title><desc>Must not be fully decoded</desc></programme>',
+      );
+    }
     programmeBlocks.push(
       '<programme start="20260924100000 +0000" stop="20260924110000 +0000" channel="wanted">' +
         '<title>Wanted</title><category>Film</category><date>2024</date></programme>',
@@ -538,8 +544,8 @@ describe('parseXmltvScheduleStream', () => {
     ]);
 
     expect(result.stats.channelBlocksScanned).toBe(251);
-    expect(result.stats.programmeBlocksScanned).toBe(5001);
-    expect(result.stats.programmeTimestampHeadersParsed).toBe(1);
+    expect(result.stats.programmeBlocksScanned).toBe(5051);
+    expect(result.stats.programmeTimestampHeadersParsed).toBe(51);
     expect(result.stats.programmeBlocksMaterialised).toBe(1);
     expect(result.stats.maxBufferedChars).toBeLessThan(source.length / 10);
     expect(result.channels).toEqual([
