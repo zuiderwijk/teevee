@@ -1,6 +1,6 @@
 # Phase 5A — Guide Search Product Definition
 
-Status: **CANONICAL PRODUCT CONTRACT — hosted architecture live; mobile UI/runtime is the active implementation increment**  
+Status: **CANONICAL PRODUCT CONTRACT — Phase 5A closed; amended 24 September 2026 with queued channel-personalisation/Search bridge**  
 Activated: 2026-09-23  
 Owner: Teevee product  
 Scope: first slice of Phase 5 — Search and Discovery
@@ -204,6 +204,23 @@ This navigation is contextual. It must not silently rewrite unrelated long-term 
 
 The implementation must preserve a natural route back to Search through the existing app navigation model.
 
+### Channel personalisation bridge — queued with catalog expansion
+
+TVgids.nl app Search evidence on 24 September 2026 materially strengthens channel retrieval as a Search job and establishes a future bridge to channel personalisation. Canonical evidence and interpretation: `docs/TVGIDS_APP_SEARCH_CHANNEL_EVIDENCE_2026-09-24.md`.
+
+When Teevee's expanded catalog and channel selection/order capability are implemented:
+
+- Search continues to search the **complete canonical channel catalog**, not only channels currently visible in the user's Guide;
+- a hidden/unselected channel result remains visible and may still open Per zender contextually;
+- opening that result does **not** auto-add the channel or mutate persisted order;
+- a hidden/unselected channel result should expose a quiet explicit path to add it to the user's selected channel set;
+- after explicit addition, a route to reorder/manage channels may be offered without blocking the primary open-channel action;
+- deterministic channel-management queries such as `zenders`, `alle zenders`, `zenderoverzicht`, `mijn zenders`, `zenders instellen`, `zenders toevoegen` and `zendervolgorde` should surface a bounded navigation/action result rather than an ordinary no-match state;
+- this does not authorize general semantic/AI Search. It is a finite product-navigation intent set;
+- canonical channel alias normalisation should handle safe spacing/punctuation variants such as `RTL8`, `NPO1` and `RTLZ` without provider-specific mobile heuristics.
+
+The working user-facing concept is **Mijn zenders**; exact final microcopy and management-screen visual treatment remain part of the dedicated implementation/design increment.
+
 ## Search screen states
 
 ### Empty / untouched
@@ -325,6 +342,8 @@ Phase 5A may measure:
 
 Do **not** log raw search text by default. Any future raw-query collection requires an explicit privacy/data decision.
 
+The 24 September 2026 TVgids.nl app Search export used for product research is an external historical evidence set and does not change this Teevee analytics contract. Its raw query rows are not committed to the repository.
+
 Primary product-quality metrics:
 
 - successful result selection rate;
@@ -397,15 +416,9 @@ Guide Search may be considered complete when:
 - Independent QA passes;
 - canonical docs reflect the final implementation.
 
-## Immediate next engineering step
+## Post-Phase-5A product follow-up
 
-The **Guide Search Architecture** handoff is defined by ADR 0009, merged in PR #132 and deployed/live-verified. Deployment evidence: `docs/GUIDE_SEARCH_DEPLOYMENT_2026-09-23.md`.
+Phase 5A Search is closed. Do not reopen its proven hosted/mobile architecture merely to implement the channel-personalisation bridge.
 
-Next:
-1. implement the mobile Search runtime/screen against the frozen `GuideSearchApi` boundary;
-2. preserve query/results on Programme Detail round-trip and consume explicit Per-zender navigation intent;
-3. add measured debounce/cancellation and stale-response handling plus loading/no-match/partial/unavailable states;
-4. meet accessibility, Dynamic Type and measured performance requirements without reopening Guide loading;
-5. complete focused physical iPhone validation and Independent QA before Phase 5A exit.
+The channel-personalisation/Search follow-up is queued with the expanded channel catalog. Its implementation must preserve the existing Search read boundary, provider-independent canonical channel identity, query/result continuity and contextual Per-zender navigation while adding only the minimum personal-channel state/action surface required by the product contract.
 
-Do not reopen the Guide loading architecture, add broad discovery scope or introduce fuzzy/semantic search while implementing the mobile surface.

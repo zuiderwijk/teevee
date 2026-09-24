@@ -63,7 +63,9 @@ The next expansion iteration targets exactly these **49 channels**, in this defa
 ## Product semantics
 
 - This is the **first-run/default channel order** for the expanded catalog.
-- A persisted user-defined channel order remains authoritative once it exists.
+- A persisted user-defined channel selection/order remains authoritative once it exists.
+- The expanded catalog is distinct from the user's **Mijn zenders** subset: hidden channels remain supported/searchable, while the selected subset/order drives everyday Guide channel presentation.
+- Search remains full-catalog and may explicitly offer to add a hidden channel to Mijn zenders; opening a Search result must not silently alter selection/order. Detailed evidence/contract: `docs/TVGIDS_APP_SEARCH_CHANNEL_EVIDENCE_2026-09-24.md`.
 - The order is shared product semantics across Guide surfaces; Totaal, Per zender and Nu & Straks must not invent different default channel rankings.
 - Search and other channel-selection surfaces should consume the same canonical channel catalog rather than maintaining a separate ordering table.
 - This decision fixes inclusion and order. It does **not** fix provider IDs, feed URLs, logo source, entitlement/package availability or production redistribution rights.
