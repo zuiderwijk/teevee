@@ -541,10 +541,11 @@ describe('parseXmltvScheduleStream', () => {
   it('bounds full programme materialisation to requested channel/window scope in a large irrelevant feed', async () => {
     const channels = ['wanted'];
     const programmeBlocks: string[] = [];
-    for (let channelIndex = 0; channelIndex < 250; channelIndex += 1) {
+    const irrelevantDescription = 'x'.repeat(400);
+    for (let channelIndex = 0; channelIndex < 183; channelIndex += 1) {
       const channelId = 'noise-' + channelIndex;
       channels.push(channelId);
-      for (let programmeIndex = 0; programmeIndex < 20; programmeIndex += 1) {
+      for (let programmeIndex = 0; programmeIndex < 220; programmeIndex += 1) {
         const minute = String(programmeIndex % 60).padStart(2, '0');
         programmeBlocks.push(
           '<programme start="20260913' +
@@ -555,7 +556,9 @@ describe('parseXmltvScheduleStream', () => {
             String((programmeIndex + 1) % 60).padStart(2, '0') +
             '00 +0000" channel="' +
             channelId +
-            '"><title>Noise</title><desc>Large irrelevant payload</desc></programme>',
+            '"><title>Noise</title><desc>' +
+            irrelevantDescription +
+            '</desc></programme>',
         );
       }
     }
@@ -585,8 +588,8 @@ describe('parseXmltvScheduleStream', () => {
       },
     ]);
 
-    expect(result.stats.channelBlocksScanned).toBe(251);
-    expect(result.stats.programmeBlocksScanned).toBe(5051);
+    expect(result.stats.channelBlocksScanned).toBe(184);
+    expect(result.stats.programmeBlocksScanned).toBe(40311);
     expect(result.stats.programmeTimestampHeadersParsed).toBe(51);
     expect(result.stats.programmeBlocksMaterialised).toBe(1);
     expect(result.stats.maxBufferedChars).toBeLessThan(source.length / 10);
