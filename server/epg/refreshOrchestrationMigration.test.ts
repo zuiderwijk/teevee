@@ -23,6 +23,7 @@ describe('bounded EPG refresh orchestration migration', () => {
     expect(migration).toContain('day_offset integer not null');
     expect(migration).toContain('channel_group_key text not null');
     expect(migration).toContain('provider_channel_ids text[] not null');
+    expect(migration).toContain('canonical_channel_ids text[] not null');
     expect(migration).toContain('external_content_status text not null');
     expect(migration).toContain('external_content_observation jsonb');
     expect(migration).toContain(
@@ -48,6 +49,20 @@ describe('bounded EPG refresh orchestration migration', () => {
     );
     expect(migration).toContain("'teevee-development-epg-refresh-pump'");
     expect(migration).toContain("'* * * * *'");
+  });
+
+  it('proves ignored-stale authority against the database-owned canonical scope atomically', () => {
+    expect(migration).toContain("'canonicalChannelIds',to_jsonb(v_job.canonical_channel_ids)");
+    expect(migration).toContain("'verify-stale-authority'");
+    expect(migration).toContain('foreach v_channel_id in array v_job.canonical_channel_ids');
+    expect(migration).toContain(
+      "pg_catalog.hashtextextended(v_channel_id, 0)",
+    );
+    expect(migration).toContain('c.generated_at >= v_observed_at');
+    expect(migration).toContain('v_authoritative_channel_count');
+    expect(migration).toContain(
+      "'ignored-stale-without-complete-same-or-newer-authority'",
+    );
   });
 
   it('persists incomplete authority and dispatch-unavailable reasons durably', () => {
