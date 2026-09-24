@@ -127,8 +127,8 @@ The first hosted activation attempt subsequently exposed a separate provider-ing
 
 Production evidence:
 
-- full request `{"mode":"guide-horizon"}` -> HTTP **546** / `WORKER_RESOURCE_LIMIT`;
-- narrow request `{"mode":"window","from":"2026-09-24T09:30:00Z","to":"2026-09-24T13:30:00Z","providerChannelIds":["RTL4.nl"]}` -> the same HTTP **546** / `WORKER_RESOURCE_LIMIT`;
+- full request `{"mode":"guide-horizon"}` -> HTTP **546** / `WORKER_RESOURCE_LIMIT`, worker shutdown `reason=CPUTime`, `cpu_time_used=2144 ms`, total memory `182,785,670 B`;
+- narrow request `{"mode":"window","from":"2026-09-24T09:30:00Z","to":"2026-09-24T13:30:00Z","providerChannelIds":["RTL4.nl"]}` -> the same HTTP **546** / `WORKER_RESOURCE_LIMIT`, `reason=CPUTime`, `cpu_time_used=2165 ms`, total memory `181,521,784 B`;
 - external-content reference count remained **0**.
 
 The narrow one-channel/four-hour failure rules out guide-horizon size and TMDB fan-out as sufficient explanations. The pre-issue-#167 XMLTV adapter performed `response.text()`, parsed/materialised every source channel and programme plus rich evidence, and only then filtered the requested provider channel IDs and time range. Requested bounds therefore did not reduce peak provider parse/materialisation.
