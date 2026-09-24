@@ -995,7 +995,7 @@ begin
           external_content_lease_expires_at = null,
           external_content_finished_at = pg_catalog.now(),
           external_content_last_error = null,
-          external_content_outcome = v_outcome,
+          external_content_outcome = p_outcome,
           external_content_observation = null
     where id = p_job_id
     returning external_content_status into v_external_content_status;
@@ -1010,7 +1010,7 @@ begin
             coalesce(nullif(btrim(p_error),''),'external-content work-item failed'),
             1000
           ),
-          external_content_outcome = v_outcome
+          external_content_outcome = p_outcome
           -- Keep staged provider evidence for the next bounded attempt.
     where id = p_job_id
     returning external_content_status into v_external_content_status;
@@ -1023,7 +1023,7 @@ begin
             coalesce(nullif(btrim(p_error),''),'external-content work-item failed'),
             1000
           ),
-          external_content_outcome = v_outcome,
+          external_content_outcome = p_outcome,
           -- Retry budget is exhausted: no later worker may consume stale staging.
           external_content_observation = null
     where id = p_job_id
