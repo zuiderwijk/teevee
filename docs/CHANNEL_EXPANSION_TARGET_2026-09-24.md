@@ -64,6 +64,7 @@ The next expansion iteration targets exactly these **49 channels**, in this defa
 
 - This is the **first-run/default channel order** for the expanded catalog.
 - A persisted user-defined channel selection/order remains authoritative once it exists.
+- If Teevee later introduces a genuinely new canonical channel, it is automatically added as visible at the **end** of an existing customised Mijn-zenders order. Existing relative order and hidden-channel choices remain unchanged. Multiple new channels append in canonical/default order.
 - The expanded catalog is distinct from the user's **Mijn zenders** subset: hidden channels remain supported/searchable, while the selected subset/order drives everyday Guide channel presentation.
 - Search remains full-catalog and may explicitly offer to add a hidden channel to Mijn zenders; opening a Search result must not silently alter selection/order. Detailed evidence/contract: `docs/TVGIDS_APP_SEARCH_CHANNEL_EVIDENCE_2026-09-24.md`.
 - The order is shared product semantics across Guide surfaces; Totaal, Per zender and Nu & Straks must not invent different default channel rankings.
@@ -101,7 +102,8 @@ The later development increment should:
 - keep mobile/public Guide contracts provider-independent;
 - verify the required Guide television-day coverage and failure semantics for the expanded catalog;
 - keep unavailable/partial provider coverage from corrupting otherwise valid channels;
-- preserve or migrate any existing user-defined channel order without destructive reset;
+- preserve or migrate any existing user-defined channel selection/order without destructive reset;
+- reconcile later catalog additions by distinguishing genuinely new channel IDs from previously known hidden IDs; append genuinely new channels as visible at the end, never resurrect previously hidden channels;
 - treat channel-logo provenance/licensing and production EPG redistribution rights as separate release requirements.
 
 No runtime/provider implementation is part of this decision record.
