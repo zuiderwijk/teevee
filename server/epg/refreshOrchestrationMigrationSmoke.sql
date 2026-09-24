@@ -1144,6 +1144,437 @@ select test_epg.assert_true(
   'run exposes exhausted external-content lifecycle separately from Guide authority'
 );
 
+
+-- Independent QA regression: ignored-stale is only a stale-write signal. Durable
+-- success requires complete same-or-newer canonical coverage for the exact DB-owned
+-- child scope, proven under the same per-channel advisory locks as ADR-0007.
+
+-- Case 1: A is newer for the full window, B is missing. The real canonical writer
+-- rejects A+B as ignored-stale, but orchestration must remain incomplete.
+set role service_role;
+select test_epg.replace_canonical_window(
+  '2026-09-26T04:00:00Z',
+  '2026-09-27T04:00:00Z',
+  '2026-09-24T15:01:00Z',
+  array['qa-stale-a']
+);
+
+insert into test_epg.results(label, payload)
+select 'qa-stale-mixed-start', public.teevee_start_epg_refresh_run(
+  'manual:qa-stale-mixed',
+  '2026-09-24T15:00:00Z'::timestamptz,
+  '2026-09-24T15:00:00Z'::timestamptz,
+  jsonb_build_array(
+    jsonb_build_object(
+      'sourceKey','qa-source',
+      'dayOffset',0,
+      'from','2026-09-26T04:00:00Z',
+      'to','2026-09-27T04:00:00Z',
+      'channelGroupKey','group-ab',
+      'providerChannelIds',jsonb_build_array('qa-provider-a','qa-provider-b'),
+      'canonicalChannelIds',jsonb_build_array('qa-stale-a','qa-stale-b')
+    )
+  )
+);
+
+insert into test_epg.tokens(label, token)
+select 'qa-stale-mixed-attempt', j.attempt_token
+from teevee.epg_refresh_jobs j
+join teevee.epg_refresh_runs r on r.id=j.run_id
+where r.request_key='manual:qa-stale-mixed';
+
+select public.teevee_claim_epg_refresh_job(
+  (select j.id from teevee.epg_refresh_jobs j
+   join teevee.epg_refresh_runs r on r.id=j.run_id
+   where r.request_key='manual:qa-stale-mixed'),
+  (select token from test_epg.tokens where label='qa-stale-mixed-attempt')
+);
+
+insert into test_epg.results(label, payload)
+select 'qa-stale-mixed-write', test_epg.replace_canonical_window(
+  '2026-09-26T04:00:00Z',
+  '2026-09-27T04:00:00Z',
+  '2026-09-24T15:00:00Z',
+  array['qa-stale-a','qa-stale-b']
+);
+
+select test_epg.assert_json_status(
+  (select payload from test_epg.results where label='qa-stale-mixed-write'),
+  'ignored-stale',
+  'real ADR-0007 writer rejects A+B when only A has newer authority'
+);
+
+select public.teevee_complete_epg_refresh_job(
+  (select j.id from teevee.epg_refresh_jobs j
+   join teevee.epg_refresh_runs r on r.id=j.run_id
+   where r.request_key='manual:qa-stale-mixed'),
+  (select token from test_epg.tokens where label='qa-stale-mixed-attempt'),
+  'verify-stale-authority',
+  '{"writeStatus":"ignored-stale"}'::jsonb,
+  null,
+  null
+);
+reset role;
+
+select test_epg.assert_true(
+  exists (
+    select 1
+    from teevee.epg_refresh_jobs j
+    join teevee.epg_refresh_runs r on r.id=j.run_id
+    where r.request_key='manual:qa-stale-mixed'
+      and j.status='incomplete'
+      and j.last_error='ignored-stale-without-complete-same-or-newer-authority'
+      and (j.outcome->'staleAuthorityProof'->>'authoritativeChannelCount')::integer = 1
+  ),
+  'A newer plus B missing cannot become durable child success'
+);
+select test_epg.assert_true(
+  (select status from teevee.epg_refresh_runs
+   where request_key='manual:qa-stale-mixed') = 'incomplete',
+  'mixed stale authority cannot produce parent completed'
+);
+
+-- Case 2: only part of C is newer and D is old. One newer overlap still rejects the
+-- whole C+D writer, but freshness filtering leaves no fully authoritative channel.
+set role service_role;
+select test_epg.replace_canonical_window(
+  '2026-09-27T04:00:00Z',
+  '2026-09-28T04:00:00Z',
+  '2026-09-24T14:59:00Z',
+  array['qa-partial-d']
+);
+select test_epg.replace_canonical_window(
+  '2026-09-27T04:00:00Z',
+  '2026-09-27T16:00:00Z',
+  '2026-09-24T15:01:00Z',
+  array['qa-partial-c']
+);
+
+select public.teevee_start_epg_refresh_run(
+  'manual:qa-stale-partial',
+  '2026-09-24T15:00:00Z'::timestamptz,
+  '2026-09-24T15:00:00Z'::timestamptz,
+  jsonb_build_array(
+    jsonb_build_object(
+      'sourceKey','qa-source',
+      'dayOffset',1,
+      'from','2026-09-27T04:00:00Z',
+      'to','2026-09-28T04:00:00Z',
+      'channelGroupKey','group-cd',
+      'providerChannelIds',jsonb_build_array('qa-provider-c','qa-provider-d'),
+      'canonicalChannelIds',jsonb_build_array('qa-partial-c','qa-partial-d')
+    )
+  )
+);
+
+insert into test_epg.tokens(label, token)
+select 'qa-stale-partial-attempt', j.attempt_token
+from teevee.epg_refresh_jobs j
+join teevee.epg_refresh_runs r on r.id=j.run_id
+where r.request_key='manual:qa-stale-partial';
+
+select public.teevee_claim_epg_refresh_job(
+  (select j.id from teevee.epg_refresh_jobs j
+   join teevee.epg_refresh_runs r on r.id=j.run_id
+   where r.request_key='manual:qa-stale-partial'),
+  (select token from test_epg.tokens where label='qa-stale-partial-attempt')
+);
+
+insert into test_epg.results(label, payload)
+select 'qa-stale-partial-write', test_epg.replace_canonical_window(
+  '2026-09-27T04:00:00Z',
+  '2026-09-28T04:00:00Z',
+  '2026-09-24T15:00:00Z',
+  array['qa-partial-c','qa-partial-d']
+);
+
+select test_epg.assert_json_status(
+  (select payload from test_epg.results where label='qa-stale-partial-write'),
+  'ignored-stale',
+  'partial newer overlap on C rejects the whole C+D stale write'
+);
+
+select public.teevee_complete_epg_refresh_job(
+  (select j.id from teevee.epg_refresh_jobs j
+   join teevee.epg_refresh_runs r on r.id=j.run_id
+   where r.request_key='manual:qa-stale-partial'),
+  (select token from test_epg.tokens where label='qa-stale-partial-attempt'),
+  'verify-stale-authority',
+  '{"writeStatus":"ignored-stale"}'::jsonb,
+  null,
+  null
+);
+reset role;
+
+select test_epg.assert_true(
+  exists (
+    select 1
+    from teevee.epg_refresh_jobs j
+    join teevee.epg_refresh_runs r on r.id=j.run_id
+    where r.request_key='manual:qa-stale-partial'
+      and j.status='incomplete'
+      and (j.outcome->'staleAuthorityProof'->>'authoritativeChannelCount')::integer = 0
+  ),
+  'partial newer overlap on one channel is not full exact-scope authority'
+);
+
+-- Cases 3+4+5: attempt 1 commits the full E+F scope at the run observation, then a
+-- newer half-window lands on E before retry. The retry is ignored-stale, but the union
+-- of same-observation and newer coverage is complete for E+F, so verification succeeds.
+set role service_role;
+select public.teevee_start_epg_refresh_run(
+  'manual:qa-stale-same-observation',
+  '2026-09-24T15:00:00Z'::timestamptz,
+  '2026-09-24T15:00:00Z'::timestamptz,
+  jsonb_build_array(
+    jsonb_build_object(
+      'sourceKey','qa-source',
+      'dayOffset',2,
+      'from','2026-09-28T04:00:00Z',
+      'to','2026-09-29T04:00:00Z',
+      'channelGroupKey','group-ef',
+      'providerChannelIds',jsonb_build_array('qa-provider-e','qa-provider-f'),
+      'canonicalChannelIds',jsonb_build_array('qa-same-e','qa-same-f')
+    )
+  )
+);
+
+insert into test_epg.tokens(label, token)
+select 'qa-same-attempt-1', j.attempt_token
+from teevee.epg_refresh_jobs j
+join teevee.epg_refresh_runs r on r.id=j.run_id
+where r.request_key='manual:qa-stale-same-observation';
+
+select public.teevee_claim_epg_refresh_job(
+  (select j.id from teevee.epg_refresh_jobs j
+   join teevee.epg_refresh_runs r on r.id=j.run_id
+   where r.request_key='manual:qa-stale-same-observation'),
+  (select token from test_epg.tokens where label='qa-same-attempt-1')
+);
+
+insert into test_epg.results(label, payload)
+select 'qa-same-attempt-1-write', test_epg.replace_canonical_window(
+  '2026-09-28T04:00:00Z',
+  '2026-09-29T04:00:00Z',
+  '2026-09-24T15:00:00Z',
+  array['qa-same-e','qa-same-f']
+);
+select test_epg.assert_json_status(
+  (select payload from test_epg.results where label='qa-same-attempt-1-write'),
+  'stored',
+  'earlier attempt commits full same-observation authority'
+);
+
+select test_epg.replace_canonical_window(
+  '2026-09-28T04:00:00Z',
+  '2026-09-28T16:00:00Z',
+  '2026-09-24T15:01:00Z',
+  array['qa-same-e']
+);
+reset role;
+
+update teevee.epg_refresh_jobs
+set lease_expires_at = pg_catalog.now() - interval '1 second'
+where run_id=(select id from teevee.epg_refresh_runs
+              where request_key='manual:qa-stale-same-observation');
+
+set role service_role;
+select teevee.pump_epg_refresh_jobs();
+
+insert into test_epg.tokens(label, token)
+select 'qa-same-attempt-2', j.attempt_token
+from teevee.epg_refresh_jobs j
+join teevee.epg_refresh_runs r on r.id=j.run_id
+where r.request_key='manual:qa-stale-same-observation';
+
+select public.teevee_claim_epg_refresh_job(
+  (select j.id from teevee.epg_refresh_jobs j
+   join teevee.epg_refresh_runs r on r.id=j.run_id
+   where r.request_key='manual:qa-stale-same-observation'),
+  (select token from test_epg.tokens where label='qa-same-attempt-2')
+);
+
+insert into test_epg.results(label, payload)
+select 'qa-same-attempt-2-write', test_epg.replace_canonical_window(
+  '2026-09-28T04:00:00Z',
+  '2026-09-29T04:00:00Z',
+  '2026-09-24T15:00:00Z',
+  array['qa-same-e','qa-same-f']
+);
+select test_epg.assert_json_status(
+  (select payload from test_epg.results where label='qa-same-attempt-2-write'),
+  'ignored-stale',
+  'same-observation retry is stale after a newer overlapping E segment'
+);
+
+select public.teevee_complete_epg_refresh_job(
+  (select j.id from teevee.epg_refresh_jobs j
+   join teevee.epg_refresh_runs r on r.id=j.run_id
+   where r.request_key='manual:qa-stale-same-observation'),
+  (select token from test_epg.tokens where label='qa-same-attempt-2'),
+  'verify-stale-authority',
+  '{"writeStatus":"ignored-stale"}'::jsonb,
+  null,
+  null
+);
+reset role;
+
+select test_epg.assert_true(
+  exists (
+    select 1
+    from teevee.epg_refresh_jobs j
+    join teevee.epg_refresh_runs r on r.id=j.run_id
+    where r.request_key='manual:qa-stale-same-observation'
+      and j.status='succeeded'
+      and (j.outcome->'staleAuthorityProof'->>'status')='complete-same-or-newer'
+      and (j.outcome->'staleAuthorityProof'->>'authoritativeChannelCount')::integer = 2
+  ),
+  'same-or-newer full E+F authority permits stale retry success'
+);
+select test_epg.assert_true(
+  (select status from teevee.epg_refresh_runs
+   where request_key='manual:qa-stale-same-observation') = 'completed',
+  'full same-or-newer stale authority permits parent completion'
+);
+select test_epg.assert_true(
+  exists (
+    select 1
+    from teevee.schedule_coverage
+    where channel_id='qa-same-e'
+      and from_at='2026-09-28T04:00:00Z'::timestamptz
+      and to_at='2026-09-28T16:00:00Z'::timestamptz
+      and generated_at='2026-09-24T15:01:00Z'::timestamptz
+  ),
+  'stale retry does not roll newer E coverage backwards'
+);
+
+-- Case 6: one verified group cannot satisfy a disjoint sibling group.
+set role service_role;
+select test_epg.replace_canonical_window(
+  '2026-09-29T04:00:00Z',
+  '2026-09-30T04:00:00Z',
+  '2026-09-24T15:01:00Z',
+  array['qa-group-g']
+);
+
+select public.teevee_start_epg_refresh_run(
+  'manual:qa-stale-disjoint-groups',
+  '2026-09-24T15:00:00Z'::timestamptz,
+  '2026-09-24T15:00:00Z'::timestamptz,
+  jsonb_build_array(
+    jsonb_build_object(
+      'sourceKey','qa-source',
+      'dayOffset',3,
+      'from','2026-09-29T04:00:00Z',
+      'to','2026-09-30T04:00:00Z',
+      'channelGroupKey','group-g',
+      'providerChannelIds',jsonb_build_array('qa-provider-g'),
+      'canonicalChannelIds',jsonb_build_array('qa-group-g')
+    ),
+    jsonb_build_object(
+      'sourceKey','qa-source',
+      'dayOffset',3,
+      'from','2026-09-29T04:00:00Z',
+      'to','2026-09-30T04:00:00Z',
+      'channelGroupKey','group-h',
+      'providerChannelIds',jsonb_build_array('qa-provider-h'),
+      'canonicalChannelIds',jsonb_build_array('qa-group-h')
+    )
+  )
+);
+
+insert into test_epg.tokens(label, token)
+select 'qa-disjoint-g-attempt', j.attempt_token
+from teevee.epg_refresh_jobs j
+join teevee.epg_refresh_runs r on r.id=j.run_id
+where r.request_key='manual:qa-stale-disjoint-groups' and j.ordinal=1;
+
+select public.teevee_claim_epg_refresh_job(
+  (select j.id from teevee.epg_refresh_jobs j
+   join teevee.epg_refresh_runs r on r.id=j.run_id
+   where r.request_key='manual:qa-stale-disjoint-groups' and j.ordinal=1),
+  (select token from test_epg.tokens where label='qa-disjoint-g-attempt')
+);
+
+insert into test_epg.results(label, payload)
+select 'qa-disjoint-g-write', test_epg.replace_canonical_window(
+  '2026-09-29T04:00:00Z',
+  '2026-09-30T04:00:00Z',
+  '2026-09-24T15:00:00Z',
+  array['qa-group-g']
+);
+select test_epg.assert_json_status(
+  (select payload from test_epg.results where label='qa-disjoint-g-write'),
+  'ignored-stale',
+  'group G stale write is rejected by its own newer authority'
+);
+
+select public.teevee_complete_epg_refresh_job(
+  (select j.id from teevee.epg_refresh_jobs j
+   join teevee.epg_refresh_runs r on r.id=j.run_id
+   where r.request_key='manual:qa-stale-disjoint-groups' and j.ordinal=1),
+  (select token from test_epg.tokens where label='qa-disjoint-g-attempt'),
+  'verify-stale-authority',
+  '{"writeStatus":"ignored-stale"}'::jsonb,
+  null,
+  null
+);
+reset role;
+
+select test_epg.assert_true(
+  (select status from teevee.epg_refresh_runs
+   where request_key='manual:qa-stale-disjoint-groups') = 'running'
+  and exists (
+    select 1
+    from teevee.epg_refresh_jobs j
+    join teevee.epg_refresh_runs r on r.id=j.run_id
+    where r.request_key='manual:qa-stale-disjoint-groups'
+      and j.ordinal=1
+      and j.status='succeeded'
+  )
+  and exists (
+    select 1
+    from teevee.epg_refresh_jobs j
+    join teevee.epg_refresh_runs r on r.id=j.run_id
+    where r.request_key='manual:qa-stale-disjoint-groups'
+      and j.ordinal=2
+      and j.status='dispatched'
+  ),
+  'verified group G authority proves nothing about disjoint group H'
+);
+
+set role service_role;
+insert into test_epg.tokens(label, token)
+select 'qa-disjoint-h-attempt', j.attempt_token
+from teevee.epg_refresh_jobs j
+join teevee.epg_refresh_runs r on r.id=j.run_id
+where r.request_key='manual:qa-stale-disjoint-groups' and j.ordinal=2;
+
+select public.teevee_claim_epg_refresh_job(
+  (select j.id from teevee.epg_refresh_jobs j
+   join teevee.epg_refresh_runs r on r.id=j.run_id
+   where r.request_key='manual:qa-stale-disjoint-groups' and j.ordinal=2),
+  (select token from test_epg.tokens where label='qa-disjoint-h-attempt')
+);
+
+select public.teevee_complete_epg_refresh_job(
+  (select j.id from teevee.epg_refresh_jobs j
+   join teevee.epg_refresh_runs r on r.id=j.run_id
+   where r.request_key='manual:qa-stale-disjoint-groups' and j.ordinal=2),
+  (select token from test_epg.tokens where label='qa-disjoint-h-attempt'),
+  'incomplete',
+  '{"authority":{"status":"incomplete","reason":"no-safe-channel-scope"}}'::jsonb,
+  'incomplete-authority:no-safe-channel-scope',
+  null
+);
+reset role;
+
+select test_epg.assert_true(
+  (select status from teevee.epg_refresh_runs
+   where request_key='manual:qa-stale-disjoint-groups') = 'incomplete',
+  'disjoint missing group keeps the parent incomplete'
+);
+
 delete from vault.decrypted_secrets
 where name='teevee_epg_refresh_cron_token';
 
