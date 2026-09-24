@@ -334,39 +334,38 @@ function findBlockEnd(
   const closingPrefix = `</${tag}`;
   let cursor = openingEnd + 1;
 
+  // Walk monotonically through markup starts inside this top-level block. CDATA and
+  // comments are skipped as opaque regions before interpreting any closing-tag text
+  // they may contain. Because cursor only advances, scan cost is proportional to the
+  // consumed XML instead of rescanning the remaining network chunk per programme.
   while (cursor < source.length) {
-    const closingIndex = lowerSource.indexOf(closingPrefix, cursor);
-    if (closingIndex < 0) return null;
+    const markupIndex = lowerSource.indexOf('<', cursor);
+    if (markupIndex < 0) return null;
 
-    // Search only inside this candidate block. Looking for CDATA/comments in the
-    // entire remaining network chunk for every programme makes large chunks
-    // quadratic; this keeps the structural scan proportional to consumed XML.
-    const beforeClosing = lowerSource.slice(cursor, closingIndex);
-    const cdataStart = beforeClosing.lastIndexOf('<![cdata[');
-    const cdataEnd = beforeClosing.lastIndexOf(']]>');
-    if (cdataStart > cdataEnd) {
-      const end = lowerSource.indexOf(']]>', closingIndex + closingPrefix.length);
-      if (end < 0) return null;
-      cursor = end + 3;
+    if (lowerSource.startsWith('<![cdata[', markupIndex)) {
+      const cdataEnd = lowerSource.indexOf(']]>', markupIndex + 9);
+      if (cdataEnd < 0) return null;
+      cursor = cdataEnd + 3;
       continue;
     }
 
-    const commentStart = beforeClosing.lastIndexOf('<!--');
-    const commentEnd = beforeClosing.lastIndexOf('-->');
-    if (commentStart > commentEnd) {
-      const end = lowerSource.indexOf('-->', closingIndex + closingPrefix.length);
-      if (end < 0) return null;
-      cursor = end + 3;
+    if (lowerSource.startsWith('<!--', markupIndex)) {
+      const commentEnd = lowerSource.indexOf('-->', markupIndex + 4);
+      if (commentEnd < 0) return null;
+      cursor = commentEnd + 3;
       continue;
     }
 
-    const boundary = lowerSource[closingIndex + closingPrefix.length];
-    if (boundary !== undefined && !/\s|>/.test(boundary)) {
-      cursor = closingIndex + closingPrefix.length;
-      continue;
+    if (lowerSource.startsWith(closingPrefix, markupIndex)) {
+      const boundary = lowerSource[markupIndex + closingPrefix.length];
+      if (boundary === undefined) return null;
+      if (/\s|>/.test(boundary)) {
+        const closingEnd = source.indexOf('>', markupIndex + closingPrefix.length);
+        return closingEnd < 0 ? null : closingEnd + 1;
+      }
     }
-    const closingEnd = source.indexOf('>', closingIndex + closingPrefix.length);
-    return closingEnd < 0 ? null : closingEnd + 1;
+
+    cursor = markupIndex + 1;
   }
 
   return null;
