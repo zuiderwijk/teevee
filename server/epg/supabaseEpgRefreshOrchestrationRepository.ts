@@ -1,0 +1,190 @@
+import type { EpgRefreshWorkItemPlan } from './refreshTopology.ts';
+import type { ScheduleRpcClient } from './supabaseScheduleRepository.ts';
+
+type RpcError = { message: string };
+
+function rpcError(operation: string, error: RpcError): Error {
+  return new Error(`Supabase ${operation} failed: ${error.message}`);
+}
+
+function record(value: unknown, label: string): Record<string, unknown> {
+  if (typeof value !== 'object' || value === null || Array.isArray(value)) {
+    throw new Error(`${label} returned an invalid payload`);
+  }
+  return value as Record<string, unknown>;
+}
+
+function positiveInteger(value: unknown, label: string): number {
+  if (typeof value !== 'number' || !Number.isInteger(value) || value < 1) {
+    throw new Error(`${label} must be a positive integer`);
+  }
+  return value;
+}
+
+function requiredText(value: unknown, label: string): string {
+  if (typeof value !== 'string' || !value.trim()) {
+    throw new Error(`${label} must be a non-empty string`);
+  }
+  return value.trim();
+}
+
+function timestamp(value: unknown, label: string): string {
+  const text = requiredText(value, label);
+  if (!Number.isFinite(Date.parse(text))) throw new Error(`${label} must be a valid timestamp`);
+  return new Date(Date.parse(text)).toISOString();
+}
+
+function stringArray(value: unknown, label: string): string[] {
+  if (!Array.isArray(value) || value.length === 0) {
+    throw new Error(`${label} must contain at least one value`);
+  }
+  return value.map((item, index) => requiredText(item, `${label}[${index}]`));
+}
+
+export type EpgRefreshRunLifecycle = 'queued' | 'running' | 'completed' | 'failed';
+
+export type StartEpgRefreshRunResult = {
+  runId: number;
+  status: EpgRefreshRunLifecycle;
+  jobCount: number;
+  reused: boolean;
+};
+
+export type ClaimedEpgRefreshWorkItem = {
+  status: 'claimed';
+  runId: number;
+  jobId: number;
+  attempt: number;
+  observedAt: string;
+  sourceKey: string;
+  dayOffset: number;
+  from: string;
+  to: string;
+  channelGroupKey: string;
+  providerChannelIds: string[];
+};
+
+export type EpgRefreshWorkItemClaimResult =
+  | ClaimedEpgRefreshWorkItem
+  | {
+      status: 'duplicate' | 'stale-attempt' | 'terminal';
+      jobId: number;
+    };
+
+export type CompleteEpgRefreshWorkItemResult = {
+  jobId: number;
+  jobStatus: 'queued' | 'succeeded' | 'failed';
+  runId: number;
+  runStatus: EpgRefreshRunLifecycle;
+};
+
+function parseRunLifecycle(value: unknown, label: string): EpgRefreshRunLifecycle {
+  if (value === 'queued' || value === 'running' || value === 'completed' || value === 'failed') {
+    return value;
+  }
+  throw new Error(`${label} is invalid`);
+}
+
+function parseStartResult(value: unknown): StartEpgRefreshRunResult {
+  const payload = record(value, 'Supabase start_epg_refresh_run');
+  return {
+    runId: positiveInteger(payload.runId, 'runId'),
+    status: parseRunLifecycle(payload.status, 'run status'),
+    jobCount: positiveInteger(payload.jobCount, 'jobCount'),
+    reused: payload.reused === true,
+  };
+}
+
+function parseClaimResult(value: unknown): EpgRefreshWorkItemClaimResult {
+  const payload = record(value, 'Supabase claim_epg_refresh_job');
+  const status = payload.status;
+  const jobId = positiveInteger(payload.jobId, 'jobId');
+
+  if (status === 'duplicate' || status === 'stale-attempt' || status === 'terminal') {
+    return { status, jobId };
+  }
+  if (status !== 'claimed') throw new Error('Supabase claim_epg_refresh_job status is invalid');
+
+  if (typeof payload.dayOffset !== 'number' || !Number.isInteger(payload.dayOffset)) {
+    throw new Error('dayOffset must be an integer');
+  }
+
+  return {
+    status: 'claimed',
+    runId: positiveInteger(payload.runId, 'runId'),
+    jobId,
+    attempt: positiveInteger(payload.attempt, 'attempt'),
+    observedAt: timestamp(payload.observedAt, 'observedAt'),
+    sourceKey: requiredText(payload.sourceKey, 'sourceKey'),
+    dayOffset: payload.dayOffset,
+    from: timestamp(payload.from, 'from'),
+    to: timestamp(payload.to, 'to'),
+    channelGroupKey: requiredText(payload.channelGroupKey, 'channelGroupKey'),
+    providerChannelIds: stringArray(payload.providerChannelIds, 'providerChannelIds'),
+  };
+}
+
+function parseCompleteResult(value: unknown): CompleteEpgRefreshWorkItemResult {
+  const payload = record(value, 'Supabase complete_epg_refresh_job');
+  const jobStatus = payload.jobStatus;
+  if (jobStatus !== 'queued' && jobStatus !== 'succeeded' && jobStatus !== 'failed') {
+    throw new Error('jobStatus is invalid');
+  }
+
+  return {
+    jobId: positiveInteger(payload.jobId, 'jobId'),
+    jobStatus,
+    runId: positiveInteger(payload.runId, 'runId'),
+    runStatus: parseRunLifecycle(payload.runStatus, 'runStatus'),
+  };
+}
+
+export class SupabaseEpgRefreshOrchestrationRepository {
+  constructor(private readonly client: ScheduleRpcClient) {}
+
+  async startRun(input: {
+    requestKey: string;
+    observedAt: string;
+    anchorAt: string;
+    jobs: readonly EpgRefreshWorkItemPlan[];
+  }): Promise<StartEpgRefreshRunResult> {
+    const response = await this.client.rpc<unknown>('teevee_start_epg_refresh_run', {
+      p_request_key: requiredText(input.requestKey, 'requestKey'),
+      p_observed_at: timestamp(input.observedAt, 'observedAt'),
+      p_anchor_at: timestamp(input.anchorAt, 'anchorAt'),
+      p_jobs: input.jobs,
+    });
+    if (response.error) throw rpcError('start_epg_refresh_run', response.error);
+    return parseStartResult(response.data);
+  }
+
+  async claimJob(input: {
+    jobId: number;
+    attemptToken: string;
+  }): Promise<EpgRefreshWorkItemClaimResult> {
+    const response = await this.client.rpc<unknown>('teevee_claim_epg_refresh_job', {
+      p_job_id: positiveInteger(input.jobId, 'jobId'),
+      p_attempt_token: requiredText(input.attemptToken, 'attemptToken'),
+    });
+    if (response.error) throw rpcError('claim_epg_refresh_job', response.error);
+    return parseClaimResult(response.data);
+  }
+
+  async completeJob(input: {
+    jobId: number;
+    attemptToken: string;
+    success: boolean;
+    outcome?: Record<string, unknown>;
+    error?: string;
+  }): Promise<CompleteEpgRefreshWorkItemResult> {
+    const response = await this.client.rpc<unknown>('teevee_complete_epg_refresh_job', {
+      p_job_id: positiveInteger(input.jobId, 'jobId'),
+      p_attempt_token: requiredText(input.attemptToken, 'attemptToken'),
+      p_success: input.success,
+      p_outcome: input.outcome ?? null,
+      p_error: input.error?.trim() || null,
+    });
+    if (response.error) throw rpcError('complete_epg_refresh_job', response.error);
+    return parseCompleteResult(response.data);
+  }
+}

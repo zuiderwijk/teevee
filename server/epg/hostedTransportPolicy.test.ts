@@ -100,6 +100,66 @@ describe('parseHostedRefreshRequest', () => {
     ).toThrow('derives its own television-day windows');
   });
 
+  it('accepts an idempotency key for Guide-horizon orchestration', () => {
+    expect(
+      parseHostedRefreshRequest(
+        {
+          mode: 'guide-horizon',
+          requestKey: 'cron:2026-09-24T12',
+          providerChannelIds: ['RTL4.nl'],
+        },
+        providerIds,
+      ),
+    ).toEqual({
+      mode: 'guide-horizon',
+      providerChannelIds: ['RTL4.nl'],
+      requestKey: 'cron:2026-09-24T12',
+    });
+
+    expect(() =>
+      parseHostedRefreshRequest(
+        { mode: 'guide-horizon', requestKey: 'not allowed / key' },
+        providerIds,
+      ),
+    ).toThrow('requestKey is invalid');
+  });
+
+  it('accepts only database-owned work-item identity and rejects caller-owned scope', () => {
+    const attemptToken = '123e4567-e89b-42d3-a456-426614174000';
+    expect(
+      parseHostedRefreshRequest(
+        { mode: 'work-item', jobId: 17, attemptToken },
+        providerIds,
+      ),
+    ).toEqual({ mode: 'work-item', jobId: 17, attemptToken });
+
+    expect(() =>
+      parseHostedRefreshRequest(
+        {
+          mode: 'work-item',
+          jobId: 17,
+          attemptToken,
+          providerChannelIds: ['RTL4.nl'],
+        },
+        providerIds,
+      ),
+    ).toThrow('scope is database-owned');
+
+    expect(() =>
+      parseHostedRefreshRequest(
+        { mode: 'work-item', jobId: 0, attemptToken },
+        providerIds,
+      ),
+    ).toThrow('jobId must be a positive integer');
+
+    expect(() =>
+      parseHostedRefreshRequest(
+        { mode: 'work-item', jobId: 17, attemptToken: 'not-a-uuid' },
+        providerIds,
+      ),
+    ).toThrow('attemptToken must be a UUID');
+  });
+
   it('defaults to the allow-listed provider scope and canonicalises timestamps', () => {
     expect(
       parseHostedRefreshRequest(

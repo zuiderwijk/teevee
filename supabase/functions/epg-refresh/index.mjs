@@ -1,14 +1,15 @@
 import {
-  DEVELOPMENT_CHANNELS,
-  IPTV_EPG_NL_CHANNEL_MAPPINGS,
-  IPTV_EPG_NL_PROVIDER_CHANNEL_IDS,
-} from '../../../server/epg/developmentChannelCatalog.ts';
-import { refreshGuideHorizon } from '../../../server/epg/guideHorizonRefresh.ts';
+  hostedRefreshProviderChannelIds,
+  planGuideHorizonRefreshWorkItems,
+  resolveEpgRefreshWorkItemScope,
+  EPG_REFRESH_SOURCES,
+} from '../../../server/epg/refreshTopology.ts';
 import {
   HOSTED_REQUEST_MAX_BODY_BYTES,
   parseHostedRefreshRequest,
 } from '../../../server/epg/hostedTransportPolicy.ts';
 import { ingestProviderSchedule } from '../../../server/epg/ingest.ts';
+import { SupabaseEpgRefreshOrchestrationRepository } from '../../../server/epg/supabaseEpgRefreshOrchestrationRepository.ts';
 import { SupabaseRestRpcClient } from '../../../server/epg/supabaseRestRpcClient.ts';
 import { SupabaseScheduleRepository } from '../../../server/epg/supabaseScheduleRepository.ts';
 import { XmltvEpgProvider } from '../../../server/epg/xmltvProvider.ts';
@@ -68,6 +69,10 @@ function repository(secretKey) {
   return new SupabaseScheduleRepository(rpcClient(secretKey));
 }
 
+function orchestrationRepository(secretKey) {
+  return new SupabaseEpgRefreshOrchestrationRepository(rpcClient(secretKey));
+}
+
 const EXTERNAL_CONTENT_ENRICHMENT_BUDGET_MS = 20_000;
 
 function externalContentRepository(secretKey, signal) {
@@ -87,8 +92,6 @@ async function enrichExternalContent(observations, secretKey, ownerSignal) {
   const controller = new AbortController();
   const ownerAbort = () => controller.abort();
   ownerSignal?.addEventListener('abort', ownerAbort, { once: true });
-  // One owner signal bounds both TMDB HTTP work and the final external-content
-  // PostgREST persistence request. Canonical Guide writes already committed first.
   const timeout = setTimeout(
     () => controller.abort(),
     EXTERNAL_CONTENT_ENRICHMENT_BUDGET_MS,
@@ -142,15 +145,53 @@ function diagnosticCounts(result) {
   );
 }
 
-function horizonWindowResponse(window) {
+function workItemOutcome(claim, result, externalContent, elapsedMs) {
   return {
-    offset: window.offset,
-    from: window.from,
-    to: window.to,
-    status: window.result.write.status,
-    write: window.result.write,
-    programmeCount: window.result.schedule.programmes.length,
-    diagnosticCounts: diagnosticCounts(window.result),
+    sourceKey: claim.sourceKey,
+    dayOffset: claim.dayOffset,
+    from: claim.from,
+    to: claim.to,
+    channelGroupKey: claim.channelGroupKey,
+    providerChannelCount: claim.providerChannelIds.length,
+    writeStatus: result.write.status,
+    write: result.write,
+    programmeCount: result.schedule.programmes.length,
+    diagnosticCounts: diagnosticCounts(result),
+    externalContent,
+    elapsedMs,
+  };
+}
+
+async function executeClaimedWorkItem({ claim, secretKey, ownerSignal, startedAt }) {
+  const scope = resolveEpgRefreshWorkItemScope({
+    sourceKey: claim.sourceKey,
+    providerChannelIds: claim.providerChannelIds,
+  });
+  const provider = new XmltvEpgProvider({
+    key: scope.source.providerKey,
+    url: scope.source.url,
+  });
+  const result = await ingestProviderSchedule({
+    provider,
+    repository: repository(secretKey),
+    canonicalChannels: scope.canonicalChannels,
+    channelMappings: scope.channelMappings,
+    providerChannelIds: scope.providerChannelIds,
+    from: new Date(claim.from),
+    to: new Date(claim.to),
+    clock: () => new Date(claim.observedAt),
+  });
+  const externalContent = await enrichExternalContent(
+    result.storedObservation ? [result.storedObservation] : [],
+    secretKey,
+    ownerSignal,
+  );
+  const elapsedMs = Math.round(performance.now() - startedAt);
+  return {
+    result,
+    externalContent,
+    elapsedMs,
+    outcome: workItemOutcome(claim, result, externalContent, elapsedMs),
   };
 }
 
@@ -177,64 +218,143 @@ export default {
     try {
       request = parseHostedRefreshRequest(
         await parseJsonBody(req),
-        IPTV_EPG_NL_PROVIDER_CHANNEL_IDS,
+        hostedRefreshProviderChannelIds(),
       );
     } catch (error) {
       return errorResponse(error instanceof Error ? error.message : 'Invalid refresh request', 400);
     }
 
     const startedAt = performance.now();
-    const refreshStartedAt = new Date();
-    // One provider instance owns the invocation. Guide-horizon uses its bulk schedule
-    // session so the upstream XMLTV response is fetched/scanned once while each
-    // television-day window keeps independent complete/partial authority.
-    const provider = new XmltvEpgProvider();
-    const scheduleRepository = repository(secretKey);
 
-    try {
-      if (request.mode === 'guide-horizon') {
-        const windows = await refreshGuideHorizon({
-          provider,
-          repository: scheduleRepository,
-          canonicalChannels: [...DEVELOPMENT_CHANNELS],
-          channelMappings: [...IPTV_EPG_NL_CHANNEL_MAPPINGS],
-          providerChannelIds: request.providerChannelIds,
+    if (request.mode === 'guide-horizon') {
+      const refreshStartedAt = new Date();
+      try {
+        const jobs = planGuideHorizonRefreshWorkItems({
           anchorMs: refreshStartedAt.getTime(),
-          clock: () => refreshStartedAt,
+          requestedProviderChannelIds: request.providerChannelIds,
         });
-
-        // Canonical Guide writes for the entire horizon finish before any TMDB work.
-        // Enrichment is therefore fail-open and cannot roll back or delay an individual
-        // authoritative schedule transaction.
-        const storedObservations = windows.flatMap(({ result }) =>
-          result.storedObservation ? [result.storedObservation] : [],
+        const run = await orchestrationRepository(secretKey).startRun({
+          requestKey: request.requestKey ?? `manual:${crypto.randomUUID()}`,
+          observedAt: refreshStartedAt.toISOString(),
+          anchorAt: refreshStartedAt.toISOString(),
+          jobs,
+        });
+        return Response.json(
+          {
+            status: 'accepted',
+            mode: request.mode,
+            run,
+            workItemCount: jobs.length,
+            sourceCount: EPG_REFRESH_SOURCES.length,
+            elapsedMs: Math.round(performance.now() - startedAt),
+          },
+          { status: 202 },
         );
-        const externalContent = await enrichExternalContent(
-          storedObservations,
-          secretKey,
-          req.signal,
-        );
+      } catch (error) {
+        console.error('Teevee EPG refresh orchestration failed', error);
+        return errorResponse('EPG refresh orchestration failed', 502);
+      }
+    }
 
+    if (request.mode === 'work-item') {
+      const orchestration = orchestrationRepository(secretKey);
+      let claim;
+      try {
+        claim = await orchestration.claimJob({
+          jobId: request.jobId,
+          attemptToken: request.attemptToken,
+        });
+      } catch (error) {
+        console.error('Teevee EPG work-item claim failed', error);
+        return errorResponse('EPG refresh work-item claim failed', 502);
+      }
+
+      if (claim.status !== 'claimed') {
         return Response.json({
-          status: 'completed',
+          status: claim.status,
           mode: request.mode,
-          windows: windows.map(horizonWindowResponse),
-          externalContent,
+          jobId: request.jobId,
           elapsedMs: Math.round(performance.now() - startedAt),
         });
       }
 
+      try {
+        const execution = await executeClaimedWorkItem({
+          claim,
+          secretKey,
+          ownerSignal: req.signal,
+          startedAt,
+        });
+        const completion = await orchestration.completeJob({
+          jobId: claim.jobId,
+          attemptToken: request.attemptToken,
+          success: true,
+          outcome: execution.outcome,
+        });
+        return Response.json({
+          status: 'completed',
+          mode: request.mode,
+          runId: claim.runId,
+          jobId: claim.jobId,
+          attempt: claim.attempt,
+          sourceKey: claim.sourceKey,
+          dayOffset: claim.dayOffset,
+          from: claim.from,
+          to: claim.to,
+          channelGroupKey: claim.channelGroupKey,
+          providerChannelIds: claim.providerChannelIds,
+          write: execution.result.write,
+          programmeCount: execution.result.schedule.programmes.length,
+          diagnosticCounts: diagnosticCounts(execution.result),
+          externalContent: execution.externalContent,
+          orchestration: completion,
+          elapsedMs: execution.elapsedMs,
+        });
+      } catch (error) {
+        const message = error instanceof Error ? error.message : 'work-item failed';
+        console.error('Teevee EPG work-item failed', error);
+        try {
+          await orchestration.completeJob({
+            jobId: claim.jobId,
+            attemptToken: request.attemptToken,
+            success: false,
+            outcome: {
+              sourceKey: claim.sourceKey,
+              dayOffset: claim.dayOffset,
+              channelGroupKey: claim.channelGroupKey,
+              elapsedMs: Math.round(performance.now() - startedAt),
+            },
+            error: message,
+          });
+        } catch (completionError) {
+          console.error('Teevee EPG work-item failure completion failed', completionError);
+        }
+        return errorResponse('EPG refresh work-item failed', 502);
+      }
+    }
+
+    const refreshStartedAt = new Date();
+    try {
+      const defaultSource = EPG_REFRESH_SOURCES[0];
+      if (!defaultSource) throw new Error('No hosted EPG refresh source is configured');
+      const scope = resolveEpgRefreshWorkItemScope({
+        sourceKey: defaultSource.key,
+        providerChannelIds: request.providerChannelIds,
+      });
+      const provider = new XmltvEpgProvider({
+        key: scope.source.providerKey,
+        url: scope.source.url,
+      });
       const result = await ingestProviderSchedule({
         provider,
-        repository: scheduleRepository,
-        canonicalChannels: [...DEVELOPMENT_CHANNELS],
-        channelMappings: [...IPTV_EPG_NL_CHANNEL_MAPPINGS],
-        providerChannelIds: request.providerChannelIds,
+        repository: repository(secretKey),
+        canonicalChannels: scope.canonicalChannels,
+        channelMappings: scope.channelMappings,
+        providerChannelIds: scope.providerChannelIds,
         from: new Date(request.from),
         to: new Date(request.to),
         clock: () => refreshStartedAt,
       });
-
       const externalContent = await enrichExternalContent(
         result.storedObservation ? [result.storedObservation] : [],
         secretKey,

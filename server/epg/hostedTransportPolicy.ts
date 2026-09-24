@@ -14,11 +14,19 @@ export type HostedWindowRefreshRequest = {
 export type HostedGuideHorizonRefreshRequest = {
   mode: 'guide-horizon';
   providerChannelIds: string[];
+  requestKey?: string;
+};
+
+export type HostedWorkItemRefreshRequest = {
+  mode: 'work-item';
+  jobId: number;
+  attemptToken: string;
 };
 
 export type HostedRefreshRequest =
   | HostedWindowRefreshRequest
-  | HostedGuideHorizonRefreshRequest;
+  | HostedGuideHorizonRefreshRequest
+  | HostedWorkItemRefreshRequest;
 
 function record(value: unknown): Record<string, unknown> | null {
   if (typeof value !== 'object' || value === null || Array.isArray(value)) return null;
@@ -36,6 +44,40 @@ function assertHostedWindow(from: string, to: string): void {
   if (duration > HOSTED_SCHEDULE_MAX_WINDOW_MS) {
     throw new Error('Hosted schedule requests are limited to 25 hours');
   }
+}
+
+function optionalRequestKey(value: unknown): string | undefined {
+  if (value === undefined) return undefined;
+  if (typeof value !== 'string') throw new Error('requestKey must be a string when provided');
+  const normalized = value.trim();
+  if (!normalized || normalized.length > 128 || !/^[A-Za-z0-9:._-]+$/.test(normalized)) {
+    throw new Error('requestKey is invalid');
+  }
+  return normalized;
+}
+
+function workItemRequest(input: Record<string, unknown>): HostedWorkItemRefreshRequest {
+  for (const forbidden of ['from', 'to', 'providerChannelIds', 'requestKey', 'sourceKey']) {
+    if (input[forbidden] !== undefined) {
+      throw new Error('Work-item refresh scope is database-owned');
+    }
+  }
+  if (typeof input.jobId !== 'number' || !Number.isSafeInteger(input.jobId) || input.jobId < 1) {
+    throw new Error('work-item jobId must be a positive integer');
+  }
+  if (
+    typeof input.attemptToken !== 'string' ||
+    !/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
+      input.attemptToken.trim(),
+    )
+  ) {
+    throw new Error('work-item attemptToken must be a UUID');
+  }
+  return {
+    mode: 'work-item',
+    jobId: input.jobId,
+    attemptToken: input.attemptToken.trim(),
+  };
 }
 
 function requestedIds(
@@ -94,6 +136,10 @@ export function parseHostedRefreshRequest(
   const input = record(value);
   if (!input) throw new Error('Refresh request must be an object');
 
+  if (input.mode === 'work-item') {
+    return workItemRequest(input);
+  }
+
   const providerChannelIds = requestedIds(
     input.providerChannelIds,
     allowedProviderChannelIds,
@@ -104,7 +150,13 @@ export function parseHostedRefreshRequest(
     if (input.from !== undefined || input.to !== undefined) {
       throw new Error('Guide-horizon refresh derives its own television-day windows');
     }
-    return { mode: 'guide-horizon', providerChannelIds };
+    return {
+      mode: 'guide-horizon',
+      providerChannelIds,
+      ...(optionalRequestKey(input.requestKey)
+        ? { requestKey: optionalRequestKey(input.requestKey) }
+        : {}),
+    };
   }
 
   if (input.mode !== undefined && input.mode !== 'window') {
