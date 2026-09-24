@@ -229,6 +229,7 @@ export function parseXmltvDocument(xml: string): ParsedDocument {
 export type XmltvStreamingStats = {
   channelBlocksScanned: number;
   programmeBlocksScanned: number;
+  programmeTimestampHeadersParsed: number;
   programmeBlocksMaterialised: number;
   maxBufferedChars: number;
 };
@@ -421,36 +422,29 @@ async function consumeXmltvBlocks(
   }
 }
 
-function programmeHeader(block: string): {
-  channelId: string | undefined;
-  startMs: number | null;
-  endMs: number | null;
-} {
-  const tag = openingTag(block);
-  const channelId = attribute(tag, 'channel');
+function queryRequestsChannel(query: PreparedScheduleQuery, channelId: string): boolean {
+  return query.requestedChannelSet === null || query.requestedChannelSet.has(channelId);
+}
+
+function programmeTimes(tag: string): { startMs: number | null; endMs: number | null } {
   const startAt = parseXmltvTimestamp(attribute(tag, 'start'));
   const endAt = parseXmltvTimestamp(attribute(tag, 'stop'));
   return {
-    channelId,
     startMs: startAt ? Date.parse(startAt) : null,
     endMs: endAt ? Date.parse(endAt) : null,
   };
 }
 
-function headerIntersectsQuery(
-  header: ReturnType<typeof programmeHeader>,
+function timesIntersectQuery(
+  times: ReturnType<typeof programmeTimes>,
   query: PreparedScheduleQuery,
 ): boolean {
-  if (
-    !header.channelId ||
-    header.startMs === null ||
-    header.endMs === null ||
-    header.startMs >= query.toMs ||
-    header.endMs <= query.fromMs
-  ) {
-    return false;
-  }
-  return query.requestedChannelSet === null || query.requestedChannelSet.has(header.channelId);
+  return (
+    times.startMs !== null &&
+    times.endMs !== null &&
+    times.startMs < query.toMs &&
+    times.endMs > query.fromMs
+  );
 }
 
 function uniqueChannelIds(channels: readonly ExternalChannel[]): string[] {
@@ -515,6 +509,7 @@ export async function parseXmltvScheduleStream(
   const stats: XmltvStreamingStats = {
     channelBlocksScanned: 0,
     programmeBlocksScanned: 0,
+    programmeTimestampHeadersParsed: 0,
     programmeBlocksMaterialised: 0,
     maxBufferedChars: 0,
   };
@@ -530,8 +525,16 @@ export async function parseXmltvScheduleStream(
     }
 
     stats.programmeBlocksScanned += 1;
-    const header = programmeHeader(block);
-    const matchingQueries = queries.filter((query) => headerIntersectsQuery(header, query));
+    const tagText = openingTag(block);
+    const channelId = attribute(tagText, 'channel');
+    if (!channelId) return;
+
+    const channelQueries = queries.filter((query) => queryRequestsChannel(query, channelId));
+    if (channelQueries.length === 0) return;
+
+    stats.programmeTimestampHeadersParsed += 1;
+    const times = programmeTimes(tagText);
+    const matchingQueries = channelQueries.filter((query) => timesIntersectQuery(times, query));
     if (matchingQueries.length === 0) return;
 
     const parsed = parseProgramme(block);
