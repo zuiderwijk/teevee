@@ -245,6 +245,25 @@ export function ChannelManagementRow({
     onToggleVisibility(channel.id, !visible);
   };
 
+  const handleAccessibilityAction = (event: {
+    nativeEvent: { actionName: string };
+  }) => {
+    switch (event.nativeEvent.actionName) {
+      case 'hide':
+        if (canHide) onToggleVisibility(channel.id, false);
+        break;
+      case 'show':
+        onToggleVisibility(channel.id, true);
+        break;
+      case 'moveUp':
+        onMoveOneStep(channel.id, -1);
+        break;
+      case 'moveDown':
+        onMoveOneStep(channel.id, 1);
+        break;
+    }
+  };
+
   const content = (
     <>
       {overlay ? (
@@ -348,48 +367,29 @@ export function ChannelManagementRow({
 
   return (
     <Animated.View
-      ref={rowRef}
+      {...(rowRef ? { ref: rowRef } : {})}
       testID={`channels-${visible ? 'visible' : 'hidden'}-${channel.id}`}
       accessible={!overlay}
-      accessibilityRole={overlay ? undefined : 'button'}
-      accessibilityLabel={
-        overlay
-          ? undefined
-          : visible
-            ? visibleChannelAccessibilityLabel(channel.displayName, index, total)
-            : hiddenChannelAccessibilityLabel(channel.displayName)
-      }
-      accessibilityHint={
-        visible && !canHide
-          ? 'Minimaal één zender moet zichtbaar blijven'
-          : undefined
-      }
-      accessibilityActions={overlay ? undefined : actions}
-      onAccessibilityTap={overlay ? undefined : toggle}
-      onAccessibilityAction={
-        overlay
-          ? undefined
-          : (event) => {
-              switch (event.nativeEvent.actionName) {
-                case 'hide':
-                  if (canHide) onToggleVisibility(channel.id, false);
-                  break;
-                case 'show':
-                  onToggleVisibility(channel.id, true);
-                  break;
-                case 'moveUp':
-                  onMoveOneStep(channel.id, -1);
-                  break;
-                case 'moveDown':
-                  onMoveOneStep(channel.id, 1);
-                  break;
-              }
-            }
-      }
-      onLayout={overlay ? undefined : handleLayout}
-      entering={overlay ? undefined : entering}
-      exiting={overlay ? undefined : exiting}
-      layout={overlay ? undefined : layoutTransition}
+      {...(!overlay
+        ? {
+            accessibilityRole: 'button' as const,
+            accessibilityLabel: visible
+              ? visibleChannelAccessibilityLabel(channel.displayName, index, total)
+              : hiddenChannelAccessibilityLabel(channel.displayName),
+            accessibilityActions: actions,
+            onAccessibilityTap: toggle,
+            onAccessibilityAction: handleAccessibilityAction,
+            onLayout: handleLayout,
+          }
+        : {})}
+      {...(!overlay && visible && !canHide
+        ? {
+            accessibilityHint: 'Minimaal één zender moet zichtbaar blijven',
+          }
+        : {})}
+      {...(!overlay && entering ? { entering } : {})}
+      {...(!overlay && exiting ? { exiting } : {})}
+      {...(!overlay && layoutTransition ? { layout: layoutTransition } : {})}
       pointerEvents={overlay ? 'none' : 'auto'}
       style={[
         styles.row,
