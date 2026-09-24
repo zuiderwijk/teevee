@@ -71,6 +71,24 @@ Totaal date-context behaviour:
 
 Canonical visual/interaction details live in `design/current/guide/GUIDE_DAY_SELECTOR.md`.
 
+### Mijn zenders — accepted personal channel model
+
+Teevee separates the complete supported channel catalog from the subset/order the user wants in their everyday Guide.
+
+- one persisted selected-channel set and order is shared across Guide presentations;
+- Per zender's persistent channel-logo rail uses that selected set/order;
+- Totaal and Nu & Straks consume the same selected set/order rather than maintaining independent personal channel lists;
+- a hidden channel is removed from everyday Guide navigation, not deleted from Teevee;
+- Search always searches the complete canonical catalog, including hidden channels;
+- opening a hidden channel from Search is contextual and must not silently add it to the persisted Guide selection;
+- when Search exposes a hidden channel, provide a quiet explicit personalisation affordance so the user can add it to the selected set;
+- after explicit addition, channel-order management may be offered as a secondary next step;
+- deterministic channel-management intents such as `zenders`, `zenderoverzicht` and `mijn zenders` may route directly to the management surface instead of producing a dead no-result state.
+
+This makes Search both a recovery path and a contextual learning surface for personalisation. Avoid generic interruptive tutorials when the user's own query already creates a better teaching moment.
+
+Evidence and product boundary: `docs/TVGIDS_APP_SEARCH_CHANNEL_EVIDENCE_2026-09-24.md`.
+
 ### Shared channel identity
 Use the channel logo as the primary visual identifier when licensed/readable artwork exists. Channel name is secondary/contextual and remains available to accessibility APIs. Provide an intentional text fallback when artwork is unavailable. Never distort channel marks merely to fit the UI.
 
