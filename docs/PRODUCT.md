@@ -119,7 +119,9 @@ Owner decision, 24 September 2026. The next dedicated channel-expansion iteratio
 48. VTM Gold
 49. Ketnet
 
-A persisted user-defined order overrides this default. All Guide presentations must consume the same canonical default order; provider channel numbers and raw feed ordering are not product semantics.
+A persisted user-defined channel selection/order overrides this default. All Guide presentations must consume one shared personal channel model; provider channel numbers and raw feed ordering are not product semantics.
+
+**Mijn zenders direction, owner-approved 24 September 2026:** Teevee keeps the complete supported channel catalog distinct from the user's visible Guide subset. A user may hide channels from their everyday Guide and reorder the remaining channels without making hidden channels disappear from Teevee. Search continues to search the full supported catalog and becomes a contextual recovery/education route: a hidden channel can still be found/opened, with an explicit optional path to add it to Mijn zenders. Search never silently mutates the user's persisted selection/order. Evidence and detailed contract: `docs/TVGIDS_APP_SEARCH_CHANNEL_EVIDENCE_2026-09-24.md`.
 
 The source/mapping evidence, known alias/rename caveats and later implementation boundary are canonical in `docs/CHANNEL_EXPANSION_TARGET_2026-09-24.md`. In particular, STAR Channel and BBC NL still require explicit provider-identity verification, while the Belgian Play family is available under legacy provider names Play4/5/6/7.
 
@@ -219,6 +221,8 @@ Exact production design tokens, Instrument Sans font-file selection/licensing ve
 
 ## Onboarding
 Maximum three functional steps: welcome, choose/reorder channels, done. No account wall.
+
+Onboarding is not the only education path for channel personalisation. Search should teach the concept contextually when a user searches for a supported channel outside their current Mijn-zenders selection; the user may add it explicitly without being forced through channel management first.
 
 ## Monetisation
 Teevee is intended to become a paid, ad-free app. Exact pricing, trial model and paywall timing are not frozen.
