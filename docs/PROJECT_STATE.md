@@ -2,7 +2,7 @@
 
 Last updated: 2026-09-24.
 Status: ACTIVE — **Inter-phase Premium Artwork & Content Identity enrichment**.
-Current implementation priority: **Issue #167 / PR #172 — replace monolithic D-3..D+8 hosted refresh ownership with durable bounded `provider source × Amsterdam television-day × channel group` orchestration; keep the merged PR #168 streaming parser frozen and do not resume artwork work until the full production refresh/cron path is proven**
+Current implementation priority: **Issue #170 / PR #173 — Channel personalisation: one persisted `Mijn zenders` selection/order shared by all Guide presentations, with full-catalog Search recovery/education. Issue #167 / merged PR #172 remains independently pending only its normal six-hour production cron acceptance gate.**
 Current broader product phase: **Phase 6 — Personal Features, intentionally deferred behind the owner-priority inter-phase enrichment**
 Previous phase: **Phase 5 — Search and Discovery — CLOSED**
 
@@ -17,10 +17,10 @@ Previous phase: **Phase 5 — Search and Discovery — CLOSED**
 - Deterministic fixtures remain mandatory after real data is introduced.
 - Core Guide cannot depend on artwork/enrichment.
 - `docs/VISUAL_BASELINE.md` plus `design/current/` select the accepted visual references. New visual exploration is not canonical until explicitly approved and merged.
-- Accepted durable architecture contracts are ADR 0001 through ADR 0011; ADR 0010 is canonical for the classification sibling boundary and ADR 0011 for broadcast-keyed external-content identity. PR #172 proposes ADR 0012 for bounded durable EPG refresh orchestration; it becomes canonical only after the normal review/merge gates.
+- Accepted durable architecture contracts are ADR 0001 through ADR 0012. ADR 0010 is canonical for the classification sibling boundary, ADR 0011 for broadcast-keyed external-content identity and ADR 0012 for bounded durable EPG refresh orchestration. PR #173 proposes ADR 0013 for the local canonical channel-personalisation projection; it becomes canonical on merge.
 - **Queued owner-approved next iteration:** expand the canonical channel catalog to the exact 49-channel set/order in `docs/CHANNEL_EXPANSION_TARGET_2026-09-24.md`. This is not the current implementation priority and must not interrupt the active external-content/artwork foundation.
 - **Vanavond category discovery scope:** Films/Series/Sport are intentionally limited to the owner-approved 28-channel set in `docs/TONIGHT_PRODUCT_DEFINITION.md`; Jouw gids and Onze Kijktips are not channel-filtered, and no `populaire zenders / alle zenders` toggle is part of the accepted composition.
-- **Queued Search/channel-personalisation direction:** the expanded catalog will separate the complete supported channel catalog from one shared persisted Mijn-zenders selection/order. Search remains full-catalog and becomes the recovery/education route for hidden channels and deterministic channel-management intents. Evidence/contract: `docs/TVGIDS_APP_SEARCH_CHANNEL_EVIDENCE_2026-09-24.md`. This does not reopen Phase 5A or interrupt the active server/data priority.
+- **Active Search/channel-personalisation increment:** Issue #170 / PR #173 implements the separation between complete supported channel catalog and one shared persisted Mijn-zenders selection/order. Search remains full-catalog, opens hidden channels contextually without persistence mutation, exposes explicit add, and resolves only the approved finite channel-management intents. Contract: `docs/CHANNEL_PERSONALISATION.md`; evidence: `docs/TVGIDS_APP_SEARCH_CHANNEL_EVIDENCE_2026-09-24.md`. Phase 5A remains closed. The exact 49-channel production activation stays a separate next step.
 
 ## Phase status
 1. **Phase 1A — Totaal interaction/technical baseline:** complete and physically accepted on iPhone. Totaal production visual design, implementation-ready specification and runtime production convergence are merged, owner-accepted and canonical.
