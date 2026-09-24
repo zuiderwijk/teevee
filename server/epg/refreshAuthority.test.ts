@@ -54,15 +54,15 @@ describe('classifyEpgRefreshWorkItemAuthority', () => {
     });
   });
 
-  it('accepts ignored-stale only when newer authority owns the exact child scope', () => {
+  it('requires database proof before exact-scope ignored-stale can become success', () => {
     expect(
       classifyEpgRefreshWorkItemAuthority({
         expectedCanonicalChannelIds: ['channel-1', 'channel-2'],
         write: ignoredStale(['channel-2', 'channel-1']),
       }),
     ).toMatchObject({
-      status: 'authoritative',
-      reason: 'newer-authority-exact-scope',
+      status: 'requires-canonical-proof',
+      reason: 'ignored-stale-exact-scope',
     });
 
     expect(
