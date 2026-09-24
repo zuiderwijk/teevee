@@ -104,14 +104,19 @@ function channelMatchesQuery(channel: Channel, query: string): boolean {
   const canonicalQuery = canonicalGuideSearchQuery(query);
   const normalizedQuery = normalizeGuideSearchText(canonicalQuery);
   if (!normalizedQuery) return true;
+  const compactQuery = normalizedQuery.replace(/\s+/g, '');
 
   return [
     channel.displayName,
     channel.name,
     channel.shortName ?? '',
-  ].some((candidate) =>
-    normalizeGuideSearchText(candidate).includes(normalizedQuery),
-  );
+  ].some((candidate) => {
+    const normalizedCandidate = normalizeGuideSearchText(candidate);
+    return (
+      normalizedCandidate.includes(normalizedQuery) ||
+      normalizedCandidate.replace(/\s+/g, '').includes(compactQuery)
+    );
+  });
 }
 
 export function channelManagementZones(
