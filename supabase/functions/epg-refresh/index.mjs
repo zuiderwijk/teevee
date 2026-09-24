@@ -2,6 +2,7 @@ import {
   hostedRefreshProviderChannelIds,
   planGuideHorizonRefreshWorkItems,
   resolveEpgRefreshWorkItemScope,
+  scheduledEpgRefreshRequestKey,
   EPG_REFRESH_SOURCES,
 } from '../../../server/epg/refreshTopology.ts';
 import {
@@ -42,27 +43,27 @@ function rpcClient(secretKey, signal) {
   });
 }
 
-async function authorised(req, secretKey) {
+async function authorisationKind(req, secretKey) {
   const suppliedSecret = req.headers.get('apikey');
   if (
     typeof suppliedSecret === 'string' &&
     suppliedSecret.length > 0 &&
     suppliedSecret === secretKey
   ) {
-    return true;
+    return 'service-key';
   }
 
   const cronToken = req.headers.get('x-teevee-cron-token');
-  if (!cronToken || cronToken.length > 256) return false;
+  if (!cronToken || cronToken.length > 256) return null;
 
   const validation = await rpcClient(secretKey).rpc('teevee_validate_epg_refresh_cron_token', {
     p_token: cronToken,
   });
   if (validation.error) {
     console.error('Teevee cron token validation failed', validation.error.message);
-    return false;
+    return null;
   }
-  return validation.data === true;
+  return validation.data === true ? 'cron-token' : null;
 }
 
 function repository(secretKey) {
@@ -207,8 +208,10 @@ export default {
       return errorResponse('Refresh service unavailable', 503);
     }
 
+    let authKind;
     try {
-      if (!(await authorised(req, secretKey))) return errorResponse('Unauthorized', 401);
+      authKind = await authorisationKind(req, secretKey);
+      if (!authKind) return errorResponse('Unauthorized', 401);
     } catch (error) {
       console.error('Teevee refresh authorization failed', error);
       return errorResponse('Unauthorized', 401);
@@ -234,7 +237,11 @@ export default {
           requestedProviderChannelIds: request.providerChannelIds,
         });
         const run = await orchestrationRepository(secretKey).startRun({
-          requestKey: request.requestKey ?? `manual:${crypto.randomUUID()}`,
+          requestKey:
+            request.requestKey ??
+            (authKind === 'cron-token'
+              ? scheduledEpgRefreshRequestKey(refreshStartedAt.getTime())
+              : `manual:${crypto.randomUUID()}`),
           observedAt: refreshStartedAt.toISOString(),
           anchorAt: refreshStartedAt.toISOString(),
           jobs,
