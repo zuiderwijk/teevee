@@ -1,4 +1,4 @@
-import { CANONICAL_CHANNEL_CATALOG } from '@/data/domain/channelCatalog';
+import { CANONICAL_CHANNEL_CATALOG } from '../../data/domain/channelCatalog.ts';
 
 import type { ChannelMapping } from './provider';
 
