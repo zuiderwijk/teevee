@@ -28,7 +28,7 @@ create table teevee.epg_refresh_runs (
   constraint epg_refresh_runs_job_count
     check (job_count > 0),
   constraint epg_refresh_runs_external_content_status
-    check (external_content_status in ('pending','running','completed','failed'))
+    check (external_content_status in ('pending','running','completed','skipped','failed'))
 );
 
 create table teevee.epg_refresh_jobs (
@@ -74,7 +74,7 @@ create table teevee.epg_refresh_jobs (
   constraint epg_refresh_jobs_attempt_count check (attempt_count >= 0),
   constraint epg_refresh_jobs_max_attempts check (max_attempts between 1 and 10),
   constraint epg_refresh_jobs_external_content_status
-    check (external_content_status in ('not-required','queued','dispatched','running','completed','failed')),
+    check (external_content_status in ('not-required','queued','dispatched','running','completed','skipped','failed')),
   constraint epg_refresh_jobs_external_content_attempt_count
     check (external_content_attempt_count >= 0),
   constraint epg_refresh_jobs_external_content_max_attempts
@@ -151,8 +151,29 @@ begin
     and j.status in ('failed','incomplete')
     and j.last_error is not null;
 
+  if v_status = 'failed' then
+    update teevee.epg_refresh_jobs
+      set external_content_status = case
+            when external_content_observation is null then 'not-required'
+            else 'skipped'
+          end,
+          external_content_finished_at = case
+            when external_content_observation is null then external_content_finished_at
+            else coalesce(external_content_finished_at, pg_catalog.now())
+          end,
+          external_content_last_error = case
+            when external_content_observation is null then external_content_last_error
+            else 'guide-run-failed-before-enrichment'
+          end,
+          external_content_observation = null
+    where run_id = p_run_id
+      and external_content_status = 'queued';
+  end if;
+
   if v_status = 'running' then
     v_external_content_status := 'pending';
+  elsif v_status = 'failed' then
+    v_external_content_status := 'skipped';
   elsif exists (
     select 1
     from teevee.epg_refresh_jobs j
@@ -192,7 +213,7 @@ begin
         end,
         external_content_status = v_external_content_status,
         external_content_completed_at = case
-          when v_external_content_status in ('completed','failed')
+          when v_external_content_status in ('completed','skipped','failed')
             then coalesce(external_content_completed_at, pg_catalog.now())
           else null
         end,
@@ -316,6 +337,7 @@ begin
       and j.external_content_available_at <= pg_catalog.now()
       and j.external_content_observation is not null
       and j.status in ('succeeded','incomplete')
+      and r.status in ('completed','incomplete')
     order by r.created_at, j.ordinal
     for update of j skip locked
     limit 1;
@@ -779,7 +801,7 @@ begin
   if not found then
     return jsonb_build_object('status','stale-attempt','jobId',p_job_id);
   end if;
-  if v_job.external_content_status in ('not-required','completed','failed') then
+  if v_job.external_content_status in ('not-required','completed','skipped','failed') then
     return jsonb_build_object('status','terminal','jobId',p_job_id);
   end if;
   if v_job.external_content_attempt_token is distinct from p_attempt_token then
