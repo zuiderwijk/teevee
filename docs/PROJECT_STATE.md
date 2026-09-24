@@ -289,7 +289,7 @@ Physical Android interaction acceptance remains OPEN/DEFERRED because no Android
 - physical Android validation.
 
 ## Current next step
-**Complete Technical Lead review and Independent QA for issue #159 / PR #161 — TMDB Film/Series external-content identity production foundation.** Do not deploy or merge before both gates pass. After merge, deploy only from reviewed canonical `main`, verify the migration/Edge runtime and production secret ownership, then use the resulting private external identity as the prerequisite for a separate artwork-selection/transport increment. Do not add artwork UI, fuzzy historical reconciliation, TMDB episode identity or a generic content catalogue in PR #161.
+**Complete Technical Lead review and Independent QA for issue #167 / PR #168 — bounded XMLTV ingest under the hosted Supabase Edge CPU limit.** Do not deploy or merge before both gates pass. After merge, require exact-main CI, deploy `epg-refresh` only from reviewed canonical `main`, then prove the production path in order: narrow RTL4 four-hour smoke → full `guide-horizon` smoke → external-content reference/failure/orphan verification → normal scheduled cron as independent operational proof. Do not resume artwork-selection/transport work until this blocker and the first hosted TMDB activation smoke are closed.
 
 Owner checkout: `~/projects/teevee`.
 
