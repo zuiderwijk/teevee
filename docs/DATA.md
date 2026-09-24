@@ -474,7 +474,7 @@ Those bounded windows are compatible with individual television-day requests. Ph
 - anonymous/authenticated callers cannot refresh/write;
 - partial provider coverage never destructively overwrites canonical data;
 - trusted refresh may use the server secret-key route or the validated scheduled-refresh token;
-- issue #167 production evidence is explicit: both a full `guide-horizon` request and an RTL4-only four-hour `window` request failed with HTTP 546 / `WORKER_RESOURCE_LIMIT` while the pre-#168 adapter materialised the complete Netherlands XMLTV document before filtering; external-content references remained 0.
+- issue #167 production evidence is explicit: both a full `guide-horizon` request and an RTL4-only four-hour `window` request failed with HTTP 546 / `WORKER_RESOURCE_LIMIT` while the pre-#168 adapter materialised the complete Netherlands XMLTV document before filtering; worker shutdown was `reason=CPUTime` at 2144 ms / 182,785,670 B and 2165 ms / 181,521,784 B respectively, and external-content references remained 0.
 
 ### Automatic development refresh
 A server-side `pg_cron` + `pg_net` job runs every six hours. The cron requests one protected `guide-horizon` refresh; the Edge Function derives independent **06:00 Europe/Amsterdam television-day windows** from D-3 through D+8. D-2..D+7 remains the selectable product horizon; D-3/D+8 are backend safety buffers only.
