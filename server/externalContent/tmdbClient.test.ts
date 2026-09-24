@@ -479,6 +479,7 @@ describe('TmdbRequestSession', () => {
     ['missing', undefined],
     ['null', null],
     ['empty', ''],
+    ['whitespace', '   '],
   ])('keeps director-filmography release_date %s as optional unknown year', async (_case, releaseDate) => {
     const credit = {
       id: 100,
