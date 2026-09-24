@@ -151,11 +151,10 @@ export function parseHostedRefreshRequest(
       throw new Error('Guide-horizon refresh derives its own television-day windows');
     }
     const requestKey = optionalRequestKey(input.requestKey);
-    return {
-      mode: 'guide-horizon',
-      providerChannelIds,
-      ...(requestKey ? { requestKey } : {}),
-    };
+    if (requestKey) {
+      return { mode: 'guide-horizon', providerChannelIds, requestKey };
+    }
+    return { mode: 'guide-horizon', providerChannelIds };
   }
 
   if (input.mode !== undefined && input.mode !== 'window') {
