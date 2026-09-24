@@ -16,7 +16,10 @@ import { SupabaseEpgRefreshOrchestrationRepository } from '../../../server/epg/s
 import { SupabaseRestRpcClient } from '../../../server/epg/supabaseRestRpcClient.ts';
 import { SupabaseScheduleRepository } from '../../../server/epg/supabaseScheduleRepository.ts';
 import { XmltvEpgProvider } from '../../../server/epg/xmltvProvider.ts';
-import { enrichStoredExternalContent } from '../../../server/externalContent/enrichment.ts';
+import {
+  enrichStoredExternalContent,
+  selectExternalContentEnrichmentObservation,
+} from '../../../server/externalContent/enrichment.ts';
 import { SupabaseProgrammeExternalContentRepository } from '../../../server/externalContent/supabaseProgrammeExternalContentRepository.ts';
 import {
   TmdbApiClient,
@@ -148,7 +151,13 @@ function diagnosticCounts(result) {
   );
 }
 
-function workItemOutcome(claim, result, authority, externalContent, elapsedMs) {
+function workItemOutcome(
+  claim,
+  result,
+  authority,
+  externalContentObservation,
+  elapsedMs,
+) {
   return {
     authority,
     sourceKey: claim.sourceKey,
@@ -161,12 +170,17 @@ function workItemOutcome(claim, result, authority, externalContent, elapsedMs) {
     write: result.write,
     programmeCount: result.schedule.programmes.length,
     diagnosticCounts: diagnosticCounts(result),
-    externalContent,
+    externalContent: externalContentObservation
+      ? {
+          status: 'deferred',
+          eligibleProgrammeCount: externalContentObservation.programmes.length,
+        }
+      : { status: 'skipped', reason: 'no-authoritative-current-candidates' },
     elapsedMs,
   };
 }
 
-async function executeClaimedWorkItem({ claim, secretKey, ownerSignal, startedAt }) {
+async function executeClaimedWorkItem({ claim, secretKey, startedAt }) {
   const scope = resolveEpgRefreshWorkItemScope({
     sourceKey: claim.sourceKey,
     providerChannelIds: claim.providerChannelIds,
@@ -189,18 +203,22 @@ async function executeClaimedWorkItem({ claim, secretKey, ownerSignal, startedAt
     expectedCanonicalChannelIds: scope.canonicalChannels.map(({ id }) => id),
     write: result.write,
   });
-  const externalContent = await enrichExternalContent(
-    result.storedObservation ? [result.storedObservation] : [],
-    secretKey,
-    ownerSignal,
-  );
+  const externalContentObservation = result.storedObservation
+    ? selectExternalContentEnrichmentObservation(result.storedObservation)
+    : null;
   const elapsedMs = Math.round(performance.now() - startedAt);
   return {
     result,
     authority,
-    externalContent,
+    externalContentObservation,
     elapsedMs,
-    outcome: workItemOutcome(claim, result, authority, externalContent, elapsedMs),
+    outcome: workItemOutcome(
+      claim,
+      result,
+      authority,
+      externalContentObservation,
+      elapsedMs,
+    ),
   };
 }
 
@@ -297,7 +315,6 @@ export default {
         const execution = await executeClaimedWorkItem({
           claim,
           secretKey,
-          ownerSignal: req.signal,
           startedAt,
         });
         const completion = await orchestration.completeJob({
@@ -310,6 +327,9 @@ export default {
           outcome: execution.outcome,
           ...(execution.authority.status === 'incomplete'
             ? { error: `incomplete-authority:${execution.authority.reason}` }
+            : {}),
+          ...(execution.externalContentObservation
+            ? { externalContentObservation: execution.externalContentObservation }
             : {}),
         });
         return Response.json({
@@ -331,7 +351,13 @@ export default {
           write: execution.result.write,
           programmeCount: execution.result.schedule.programmes.length,
           diagnosticCounts: diagnosticCounts(execution.result),
-          externalContent: execution.externalContent,
+          externalContent: execution.externalContentObservation
+            ? {
+                status: 'deferred',
+                eligibleProgrammeCount:
+                  execution.externalContentObservation.programmes.length,
+              }
+            : { status: 'skipped', reason: 'no-authoritative-current-candidates' },
           orchestration: completion,
           elapsedMs: execution.elapsedMs,
         });
@@ -355,6 +381,75 @@ export default {
           console.error('Teevee EPG work-item failure completion failed', completionError);
         }
         return errorResponse('EPG refresh work-item failed', 502);
+      }
+    }
+
+    if (request.mode === 'external-content-work-item') {
+      const orchestration = orchestrationRepository(secretKey);
+      let claim;
+      try {
+        claim = await orchestration.claimExternalContentJob({
+          jobId: request.jobId,
+          attemptToken: request.attemptToken,
+        });
+      } catch (error) {
+        console.error('Teevee external-content work-item claim failed', error);
+        return errorResponse('External-content work-item claim failed', 502);
+      }
+
+      if (claim.status !== 'claimed') {
+        return Response.json({
+          status: claim.status,
+          mode: request.mode,
+          jobId: request.jobId,
+          elapsedMs: Math.round(performance.now() - startedAt),
+        });
+      }
+
+      try {
+        const externalContent = await enrichExternalContent(
+          [claim.externalContentObservation],
+          secretKey,
+          req.signal,
+        );
+        const elapsedMs = Math.round(performance.now() - startedAt);
+        const completion = await orchestration.completeExternalContentJob({
+          jobId: claim.jobId,
+          attemptToken: request.attemptToken,
+          success: true,
+          outcome: { externalContent, elapsedMs },
+        });
+        return Response.json({
+          status: 'completed',
+          mode: request.mode,
+          runId: claim.runId,
+          jobId: claim.jobId,
+          attempt: claim.attempt,
+          externalContent,
+          orchestration: completion,
+          elapsedMs,
+        });
+      } catch (error) {
+        const message =
+          error instanceof Error ? error.message : 'external-content work-item failed';
+        console.error('Teevee external-content work-item failed', error);
+        try {
+          await orchestration.completeExternalContentJob({
+            jobId: claim.jobId,
+            attemptToken: request.attemptToken,
+            success: false,
+            outcome: {
+              elapsedMs: Math.round(performance.now() - startedAt),
+            },
+            error: message,
+          });
+        } catch (completionError) {
+          console.error(
+            'Teevee external-content work-item failure completion failed',
+            completionError,
+          );
+        }
+        return errorResponse('External-content work-item failed', 502);
       }
     }
 
