@@ -215,6 +215,7 @@ set search_path = ''
 as $$
 declare
   v_job record;
+  v_phase text;
   v_cron_token text;
   v_attempt_token uuid;
   v_request_id bigint;
@@ -226,11 +227,6 @@ begin
     return jsonb_build_object('status','busy');
   end if;
 
-  -- Recover Edge executions that never reached completion (CPU kill, timeout, network
-  -- loss). The 8-minute lease exceeds Supabase's current 400-second paid hosted worker
-  -- maximum, so natural expiry cannot race a still-live worker. The attempt token is
-  -- cleared so a late transport delivery from the expired attempt cannot claim/complete
-  -- the replacement lease.
   update teevee.epg_refresh_jobs
     set status = case when attempt_count >= max_attempts then 'failed' else 'queued' end,
         available_at = case
@@ -249,17 +245,51 @@ begin
     and lease_expires_at is not null
     and lease_expires_at <= pg_catalog.now();
 
-  -- One child globally at a time. Current 12-channel evidence fits one day/job;
-  -- future source/channel partitions therefore scale by queue depth, not concurrency.
+  update teevee.epg_refresh_jobs
+    set external_content_status = case
+          when external_content_attempt_count >= external_content_max_attempts
+            then 'failed'
+          else 'queued'
+        end,
+        external_content_available_at = case
+          when external_content_attempt_count >= external_content_max_attempts
+            then external_content_available_at
+          else pg_catalog.now()
+        end,
+        external_content_lease_expires_at = null,
+        external_content_attempt_token = null,
+        external_content_request_id = null,
+        external_content_finished_at = case
+          when external_content_attempt_count >= external_content_max_attempts
+            then pg_catalog.now()
+          else null
+        end,
+        external_content_last_error =
+          'external-content lease expired before terminal completion',
+        external_content_observation = case
+          when external_content_attempt_count >= external_content_max_attempts
+            then null
+          else external_content_observation
+        end
+  where external_content_status in ('dispatched','running')
+    and external_content_lease_expires_at is not null
+    and external_content_lease_expires_at <= pg_catalog.now();
+
   if exists (
     select 1
     from teevee.epg_refresh_jobs
-    where status in ('dispatched','running')
+    where (
+      status in ('dispatched','running')
       and lease_expires_at > pg_catalog.now()
+    ) or (
+      external_content_status in ('dispatched','running')
+      and external_content_lease_expires_at > pg_catalog.now()
+    )
   ) then
     return jsonb_build_object('status','busy');
   end if;
 
+  -- Canonical Guide work always wins. This is the durable ADR-0011 ordering gate.
   select j.*, r.request_key
     into v_job
   from teevee.epg_refresh_jobs j
@@ -271,11 +301,36 @@ begin
   for update of j skip locked
   limit 1;
 
-  if not found then
+  if found then
+    v_phase := 'guide';
+  elsif not exists (
+    select 1
+    from teevee.epg_refresh_jobs
+    where status in ('queued','dispatched','running')
+  ) then
+    select j.*, r.request_key
+      into v_job
+    from teevee.epg_refresh_jobs j
+    join teevee.epg_refresh_runs r on r.id = j.run_id
+    where j.external_content_status = 'queued'
+      and j.external_content_available_at <= pg_catalog.now()
+      and j.external_content_observation is not null
+      and j.status in ('succeeded','incomplete')
+    order by r.created_at, j.ordinal
+    for update of j skip locked
+    limit 1;
+
+    if found then
+      v_phase := 'external-content';
+    end if;
+  end if;
+
+  if v_phase is null then
     for v_run_id in
       select r.id
       from teevee.epg_refresh_runs r
-      where r.status in ('queued','running')
+      where r.status in ('queued','running','completed','incomplete','failed')
+        and r.external_content_status in ('pending','running')
     loop
       perform teevee.recompute_epg_refresh_run(v_run_id);
     end loop;
@@ -290,17 +345,29 @@ begin
   limit 1;
 
   if v_cron_token is null or length(btrim(v_cron_token)) = 0 then
-    update teevee.epg_refresh_jobs
-      set last_error = 'cron-token-unavailable',
-          available_at = pg_catalog.now() + interval '1 minute'
-    where id = v_job.id;
+    if v_phase = 'guide' then
+      update teevee.epg_refresh_jobs
+        set last_error = 'cron-token-unavailable',
+            available_at = pg_catalog.now() + interval '1 minute'
+      where id = v_job.id;
 
-    update teevee.epg_refresh_runs
-      set last_error = 'cron-token-unavailable'
-    where id = v_job.run_id;
+      update teevee.epg_refresh_runs
+        set last_error = 'cron-token-unavailable'
+      where id = v_job.run_id;
+    else
+      update teevee.epg_refresh_jobs
+        set external_content_last_error = 'cron-token-unavailable',
+            external_content_available_at = pg_catalog.now() + interval '1 minute'
+      where id = v_job.id;
+
+      update teevee.epg_refresh_runs
+        set external_content_last_error = 'cron-token-unavailable'
+      where id = v_job.run_id;
+    end if;
 
     return jsonb_build_object(
       'status','unavailable',
+      'phase',v_phase,
       'reason','cron-token-unavailable',
       'runId',v_job.run_id,
       'jobId',v_job.id
@@ -316,30 +383,51 @@ begin
       'x-teevee-cron-token', v_cron_token
     ),
     body := jsonb_build_object(
-      'mode', 'work-item',
+      'mode', case
+        when v_phase = 'guide' then 'work-item'
+        else 'external-content-work-item'
+      end,
       'jobId', v_job.id,
       'attemptToken', v_attempt_token
     ),
     timeout_milliseconds := 120000
   ) into v_request_id;
 
-  update teevee.epg_refresh_jobs
-    set status = 'dispatched',
-        attempt_count = attempt_count + 1,
-        attempt_token = v_attempt_token,
-        request_id = v_request_id,
-        lease_expires_at = pg_catalog.now() + interval '8 minutes',
-        last_error = null
-  where id = v_job.id;
+  if v_phase = 'guide' then
+    update teevee.epg_refresh_jobs
+      set status = 'dispatched',
+          attempt_count = attempt_count + 1,
+          attempt_token = v_attempt_token,
+          request_id = v_request_id,
+          lease_expires_at = pg_catalog.now() + interval '8 minutes',
+          last_error = null
+    where id = v_job.id;
 
-  update teevee.epg_refresh_runs
-    set status = 'running',
-        started_at = coalesce(started_at, pg_catalog.now()),
-        completed_at = null
-  where id = v_job.run_id;
+    update teevee.epg_refresh_runs
+      set status = 'running',
+          started_at = coalesce(started_at, pg_catalog.now()),
+          completed_at = null
+    where id = v_job.run_id;
+  else
+    update teevee.epg_refresh_jobs
+      set external_content_status = 'dispatched',
+          external_content_attempt_count = external_content_attempt_count + 1,
+          external_content_attempt_token = v_attempt_token,
+          external_content_request_id = v_request_id,
+          external_content_lease_expires_at = pg_catalog.now() + interval '8 minutes',
+          external_content_last_error = null
+    where id = v_job.id;
+
+    update teevee.epg_refresh_runs
+      set external_content_status = 'running',
+          external_content_completed_at = null,
+          external_content_last_error = null
+    where id = v_job.run_id;
+  end if;
 
   return jsonb_build_object(
     'status','dispatched',
+    'phase',v_phase,
     'runId',v_job.run_id,
     'jobId',v_job.id,
     'requestId',v_request_id,
