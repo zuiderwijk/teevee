@@ -38,7 +38,7 @@ function channel(
     id,
     name: displayName,
     displayName,
-    shortName,
+    ...(shortName ? { shortName } : {}),
     sortOrder,
     isActive: true,
   };
