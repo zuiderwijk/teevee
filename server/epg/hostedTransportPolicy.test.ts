@@ -145,6 +145,25 @@ describe('parseHostedRefreshRequest', () => {
       ),
     ).toThrow('scope is database-owned');
 
+    expect(
+      parseHostedRefreshRequest(
+        { mode: 'external-content-work-item', jobId: 17, attemptToken },
+        providerIds,
+      ),
+    ).toEqual({ mode: 'external-content-work-item', jobId: 17, attemptToken });
+
+    expect(() =>
+      parseHostedRefreshRequest(
+        {
+          mode: 'external-content-work-item',
+          jobId: 17,
+          attemptToken,
+          sourceKey: 'iptv-epg-nl',
+        },
+        providerIds,
+      ),
+    ).toThrow('scope is database-owned');
+
     expect(() =>
       parseHostedRefreshRequest(
         { mode: 'work-item', jobId: 0, attemptToken },
