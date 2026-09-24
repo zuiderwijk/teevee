@@ -323,9 +323,10 @@ begin
 
   if found then
     v_dispatch := teevee.dispatch_next_epg_refresh_job();
+    select status into v_status from teevee.epg_refresh_runs where id = v_existing.id;
     return jsonb_build_object(
       'runId',v_existing.id,
-      'status',v_existing.status,
+      'status',v_status,
       'jobCount',v_existing.job_count,
       'reused',true
     );
@@ -380,8 +381,9 @@ begin
     ) then
       raise exception 'Refresh job providerChannelIds must not contain blanks';
     end if;
-    if cardinality(v_provider_ids) <> cardinality(
-      array(select distinct value from unnest(v_provider_ids) value)
+    if cardinality(v_provider_ids) <> (
+      select count(distinct provider_id)::integer
+      from unnest(v_provider_ids) as provider_ids(provider_id)
     ) then
       raise exception 'Refresh job providerChannelIds must not contain duplicates';
     end if;
@@ -642,55 +644,9 @@ grant execute on function public.teevee_claim_epg_refresh_job(bigint,uuid)
 grant execute on function public.teevee_complete_epg_refresh_job(bigint,uuid,boolean,jsonb,text)
   to service_role;
 
--- Keep the existing six-hour cron entrypoint and auth model, but give each scheduled
--- request a stable key so duplicate pg_net delivery cannot create duplicate runs.
-create or replace function teevee.enqueue_development_epg_refresh()
-returns bigint[]
-language plpgsql
-security definer
-set search_path = ''
-as $$
-declare
-  v_cron_token text;
-  v_request_id bigint;
-  v_request_key text;
-begin
-  select decrypted_secret
-    into v_cron_token
-  from vault.decrypted_secrets
-  where name = 'teevee_epg_refresh_cron_token'
-  order by updated_at desc
-  limit 1;
-
-  if v_cron_token is null or length(btrim(v_cron_token)) = 0 then
-    return array[]::bigint[];
-  end if;
-
-  v_request_key :=
-    'cron:' ||
-    to_char(clock_timestamp() at time zone 'UTC', 'YYYY-MM-DD"T"HH24');
-
-  select net.http_post(
-    url := 'https://eokszvpityhtysbwdduy.supabase.co/functions/v1/epg-refresh',
-    headers := jsonb_build_object(
-      'Content-Type', 'application/json',
-      'x-teevee-cron-token', v_cron_token
-    ),
-    body := jsonb_build_object(
-      'mode', 'guide-horizon',
-      'requestKey', v_request_key
-    ),
-    timeout_milliseconds := 30000
-  ) into v_request_id;
-
-  return array[v_request_id];
-end;
-$$;
-
-revoke execute on function teevee.enqueue_development_epg_refresh()
-  from public, anon, authenticated;
-grant execute on function teevee.enqueue_development_epg_refresh()
-  to service_role;
+-- The existing six-hour teevee-development-epg-refresh job remains unchanged.
+-- New Edge code derives a stable six-hour idempotency key from authenticated cron
+-- requests, so this migration can be applied safely before the Edge deployment.
 
 select cron.schedule(
   'teevee-development-epg-refresh-pump',
