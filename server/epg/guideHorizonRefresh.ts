@@ -75,7 +75,7 @@ export async function refreshGuideHorizon(input: {
       canonicalChannels: input.canonicalChannels,
       channelMappings: input.channelMappings,
       providerChannelIds: input.providerChannelIds,
-      ...(providerBatches ? { providerBatch: providerBatches[index] } : {}),
+      ...(providerBatches ? { providerBatch: providerBatches[index]! } : {}),
       from: new Date(window.from),
       to: new Date(window.to),
       clock: () => observedAt,
