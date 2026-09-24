@@ -5,6 +5,7 @@ import {
   createChannelPersonalisationPreference,
   hiddenChannelIdsForPreference,
   moveSelectedChannel,
+  moveSelectedChannelToIndex,
   parseChannelPersonalisationPreference,
   reconcileChannelPersonalisation,
   setChannelVisibility,
@@ -125,6 +126,19 @@ describe('channel personalisation reconciliation', () => {
 
     const one = preference(['a', 'b', 'c'], ['c']);
     expect(setChannelVisibility(ABC, one, 'c', false)).toEqual(one);
+  });
+
+  it('moves one visible channel directly to an arbitrary index', () => {
+    const saved = preference(['a', 'b', 'c'], ['c', 'a', 'b']);
+    expect(
+      moveSelectedChannelToIndex(ABC, saved, 'c', 2)?.selectedChannelIds,
+    ).toEqual(['a', 'b', 'c']);
+    expect(
+      moveSelectedChannelToIndex(ABC, saved, 'b', 0)?.selectedChannelIds,
+    ).toEqual(['b', 'c', 'a']);
+    expect(
+      moveSelectedChannelToIndex(ABC, saved, 'a', 99)?.selectedChannelIds,
+    ).toEqual(['c', 'b', 'a']);
   });
 
   it('moves only visible channels and creates a preference from the default when needed', () => {
