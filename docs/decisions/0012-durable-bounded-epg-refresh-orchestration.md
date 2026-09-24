@@ -64,7 +64,7 @@ Future source/channel expansion changes configuration and measurements, not orch
 
 Every dispatch has a lease, bounded attempt count and unique attempt token.
 
-The lease is **8 minutes**. Supabase's current paid hosted Edge limit is 400 seconds wall-clock, so the lease deliberately exceeds the maximum possible worker lifetime by 80 seconds. The recovery pump therefore cannot dispatch a replacement while the previous hosted worker can still be alive, even if pg_net timed out or the client disconnected. This is the single-flight liveness invariant; changing the hosted maximum requires revalidating the lease before rollout.
+The lease is **8 minutes**. Supabase's current paid hosted Edge limit is 400 seconds wall-clock, so the lease deliberately exceeds the maximum possible worker lifetime by 80 seconds. The recovery pump therefore cannot dispatch a replacement while the previous hosted worker can still be alive, even if pg_net timed out or the client disconnected. This is the single-flight liveness invariant; changing the hosted maximum requires revalidating the lease before rollout. Platform-limit source: [Supabase Edge Functions — Limits](https://supabase.com/docs/guides/functions/limits).
 
 - duplicate delivery of the same active token performs no second work;
 - an expired/old token cannot claim or complete a replacement attempt;
