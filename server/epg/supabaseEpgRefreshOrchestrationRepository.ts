@@ -328,7 +328,7 @@ export class SupabaseEpgRefreshOrchestrationRepository {
   async completeExternalContentJob(input: {
     jobId: number;
     attemptToken: string;
-    success: boolean;
+    result: 'succeeded' | 'retryable-failure';
     outcome?: Record<string, unknown>;
     error?: string;
   }): Promise<CompleteEpgRefreshExternalContentResult> {
@@ -337,7 +337,7 @@ export class SupabaseEpgRefreshOrchestrationRepository {
       {
         p_job_id: positiveInteger(input.jobId, 'jobId'),
         p_attempt_token: requiredText(input.attemptToken, 'attemptToken'),
-        p_success: input.success,
+        p_result: input.result,
         p_outcome: input.outcome ?? null,
         p_error: input.error?.trim() || null,
       },
