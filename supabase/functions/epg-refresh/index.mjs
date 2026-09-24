@@ -1,6 +1,7 @@
 import {
   hostedRefreshProviderChannelIds,
   planGuideHorizonRefreshWorkItems,
+  resolveEpgRefreshWindowScope,
   resolveEpgRefreshWorkItemScope,
   scheduledEpgRefreshRequestKey,
   EPG_REFRESH_SOURCES,
@@ -342,10 +343,7 @@ export default {
 
     const refreshStartedAt = new Date();
     try {
-      const defaultSource = EPG_REFRESH_SOURCES[0];
-      if (!defaultSource) throw new Error('No hosted EPG refresh source is configured');
-      const scope = resolveEpgRefreshWorkItemScope({
-        sourceKey: defaultSource.key,
+      const scope = resolveEpgRefreshWindowScope({
         providerChannelIds: request.providerChannelIds,
       });
       const provider = new XmltvEpgProvider({
