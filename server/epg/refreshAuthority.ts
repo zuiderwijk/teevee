@@ -11,7 +11,7 @@ export type EpgRefreshAuthorityResult =
     }
   | {
       status: 'requires-canonical-proof';
-      reason: 'ignored-stale-needs-exact-scope-proof';
+      reason: 'ignored-stale-exact-scope';
       expectedChannelIds: Channel['id'][];
       actualChannelIds: Channel['id'][];
     }
@@ -42,7 +42,7 @@ function sameChannelScope(
  * Durable orchestration success is stricter than a non-throwing ingest.
  *
  * A stored write proves exact-scope authority when the actual stored channel set equals
- * the database-owned expected child scope. \`ignored-stale\` is deliberately different:
+ * the database-owned expected child scope. `ignored-stale` is deliberately different:
  * ADR 0007 rejects a whole multi-channel replacement when any target channel overlaps
  * newer coverage, so echoed channel IDs prove only the attempted scope. Exact
  * same-or-newer canonical coverage must therefore be proven atomically in Postgres
@@ -72,7 +72,7 @@ export function classifyEpgRefreshWorkItemAuthority(input: {
   if (input.write.status === 'ignored-stale' && exactScope) {
     return {
       status: 'requires-canonical-proof',
-      reason: 'ignored-stale-needs-exact-scope-proof',
+      reason: 'ignored-stale-exact-scope',
       expectedChannelIds,
       actualChannelIds,
     };
