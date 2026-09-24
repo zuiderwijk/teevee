@@ -200,6 +200,17 @@ describe('EPG refresh topology', () => {
       .toThrow('is owned by multiple refresh sources');
   });
 
+  it('fails closed when a source-owned canonical channel has no provider mapping', () => {
+    const base = source('nl', ['nl-1', 'nl-2'], 2);
+    const incomplete: EpgRefreshSourceConfig = {
+      ...base,
+      channelMappings: base.channelMappings.slice(0, 1),
+    };
+
+    expect(() => hostedRefreshProviderChannelIds([incomplete]))
+      .toThrow('Source nl is missing provider mappings for canonical channels: nl-canonical-2');
+  });
+
   it('rejects unknown sources, cross-source channels and oversized groups', () => {
     const sources = [
       source('nl', ['nl-1', 'nl-2'], 1),
