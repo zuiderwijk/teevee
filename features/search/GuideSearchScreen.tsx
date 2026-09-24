@@ -17,10 +17,12 @@ import { SettingsButton } from '@/components/SettingsButton';
 import type { Channel } from '@/data/domain/epg';
 import { guideTelevisionDayStart } from '@/data/domain/guideTime';
 import {
+  guideSearchChannelManagementIntent,
   guideSearchPerChannelIntent,
   guideSearchProgrammeDetailIntent,
   type GuideSearchProgrammeMatch,
 } from '@/data/domain/search';
+import { useChannelPersonalisation } from '@/features/channels/ChannelPersonalisationProvider';
 import { ChannelIdentity } from '@/features/guide/ChannelIdentity';
 import {
   detailReducer,
@@ -125,50 +127,78 @@ function AvailabilityNotice({
 
 function ChannelResult({
   channel,
-  onPress,
+  hidden,
+  onOpen,
+  onAdd,
 }: {
   channel: Channel;
-  onPress: () => void;
+  hidden: boolean;
+  onOpen: () => void;
+  onAdd: () => void;
 }) {
   const theme = useTeeveeTheme();
 
   return (
-    <Pressable
-      testID={`search-channel-${channel.id}`}
-      accessibilityRole="button"
-      accessibilityLabel={`${channel.displayName}, open Per zender`}
-      accessibilityHint="Opent de gids voor deze zender rond het huidige tijdstip"
-      onPress={onPress}
-      style={({ pressed }) => [
-        styles.resultRow,
-        {
-          borderBottomColor: theme.colors.border,
-          backgroundColor: pressed ? theme.colors.surface : 'transparent',
-        },
-      ]}
-    >
-      <View style={styles.channelIdentity}>
-        <ChannelIdentity
-          channel={channel}
-          textColor={theme.colors.text}
-          mutedTextColor={theme.colors.textSecondary}
-          variant="detail"
-          accessible={false}
-        />
-      </View>
-      <Text
-        accessible={false}
-        style={[
-          styles.channelAction,
-          {
-            color: theme.colors.textMuted,
-            fontFamily: TEEVEE_FONT_FAMILIES.medium,
-          },
+    <View style={[styles.resultRow, { borderBottomColor: theme.colors.border }]}>
+      <Pressable
+        testID={`search-channel-${channel.id}`}
+        accessibilityRole="button"
+        accessibilityLabel={`${channel.displayName}, open Per zender${hidden ? ', niet in Mijn zenders' : ''}`}
+        accessibilityHint="Opent de gids voor deze zender rond het huidige tijdstip"
+        onPress={onOpen}
+        style={({ pressed }) => [
+          styles.channelOpen,
+          { backgroundColor: pressed ? theme.colors.surface : 'transparent' },
         ]}
       >
-        Per zender
-      </Text>
-    </Pressable>
+        <View style={styles.channelIdentity}>
+          <ChannelIdentity
+            channel={channel}
+            textColor={theme.colors.text}
+            mutedTextColor={theme.colors.textSecondary}
+            variant="detail"
+            accessible={false}
+          />
+          {hidden ? (
+            <Text style={[styles.hiddenLabel, { color: theme.colors.textMuted }]}>
+              Niet in Mijn zenders
+            </Text>
+          ) : null}
+        </View>
+        <Text
+          accessible={false}
+          style={[
+            styles.channelAction,
+            {
+              color: theme.colors.textMuted,
+              fontFamily: TEEVEE_FONT_FAMILIES.medium,
+            },
+          ]}
+        >
+          Per zender
+        </Text>
+      </Pressable>
+      {hidden ? (
+        <Pressable
+          testID={`search-channel-add-${channel.id}`}
+          accessibilityRole="button"
+          accessibilityLabel={`${channel.displayName} toevoegen aan Mijn zenders`}
+          onPress={onAdd}
+          style={({ pressed }) => [
+            styles.channelAdd,
+            {
+              borderColor: theme.colors.border,
+              backgroundColor: theme.colors.surfaceElevated,
+              opacity: pressed ? 0.68 : 1,
+            },
+          ]}
+        >
+          <Text style={[styles.channelAddText, { color: theme.colors.text }]}>
+            Toevoegen
+          </Text>
+        </Pressable>
+      ) : null}
+    </View>
   );
 }
 
@@ -281,6 +311,7 @@ export function GuideSearchScreen() {
   const router = useRouter();
   const nowMs = useGuideClock();
   const session = useGuideSearchSession();
+  const { isChannelVisible, addChannel } = useChannelPersonalisation();
   const [detail, dispatchDetail] = useReducer(detailReducer, initialDetailState);
   const response = session.response;
   const searchDayStartMs = guideTelevisionDayStart(nowMs);
@@ -313,6 +344,7 @@ export function GuideSearchScreen() {
 
   const channelMatches = response?.channelMatches ?? [];
   const programmeMatches = response?.programmeMatches ?? [];
+  const managementIntent = guideSearchChannelManagementIntent(session.query);
   const hasResults = channelMatches.length > 0 || programmeMatches.length > 0;
   const searching = session.phase === 'loading';
   const meaningfulQuery = session.phase !== 'idle';
@@ -431,6 +463,40 @@ export function GuideSearchScreen() {
             </AvailabilityNotice>
           ) : null}
 
+          {managementIntent ? (
+            <View style={styles.section}>
+              <SectionTitle>Mijn zenders</SectionTitle>
+              <Pressable
+                testID="search-manage-channels"
+                accessibilityRole="button"
+                accessibilityLabel="Mijn zenders beheren"
+                accessibilityHint="Kies zichtbare zenders en wijzig hun volgorde"
+                onPress={() => {
+                  Keyboard.dismiss();
+                  router.push('/channels');
+                }}
+                style={({ pressed }) => [
+                  styles.managementResult,
+                  {
+                    borderColor: theme.colors.border,
+                    backgroundColor: pressed
+                      ? theme.colors.surface
+                      : theme.colors.surfaceElevated,
+                  },
+                ]}
+              >
+                <Text style={[styles.managementTitle, { color: theme.colors.text }]}>
+                  Mijn zenders
+                </Text>
+                <Text
+                  style={[styles.managementBody, { color: theme.colors.textSecondary }]}
+                >
+                  Zenders kiezen en volgorde aanpassen
+                </Text>
+              </Pressable>
+            </View>
+          ) : null}
+
           {channelMatches.length > 0 ? (
             <View style={styles.section}>
               <SectionTitle>Zenders</SectionTitle>
@@ -439,7 +505,9 @@ export function GuideSearchScreen() {
                   <ChannelResult
                     key={channel.id}
                     channel={channel}
-                    onPress={() => openChannel(channel)}
+                    hidden={!isChannelVisible(channel.id)}
+                    onOpen={() => openChannel(channel)}
+                    onAdd={() => addChannel(channel)}
                   />
                 ))}
               </View>
@@ -465,7 +533,8 @@ export function GuideSearchScreen() {
 
           {session.phase === 'ready' &&
           response?.programmeCoverage === 'complete' &&
-          !hasResults ? (
+          !hasResults &&
+          !managementIntent ? (
             <Text
               accessibilityLiveRegion="polite"
               style={[
@@ -597,8 +666,33 @@ const styles = StyleSheet.create({
     borderBottomWidth: StyleSheet.hairlineWidth,
     flexDirection: 'row',
     alignItems: 'center',
+    gap: 8,
+  },
+  channelOpen: {
+    flex: 1,
+    minWidth: 0,
+    minHeight: 60,
+    flexDirection: 'row',
+    alignItems: 'center',
     gap: 12,
     paddingVertical: 8,
+  },
+  hiddenLabel: {
+    marginTop: 2,
+    fontSize: 12,
+    lineHeight: 16,
+  },
+  channelAdd: {
+    minHeight: 44,
+    justifyContent: 'center',
+    paddingHorizontal: 11,
+    borderRadius: 22,
+    borderWidth: StyleSheet.hairlineWidth,
+  },
+  channelAddText: {
+    fontSize: 12,
+    lineHeight: 16,
+    fontWeight: '700',
   },
   channelIdentity: {
     flex: 1,
@@ -608,6 +702,24 @@ const styles = StyleSheet.create({
   },
   channelAction: {
     flexShrink: 0,
+    fontSize: 13,
+    lineHeight: 18,
+  },
+  managementResult: {
+    minHeight: 64,
+    justifyContent: 'center',
+    borderRadius: 14,
+    borderWidth: StyleSheet.hairlineWidth,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+  },
+  managementTitle: {
+    fontSize: 16,
+    lineHeight: 21,
+    fontWeight: '700',
+  },
+  managementBody: {
+    marginTop: 2,
     fontSize: 13,
     lineHeight: 18,
   },
