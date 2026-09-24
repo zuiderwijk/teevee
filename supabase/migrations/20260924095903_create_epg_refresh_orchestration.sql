@@ -470,8 +470,8 @@ begin
   end if;
   if jsonb_typeof(p_jobs) is distinct from 'array'
      or jsonb_array_length(p_jobs) < 1
-     or jsonb_array_length(p_jobs) > 512 then
-    raise exception 'jobs must contain 1..512 work items';
+     or jsonb_array_length(p_jobs) > 1024 then
+    raise exception 'jobs must contain 1..1024 work items';
   end if;
 
   perform pg_catalog.pg_advisory_xact_lock(
@@ -640,7 +640,8 @@ create or replace function teevee.complete_epg_refresh_job(
   p_attempt_token uuid,
   p_result text,
   p_outcome jsonb,
-  p_error text
+  p_error text,
+  p_external_content_observation jsonb
 ) returns jsonb
 language plpgsql
 security invoker
@@ -680,6 +681,13 @@ begin
   if p_result is null or p_result not in ('succeeded','incomplete','failed') then
     raise exception 'EPG refresh job result is invalid';
   end if;
+  if p_external_content_observation is not null
+     and jsonb_typeof(p_external_content_observation) is distinct from 'object' then
+    raise exception 'External-content observation must be an object';
+  end if;
+  if p_result = 'failed' and p_external_content_observation is not null then
+    raise exception 'Failed Guide work cannot stage external-content evidence';
+  end if;
 
   if p_result = 'succeeded' then
     update teevee.epg_refresh_jobs
@@ -687,7 +695,14 @@ begin
           lease_expires_at = null,
           finished_at = pg_catalog.now(),
           last_error = null,
-          outcome = p_outcome
+          outcome = p_outcome,
+          external_content_status = case
+            when p_external_content_observation is null then 'not-required'
+            else 'queued'
+          end,
+          external_content_observation = p_external_content_observation,
+          external_content_available_at = pg_catalog.now(),
+          external_content_last_error = null
     where id = p_job_id
     returning status into v_job_status;
   elsif p_result = 'incomplete' then
@@ -699,7 +714,14 @@ begin
             coalesce(nullif(btrim(p_error),''),'work-item incomplete authority'),
             1000
           ),
-          outcome = p_outcome
+          outcome = p_outcome,
+          external_content_status = case
+            when p_external_content_observation is null then 'not-required'
+            else 'queued'
+          end,
+          external_content_observation = p_external_content_observation,
+          external_content_available_at = pg_catalog.now(),
+          external_content_last_error = null
     where id = p_job_id
     returning status into v_job_status;
   elsif v_job.attempt_count < v_job.max_attempts then
