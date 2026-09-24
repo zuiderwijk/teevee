@@ -188,6 +188,34 @@ export function setChannelVisibility(
   };
 }
 
+export function moveSelectedChannelToIndex(
+  catalogue: readonly Channel[],
+  preference: ChannelPersonalisationPreference | null,
+  channelId: string,
+  toIndex: number,
+): ChannelPersonalisationPreference | null {
+  const base =
+    reconcileChannelPersonalisation(
+      catalogue,
+      preference ?? createChannelPersonalisationPreference(catalogue),
+    ) ?? createChannelPersonalisationPreference(catalogue);
+  if (!base) return null;
+
+  const from = base.selectedChannelIds.indexOf(channelId);
+  if (from < 0) return base;
+
+  const to = Math.max(
+    0,
+    Math.min(base.selectedChannelIds.length - 1, Math.trunc(toIndex)),
+  );
+  if (to === from) return base;
+
+  const selectedChannelIds = [...base.selectedChannelIds];
+  const [moved] = selectedChannelIds.splice(from, 1);
+  selectedChannelIds.splice(to, 0, moved!);
+  return { ...base, selectedChannelIds };
+}
+
 export function moveSelectedChannel(
   catalogue: readonly Channel[],
   preference: ChannelPersonalisationPreference | null,
