@@ -150,6 +150,61 @@ select test_epg.assert_true(
   'migration must schedule the recovery pump'
 );
 
+select test_epg.assert_true(
+  not has_function_privilege(
+    'anon',
+    'public.teevee_start_epg_refresh_run(text,timestamptz,timestamptz,jsonb)',
+    'EXECUTE'
+  )
+  and not has_function_privilege(
+    'anon',
+    'public.teevee_claim_epg_refresh_job(bigint,uuid)',
+    'EXECUTE'
+  )
+  and not has_function_privilege(
+    'anon',
+    'public.teevee_complete_epg_refresh_job(bigint,uuid,text,jsonb,text)',
+    'EXECUTE'
+  ),
+  'anon must have no orchestration RPC execute privileges'
+);
+select test_epg.assert_true(
+  not has_function_privilege(
+    'authenticated',
+    'public.teevee_start_epg_refresh_run(text,timestamptz,timestamptz,jsonb)',
+    'EXECUTE'
+  )
+  and not has_function_privilege(
+    'authenticated',
+    'public.teevee_claim_epg_refresh_job(bigint,uuid)',
+    'EXECUTE'
+  )
+  and not has_function_privilege(
+    'authenticated',
+    'public.teevee_complete_epg_refresh_job(bigint,uuid,text,jsonb,text)',
+    'EXECUTE'
+  ),
+  'authenticated must have no orchestration RPC execute privileges'
+);
+select test_epg.assert_true(
+  has_function_privilege(
+    'service_role',
+    'public.teevee_start_epg_refresh_run(text,timestamptz,timestamptz,jsonb)',
+    'EXECUTE'
+  )
+  and has_function_privilege(
+    'service_role',
+    'public.teevee_claim_epg_refresh_job(bigint,uuid)',
+    'EXECUTE'
+  )
+  and has_function_privilege(
+    'service_role',
+    'public.teevee_complete_epg_refresh_job(bigint,uuid,text,jsonb,text)',
+    'EXECUTE'
+  ),
+  'service_role must own the public orchestration RPC execute boundary'
+);
+
 insert into vault.decrypted_secrets(name, decrypted_secret)
 values ('teevee_epg_refresh_cron_token', 'test-cron-token');
 
