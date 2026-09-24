@@ -384,13 +384,19 @@ async function consumeXmltvBlocks(
   const reader = body.getReader();
   const decoder = new TextDecoder();
   let buffer = '';
+  let lowerBuffer = '';
+
+  const append = (text: string) => {
+    buffer += text;
+    lowerBuffer += text.toLowerCase();
+    stats.maxBufferedChars = Math.max(stats.maxBufferedChars, buffer.length);
+  };
 
   const drain = (final: boolean) => {
-    const lower = buffer.toLowerCase();
     let consumedUntil = 0;
 
     while (consumedUntil < buffer.length) {
-      const start = findNextBlockStart(lower, consumedUntil);
+      const start = findNextBlockStart(lowerBuffer, consumedUntil);
       if (!start) {
         consumedUntil = buffer.length;
         break;
@@ -400,7 +406,7 @@ async function consumeXmltvBlocks(
         break;
       }
 
-      const end = findBlockEnd(buffer, lower, start.index, start.tag);
+      const end = findBlockEnd(buffer, lowerBuffer, start.index, start.tag);
       if (end === null) {
         consumedUntil = start.index;
         break;
@@ -410,20 +416,24 @@ async function consumeXmltvBlocks(
       consumedUntil = end;
     }
 
-    if (consumedUntil > 0) buffer = buffer.slice(consumedUntil);
-    if (final) buffer = '';
+    if (consumedUntil > 0) {
+      buffer = buffer.slice(consumedUntil);
+      lowerBuffer = lowerBuffer.slice(consumedUntil);
+    }
+    if (final) {
+      buffer = '';
+      lowerBuffer = '';
+    }
   };
 
   try {
     for (;;) {
       const { done, value } = await reader.read();
       if (done) break;
-      buffer += decoder.decode(value, { stream: true });
-      stats.maxBufferedChars = Math.max(stats.maxBufferedChars, buffer.length);
+      append(decoder.decode(value, { stream: true }));
       drain(false);
     }
-    buffer += decoder.decode();
-    stats.maxBufferedChars = Math.max(stats.maxBufferedChars, buffer.length);
+    append(decoder.decode());
     drain(true);
   } finally {
     reader.releaseLock();
