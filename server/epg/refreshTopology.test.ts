@@ -65,6 +65,8 @@ describe('EPG refresh topology', () => {
     expect(workItems.every(({ sourceKey }) => sourceKey === 'iptv-epg-nl')).toBe(true);
     expect(workItems.every(({ channelGroupKey }) => channelGroupKey === 'group-1')).toBe(true);
     expect(workItems.every(({ providerChannelIds: ids }) => ids.length === 12)).toBe(true);
+    expect(workItems.every(({ canonicalChannelIds }) => canonicalChannelIds.length === 12))
+      .toBe(true);
   });
 
   it('plans multiple provider sources and multiple channel groups per day without changing orchestration semantics', () => {
@@ -85,26 +87,31 @@ describe('EPG refresh topology', () => {
         sourceKey: 'nl',
         channelGroupKey: 'group-1',
         providerChannelIds: ['nl-1', 'nl-2'],
+        canonicalChannelIds: ['nl-canonical-1', 'nl-canonical-2'],
       }),
       expect.objectContaining({
         sourceKey: 'nl',
         channelGroupKey: 'group-2',
         providerChannelIds: ['nl-3', 'nl-4'],
+        canonicalChannelIds: ['nl-canonical-3', 'nl-canonical-4'],
       }),
       expect.objectContaining({
         sourceKey: 'nl',
         channelGroupKey: 'group-3',
         providerChannelIds: ['nl-5'],
+        canonicalChannelIds: ['nl-canonical-5'],
       }),
       expect.objectContaining({
         sourceKey: 'be',
         channelGroupKey: 'group-1',
         providerChannelIds: ['be-1', 'be-2'],
+        canonicalChannelIds: ['be-canonical-1', 'be-canonical-2'],
       }),
       expect.objectContaining({
         sourceKey: 'be',
         channelGroupKey: 'group-2',
         providerChannelIds: ['be-3'],
+        canonicalChannelIds: ['be-canonical-3'],
       }),
     ]);
   });
@@ -127,6 +134,8 @@ describe('EPG refresh topology', () => {
     expect(workItems).toHaveLength(588);
     expect(workItems.length).toBeLessThanOrEqual(EPG_REFRESH_MAX_WORK_ITEMS_PER_RUN);
     expect(workItems.every(({ providerChannelIds }) => providerChannelIds.length === 1))
+      .toBe(true);
+    expect(workItems.every(({ canonicalChannelIds }) => canonicalChannelIds.length === 1))
       .toBe(true);
     expect(new Set(workItems.map(({ sourceKey }) => sourceKey))).toEqual(
       new Set(['nl', 'be']),
@@ -156,6 +165,8 @@ describe('EPG refresh topology', () => {
     expect(workItems).toHaveLength(12);
     expect(workItems.every(({ providerChannelIds }) =>
       providerChannelIds.length === 1 && providerChannelIds[0] === 'RTL4.nl')).toBe(true);
+    expect(workItems.every(({ canonicalChannelIds }) => canonicalChannelIds.length === 1))
+      .toBe(true);
   });
 
   it('resolves manual windows to their unique provider source and rejects cross-source windows', () => {
