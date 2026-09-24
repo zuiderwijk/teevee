@@ -138,6 +138,7 @@ export default function ChannelsScreen() {
   const hiddenHeadingRef = useRef<View | null>(null);
 
   const scrollRef = useRef<ScrollView>(null);
+  const scrollViewportRef = useRef<View>(null);
   const scrollOffsetRef = useRef(0);
   const contentHeightRef = useRef(0);
   const viewportWindowYRef = useRef(0);
@@ -290,10 +291,12 @@ export default function ChannelsScreen() {
   );
 
   const measureScrollViewport = useCallback(() => {
-    scrollRef.current?.measureInWindow((_x, y, _width, height) => {
-      viewportWindowYRef.current = y;
-      viewportHeightRef.current = height;
-    });
+    scrollViewportRef.current?.measureInWindow(
+      (_x: number, y: number, _width: number, height: number) => {
+        viewportWindowYRef.current = y;
+        viewportHeightRef.current = height;
+      },
+    );
   }, []);
 
   const contentYForAbsoluteY = useCallback((absoluteY: number) => {
@@ -513,13 +516,18 @@ export default function ChannelsScreen() {
     <SafeAreaView
       style={[styles.safeArea, { backgroundColor: theme.colors.background }]}
     >
+      <View
+        ref={scrollViewportRef}
+        collapsable={false}
+        onLayout={measureScrollViewport}
+        style={styles.scrollViewport}
+      >
       <ScrollView
         ref={scrollRef}
         testID="channels-scroll"
         scrollEnabled={dragState === null}
         scrollEventThrottle={16}
         keyboardShouldPersistTaps="handled"
-        onLayout={measureScrollViewport}
         onContentSizeChange={(_width, height) => {
           contentHeightRef.current = height;
           measureScrollViewport();
@@ -628,7 +636,7 @@ export default function ChannelsScreen() {
           ) : (
             <>
               <Animated.View
-                layout={zoneLayoutTransition}
+                {...(zoneLayoutTransition ? { layout: zoneLayoutTransition } : {})}
                 onLayout={(event) => {
                   visibleZoneContentYRef.current = event.nativeEvent.layout.y;
                 }}
@@ -722,21 +730,17 @@ export default function ChannelsScreen() {
               {allZones.hidden.length > 0 ? (
                 <Animated.View
                   testID="channels-hidden-zone"
-                  entering={
-                    reduceMotion
-                      ? undefined
-                      : FadeIn.duration(
+                  {...(!reduceMotion
+                    ? {
+                        entering: FadeIn.duration(
                           CHANNEL_MANAGEMENT_METRICS.zoneTransitionMs,
-                        )
-                  }
-                  exiting={
-                    reduceMotion
-                      ? undefined
-                      : FadeOut.duration(
+                        ),
+                        exiting: FadeOut.duration(
                           CHANNEL_MANAGEMENT_METRICS.zoneTransitionMs,
-                        )
-                  }
-                  layout={zoneLayoutTransition}
+                        ),
+                      }
+                    : {})}
+                  {...(zoneLayoutTransition ? { layout: zoneLayoutTransition } : {})}
                   style={styles.hiddenZone}
                 >
                   <ZoneHeader
@@ -803,12 +807,16 @@ export default function ChannelsScreen() {
           </Animated.View>
         ) : null}
       </ScrollView>
+      </View>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   safeArea: {
+    flex: 1,
+  },
+  scrollViewport: {
     flex: 1,
   },
   scrollContent: {
