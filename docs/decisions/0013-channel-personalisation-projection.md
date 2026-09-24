@@ -40,6 +40,6 @@ The later 49-channel expansion does not need a preference migration or Guide-spe
 
 The app does not require accounts, server-side profiles, a database table, a new state-management library or persistent schedule cache for this capability.
 
-Discrete reorder controls are used for the initial management surface. A future drag interaction may replace the presentation without changing persistence semantics, but it must preserve the same canonical-ID operations and accessibility behavior.
+The accepted management presentation is a two-zone surface: visible channels are reordered by handle-only drag while hidden channels remain in canonical/default order and are not reorderable. Drag changes presentation state provisionally and commits one arbitrary-index canonical-ID move only after a changed-position drop. Accessibility retains explicit one-step move actions, so reorder remains operable without drag. This presentation does not alter the persisted known-vs-selected model or shared Guide projection.
 
 Search alias handling remains a finite provider-independent mapping at the shared Search domain/API boundary. It is not provider-ID logic and does not authorize fuzzy/semantic Search.
