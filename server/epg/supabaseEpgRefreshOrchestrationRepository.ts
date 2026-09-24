@@ -1,5 +1,8 @@
 import type { StoredProviderScheduleObservation } from './ingest.ts';
-import type { EpgRefreshWorkItemPlan } from './refreshTopology.ts';
+import {
+  EPG_REFRESH_MAX_WORK_ITEMS_PER_RUN,
+  type EpgRefreshWorkItemPlan,
+} from './refreshTopology.ts';
 import type { ScheduleRpcClient } from './supabaseScheduleRepository.ts';
 
 type RpcError = { message: string };
@@ -257,6 +260,11 @@ export class SupabaseEpgRefreshOrchestrationRepository {
     anchorAt: string;
     jobs: readonly EpgRefreshWorkItemPlan[];
   }): Promise<StartEpgRefreshRunResult> {
+    if (input.jobs.length < 1 || input.jobs.length > EPG_REFRESH_MAX_WORK_ITEMS_PER_RUN) {
+      throw new Error(
+        `jobs must contain 1..${EPG_REFRESH_MAX_WORK_ITEMS_PER_RUN} work items`,
+      );
+    }
     const response = await this.client.rpc<unknown>('teevee_start_epg_refresh_run', {
       p_request_key: requiredText(input.requestKey, 'requestKey'),
       p_observed_at: timestamp(input.observedAt, 'observedAt'),
