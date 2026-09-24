@@ -317,8 +317,8 @@ describe('provider -> normalisation -> repository -> schedule API', () => {
       expectedCanonicalChannelIds: ['channel-1'],
       write: stale.write,
     })).toMatchObject({
-      status: 'authoritative',
-      reason: 'newer-authority-exact-scope',
+      status: 'requires-canonical-proof',
+      reason: 'ignored-stale-exact-scope',
     });
     await expect(titles(repository)).resolves.toEqual(['Nieuw']);
   });
