@@ -141,6 +141,103 @@ describe('SupabaseEpgRefreshOrchestrationRepository', () => {
         p_result: 'succeeded',
         p_outcome: { writeStatus: 'stored', programmeCount: 42 },
         p_error: null,
+        p_external_content_observation: null,
+      },
+    });
+  });
+
+  it('claims and completes only database-owned deferred external-content evidence', async () => {
+    const observation = {
+      from: '2026-09-24T04:00:00.000Z',
+      to: '2026-09-25T04:00:00.000Z',
+      observedAt: '2026-09-24T10:17:00.000Z',
+      channelIds: ['channel-1'],
+      programmes: [{
+        programme: {
+          id: 'programme-1',
+          channelId: 'channel-1',
+          startAt: '2026-09-24T18:00:00.000Z',
+          endAt: '2026-09-24T20:00:00.000Z',
+          title: 'Film',
+        },
+        classification: {
+          programmeId: 'programme-1',
+          contentType: 'film',
+          seriesType: 'unknown',
+          audience: 'unknown',
+          sportType: 'unknown',
+          liveStatus: 'unknown',
+          repeatStatus: 'unknown',
+          confidence: 'high',
+        },
+        externalProgramme: {
+          title: 'Film',
+          productionDate: { raw: '2020', year: 2020 },
+          credits: { director: ['Director'], actor: [], producer: [] },
+        },
+      }],
+    };
+
+    const client = new FakeRpcClient([
+      {
+        data: {
+          status: 'claimed',
+          runId: 41,
+          jobId: 7,
+          attempt: 1,
+          externalContentObservation: observation,
+        },
+        error: null,
+      },
+      {
+        data: {
+          jobId: 7,
+          externalContentStatus: 'completed',
+          runId: 41,
+          runStatus: 'completed',
+        },
+        error: null,
+      },
+    ]);
+    const repository = new SupabaseEpgRefreshOrchestrationRepository(client);
+
+    await expect(repository.claimExternalContentJob({
+      jobId: 7,
+      attemptToken: 'attempt-token',
+    })).resolves.toMatchObject({
+      status: 'claimed',
+      runId: 41,
+      jobId: 7,
+      externalContentObservation: {
+        observedAt: '2026-09-24T10:17:00.000Z',
+        channelIds: ['channel-1'],
+      },
+    });
+
+    await expect(repository.completeExternalContentJob({
+      jobId: 7,
+      attemptToken: 'attempt-token',
+      success: true,
+      outcome: { externalContent: { status: 'completed' } },
+    })).resolves.toEqual({
+      jobId: 7,
+      externalContentStatus: 'completed',
+      runId: 41,
+      runStatus: 'completed',
+    });
+
+    expect(client.calls[0]).toEqual({
+      functionName: 'teevee_claim_epg_refresh_external_content_job',
+      args: { p_job_id: 7, p_attempt_token: 'attempt-token' },
+    });
+    expect(client.calls[1]).toEqual({
+      functionName: 'teevee_complete_epg_refresh_external_content_job',
+      args: {
+        p_job_id: 7,
+        p_attempt_token: 'attempt-token',
+        p_success: true,
+        p_outcome: { externalContent: { status: 'completed' } },
+        p_error: null,
       },
     });
   });
