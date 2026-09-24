@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 
 import type { Channel } from '@/data/domain/epg';
+import { darkTheme, lightTheme } from '@/theme/tokens';
 
 import {
   CHANNEL_MANAGEMENT_METRICS,
@@ -201,6 +202,17 @@ describe('channel management interaction contract', () => {
     expect(channelManagementFocusAfterShow(['a'], 'a')).toEqual({
       type: 'hidden-heading',
     });
+  });
+
+  it('uses dedicated light/dark semantic visibility tokens instead of editorial accent', () => {
+    expect(lightTheme.colors.channelVisibilityActive).toBe('#237A57');
+    expect(darkTheme.colors.channelVisibilityActive).toBe('#58C592');
+    expect(lightTheme.colors.channelVisibilityActive).not.toBe(
+      lightTheme.colors.editorialAccent,
+    );
+    expect(darkTheme.colors.channelVisibilityActive).not.toBe(
+      darkTheme.colors.editorialAccent,
+    );
   });
 
   it('removes lift/reflow motion under Reduced Motion while retaining direct tracking', () => {
