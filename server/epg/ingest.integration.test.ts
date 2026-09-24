@@ -273,4 +273,36 @@ describe('provider -> normalisation -> repository -> schedule API', () => {
       api.getSchedule({ from: from.toISOString(), to: to.toISOString() }),
     ).resolves.toEqual({ status: 'unavailable' });
   });
+
+  it('uses a preloaded provider-session batch without fetching the provider again', async () => {
+    const repository = new InMemoryScheduleRepository();
+    const getSchedule = vi.fn(async () => {
+      throw new Error('provider should not be fetched for a preloaded batch');
+    });
+    const provider: EpgProvider = {
+      key: 'development-xmltv',
+      getChannels: vi.fn(async () => [{ id: 'raw-one', name: 'Raw One' }]),
+      getSchedule,
+    };
+
+    const result = await ingestProviderSchedule({
+      provider,
+      providerBatch: {
+        coverage: 'complete',
+        programmes: [programme('preloaded', 'raw-one', 'Vooraf geladen')],
+      },
+      repository,
+      canonicalChannels,
+      channelMappings: mappings,
+      providerChannelIds: ['raw-one'],
+      from,
+      to,
+      clock,
+    });
+
+    expect(getSchedule).not.toHaveBeenCalled();
+    expect(result.write).toMatchObject({ status: 'stored', channelIds: ['channel-1'] });
+    await expect(titles(repository)).resolves.toEqual(['Vooraf geladen']);
+  });
+
 });
