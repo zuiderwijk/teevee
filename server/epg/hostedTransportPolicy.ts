@@ -23,10 +23,17 @@ export type HostedWorkItemRefreshRequest = {
   attemptToken: string;
 };
 
+export type HostedExternalContentWorkItemRefreshRequest = {
+  mode: 'external-content-work-item';
+  jobId: number;
+  attemptToken: string;
+};
+
 export type HostedRefreshRequest =
   | HostedWindowRefreshRequest
   | HostedGuideHorizonRefreshRequest
-  | HostedWorkItemRefreshRequest;
+  | HostedWorkItemRefreshRequest
+  | HostedExternalContentWorkItemRefreshRequest;
 
 function record(value: unknown): Record<string, unknown> | null {
   if (typeof value !== 'object' || value === null || Array.isArray(value)) return null;
@@ -56,7 +63,10 @@ function optionalRequestKey(value: unknown): string | undefined {
   return normalized;
 }
 
-function workItemRequest(input: Record<string, unknown>): HostedWorkItemRefreshRequest {
+function workItemRequest(
+  input: Record<string, unknown>,
+  mode: 'work-item' | 'external-content-work-item',
+): HostedWorkItemRefreshRequest | HostedExternalContentWorkItemRefreshRequest {
   for (const forbidden of ['from', 'to', 'providerChannelIds', 'requestKey', 'sourceKey']) {
     if (input[forbidden] !== undefined) {
       throw new Error('Work-item refresh scope is database-owned');
@@ -74,7 +84,7 @@ function workItemRequest(input: Record<string, unknown>): HostedWorkItemRefreshR
     throw new Error('work-item attemptToken must be a UUID');
   }
   return {
-    mode: 'work-item',
+    mode,
     jobId: input.jobId,
     attemptToken: input.attemptToken.trim(),
   };
@@ -136,8 +146,8 @@ export function parseHostedRefreshRequest(
   const input = record(value);
   if (!input) throw new Error('Refresh request must be an object');
 
-  if (input.mode === 'work-item') {
-    return workItemRequest(input);
+  if (input.mode === 'work-item' || input.mode === 'external-content-work-item') {
+    return workItemRequest(input, input.mode);
   }
 
   const providerChannelIds = requestedIds(
