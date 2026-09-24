@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter } from 'expo-router';
 import {
   AccessibilityInfo,
@@ -54,6 +54,7 @@ import { useTeeveeTheme } from '@/theme/useTeeveeTheme';
 type DragState = {
   channelId: string;
   targetIndex: number;
+  height: number;
 };
 
 function ZoneHeader({
@@ -126,11 +127,16 @@ export default function ChannelsScreen() {
   const queryActive = channelManagementQueryActive(query);
 
   const selectedIdsRef = useRef<readonly string[]>(selectedChannelIds);
-  selectedIdsRef.current = selectedChannelIds;
   const queryActiveRef = useRef(queryActive);
-  queryActiveRef.current = queryActive;
-  const dragStateRef = useRef<DragState | null>(dragState);
-  dragStateRef.current = dragState;
+  const dragStateRef = useRef<DragState | null>(null);
+
+  useEffect(() => {
+    selectedIdsRef.current = selectedChannelIds;
+  }, [selectedChannelIds]);
+
+  useEffect(() => {
+    queryActiveRef.current = queryActive;
+  }, [queryActive]);
 
   const rowHeightsRef = useRef<Record<string, number>>({});
   const rowRefs = useRef(new Map<string, View>());
@@ -151,7 +157,7 @@ export default function ChannelsScreen() {
 
   const overlayTop = useSharedValue(0);
   const overlayStyle = useAnimatedStyle(() => ({
-    top: overlayTop.value,
+    top: overlayTop.get(),
     transform: [{ scale: motion.pickedScale }],
   }));
 
@@ -315,7 +321,7 @@ export default function ChannelsScreen() {
       const contentY = contentYForAbsoluteY(absoluteY);
       const height =
         rowHeightsRef.current[channelId] ?? rowMetrics.minHeight;
-      overlayTop.value = contentY - height / 2;
+      overlayTop.set(contentY - height / 2);
 
       const targetIndex = channelManagementInsertionIndex(
         selectedIdsRef.current,
@@ -409,17 +415,19 @@ export default function ChannelsScreen() {
         );
 
       if (motion.settleImmediately) {
-        overlayTop.value = targetTop;
+        overlayTop.set(targetTop);
         clearDrag();
         return;
       }
 
-      overlayTop.value = withSpring(
-        targetTop,
-        CHANNEL_MANAGEMENT_METRICS.dropSpring,
-        (finished) => {
-          if (finished) scheduleOnRN(clearDrag);
-        },
+      overlayTop.set(
+        withSpring(
+          targetTop,
+          CHANNEL_MANAGEMENT_METRICS.dropSpring,
+          (finished) => {
+            if (finished) scheduleOnRN(clearDrag);
+          },
+        ),
       );
     },
     [
@@ -436,15 +444,15 @@ export default function ChannelsScreen() {
       const from = selectedIdsRef.current.indexOf(channelId);
       if (from < 0) return;
 
-      const next = { channelId, targetIndex: from };
+      const height =
+        rowHeightsRef.current[channelId] ?? rowMetrics.minHeight;
+      const next = { channelId, targetIndex: from, height };
       dragStateRef.current = next;
       setDragState(next);
       dragPointerAbsoluteYRef.current = absoluteY;
 
       const contentY = contentYForAbsoluteY(absoluteY);
-      const height =
-        rowHeightsRef.current[channelId] ?? rowMetrics.minHeight;
-      overlayTop.value = contentY - height / 2;
+      overlayTop.set(contentY - height / 2);
 
       void channelManagementPickHaptic();
       startAutoScroll();
@@ -494,6 +502,21 @@ export default function ChannelsScreen() {
     [clearDrag, settleOverlay, stopAutoScroll],
   );
 
+  const handleVisibleZoneLayout = useCallback(
+    (event: { nativeEvent: { layout: { y: number } } }) => {
+      visibleZoneContentYRef.current = event.nativeEvent.layout.y;
+    },
+    [],
+  );
+
+  const handleVisibleListLayout = useCallback(
+    (event: { nativeEvent: { layout: { y: number } } }) => {
+      visibleListContentYRef.current =
+        visibleZoneContentYRef.current + event.nativeEvent.layout.y;
+    },
+    [],
+  );
+
   const handleBack = () => {
     if (router.canGoBack()) router.back();
     else router.replace('/');
@@ -502,10 +525,7 @@ export default function ChannelsScreen() {
   const draggedChannel = dragState
     ? byId.get(dragState.channelId) ?? null
     : null;
-  const draggedHeight =
-    dragState
-      ? rowHeightsRef.current[dragState.channelId] ?? rowMetrics.minHeight
-      : rowMetrics.minHeight;
+  const draggedHeight = dragState?.height ?? rowMetrics.minHeight;
   const zoneLayoutTransition = reduceMotion
     ? undefined
     : LinearTransition.duration(
@@ -637,9 +657,7 @@ export default function ChannelsScreen() {
             <>
               <Animated.View
                 {...(zoneLayoutTransition ? { layout: zoneLayoutTransition } : {})}
-                onLayout={(event) => {
-                  visibleZoneContentYRef.current = event.nativeEvent.layout.y;
-                }}
+                onLayout={handleVisibleZoneLayout}
                 style={styles.visibleZone}
               >
                 <ZoneHeader
@@ -651,10 +669,7 @@ export default function ChannelsScreen() {
                 />
                 <View
                   testID="channels-visible-zone"
-                  onLayout={(event) => {
-                    visibleListContentYRef.current =
-                      visibleZoneContentYRef.current + event.nativeEvent.layout.y;
-                  }}
+                  onLayout={handleVisibleListLayout}
                 >
                   {visibleRows.map((channel, displayIndex) => {
                     const actualIndex = provisionalIds.indexOf(channel.id);
