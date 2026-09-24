@@ -10,6 +10,12 @@ export type EpgRefreshAuthorityResult =
       actualChannelIds: Channel['id'][];
     }
   | {
+      status: 'requires-canonical-proof';
+      reason: 'ignored-stale-exact-scope';
+      expectedChannelIds: Channel['id'][];
+      actualChannelIds: Channel['id'][];
+    }
+  | {
       status: 'incomplete';
       reason:
         | 'partial-provider-coverage'
@@ -36,10 +42,12 @@ function sameChannelScope(
  * Durable orchestration success is stricter than a non-throwing ingest.
  *
  * A child represents one exact database-owned channel/time scope. The child is only
- * authoritative when the whole expected canonical channel set was stored, or when a
- * newer observation already owns that exact scope through ignored-stale. Provider
- * partial coverage, unattributed/no-safe input and channel-local data-quality blocking
- * remain durable incomplete outcomes rather than masquerading as horizon success.
+ * authoritative when the whole expected canonical channel set was stored. An
+ * ignored-stale response is only a candidate for success: ADR 0007 may reject a whole
+ * multi-channel write because of one newer overlapping segment, so full canonical
+ * same-or-newer coverage must be proven transactionally by the orchestration store.
+ * Provider partial coverage, unattributed/no-safe input and channel-local data-quality
+ * blocking remain durable incomplete outcomes rather than masquerading as horizon success.
  */
 export function classifyEpgRefreshWorkItemAuthority(input: {
   expectedCanonicalChannelIds: readonly Channel['id'][];
@@ -64,8 +72,8 @@ export function classifyEpgRefreshWorkItemAuthority(input: {
 
   if (input.write.status === 'ignored-stale' && exactScope) {
     return {
-      status: 'authoritative',
-      reason: 'newer-authority-exact-scope',
+      status: 'requires-canonical-proof',
+      reason: 'ignored-stale-exact-scope',
       expectedChannelIds,
       actualChannelIds,
     };
