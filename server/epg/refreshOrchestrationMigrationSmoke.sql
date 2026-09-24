@@ -11,6 +11,8 @@ create role anon nologin;
 create role authenticated nologin;
 create role service_role nologin bypassrls;
 
+\i supabase/migrations/20260914001257_create_canonical_schedule_store.sql
+
 grant usage on schema teevee to service_role;
 grant usage on schema public to service_role, anon, authenticated;
 grant usage on schema test_epg to service_role;
@@ -138,6 +140,42 @@ $$;
 grant execute on function test_epg.assert_true(boolean,text) to service_role;
 grant execute on function test_epg.assert_json_status(jsonb,text,text) to service_role;
 
+create or replace function test_epg.replace_canonical_window(
+  p_from timestamptz,
+  p_to timestamptz,
+  p_generated_at timestamptz,
+  p_channel_ids text[]
+) returns jsonb
+language sql
+security invoker
+set search_path = ''
+as $
+  select teevee.replace_schedule_window(
+    p_from,
+    p_to,
+    p_generated_at,
+    p_channel_ids,
+    (
+      select jsonb_agg(
+        jsonb_build_object(
+          'id',channel_id,
+          'name',channel_id,
+          'displayName',channel_id,
+          'sortOrder',ordinality::integer,
+          'isActive',true
+        )
+        order by ordinality
+      )
+      from unnest(p_channel_ids) with ordinality as channels(channel_id, ordinality)
+    ),
+    '[]'::jsonb
+  );
+$;
+
+grant execute on function test_epg.replace_canonical_window(
+  timestamptz,timestamptz,timestamptz,text[]
+) to service_role;
+
 \i supabase/migrations/20260924095903_create_epg_refresh_orchestration.sql
 
 select test_epg.assert_true(
@@ -252,7 +290,8 @@ select 'run-1-start', public.teevee_start_epg_refresh_run(
       'from','2026-09-24T04:00:00Z',
       'to','2026-09-25T04:00:00Z',
       'channelGroupKey','group-1',
-      'providerChannelIds',jsonb_build_array('RTL4.nl')
+      'providerChannelIds',jsonb_build_array('RTL4.nl'),
+      'canonicalChannelIds',jsonb_build_array('channel-1')
     ),
     jsonb_build_object(
       'sourceKey','iptv-epg-nl',
@@ -260,7 +299,8 @@ select 'run-1-start', public.teevee_start_epg_refresh_run(
       'from','2026-09-25T04:00:00Z',
       'to','2026-09-26T04:00:00Z',
       'channelGroupKey','group-1',
-      'providerChannelIds',jsonb_build_array('RTL4.nl')
+      'providerChannelIds',jsonb_build_array('RTL4.nl'),
+      'canonicalChannelIds',jsonb_build_array('channel-1')
     )
   )
 );
@@ -364,7 +404,8 @@ select 'run-2-start', public.teevee_start_epg_refresh_run(
       'from','2026-09-24T04:00:00Z',
       'to','2026-09-25T04:00:00Z',
       'channelGroupKey','group-1',
-      'providerChannelIds',jsonb_build_array('RTL4.nl')
+      'providerChannelIds',jsonb_build_array('RTL4.nl'),
+      'canonicalChannelIds',jsonb_build_array('channel-1')
     )
   )
 );
@@ -879,7 +920,8 @@ select 'run-4-start-external-exhaustion', public.teevee_start_epg_refresh_run(
       'from','2026-09-24T04:00:00Z',
       'to','2026-09-25T04:00:00Z',
       'channelGroupKey','group-1',
-      'providerChannelIds',jsonb_build_array('RTL4.nl')
+      'providerChannelIds',jsonb_build_array('RTL4.nl'),
+      'canonicalChannelIds',jsonb_build_array('channel-1')
     )
   )
 );
@@ -1119,7 +1161,8 @@ select 'run-3-start-no-token', public.teevee_start_epg_refresh_run(
       'from','2026-09-24T04:00:00Z',
       'to','2026-09-25T04:00:00Z',
       'channelGroupKey','group-1',
-      'providerChannelIds',jsonb_build_array('RTL4.nl')
+      'providerChannelIds',jsonb_build_array('RTL4.nl'),
+      'canonicalChannelIds',jsonb_build_array('channel-1')
     )
   )
 );
@@ -1166,6 +1209,12 @@ select 'run-49-channel-boundary', public.teevee_start_epg_refresh_run(
           case when within_day <= 30
             then 'nl-' || within_day
             else 'be-' || (within_day - 30)
+          end
+        ),
+        'canonicalChannelIds',jsonb_build_array(
+          case when within_day <= 30
+            then 'nl-canonical-' || within_day
+            else 'be-canonical-' || (within_day - 30)
           end
         )
       )
