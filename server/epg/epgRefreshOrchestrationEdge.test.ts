@@ -74,6 +74,16 @@ describe('epg-refresh bounded orchestration entrypoint', () => {
     expect(externalBlock).not.toContain('ingestProviderSchedule');
   });
 
+  it('routes ignored-stale through database canonical authority proof', () => {
+    expect(entrypoint).toContain('claim.canonicalChannelIds');
+    expect(entrypoint).toContain('sameCanonicalScope');
+    expect(entrypoint).toContain("'verify-stale-authority'");
+    expect(entrypoint).toContain("completion.jobStatus === 'succeeded'");
+    expect(entrypoint).not.toContain(
+      "reason: 'newer-authority-exact-scope'",
+    );
+  });
+
   it('classifies deferred enrichment outcomes before durable completion', () => {
     const externalStart = entrypoint.indexOf(
       "if (request.mode === 'external-content-work-item')",
