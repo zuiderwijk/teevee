@@ -759,6 +759,163 @@ begin
 end;
 $$;
 
+create or replace function teevee.claim_epg_refresh_external_content_job(
+  p_job_id bigint,
+  p_attempt_token uuid
+) returns jsonb
+language plpgsql
+security invoker
+set search_path = ''
+as $
+declare
+  v_job teevee.epg_refresh_jobs%rowtype;
+begin
+  select *
+    into v_job
+  from teevee.epg_refresh_jobs
+  where id = p_job_id
+  for update;
+
+  if not found then
+    return jsonb_build_object('status','stale-attempt','jobId',p_job_id);
+  end if;
+  if v_job.external_content_status in ('not-required','completed','failed') then
+    return jsonb_build_object('status','terminal','jobId',p_job_id);
+  end if;
+  if v_job.external_content_attempt_token is distinct from p_attempt_token then
+    return jsonb_build_object('status','stale-attempt','jobId',p_job_id);
+  end if;
+  if v_job.external_content_status = 'running' then
+    return jsonb_build_object('status','duplicate','jobId',p_job_id);
+  end if;
+  if v_job.external_content_status <> 'dispatched'
+     or v_job.external_content_lease_expires_at is null
+     or v_job.external_content_lease_expires_at <= pg_catalog.now() then
+    return jsonb_build_object('status','stale-attempt','jobId',p_job_id);
+  end if;
+  if v_job.external_content_observation is null then
+    raise exception 'External-content work item has no staged observation';
+  end if;
+
+  update teevee.epg_refresh_jobs
+    set external_content_status = 'running',
+        external_content_started_at = coalesce(
+          external_content_started_at,
+          pg_catalog.now()
+        ),
+        external_content_lease_expires_at = pg_catalog.now() + interval '8 minutes'
+  where id = p_job_id;
+
+  return jsonb_build_object(
+    'status','claimed',
+    'runId',v_job.run_id,
+    'jobId',v_job.id,
+    'attempt',v_job.external_content_attempt_count,
+    'externalContentObservation',v_job.external_content_observation
+  );
+end;
+$;
+
+create or replace function teevee.complete_epg_refresh_external_content_job(
+  p_job_id bigint,
+  p_attempt_token uuid,
+  p_success boolean,
+  p_outcome jsonb,
+  p_error text
+) returns jsonb
+language plpgsql
+security invoker
+set search_path = ''
+as $
+declare
+  v_job teevee.epg_refresh_jobs%rowtype;
+  v_external_content_status text;
+  v_run_status text;
+  v_dispatch jsonb;
+begin
+  select *
+    into v_job
+  from teevee.epg_refresh_jobs
+  where id = p_job_id
+  for update;
+
+  if not found then
+    raise exception 'Unknown EPG refresh external-content job';
+  end if;
+  if v_job.external_content_attempt_token is distinct from p_attempt_token then
+    raise exception 'Stale EPG refresh external-content attempt';
+  end if;
+
+  if v_job.external_content_status in ('completed','failed','not-required') then
+    select status into v_run_status
+    from teevee.epg_refresh_runs
+    where id = v_job.run_id;
+    return jsonb_build_object(
+      'jobId',v_job.id,
+      'externalContentStatus',v_job.external_content_status,
+      'runId',v_job.run_id,
+      'runStatus',v_run_status
+    );
+  end if;
+  if v_job.external_content_status <> 'running' then
+    raise exception 'EPG refresh external-content job is not running';
+  end if;
+
+  if p_success then
+    update teevee.epg_refresh_jobs
+      set external_content_status = 'completed',
+          external_content_lease_expires_at = null,
+          external_content_finished_at = pg_catalog.now(),
+          external_content_last_error = null,
+          external_content_outcome = p_outcome,
+          external_content_observation = null
+    where id = p_job_id
+    returning external_content_status into v_external_content_status;
+  elsif v_job.external_content_attempt_count < v_job.external_content_max_attempts then
+    update teevee.epg_refresh_jobs
+      set external_content_status = 'queued',
+          external_content_available_at = pg_catalog.now() + interval '30 seconds',
+          external_content_lease_expires_at = null,
+          external_content_attempt_token = null,
+          external_content_request_id = null,
+          external_content_last_error = left(
+            coalesce(nullif(btrim(p_error),''),'external-content work-item failed'),
+            1000
+          ),
+          external_content_outcome = p_outcome
+    where id = p_job_id
+    returning external_content_status into v_external_content_status;
+  else
+    update teevee.epg_refresh_jobs
+      set external_content_status = 'failed',
+          external_content_lease_expires_at = null,
+          external_content_finished_at = pg_catalog.now(),
+          external_content_last_error = left(
+            coalesce(nullif(btrim(p_error),''),'external-content work-item failed'),
+            1000
+          ),
+          external_content_outcome = p_outcome,
+          external_content_observation = null
+    where id = p_job_id
+    returning external_content_status into v_external_content_status;
+  end if;
+
+  v_run_status := teevee.recompute_epg_refresh_run(v_job.run_id);
+  v_dispatch := teevee.dispatch_next_epg_refresh_job();
+
+  select status into v_run_status
+  from teevee.epg_refresh_runs
+  where id = v_job.run_id;
+
+  return jsonb_build_object(
+    'jobId',v_job.id,
+    'externalContentStatus',v_external_content_status,
+    'runId',v_job.run_id,
+    'runStatus',v_run_status
+  );
+end;
+$;
+
 create or replace function teevee.pump_epg_refresh_jobs()
 returns jsonb
 language sql
