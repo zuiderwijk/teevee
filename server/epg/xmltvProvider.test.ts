@@ -361,7 +361,7 @@ describe('parseXmltvScheduleStream', () => {
     expect(result.batches[0]?.programmes).toEqual([
       expect.objectContaining({
         title: 'CDATA test',
-        description: 'Literal  text & more',
+        description: 'Literal text & more',
       }),
     ]);
   });
@@ -539,7 +539,9 @@ describe('parseXmltvScheduleStream', () => {
 
     expect(result.stats.channelBlocksScanned).toBe(251);
     expect(result.stats.programmeBlocksScanned).toBe(5001);
+    expect(result.stats.programmeTimestampHeadersParsed).toBe(1);
     expect(result.stats.programmeBlocksMaterialised).toBe(1);
+    expect(result.stats.maxBufferedChars).toBeLessThan(source.length / 10);
     expect(result.channels).toEqual([
       { id: 'wanted', name: 'wanted', displayName: 'wanted' },
     ]);
