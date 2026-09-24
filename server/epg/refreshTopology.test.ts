@@ -7,6 +7,7 @@ import {
   hostedRefreshProviderChannelIds,
   planGuideHorizonRefreshWorkItems,
   resolveEpgRefreshWorkItemScope,
+  scheduledEpgRefreshRequestKey,
   type EpgRefreshSourceConfig,
 } from './refreshTopology.ts';
 
@@ -37,6 +38,15 @@ function source(
 }
 
 describe('EPG refresh topology', () => {
+  it('derives one stable idempotency key per six-hour scheduled refresh bucket', () => {
+    expect(scheduledEpgRefreshRequestKey(Date.parse('2026-09-24T06:17:00Z')))
+      .toBe('cron:2026-09-24T06');
+    expect(scheduledEpgRefreshRequestKey(Date.parse('2026-09-24T11:59:59Z')))
+      .toBe('cron:2026-09-24T06');
+    expect(scheduledEpgRefreshRequestKey(Date.parse('2026-09-24T12:17:00Z')))
+      .toBe('cron:2026-09-24T12');
+  });
+
   it('plans the current runtime as twelve bounded Amsterdam television-day jobs without encoding that shape in the contract', () => {
     const providerChannelIds = hostedRefreshProviderChannelIds();
     const workItems = planGuideHorizonRefreshWorkItems({
