@@ -31,6 +31,7 @@ export type EpgRefreshWorkItemPlan = {
   to: string;
   channelGroupKey: string;
   providerChannelIds: string[];
+  canonicalChannelIds: string[];
 };
 
 /**
@@ -154,6 +155,29 @@ function sourceProviderChannelIds(source: EpgRefreshSourceConfig): string[] {
   return normalizedIds(source.channelMappings.map(({ providerChannelId }) => providerChannelId));
 }
 
+function sourceCanonicalChannelIdsForProviderIds(
+  source: EpgRefreshSourceConfig,
+  providerChannelIds: readonly string[],
+): string[] {
+  const mappingByProviderId = new Map(
+    source.channelMappings.map(({ providerChannelId, channelId }) => [
+      providerChannelId,
+      channelId,
+    ]),
+  );
+  return providerChannelIds
+    .map((providerChannelId) => {
+      const channelId = mappingByProviderId.get(providerChannelId);
+      if (!channelId) {
+        throw new Error(
+          `Provider channel ${providerChannelId} does not belong to source ${source.key}`,
+        );
+      }
+      return channelId;
+    })
+    .sort();
+}
+
 function partition<T>(values: readonly T[], size: number): T[][] {
   if (!Number.isInteger(size) || size < 1) {
     throw new Error('maxProviderChannelsPerWorkItem must be a positive integer');
@@ -217,6 +241,10 @@ export function planGuideHorizonRefreshWorkItems(input: {
           to: window.to,
           channelGroupKey: `group-${groupIndex + 1}`,
           providerChannelIds,
+          canonicalChannelIds: sourceCanonicalChannelIdsForProviderIds(
+            source,
+            providerChannelIds,
+          ),
         });
       }
     }
