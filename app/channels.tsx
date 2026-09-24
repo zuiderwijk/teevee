@@ -1,246 +1,805 @@
-import { useMemo } from 'react';
+import { useCallback, useMemo, useRef, useState } from 'react';
 import { useRouter } from 'expo-router';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import {
+  AccessibilityInfo,
+  findNodeHandle,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  useWindowDimensions,
+  View,
+} from 'react-native';
+import Animated, {
+  Easing,
+  FadeIn,
+  FadeOut,
+  LinearTransition,
+  useAnimatedStyle,
+  useReducedMotion,
+  useSharedValue,
+  withSpring,
+} from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { scheduleOnRN } from 'react-native-worklets';
 
-import { AppScreenHeader } from '@/components/AppScreenHeader';
+import type { Channel } from '@/data/domain/epg';
+import { ChannelManagementRow } from '@/features/channels/ChannelManagementRow';
 import { useChannelPersonalisationSettings } from '@/features/channels/ChannelPersonalisationProvider';
-import { ChannelIdentity } from '@/features/guide/ChannelIdentity';
+import {
+  CHANNEL_MANAGEMENT_METRICS,
+  channelManagementAutoScrollVelocity,
+  channelManagementFocusAfterHide,
+  channelManagementFocusAfterShow,
+  channelManagementInsertionIndex,
+  channelManagementMotionProfile,
+  channelManagementQueryActive,
+  channelManagementRowMetrics,
+  channelManagementSectionCount,
+  channelManagementSlotTop,
+  channelManagementZones,
+  clampChannelManagementScrollOffset,
+  commitChannelManagementDrop,
+  reorderChannelIdsToIndex,
+  type ChannelManagementFocusOutcome,
+} from '@/features/channels/channelManagement';
+import {
+  channelManagementDropHaptic,
+  channelManagementPickHaptic,
+} from '@/features/channels/channelManagementHaptics';
 import { TEEVEE_FONT_FAMILIES } from '@/theme/typography';
 import { useTeeveeTheme } from '@/theme/useTeeveeTheme';
+
+type DragState = {
+  channelId: string;
+  targetIndex: number;
+};
+
+function ZoneHeader({
+  title,
+  count,
+  rowRef,
+}: {
+  title: string;
+  count: string;
+  rowRef?: (node: View | null) => void;
+}) {
+  const theme = useTeeveeTheme();
+  return (
+    <View
+      ref={rowRef}
+      accessible
+      accessibilityRole="header"
+      accessibilityLabel={`${title}, ${count}`}
+      style={styles.zoneHeader}
+    >
+      <Text
+        accessible={false}
+        style={[
+          styles.zoneTitle,
+          {
+            color: theme.colors.text,
+            fontFamily: TEEVEE_FONT_FAMILIES.semibold,
+          },
+        ]}
+      >
+        {title}
+      </Text>
+      <Text
+        accessible={false}
+        style={[
+          styles.zoneCount,
+          {
+            color: theme.colors.textMuted,
+            fontFamily: TEEVEE_FONT_FAMILIES.regular,
+          },
+        ]}
+      >
+        {count}
+      </Text>
+    </View>
+  );
+}
 
 export default function ChannelsScreen() {
   const router = useRouter();
   const theme = useTeeveeTheme();
+  const reduceMotion = useReducedMotion();
+  const { fontScale } = useWindowDimensions();
+  const rowMetrics = useMemo(
+    () => channelManagementRowMetrics(fontScale),
+    [fontScale],
+  );
+  const motion = channelManagementMotionProfile(reduceMotion);
   const {
     catalog,
     selectedChannelIds,
-    isChannelVisible,
     canHideChannel,
     setChannelVisible,
     moveChannel,
+    moveChannelToIndex,
   } = useChannelPersonalisationSettings();
+
+  const [query, setQuery] = useState('');
+  const [dragState, setDragState] = useState<DragState | null>(null);
+  const queryActive = channelManagementQueryActive(query);
+
+  const selectedIdsRef = useRef<readonly string[]>(selectedChannelIds);
+  selectedIdsRef.current = selectedChannelIds;
+  const queryActiveRef = useRef(queryActive);
+  queryActiveRef.current = queryActive;
+  const dragStateRef = useRef<DragState | null>(dragState);
+  dragStateRef.current = dragState;
+
+  const rowHeightsRef = useRef<Record<string, number>>({});
+  const rowRefs = useRef(new Map<string, View>());
+  const visibleHeadingRef = useRef<View | null>(null);
+  const hiddenHeadingRef = useRef<View | null>(null);
+
+  const scrollRef = useRef<ScrollView>(null);
+  const scrollOffsetRef = useRef(0);
+  const contentHeightRef = useRef(0);
+  const viewportWindowYRef = useRef(0);
+  const viewportHeightRef = useRef(0);
+  const visibleListContentYRef = useRef(0);
+  const dragPointerAbsoluteYRef = useRef(0);
+  const autoScrollFrameRef = useRef<number | null>(null);
+  const autoScrollLastTimestampRef = useRef(0);
+
+  const overlayTop = useSharedValue(0);
+  const overlayStyle = useAnimatedStyle(() => ({
+    top: overlayTop.value,
+    transform: [{ scale: motion.pickedScale }],
+  }));
 
   const byId = useMemo(
     () => new Map(catalog.map((channel) => [channel.id, channel])),
     [catalog],
   );
-  const selectedChannels = useMemo(
-    () =>
-      selectedChannelIds
-        .map((id) => byId.get(id))
-        .filter((channel): channel is NonNullable<typeof channel> => channel !== undefined),
-    [byId, selectedChannelIds],
+
+  const baseZones = useMemo(
+    () => channelManagementZones(catalog, selectedChannelIds, query),
+    [catalog, query, selectedChannelIds],
   );
-  const hiddenChannels = useMemo(
-    () => catalog.filter((channel) => !isChannelVisible(channel.id)),
-    [catalog, isChannelVisible],
+  const allZones = useMemo(
+    () => channelManagementZones(catalog, selectedChannelIds),
+    [catalog, selectedChannelIds],
   );
 
-  const done = (
-    <Pressable
-      accessibilityRole="button"
-      accessibilityLabel="Sluit Mijn zenders"
-      onPress={() => (router.canGoBack() ? router.back() : router.replace('/'))}
-      style={({ pressed }) => [
-        styles.doneButton,
-        {
-          backgroundColor: theme.colors.surface,
-          borderColor: theme.colors.border,
-          opacity: pressed ? 0.72 : 1,
-        },
-      ]}
-    >
-      <Text
-        style={[
-          styles.doneText,
-          {
-            color: theme.colors.textSecondary,
-            fontFamily: TEEVEE_FONT_FAMILIES.semibold,
-          },
-        ]}
-      >
-        Gereed
-      </Text>
-    </Pressable>
+  const provisionalIds = useMemo(
+    () =>
+      dragState
+        ? reorderChannelIdsToIndex(
+            selectedChannelIds,
+            dragState.channelId,
+            dragState.targetIndex,
+          )
+        : selectedChannelIds,
+    [dragState, selectedChannelIds],
   );
+
+  const visibleRows = useMemo(() => {
+    if (queryActive) return baseZones.visible;
+    return provisionalIds
+      .map((id) => byId.get(id))
+      .filter((channel): channel is Channel => Boolean(channel));
+  }, [baseZones.visible, byId, provisionalIds, queryActive]);
+  const hiddenRows = baseZones.hidden;
+
+  const visibleCount = channelManagementSectionCount(
+    baseZones.visible.length,
+    allZones.visible.length,
+    queryActive,
+  );
+  const hiddenCount = channelManagementSectionCount(
+    baseZones.hidden.length,
+    allZones.hidden.length,
+    queryActive,
+  );
+  const noSearchResults =
+    queryActive && baseZones.visible.length === 0 && baseZones.hidden.length === 0;
+
+  const registerRowRef = useCallback((channelId: string, node: View | null) => {
+    if (node) rowRefs.current.set(channelId, node);
+    else rowRefs.current.delete(channelId);
+  }, []);
+
+  const focusOutcome = useCallback((outcome: ChannelManagementFocusOutcome) => {
+    requestAnimationFrame(() => {
+      let target: View | null | undefined;
+      if (outcome.type === 'channel') {
+        target = rowRefs.current.get(outcome.channelId);
+      } else if (outcome.type === 'hidden-heading') {
+        target = hiddenHeadingRef.current ?? visibleHeadingRef.current;
+      } else {
+        target = visibleHeadingRef.current;
+      }
+      if (!target) return;
+      const handle = findNodeHandle(target);
+      if (handle != null) AccessibilityInfo.setAccessibilityFocus(handle);
+    });
+  }, []);
+
+  const announce = useCallback((message: string) => {
+    AccessibilityInfo.announceForAccessibility(message);
+  }, []);
+
+  const toggleVisibility = useCallback(
+    (channelId: string, makeVisible: boolean) => {
+      const channel = byId.get(channelId);
+      if (!channel) return;
+
+      if (makeVisible) {
+        const workflowHiddenIds = hiddenRows.map(({ id }) => id);
+        const outcome = channelManagementFocusAfterShow(
+          workflowHiddenIds,
+          channelId,
+        );
+        setChannelVisible(channelId, true);
+        announce(`${channel.displayName} toegevoegd aan Mijn zenders, achteraan`);
+        focusOutcome(outcome);
+        return;
+      }
+
+      if (!canHideChannel(channelId)) {
+        announce('Minimaal één zender moet zichtbaar blijven');
+        return;
+      }
+
+      const workflowVisibleIds = visibleRows.map(({ id }) => id);
+      const outcome = channelManagementFocusAfterHide(
+        workflowVisibleIds,
+        channelId,
+      );
+      setChannelVisible(channelId, false);
+      announce(`${channel.displayName} verborgen`);
+      focusOutcome(outcome);
+    },
+    [
+      announce,
+      byId,
+      canHideChannel,
+      focusOutcome,
+      hiddenRows,
+      setChannelVisible,
+      visibleRows,
+    ],
+  );
+
+  const moveOneStep = useCallback(
+    (channelId: string, delta: -1 | 1) => {
+      if (queryActiveRef.current) return;
+      const current = selectedIdsRef.current;
+      const from = current.indexOf(channelId);
+      if (from < 0) return;
+      const to = Math.max(0, Math.min(current.length - 1, from + delta));
+      if (to === from) return;
+
+      moveChannel(channelId, delta);
+      const channel = byId.get(channelId);
+      if (channel) {
+        announce(
+          `${channel.displayName}, positie ${to + 1} van ${current.length}`,
+        );
+      }
+      focusOutcome({ type: 'channel', channelId });
+    },
+    [announce, byId, focusOutcome, moveChannel],
+  );
+
+  const measureScrollViewport = useCallback(() => {
+    scrollRef.current?.measureInWindow((_x, y, _width, height) => {
+      viewportWindowYRef.current = y;
+      viewportHeightRef.current = height;
+    });
+  }, []);
+
+  const contentYForAbsoluteY = useCallback((absoluteY: number) => {
+    return (
+      scrollOffsetRef.current +
+      (absoluteY - viewportWindowYRef.current)
+    );
+  }, []);
+
+  const updateDragPointer = useCallback(
+    (channelId: string, absoluteY: number) => {
+      const current = dragStateRef.current;
+      if (!current || current.channelId !== channelId) return;
+
+      dragPointerAbsoluteYRef.current = absoluteY;
+      const contentY = contentYForAbsoluteY(absoluteY);
+      const height =
+        rowHeightsRef.current[channelId] ?? rowMetrics.minHeight;
+      overlayTop.value = contentY - height / 2;
+
+      const targetIndex = channelManagementInsertionIndex(
+        selectedIdsRef.current,
+        channelId,
+        contentY - visibleListContentYRef.current,
+        rowHeightsRef.current,
+        rowMetrics.minHeight,
+      );
+      if (targetIndex === current.targetIndex) return;
+
+      const next = { ...current, targetIndex };
+      dragStateRef.current = next;
+      setDragState(next);
+    },
+    [contentYForAbsoluteY, overlayTop, rowMetrics.minHeight],
+  );
+
+  const stopAutoScroll = useCallback(() => {
+    if (autoScrollFrameRef.current != null) {
+      cancelAnimationFrame(autoScrollFrameRef.current);
+      autoScrollFrameRef.current = null;
+    }
+    autoScrollLastTimestampRef.current = 0;
+  }, []);
+
+  const startAutoScroll = useCallback(() => {
+    stopAutoScroll();
+
+    const tick = (timestamp: number) => {
+      const current = dragStateRef.current;
+      if (!current) {
+        autoScrollFrameRef.current = null;
+        return;
+      }
+
+      const last = autoScrollLastTimestampRef.current || timestamp;
+      autoScrollLastTimestampRef.current = timestamp;
+      const deltaSeconds = Math.min(0.05, Math.max(0, timestamp - last) / 1000);
+      const pointerYWithinViewport =
+        dragPointerAbsoluteYRef.current - viewportWindowYRef.current;
+      const velocity = channelManagementAutoScrollVelocity(
+        pointerYWithinViewport,
+        viewportHeightRef.current,
+      );
+      const maxOffset = Math.max(
+        0,
+        contentHeightRef.current - viewportHeightRef.current,
+      );
+
+      if (velocity !== 0 && deltaSeconds > 0) {
+        const nextOffset = clampChannelManagementScrollOffset(
+          scrollOffsetRef.current + velocity * deltaSeconds,
+          maxOffset,
+        );
+        if (Math.abs(nextOffset - scrollOffsetRef.current) > 0.1) {
+          scrollOffsetRef.current = nextOffset;
+          scrollRef.current?.scrollTo({ y: nextOffset, animated: false });
+          updateDragPointer(
+            current.channelId,
+            dragPointerAbsoluteYRef.current,
+          );
+        }
+      }
+
+      autoScrollFrameRef.current = requestAnimationFrame(tick);
+    };
+
+    autoScrollFrameRef.current = requestAnimationFrame(tick);
+  }, [stopAutoScroll, updateDragPointer]);
+
+  const clearDrag = useCallback(() => {
+    stopAutoScroll();
+    dragStateRef.current = null;
+    setDragState(null);
+  }, [stopAutoScroll]);
+
+  const settleOverlay = useCallback(
+    (
+      channelId: string,
+      targetIndex: number,
+      order: readonly string[],
+    ) => {
+      const targetTop =
+        visibleListContentYRef.current +
+        channelManagementSlotTop(
+          order,
+          channelId,
+          targetIndex,
+          rowHeightsRef.current,
+          rowMetrics.minHeight,
+        );
+
+      if (motion.settleImmediately) {
+        overlayTop.value = targetTop;
+        clearDrag();
+        return;
+      }
+
+      overlayTop.value = withSpring(
+        targetTop,
+        CHANNEL_MANAGEMENT_METRICS.dropSpring,
+        (finished) => {
+          if (finished) scheduleOnRN(clearDrag);
+        },
+      );
+    },
+    [
+      clearDrag,
+      motion.settleImmediately,
+      overlayTop,
+      rowMetrics.minHeight,
+    ],
+  );
+
+  const beginDrag = useCallback(
+    (channelId: string, absoluteY: number) => {
+      if (queryActiveRef.current || dragStateRef.current) return;
+      const from = selectedIdsRef.current.indexOf(channelId);
+      if (from < 0) return;
+
+      const next = { channelId, targetIndex: from };
+      dragStateRef.current = next;
+      setDragState(next);
+      dragPointerAbsoluteYRef.current = absoluteY;
+
+      const contentY = contentYForAbsoluteY(absoluteY);
+      const height =
+        rowHeightsRef.current[channelId] ?? rowMetrics.minHeight;
+      overlayTop.value = contentY - height / 2;
+
+      void channelManagementPickHaptic();
+      startAutoScroll();
+    },
+    [
+      contentYForAbsoluteY,
+      overlayTop,
+      rowMetrics.minHeight,
+      startAutoScroll,
+    ],
+  );
+
+  const endDrag = useCallback(
+    (channelId: string, absoluteY: number) => {
+      updateDragPointer(channelId, absoluteY);
+      const current = dragStateRef.current;
+      if (!current || current.channelId !== channelId) return;
+
+      stopAutoScroll();
+      const order = [...selectedIdsRef.current];
+      const changed = commitChannelManagementDrop(
+        order,
+        channelId,
+        current.targetIndex,
+        moveChannelToIndex,
+      );
+      if (changed) void channelManagementDropHaptic();
+      settleOverlay(channelId, current.targetIndex, order);
+    },
+    [moveChannelToIndex, settleOverlay, stopAutoScroll, updateDragPointer],
+  );
+
+  const cancelDrag = useCallback(
+    (channelId: string) => {
+      const current = dragStateRef.current;
+      if (!current || current.channelId !== channelId) return;
+
+      stopAutoScroll();
+      const order = [...selectedIdsRef.current];
+      const originalIndex = order.indexOf(channelId);
+      if (originalIndex < 0) {
+        clearDrag();
+        return;
+      }
+      settleOverlay(channelId, originalIndex, order);
+    },
+    [clearDrag, settleOverlay, stopAutoScroll],
+  );
+
+  const handleBack = () => {
+    if (router.canGoBack()) router.back();
+    else router.replace('/');
+  };
+
+  const draggedChannel = dragState
+    ? byId.get(dragState.channelId) ?? null
+    : null;
+  const draggedHeight =
+    dragState
+      ? rowHeightsRef.current[dragState.channelId] ?? rowMetrics.minHeight
+      : rowMetrics.minHeight;
+  const zoneLayoutTransition = reduceMotion
+    ? undefined
+    : LinearTransition.duration(
+        CHANNEL_MANAGEMENT_METRICS.zoneTransitionMs,
+      ).easing(Easing.out(Easing.cubic));
 
   return (
     <SafeAreaView
       style={[styles.safeArea, { backgroundColor: theme.colors.background }]}
     >
-      <ScrollView contentContainerStyle={styles.content}>
-        <AppScreenHeader title="Mijn zenders" action={done} />
-        <Text style={[styles.intro, { color: theme.colors.textSecondary }]}>
-          Kies welke zenders je in de gids ziet en bepaal de volgorde. Nieuwe ondersteunde zenders worden automatisch achteraan toegevoegd.
-        </Text>
-
-        <Text style={[styles.sectionLabel, { color: theme.colors.textMuted }]}>
-          IN MIJN ZENDERS
-        </Text>
-        <View
-          style={[
-            styles.group,
-            {
-              borderColor: theme.colors.border,
-              backgroundColor: theme.colors.surface,
-            },
-          ]}
-        >
-          {selectedChannels.map((channel, index) => (
-            <View
-              key={channel.id}
-              testID={`channels-visible-${channel.id}`}
-              style={[
-                styles.row,
-                index > 0 && {
-                  borderTopColor: theme.colors.border,
-                  borderTopWidth: StyleSheet.hairlineWidth,
-                },
+      <ScrollView
+        ref={scrollRef}
+        testID="channels-scroll"
+        scrollEnabled={dragState === null}
+        scrollEventThrottle={16}
+        keyboardShouldPersistTaps="handled"
+        onLayout={measureScrollViewport}
+        onContentSizeChange={(_width, height) => {
+          contentHeightRef.current = height;
+          measureScrollViewport();
+        }}
+        onScroll={(event) => {
+          scrollOffsetRef.current = event.nativeEvent.contentOffset.y;
+        }}
+        contentContainerStyle={styles.scrollContent}
+      >
+        <View style={styles.screenInset}>
+          <View style={styles.navigationRow}>
+            <Pressable
+              testID="channels-back"
+              accessibilityRole="button"
+              accessibilityLabel="Terug"
+              onPress={handleBack}
+              style={({ pressed }) => [
+                styles.backButton,
+                { opacity: pressed ? 0.55 : 1 },
               ]}
             >
-              <View style={styles.identity}>
-                <ChannelIdentity
-                  channel={channel}
-                  textColor={theme.colors.text}
-                  mutedTextColor={theme.colors.textSecondary}
-                  variant="detail"
-                  accessible
-                />
-              </View>
-              <View style={styles.actions}>
-                <Pressable
-                  accessibilityRole="button"
-                  accessibilityLabel={`${channel.displayName} omhoog`}
-                  accessibilityState={{ disabled: index === 0 }}
-                  disabled={index === 0}
-                  onPress={() => moveChannel(channel.id, -1)}
-                  style={({ pressed }) => [
-                    styles.action,
-                    {
-                      borderColor: theme.colors.border,
-                      opacity: index === 0 ? 0.35 : pressed ? 0.6 : 1,
-                    },
-                  ]}
-                >
-                  <Text
-                    style={[styles.actionText, { color: theme.colors.textSecondary }]}
-                  >
-                    Omhoog
-                  </Text>
-                </Pressable>
-                <Pressable
-                  accessibilityRole="button"
-                  accessibilityLabel={`${channel.displayName} omlaag`}
-                  accessibilityState={{
-                    disabled: index === selectedChannels.length - 1,
-                  }}
-                  disabled={index === selectedChannels.length - 1}
-                  onPress={() => moveChannel(channel.id, 1)}
-                  style={({ pressed }) => [
-                    styles.action,
-                    {
-                      borderColor: theme.colors.border,
-                      opacity:
-                        index === selectedChannels.length - 1
-                          ? 0.35
-                          : pressed
-                            ? 0.6
-                            : 1,
-                    },
-                  ]}
-                >
-                  <Text
-                    style={[styles.actionText, { color: theme.colors.textSecondary }]}
-                  >
-                    Omlaag
-                  </Text>
-                </Pressable>
-                <Pressable
-                  accessibilityRole="button"
-                  accessibilityLabel={`${channel.displayName} verbergen`}
-                  accessibilityState={{ disabled: !canHideChannel(channel.id) }}
-                  disabled={!canHideChannel(channel.id)}
-                  onPress={() => setChannelVisible(channel.id, false)}
-                  style={({ pressed }) => [
-                    styles.action,
-                    {
-                      borderColor: theme.colors.border,
-                      opacity: !canHideChannel(channel.id)
-                        ? 0.35
-                        : pressed
-                          ? 0.6
-                          : 1,
-                    },
-                  ]}
-                >
-                  <Text
-                    style={[styles.actionText, { color: theme.colors.textSecondary }]}
-                  >
-                    Verberg
-                  </Text>
-                </Pressable>
-              </View>
+              <Text
+                accessible={false}
+                allowFontScaling={false}
+                style={[styles.backGlyph, { color: theme.colors.text }]}
+              >
+                ‹
+              </Text>
+            </Pressable>
+            <View pointerEvents="none" style={styles.navigationTitleLane}>
+              <Text
+                accessibilityRole="header"
+                style={[
+                  styles.navigationTitle,
+                  {
+                    color: theme.colors.text,
+                    fontFamily: TEEVEE_FONT_FAMILIES.semibold,
+                  },
+                ]}
+              >
+                Mijn zenders
+              </Text>
             </View>
-          ))}
-        </View>
+            <View style={styles.navigationSpacer} />
+          </View>
 
-        {hiddenChannels.length > 0 ? (
-          <>
-            <Text style={[styles.sectionLabel, { color: theme.colors.textMuted }]}>
-              VERBORGEN
-            </Text>
-            <View
+          <View
+            style={[
+              styles.searchField,
+              {
+                backgroundColor: theme.colors.surface,
+                borderColor: theme.colors.border,
+              },
+            ]}
+          >
+            <TextInput
+              testID="channels-local-search"
+              accessibilityLabel="Zoek een zender"
+              value={query}
+              onChangeText={setQuery}
+              placeholder="Zoek een zender"
+              placeholderTextColor={theme.colors.textMuted}
+              returnKeyType="search"
+              autoCorrect={false}
+              autoCapitalize="none"
               style={[
-                styles.group,
+                styles.searchInput,
                 {
-                  borderColor: theme.colors.border,
-                  backgroundColor: theme.colors.surface,
+                  color: theme.colors.text,
+                  fontFamily: TEEVEE_FONT_FAMILIES.regular,
+                },
+              ]}
+            />
+            {queryActive ? (
+              <Pressable
+                testID="channels-clear-search"
+                accessibilityRole="button"
+                accessibilityLabel="Wis zoeken"
+                onPress={() => setQuery('')}
+                style={styles.searchClear}
+              >
+                <Text
+                  accessible={false}
+                  allowFontScaling={false}
+                  style={[styles.searchClearGlyph, { color: theme.colors.textMuted }]}
+                >
+                  ×
+                </Text>
+              </Pressable>
+            ) : null}
+          </View>
+
+          {noSearchResults ? (
+            <Text
+              accessibilityLiveRegion="polite"
+              style={[
+                styles.noResults,
+                {
+                  color: theme.colors.textSecondary,
+                  fontFamily: TEEVEE_FONT_FAMILIES.regular,
                 },
               ]}
             >
-              {hiddenChannels.map((channel, index) => (
+              Geen zenders gevonden
+            </Text>
+          ) : (
+            <>
+              <Animated.View
+                layout={zoneLayoutTransition}
+                style={styles.visibleZone}
+              >
+                <ZoneHeader
+                  title="Mijn zenders"
+                  count={visibleCount}
+                  rowRef={(node) => {
+                    visibleHeadingRef.current = node;
+                  }}
+                />
                 <View
-                  key={channel.id}
-                  testID={`channels-hidden-${channel.id}`}
-                  style={[
-                    styles.row,
-                    index > 0 && {
-                      borderTopColor: theme.colors.border,
-                      borderTopWidth: StyleSheet.hairlineWidth,
-                    },
-                  ]}
+                  testID="channels-visible-zone"
+                  onLayout={(event) => {
+                    visibleListContentYRef.current =
+                      event.nativeEvent.layout.y +
+                      CHANNEL_MANAGEMENT_METRICS.navigationHeight +
+                      CHANNEL_MANAGEMENT_METRICS.searchMinHeight +
+                      28;
+                  }}
                 >
-                  <View style={styles.identity}>
-                    <ChannelIdentity
-                      channel={channel}
-                      textColor={theme.colors.text}
-                      mutedTextColor={theme.colors.textSecondary}
-                      variant="detail"
-                      accessible
-                    />
-                  </View>
-                  <Pressable
-                    accessibilityRole="button"
-                    accessibilityLabel={`${channel.displayName} toevoegen aan Mijn zenders`}
-                    onPress={() => setChannelVisible(channel.id, true)}
-                    style={({ pressed }) => [
-                      styles.addButton,
+                  {visibleRows.map((channel, displayIndex) => {
+                    const actualIndex = provisionalIds.indexOf(channel.id);
+                    const isDragged = dragState?.channelId === channel.id;
+                    if (isDragged) {
+                      return (
+                        <View
+                          key={channel.id}
+                          testID={`channels-drop-slot-${channel.id}`}
+                          style={[
+                            styles.dropSlot,
+                            {
+                              height: draggedHeight,
+                            },
+                          ]}
+                        >
+                          <View
+                            style={[
+                              styles.insertionLine,
+                              {
+                                backgroundColor: theme.colors.accent,
+                              },
+                            ]}
+                          />
+                        </View>
+                      );
+                    }
+
+                    return (
+                      <ChannelManagementRow
+                        key={channel.id}
+                        channel={channel}
+                        visible
+                        index={actualIndex >= 0 ? actualIndex : displayIndex}
+                        total={selectedChannelIds.length}
+                        minHeight={rowMetrics.minHeight}
+                        nameLines={rowMetrics.nameLines}
+                        canHide={canHideChannel(channel.id)}
+                        reorderEnabled={!queryActive}
+                        reduceMotion={reduceMotion}
+                        showSeparator={displayIndex < visibleRows.length - 1}
+                        rowRef={(node) => registerRowRef(channel.id, node)}
+                        onMeasure={(id, height) => {
+                          rowHeightsRef.current[id] = height;
+                        }}
+                        onToggleVisibility={toggleVisibility}
+                        onMoveOneStep={moveOneStep}
+                        onDragStart={beginDrag}
+                        onDragMove={updateDragPointer}
+                        onDragEnd={endDrag}
+                        onDragCancel={cancelDrag}
+                      />
+                    );
+                  })}
+                </View>
+
+                {selectedChannelIds.length === 1 ? (
+                  <Text
+                    accessibilityLiveRegion="polite"
+                    style={[
+                      styles.minimumHelper,
                       {
-                        borderColor: theme.colors.border,
-                        backgroundColor: theme.colors.surfaceElevated,
-                        opacity: pressed ? 0.68 : 1,
+                        color: theme.colors.textMuted,
+                        fontFamily: TEEVEE_FONT_FAMILIES.regular,
                       },
                     ]}
                   >
-                    <Text style={[styles.addText, { color: theme.colors.text }]}>
-                      Toevoegen
-                    </Text>
-                  </Pressable>
-                </View>
-              ))}
-            </View>
-          </>
+                    Minimaal één zender blijft zichtbaar.
+                  </Text>
+                ) : null}
+              </Animated.View>
+
+              {allZones.hidden.length > 0 ? (
+                <Animated.View
+                  testID="channels-hidden-zone"
+                  entering={
+                    reduceMotion
+                      ? undefined
+                      : FadeIn.duration(
+                          CHANNEL_MANAGEMENT_METRICS.zoneTransitionMs,
+                        )
+                  }
+                  exiting={
+                    reduceMotion
+                      ? undefined
+                      : FadeOut.duration(
+                          CHANNEL_MANAGEMENT_METRICS.zoneTransitionMs,
+                        )
+                  }
+                  layout={zoneLayoutTransition}
+                  style={styles.hiddenZone}
+                >
+                  <ZoneHeader
+                    title="Verborgen zenders"
+                    count={hiddenCount}
+                    rowRef={(node) => {
+                      hiddenHeadingRef.current = node;
+                    }}
+                  />
+                  {hiddenRows.map((channel, index) => (
+                    <ChannelManagementRow
+                      key={channel.id}
+                      channel={channel}
+                      visible={false}
+                      index={index}
+                      total={hiddenRows.length}
+                      minHeight={rowMetrics.minHeight}
+                      nameLines={rowMetrics.nameLines}
+                      canHide={false}
+                      reorderEnabled={false}
+                      reduceMotion={reduceMotion}
+                      showSeparator={index < hiddenRows.length - 1}
+                      rowRef={(node) => registerRowRef(channel.id, node)}
+                      onMeasure={(id, height) => {
+                        rowHeightsRef.current[id] = height;
+                      }}
+                      onToggleVisibility={toggleVisibility}
+                      onMoveOneStep={moveOneStep}
+                    />
+                  ))}
+                </Animated.View>
+              ) : null}
+            </>
+          )}
+        </View>
+
+        {draggedChannel ? (
+          <Animated.View
+            testID="channels-drag-overlay"
+            pointerEvents="none"
+            style={[
+              styles.dragOverlay,
+              {
+                height: draggedHeight,
+              },
+              overlayStyle,
+            ]}
+          >
+            <ChannelManagementRow
+              channel={draggedChannel}
+              visible
+              index={dragState?.targetIndex ?? 0}
+              total={selectedChannelIds.length}
+              minHeight={draggedHeight}
+              nameLines={rowMetrics.nameLines}
+              canHide
+              reorderEnabled
+              reduceMotion={reduceMotion}
+              showSeparator={false}
+              overlay
+              onToggleVisibility={() => undefined}
+              onMoveOneStep={() => undefined}
+            />
+          </Animated.View>
         ) : null}
       </ScrollView>
     </SafeAreaView>
@@ -248,61 +807,129 @@ export default function ChannelsScreen() {
 }
 
 const styles = StyleSheet.create({
-  safeArea: { flex: 1 },
-  content: { paddingHorizontal: 20, paddingTop: 18, paddingBottom: 40 },
-  doneButton: {
-    minHeight: 44,
-    justifyContent: 'center',
-    paddingHorizontal: 14,
-    borderRadius: 22,
-    borderWidth: StyleSheet.hairlineWidth,
+  safeArea: {
+    flex: 1,
   },
-  doneText: { fontSize: 13, lineHeight: 18 },
-  intro: { marginTop: 14, fontSize: 14, lineHeight: 20 },
-  sectionLabel: {
-    marginTop: 24,
-    marginBottom: 8,
-    fontSize: 11,
-    lineHeight: 15,
-    fontWeight: '800',
-    letterSpacing: 1.2,
+  scrollContent: {
+    paddingBottom: 40,
+    position: 'relative',
   },
-  group: {
-    overflow: 'hidden',
-    borderRadius: 18,
-    borderWidth: StyleSheet.hairlineWidth,
+  screenInset: {
+    marginHorizontal: CHANNEL_MANAGEMENT_METRICS.screenInsetX,
   },
-  row: {
-    minHeight: 72,
+  navigationRow: {
+    height: CHANNEL_MANAGEMENT_METRICS.navigationHeight,
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
-    paddingHorizontal: 14,
-    paddingVertical: 10,
+    position: 'relative',
   },
-  identity: { flex: 1, minWidth: 0, minHeight: 44, justifyContent: 'center' },
-  actions: {
-    flexShrink: 0,
+  backButton: {
+    width: CHANNEL_MANAGEMENT_METRICS.navigationHeight,
+    height: CHANNEL_MANAGEMENT_METRICS.navigationHeight,
+    alignItems: 'flex-start',
+    justifyContent: 'center',
+  },
+  backGlyph: {
+    fontSize: 34,
+    lineHeight: 38,
+  },
+  navigationTitleLane: {
+    position: 'absolute',
+    left: CHANNEL_MANAGEMENT_METRICS.navigationHeight,
+    right: CHANNEL_MANAGEMENT_METRICS.navigationHeight,
+    top: 0,
+    bottom: 0,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  navigationTitle: {
+    fontSize: 17,
+    lineHeight: 22,
+    textAlign: 'center',
+  },
+  navigationSpacer: {
+    marginLeft: 'auto',
+    width: CHANNEL_MANAGEMENT_METRICS.navigationHeight,
+    height: CHANNEL_MANAGEMENT_METRICS.navigationHeight,
+  },
+  searchField: {
+    minHeight: CHANNEL_MANAGEMENT_METRICS.searchMinHeight,
+    borderRadius: CHANNEL_MANAGEMENT_METRICS.searchRadius,
+    borderWidth: StyleSheet.hairlineWidth,
     flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'flex-end',
-    gap: 6,
-    maxWidth: 190,
+    alignItems: 'center',
+    marginTop: 8,
   },
-  action: {
-    minHeight: 44,
+  searchInput: {
+    flex: 1,
+    minHeight: CHANNEL_MANAGEMENT_METRICS.searchMinHeight,
+    paddingHorizontal: CHANNEL_MANAGEMENT_METRICS.searchPaddingX,
+    paddingVertical: 10,
+    fontSize: 15,
+    lineHeight: 20,
+  },
+  searchClear: {
+    width: CHANNEL_MANAGEMENT_METRICS.searchMinHeight,
+    minHeight: CHANNEL_MANAGEMENT_METRICS.searchMinHeight,
+    alignItems: 'center',
     justifyContent: 'center',
-    paddingHorizontal: 9,
-    borderRadius: 22,
-    borderWidth: StyleSheet.hairlineWidth,
   },
-  actionText: { fontSize: 12, lineHeight: 16, fontWeight: '600' },
-  addButton: {
-    minHeight: 44,
-    justifyContent: 'center',
-    paddingHorizontal: 12,
-    borderRadius: 22,
-    borderWidth: StyleSheet.hairlineWidth,
+  searchClearGlyph: {
+    fontSize: 24,
+    lineHeight: 28,
   },
-  addText: { fontSize: 12, lineHeight: 16, fontWeight: '700' },
+  visibleZone: {
+    marginTop: 20,
+  },
+  hiddenZone: {
+    marginTop: CHANNEL_MANAGEMENT_METRICS.sectionGap,
+  },
+  zoneHeader: {
+    minHeight: 20,
+    flexDirection: 'row',
+    alignItems: 'baseline',
+    justifyContent: 'space-between',
+    gap: 12,
+    marginBottom: CHANNEL_MANAGEMENT_METRICS.sectionHeaderGap,
+  },
+  zoneTitle: {
+    flexShrink: 1,
+    fontSize: 15,
+    lineHeight: 20,
+  },
+  zoneCount: {
+    flexShrink: 1,
+    fontSize: 13,
+    lineHeight: 18,
+    textAlign: 'right',
+  },
+  dropSlot: {
+    width: '100%',
+    position: 'relative',
+  },
+  insertionLine: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    top: 0,
+    height: CHANNEL_MANAGEMENT_METRICS.insertionLineHeight,
+    borderRadius: 1,
+  },
+  minimumHelper: {
+    marginTop: 8,
+    fontSize: 13,
+    lineHeight: 18,
+  },
+  noResults: {
+    marginTop: 20,
+    fontSize: 15,
+    lineHeight: 20,
+    textAlign: 'center',
+  },
+  dragOverlay: {
+    position: 'absolute',
+    left: CHANNEL_MANAGEMENT_METRICS.screenInsetX,
+    right: CHANNEL_MANAGEMENT_METRICS.screenInsetX,
+    zIndex: 100,
+  },
 });
