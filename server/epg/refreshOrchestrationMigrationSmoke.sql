@@ -165,6 +165,16 @@ select test_epg.assert_true(
     'anon',
     'public.teevee_complete_epg_refresh_job(bigint,uuid,text,jsonb,text,jsonb)',
     'EXECUTE'
+  )
+  and not has_function_privilege(
+    'anon',
+    'public.teevee_claim_epg_refresh_external_content_job(bigint,uuid)',
+    'EXECUTE'
+  )
+  and not has_function_privilege(
+    'anon',
+    'public.teevee_complete_epg_refresh_external_content_job(bigint,uuid,boolean,jsonb,text)',
+    'EXECUTE'
   ),
   'anon must have no orchestration RPC execute privileges'
 );
@@ -183,6 +193,16 @@ select test_epg.assert_true(
     'authenticated',
     'public.teevee_complete_epg_refresh_job(bigint,uuid,text,jsonb,text,jsonb)',
     'EXECUTE'
+  )
+  and not has_function_privilege(
+    'authenticated',
+    'public.teevee_claim_epg_refresh_external_content_job(bigint,uuid)',
+    'EXECUTE'
+  )
+  and not has_function_privilege(
+    'authenticated',
+    'public.teevee_complete_epg_refresh_external_content_job(bigint,uuid,boolean,jsonb,text)',
+    'EXECUTE'
   ),
   'authenticated must have no orchestration RPC execute privileges'
 );
@@ -200,6 +220,16 @@ select test_epg.assert_true(
   and has_function_privilege(
     'service_role',
     'public.teevee_complete_epg_refresh_job(bigint,uuid,text,jsonb,text,jsonb)',
+    'EXECUTE'
+  )
+  and has_function_privilege(
+    'service_role',
+    'public.teevee_claim_epg_refresh_external_content_job(bigint,uuid)',
+    'EXECUTE'
+  )
+  and has_function_privilege(
+    'service_role',
+    'public.teevee_complete_epg_refresh_external_content_job(bigint,uuid,boolean,jsonb,text)',
     'EXECUTE'
   ),
   'service_role must own the public orchestration RPC execute boundary'
