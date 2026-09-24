@@ -123,25 +123,44 @@ and calls `teevee.enqueue_development_epg_refresh()`.
 
 The migration/runtime deployment completed after the 00:17 UTC EPG run. The connected management SQL channel is intentionally read-only and cannot assume `service_role` or decrypt the Vault cron token. No privilege/security boundary was weakened merely to force a smoke.
 
-The first hosted activation attempt subsequently exposed a separate provider-ingest resource blocker rather than a TMDB/persistence failure.
+The first hosted activation attempt subsequently exposed issue #167. Its production evidence now has two separate phases.
 
-Production evidence:
+### Phase 1 — pre-filter XMLTV resource failure, closed by PR #168
 
-- full request `{"mode":"guide-horizon"}` -> HTTP **546** / `WORKER_RESOURCE_LIMIT`, worker shutdown `reason=CPUTime`, `cpu_time_used=2144 ms`, total memory `182,785,670 B`;
-- narrow request `{"mode":"window","from":"2026-09-24T09:30:00Z","to":"2026-09-24T13:30:00Z","providerChannelIds":["RTL4.nl"]}` -> the same HTTP **546** / `WORKER_RESOURCE_LIMIT`, `reason=CPUTime`, `cpu_time_used=2165 ms`, total memory `181,521,784 B`;
-- external-content reference count remained **0**.
+Before PR #168:
+- full `{"mode":"guide-horizon"}` -> HTTP 546 / `WORKER_RESOURCE_LIMIT`, `reason=CPUTime`, 2144 ms CPU, 182,785,670 B memory;
+- RTL4-only four-hour window -> the same HTTP 546, 2165 ms CPU, 181,521,784 B memory;
+- external-content references remained 0.
 
-The narrow one-channel/four-hour failure rules out guide-horizon size and TMDB fan-out as sufficient explanations. The pre-issue-#167 XMLTV adapter performed `response.text()`, parsed/materialised every source channel and programme plus rich evidence, and only then filtered the requested provider channel IDs and time range. Requested bounds therefore did not reduce peak provider parse/materialisation.
+The near-identical narrow/full cost proved requested bounds did not constrain the old feed-wide parse. PR #168 merged as `6a9b601ae7e2cac8aa0c2c94302c5aa16411a76f` and replaced schedule reads with the bounded streaming parser.
 
-Issue #167 / PR #168 owns the server-only correction. Development changes only provider consumption/resource ownership: incremental chunk-safe XMLTV scanning applies channel/time bounds before full programme evidence materialisation, and guide-horizon consumes one upstream provider session while preserving independent window authority. PR #161's accepted TMDB matching thresholds, external-content persistence, ADR 0011 ownership and 20 s owner budget remain unchanged.
+Post-merge narrow production proof:
+- RTL4 four-hour schedule: 5/5 programmes stored, zero diagnostics;
+- CPU ~1279–1284 ms, memory ~12–14 MB, normal `EarlyDrop`;
+- after `TMDB_API_READ_ACCESS_TOKEN` configuration: 3 eligible / 3 resolved / 3 persisted, zero provider/persistence failures, zero dangling references.
 
-After #168 review/merge/exact-main CI, production verification must run in this order:
+This closes the original parser/materialisation blocker and proves PR #161 external-content identity can populate in production.
 
-1. deploy the exact merged `epg-refresh`;
-2. narrow RTL4 four-hour smoke;
-3. full `guide-horizon` smoke;
-4. inspect external-content counts/freshness/orphans and fail-open behavior;
-5. allow the normal cron run to succeed as an independent operational proof.
+### Phase 2 — monolithic guide-horizon CPU ownership, active in issue #167 / PR #172
+
+The required full v12 `guide-horizon` smoke still failed:
+- execution `e197a283-8494-4331-94a4-d89e10f52a32`;
+- HTTP 546 / `WORKER_RESOURCE_LIMIT`;
+- exactly 2000 ms CPU;
+- 42,721,750 B (~40.7 MiB) memory;
+- 60 schedule-coverage rows had already committed: five television days × twelve channels;
+- horizon-level TMDB enrichment had not started.
+
+A realistic one-full-television-day/all-current-12-channel smoke then passed end-to-end:
+- 524 programmes stored, zero warnings/errors;
+- TMDB 35 eligible / 34 unique identity work / 33 resolved / 2 unresolved;
+- 33 references persisted, zero provider/persistence failures;
+- 1145 ms CPU, 36,575,924 B (~34.9 MiB), HTTP 200;
+- 12 exact coverage rows, zero dangling references.
+
+Therefore the residual correction is orchestration, not another parser rewrite. ADR 0012 / PR #172 makes `guide-horizon` a lightweight durable planner and executes bounded children keyed by source/feed × 06:00 Amsterdam television day × configurable channel group. One common observation timestamp preserves ADR-0007 freshness semantics; each child claims database-owned scope, retries under a lease/attempt token, records durable outcome, and runs existing fail-open TMDB enrichment only after an authoritative stored schedule observation. Current child concurrency is one. The current 12-channel NL group is a measured operational setting, not a catalog invariant; the owner-approved 49-channel iteration can split NL groups and add the Belgian feed without changing orchestration semantics.
+
+Deployment remains gated. During PR #172 Development the connected Supabase project is inspected read-only only: no migration, cron mutation or Edge deployment is performed. After merge/exact-main CI, apply the reviewed orchestration migration first (safe with existing v12 because it does not replace the six-hour enqueue function), deploy exact merged `epg-refresh`, trigger one protected guide-horizon run and verify every child/coverage/external-content outcome, then require the next normal six-hour cron run as independent proof.
 
 Do not manually weaken custom auth, expose secrets, or add a temporary privileged endpoint to accelerate this check.
 
@@ -153,4 +172,4 @@ Physical acceptance becomes relevant when external identity is consumed by visib
 
 ## Next step
 
-Complete issue #167 / PR #168 through Technical Lead review, Independent QA, merge and exact-main CI; then deploy and prove narrow RTL4 -> full guide-horizon -> normal cron in that order before declaring hosted external-content activation healthy.
+Complete issue #167 / PR #172 through Development, Technical Lead review, Independent QA, merge and exact-main CI; then deploy the durable orchestration migration + exact merged Edge runtime and prove a complete bounded D-3..D+8 run followed by an independent normal six-hour cron run before declaring the production refresh path healthy.
