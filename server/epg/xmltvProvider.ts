@@ -574,6 +574,7 @@ async function parseXmltvChannelStream(
   const stats: XmltvStreamingStats = {
     channelBlocksScanned: 0,
     programmeBlocksScanned: 0,
+    programmeTimestampHeadersParsed: 0,
     programmeBlocksMaterialised: 0,
     maxBufferedChars: 0,
   };
