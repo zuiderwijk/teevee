@@ -105,13 +105,14 @@ function parseClaimResult(value: unknown): EpgRefreshWorkItemClaimResult {
   }
   if (status !== 'claimed') throw new Error('Supabase claim_epg_refresh_job status is invalid');
 
+  const runId = positiveInteger(payload.runId, 'runId');
   if (typeof payload.dayOffset !== 'number' || !Number.isInteger(payload.dayOffset)) {
     throw new Error('dayOffset must be an integer');
   }
 
   return {
     status: 'claimed',
-    runId: positiveInteger(payload.runId, 'runId'),
+    runId,
     jobId,
     attempt: positiveInteger(payload.attempt, 'attempt'),
     observedAt: timestamp(payload.observedAt, 'observedAt'),
