@@ -371,6 +371,10 @@ function findBlockEnd(
   return null;
 }
 
+function asciiLowercaseXmlSyntax(value: string): string {
+  return value.replace(/[A-Z]/g, (character) => character.toLowerCase());
+}
+
 async function consumeXmltvBlocks(
   body: ReadableStream<Uint8Array>,
   stats: XmltvStreamingStats,
@@ -388,7 +392,7 @@ async function consumeXmltvBlocks(
 
   const append = (text: string) => {
     buffer += text;
-    lowerBuffer += text.toLowerCase();
+    lowerBuffer += asciiLowercaseXmlSyntax(text);
     stats.maxBufferedChars = Math.max(stats.maxBufferedChars, buffer.length);
   };
 
