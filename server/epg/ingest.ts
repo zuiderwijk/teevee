@@ -5,7 +5,7 @@ import {
   normaliseProviderSchedule,
   type NormalisedProgrammeObservation,
 } from './normalise.ts';
-import type { ChannelMapping, EpgProvider } from './provider';
+import type { ChannelMapping, EpgProvider, ProviderScheduleBatch } from './provider';
 import type { ScheduleRepository, ScheduleWindowWriteResult } from './scheduleRepository';
 
 type StoredWindowResult = Extract<ScheduleWindowWriteResult, { status: 'stored' }>;
@@ -57,6 +57,8 @@ export type IngestProviderScheduleInput = {
   canonicalChannels: Channel[];
   channelMappings: ChannelMapping[];
   providerChannelIds: string[];
+  /** Optional batch already fetched from the same provider observation/session. */
+  providerBatch?: ProviderScheduleBatch;
   from: Date;
   to: Date;
   clock?: () => Date;
@@ -97,11 +99,13 @@ export async function ingestProviderSchedule(
   const observedAt = clock();
   validDate(observedAt, 'clock result');
 
-  const batch = await input.provider.getSchedule({
-    from: new Date(fromMs),
-    to: new Date(toMs),
-    channelIds: providerChannelIds,
-  });
+  const batch =
+    input.providerBatch ??
+    (await input.provider.getSchedule({
+      from: new Date(fromMs),
+      to: new Date(toMs),
+      channelIds: providerChannelIds,
+    }));
 
   const programmes = batch.programmes.filter((programme) => {
     const providerChannelId = programme.channelId?.trim();
