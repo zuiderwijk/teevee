@@ -185,6 +185,9 @@ export default {
 
     const startedAt = performance.now();
     const refreshStartedAt = new Date();
+    // One provider instance owns the invocation. Guide-horizon uses its bulk schedule
+    // session so the upstream XMLTV response is fetched/scanned once while each
+    // television-day window keeps independent complete/partial authority.
     const provider = new XmltvEpgProvider();
     const scheduleRepository = repository(secretKey);
 
