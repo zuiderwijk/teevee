@@ -4,6 +4,7 @@ import { SafeAreaView, StyleSheet, Text, View } from 'react-native';
 
 import { AppScreenErrorBoundary } from '@/components/AppScreenErrorBoundary';
 import { AppTabIcon } from '@/components/AppTabIcon';
+import { ChannelPersonalisationProvider } from '@/features/channels/ChannelPersonalisationProvider';
 import { AppearancePreferenceProvider } from '@/features/settings/AppearancePreferenceProvider';
 import { TEEVEE_FONT_FAMILIES } from '@/theme/typography';
 import { useTeeveeFonts } from '@/theme/useTeeveeFonts';
@@ -68,6 +69,7 @@ function ThemedTabs() {
           }}
         />
         <Tabs.Screen name="settings" options={{ title: 'Instellingen', href: null }} />
+        <Tabs.Screen name="channels" options={{ title: 'Mijn zenders', href: null }} />
       </Tabs>
     </>
   );
@@ -99,7 +101,9 @@ function FontAwareApp() {
 export default function RootLayout() {
   return (
     <AppearancePreferenceProvider>
-      <FontAwareApp />
+      <ChannelPersonalisationProvider>
+        <FontAwareApp />
+      </ChannelPersonalisationProvider>
     </AppearancePreferenceProvider>
   );
 }
