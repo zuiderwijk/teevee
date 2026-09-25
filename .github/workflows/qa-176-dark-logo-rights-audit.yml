@@ -20,60 +20,52 @@ jobs:
       - name: Build rights-safe final dark candidate set
         shell: python
         run: |
-          import hashlib, subprocess, urllib.request
+          import hashlib, subprocess
           from pathlib import Path
           from PIL import Image
 
           root=Path("qa176-final-audit")
           final=root/"final"; cards=root/"cards"
           final.mkdir(parents=True); cards.mkdir()
-          ua={"User-Agent":"Teevee-QA176/1.0"}
 
-          derived=[
-            "nl-rtl-4","nl-rtl-5","nl-rtl-7","nl-rtl-8","nl-rtl-z",
-            "nl-star-channel","nl-viaplay-tv","nl-comedy-central",
-            "nl-eurosport-1","nl-eurosport-2","nl-discovery","nl-national-geographic",
+          ids=[
+            "nl-rtl-4","nl-rtl-5","nl-rtl-7","nl-rtl-8","nl-star-channel",
+            "nl-ziggo-sport-2","nl-ziggo-sport-3","nl-ziggo-sport-4",
+            "nl-ziggo-sport-5","nl-ziggo-sport-6","nl-viaplay-tv","nl-rtl-z",
+            "nl-comedy-central","nl-eurosport-1","nl-eurosport-2",
+            "nl-discovery","nl-national-geographic",
           ]
 
-          # Source is the already rights/provenance-reviewed base PNG. Preserve alpha
-          # and all brand accents. Only pixels whose strongest RGB component is < 112
-          # become white, producing a fixed vendored negative mark for dark surfaces.
-          for cid in derived:
-            src=Path("assets/channels")/(cid+".png")
-            img=Image.open(src).convert("RGBA")
+          # Every output is derived exclusively from its same-ID local base PNG,
+          # whose per-file provenance/rights basis is documented in
+          # docs/CHANNEL_LOGO_ASSETS.md. Preserve alpha and all brand accents;
+          # only low-luminance wordmark pixels become white for dark surfaces.
+          for cid in ids:
+            source=Path("assets/channels")/(cid+".png")
+            img=Image.open(source).convert("RGBA")
             px=img.load()
             for y in range(img.height):
               for x in range(img.width):
                 r,g,b,a=px[x,y]
                 if a and max(r,g,b)<112:
                   px[x,y]=(255,255,255,a)
-            img.save(final/(cid+".png"),format="PNG",optimize=True)
+            dest=final/(cid+".png")
+            img.save(dest,format="PNG",optimize=True)
 
-          # Ziggo Sport supplies explicit orange-on-dark originals in its public press kit.
-          ziggo={
-            "nl-ziggo-sport-2":"https://d21buns5ku92am.cloudfront.net/69874/images/638849-Ziggo%20Sport%20402%20Orange%20RGB%20v1-754a8a-original-1768301437.png?download=1",
-            "nl-ziggo-sport-3":"https://d21buns5ku92am.cloudfront.net/69874/images/638850-Ziggo%20Sport%20403%20Orange%20RGB%20v1-7f8ed4-original-1768301437.png?download=1",
-            "nl-ziggo-sport-4":"https://d21buns5ku92am.cloudfront.net/69874/images/638854-Ziggo%20Sport%20404%20Orange%20RGB%20v1-b0022d-original-1768301437.png?download=1",
-            "nl-ziggo-sport-5":"https://d21buns5ku92am.cloudfront.net/69874/images/638852-Ziggo%20Sport%20405%20Orange%20RGB%20v1-cafafc-original-1768301437.png?download=1",
-            "nl-ziggo-sport-6":"https://d21buns5ku92am.cloudfront.net/69874/images/638853-Ziggo%20Sport%20406%20Orange%20RGB%20v1-9371e4-original-1768301437.png?download=1",
-          }
-          for cid,url in ziggo.items():
-            req=urllib.request.Request(url,headers=ua)
-            with urllib.request.urlopen(req,timeout=90) as r:
-              (final/(cid+".png")).write_bytes(r.read())
-
-          # Validate exact set, PNG decoding and >=3x contain-fit density.
-          expected=set(derived)|set(ziggo)
-          actual={p.stem for p in final.glob("*.png")}
-          assert actual==expected,(actual,expected)
+          assert {p.stem for p in final.glob("*.png")}==set(ids)
           lines=[]
+          old_new=[]
           for p in sorted(final.glob("*.png")):
             img=Image.open(p).convert("RGBA")
             w,h=img.size
             ppp=1/min(40/w,32/h)
             assert ppp>=3,(p.name,w,h,ppp)
             digest=hashlib.sha256(p.read_bytes()).hexdigest()
+            old=Path("assets/channels/dark")/p.name
+            old_digest=hashlib.sha256(old.read_bytes()).hexdigest()
+            assert digest!=old_digest, "Rejected aggregator bytes survived: "+p.name
             lines.append(f"{digest}  {p.name}  {w}x{h}  {ppp:.2f}x")
+            old_new.append(f"{p.name} old={old_digest} new={digest}")
             card=cards/p.name
             subprocess.run([
               "convert","-size","1400x440","xc:#10100F",str(p),"-resize","1120x280>",
@@ -81,16 +73,8 @@ jobs:
               "-pointsize","22","-annotate","+0+20",p.stem,str(card)
             ],check=True)
           (root/"candidate-sha256-dimensions.txt").write_text("\n".join(lines)+"\n")
+          (root/"old-vs-new.txt").write_text("\n".join(old_new)+"\n")
           subprocess.run(["montage",*map(str,sorted(cards.glob("*.png"))),"-tile","2x","-geometry","+12+12",str(root/"candidate-contact-sheet.png")],check=True)
-
-          # Byte-difference proof against the rejected aggregator dark files.
-          old=[]
-          for p in sorted(Path("assets/channels/dark").glob("*.png")):
-            old.append((p.name,hashlib.sha256(p.read_bytes()).hexdigest()))
-          new={p.name:hashlib.sha256(p.read_bytes()).hexdigest() for p in final.glob("*.png")}
-          unchanged=[name for name,h in old if new.get(name)==h]
-          assert not unchanged, "Rejected aggregator bytes survived: "+repr(unchanged)
-          (root/"old-vs-new.txt").write_text("\n".join(f"{name} old={h} new={new[name]}" for name,h in old)+"\n")
       - uses: actions/upload-artifact@v4
         with:
           name: qa176-dark-logo-final-audit
