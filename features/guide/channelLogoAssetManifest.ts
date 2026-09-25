@@ -62,3 +62,41 @@ export function localChannelLogoAssetPathForChannelId(channelId: string) {
   const key = localChannelLogoAssetKeyForChannelId(channelId);
   return key ? LOCAL_CHANNEL_LOGO_ASSET_PATHS[key] : null;
 }
+
+
+export const DARK_CHANNEL_LOGO_ASSET_PATHS = {
+  'nl-rtl-4': '../../assets/channels/dark/nl-rtl-4.png',
+  'nl-rtl-5': '../../assets/channels/dark/nl-rtl-5.png',
+  'nl-rtl-7': '../../assets/channels/dark/nl-rtl-7.png',
+  'nl-rtl-8': '../../assets/channels/dark/nl-rtl-8.png',
+  'nl-star-channel': '../../assets/channels/dark/nl-star-channel.png',
+  'nl-ziggo-sport-2': '../../assets/channels/dark/nl-ziggo-sport-2.png',
+  'nl-ziggo-sport-3': '../../assets/channels/dark/nl-ziggo-sport-3.png',
+  'nl-ziggo-sport-4': '../../assets/channels/dark/nl-ziggo-sport-4.png',
+  'nl-ziggo-sport-5': '../../assets/channels/dark/nl-ziggo-sport-5.png',
+  'nl-ziggo-sport-6': '../../assets/channels/dark/nl-ziggo-sport-6.png',
+  'nl-viaplay-tv': '../../assets/channels/dark/nl-viaplay-tv.png',
+  'nl-rtl-z': '../../assets/channels/dark/nl-rtl-z.png',
+  'nl-comedy-central': '../../assets/channels/dark/nl-comedy-central.png',
+  'nl-eurosport-1': '../../assets/channels/dark/nl-eurosport-1.png',
+  'nl-eurosport-2': '../../assets/channels/dark/nl-eurosport-2.png',
+  'nl-discovery': '../../assets/channels/dark/nl-discovery.png',
+  'nl-national-geographic': '../../assets/channels/dark/nl-national-geographic.png',
+} as const satisfies Partial<Record<LocalChannelLogoAssetKey, string>>;
+
+export type ChannelLogoAppearance = 'light' | 'dark';
+
+export function localChannelLogoAssetPathForAppearance(
+  channelId: string,
+  appearance: ChannelLogoAppearance,
+) {
+  const key = localChannelLogoAssetKeyForChannelId(channelId);
+  if (!key) return null;
+  if (appearance === 'dark') {
+    const darkPath = DARK_CHANNEL_LOGO_ASSET_PATHS[
+      key as keyof typeof DARK_CHANNEL_LOGO_ASSET_PATHS
+    ];
+    if (darkPath) return darkPath;
+  }
+  return LOCAL_CHANNEL_LOGO_ASSET_PATHS[key];
+}
