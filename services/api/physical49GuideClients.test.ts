@@ -75,18 +75,14 @@ describe('physical 49-channel client transport', () => {
 
 describe('physical mode selector contract', () => {
   it('is explicitly opt-in and cannot activate in production', async () => {
-    const originalDev = globalThis.__DEV__;
-    try {
-      vi.stubGlobal('__DEV__', true);
-      vi.resetModules();
-      const devModule = await import('./guideApiRuntime');
-      expect(devModule.physical49ModeEnabled('1')).toBe(true);
-      expect(devModule.physical49ModeEnabled('0')).toBe(false);
+    vi.stubGlobal('__DEV__', true);
+    vi.resetModules();
+    const devModule = await import('./guideApiRuntime');
+    expect(devModule.physical49ModeEnabled('1')).toBe(true);
+    expect(devModule.physical49ModeEnabled('0')).toBe(false);
 
-      vi.stubGlobal('__DEV__', false);
-      expect(devModule.physical49ModeEnabled('1')).toBe(false);
-    } finally {
-      vi.stubGlobal('__DEV__', originalDev);
-    }
+    vi.stubGlobal('__DEV__', false);
+    expect(devModule.physical49ModeEnabled('1')).toBe(false);
+    vi.unstubAllGlobals();
   });
 });
