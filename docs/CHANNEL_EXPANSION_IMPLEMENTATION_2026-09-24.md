@@ -15,8 +15,8 @@ The canonical catalogue contains exactly 49 provider-independent Teevee IDs in t
 - NL source: 36 canonical channels;
 - BE source: 13 canonical channels;
 - no canonical channel is owned by more than one refresh source;
-- the current candidate group capacity is 12 provider channels per work item, producing 5 jobs per television day / 60 jobs per D-3..D+8 run;
-- 12 remains a candidate capacity only until a hosted NL + BE source-specific CPU smoke establishes sufficient headroom.
+- the bounded group size is 12 provider channels per work item, producing 5 jobs per television day / 60 jobs per D-3..D+8 run;
+- hosted source-specific capacity for group size 12 is now measured PASS for all NL/BE groups on one complete Amsterdam television day; see `docs/CHANNEL_EXPANSION_CAPACITY_SMOKE_2026-09-25.md`. This closes only the capacity gate and does not activate production topology.
 
 Existing canonical identity is preserved where it already shipped. In particular `nl-veronica-disney-xd` remains the canonical ID while the user-facing name becomes Veronica.
 
@@ -96,7 +96,7 @@ This is covered by deterministic domain tests on PR #176.
 
 The final runtime is raster-only:
 
-- 49 canonical IDs resolve to 49 canonical-ID-keyed local PNG files;
+- all 49 canonical IDs resolve to canonical-ID-keyed local base PNG files, with 17 owner-identified dark-contrast failures resolving to central broadcaster-specific dark-background variants;
 - `channelLogoAssetManifest.ts` and `channelLogoRegistry.ts` are the only asset-resolution layer;
 - `ChannelIdentity` remains the shared renderer;
 - `assets/channels/SHA256SUMS` locks the final bytes;
@@ -104,7 +104,7 @@ The final runtime is raster-only:
 - no runtime hotlink, runtime tint/recolour, per-screen require map or provider-specific logo dictionary is introduced;
 - the earlier SVG-string/vector files, `react-native-svg`, one-shot ingest script/source manifest and write-enabled asset-generation workflows were intermediate development tooling and are removed before review.
 
-Provenance for all 49 final PNGs is recorded directly in `docs/CHANNEL_LOGO_ASSETS.md`. Physical light/dark acceptance remains required; automated byte integrity is not a visual PASS. Known visual risks include dark Ziggo Sport 2–6 marks on dark surfaces, white Play-family suffixes on light surfaces and the opaque Net5 source canvas.
+Provenance and byte hashes for all 49 base PNGs plus 17 dark variants are recorded directly in `docs/CHANNEL_LOGO_ASSETS.md`. Physical dark/system re-acceptance remains required; automated byte integrity is not a visual PASS. The dark alternates come from a pinned curated dark-background logo source and are copied byte-for-byte; they are not generated or recoloured by Teevee.
 
 ## Required physical iPhone validation
 
@@ -144,7 +144,7 @@ Before activating the 49-channel hosted refresh:
 1. PR #173 physical/QA/merge dependency is satisfied by merge `a23c5a434f237859b06112217433a12955cfa725`;
 2. PR #176 is reconciled onto canonical main while preserving the merged #173 runtime and #174/#172 production-closeout facts;
 3. exact-head CI and Independent QA must pass on the reconciled #176 candidate;
-4. hosted source-specific capacity smoke must establish a safe NL and BE group size under the Edge CPU ceiling;
+4. **capacity gate satisfied:** hosted source-specific smoke establishes group size 12 for every NL/BE group with complete coverage, zero diagnostics and measured CPU/memory headroom; evidence: `docs/CHANNEL_EXPANSION_CAPACITY_SMOKE_2026-09-25.md`;
 5. the full 49-channel experience and logo appearance must be physically checked on iPhone in light/dark/system and Larger Text contexts;
 6. exact merged Edge/runtime deployment must be followed by a protected horizon proof and the next normal six-hour cron.
 
