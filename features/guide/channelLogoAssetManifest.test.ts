@@ -6,8 +6,10 @@ import { describe, expect, it } from 'vitest';
 import { CANONICAL_CHANNEL_CATALOG } from '@/data/domain/channelCatalog';
 
 import {
+  DARK_CHANNEL_LOGO_ASSET_PATHS,
   LOCAL_CHANNEL_LOGO_ASSET_PATHS,
   localChannelLogoAssetKeyForChannelId,
+  localChannelLogoAssetPathForAppearance,
   localChannelLogoAssetPathForChannelId,
 } from './channelLogoAssetManifest';
 
@@ -30,6 +32,40 @@ describe('canonical local channel logo manifest', () => {
     }
   });
 
+  it('resolves the exact verified dark-safe variant set and light fallback centrally', () => {
+    const darkIds = [
+      "nl-rtl-4",
+      "nl-rtl-5",
+      "nl-rtl-7",
+      "nl-rtl-8",
+      "nl-star-channel",
+      "nl-ziggo-sport-2",
+      "nl-ziggo-sport-3",
+      "nl-ziggo-sport-4",
+      "nl-ziggo-sport-5",
+      "nl-ziggo-sport-6",
+      "nl-viaplay-tv",
+      "nl-rtl-z",
+      "nl-comedy-central",
+      "nl-eurosport-1",
+      "nl-eurosport-2",
+      "nl-discovery",
+      "nl-national-geographic"
+] as const;
+    expect(Object.keys(DARK_CHANNEL_LOGO_ASSET_PATHS)).toEqual(darkIds);
+
+    for (const { id } of CANONICAL_CHANNEL_CATALOG) {
+      expect(localChannelLogoAssetPathForAppearance(id, 'light')).toBe(
+        `../../assets/channels/${id}.png`,
+      );
+      expect(localChannelLogoAssetPathForAppearance(id, 'dark')).toBe(
+        darkIds.includes(id as (typeof darkIds)[number])
+          ? `../../assets/channels/dark/${id}.png`
+          : `../../assets/channels/${id}.png`,
+      );
+    }
+  });
+
   it('keeps unknown channels on the normal fallback path', () => {
     expect(localChannelLogoAssetKeyForChannelId('nl-unknown')).toBeNull();
     expect(localChannelLogoAssetPathForChannelId('nl-unknown')).toBeNull();
@@ -41,17 +77,22 @@ describe('canonical local channel logo manifest', () => {
       .trim()
       .split(/\r?\n/)
       .map((line) => {
-        const match = line.match(/^([a-f0-9]{64})  (.+\.png)$/);
+        const match = line.match(/^([a-f0-9]{64})  ((?:dark\/)?[^/]+\.png)$/);
         expect(match, `Invalid SHA256SUMS line: ${line}`).not.toBeNull();
         return { hash: match![1]!, fileName: match![2]! };
       });
 
-    const expectedFileNames = Object.keys(LOCAL_CHANNEL_LOGO_ASSET_PATHS)
-      .map((channelId) => `${channelId}.png`)
-      .sort();
+    const expectedFileNames = [
+      ...Object.keys(LOCAL_CHANNEL_LOGO_ASSET_PATHS).map(
+        (channelId) => `${channelId}.png`,
+      ),
+      ...Object.keys(DARK_CHANNEL_LOGO_ASSET_PATHS).map(
+        (channelId) => `dark/${channelId}.png`,
+      ),
+    ].sort();
 
     expect(entries.map(({ fileName }) => fileName)).toEqual(expectedFileNames);
-    expect(new Set(entries.map(({ hash }) => hash)).size).toBe(49);
+    expect(entries).toHaveLength(66);
 
     for (const { hash, fileName } of entries) {
       const bytes = readFileSync(new URL(`../../assets/channels/${fileName}`, import.meta.url));
