@@ -277,7 +277,7 @@ jobs:
           text = personal.read_text()
           text = re.sub(
               r"^Status: .*?$",
-              "Status: **MERGED AND CANONICAL — issue #170 / PR #173**  ",
+              "Status: **MERGED AND CANONICAL — issue #170 / PR #173**",
               text,
               count=1,
               flags=re.MULTILINE,
