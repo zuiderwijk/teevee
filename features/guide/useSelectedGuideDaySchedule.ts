@@ -11,14 +11,14 @@ import {
   subscribeRuntimeProgrammeEditorialSignals,
 } from '@/data/runtime/guideScheduleRuntime';
 import type { GuideScheduleApi } from '@/services/api/guideScheduleContract';
-import { HostedGuideScheduleClient } from '@/services/api/hostedGuideScheduleClient';
+import { createRuntimeGuideScheduleApi } from '@/services/api/guideApiRuntime';
 import {
   loadTelevisionDayGuideScheduleBundle,
   loadTwoTelevisionDayGuideScheduleBundle,
   type GuideScheduleBundle,
 } from '@/services/api/guideScheduleLoader';
 
-const hostedGuideScheduleApi = new HostedGuideScheduleClient();
+const hostedGuideScheduleApi = createRuntimeGuideScheduleApi();
 const MAX_VISITED_DAY_WINDOWS = 10;
 
 type SelectedGuideDayScheduleState = {
