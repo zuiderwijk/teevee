@@ -44,16 +44,16 @@ Provider legacy/rebrand vocabulary remains adapter-only:
 | 12 | `nl-sbs-9` | SBS9 | NL | `SBS9.nl` | PNG → `nl-sbs-9` |
 | 13 | `nl-paramount-network` | Paramount Network | NL | `ParamountNetwork.nl` | PNG → `nl-paramount-network` |
 | 14 | `nl-ziggo-sport` | Ziggo Sport | NL | `ZiggoSport.nl` | PNG → `nl-ziggo-sport` |
-| 15 | `nl-ziggo-sport-2` | Ziggo Sport 2 | NL | `ZiggoSport2.nl` | vector+2 → `nl-ziggo-sport` |
-| 16 | `nl-ziggo-sport-3` | Ziggo Sport 3 | NL | `ZiggoSport3.nl` | vector+3 → `nl-ziggo-sport` |
-| 17 | `nl-ziggo-sport-4` | Ziggo Sport 4 | NL | `ZiggoSport4.nl` | vector+4 → `nl-ziggo-sport` |
-| 18 | `nl-ziggo-sport-5` | Ziggo Sport 5 | NL | `ZiggoSport5.nl` | vector+5 → `nl-ziggo-sport` |
-| 19 | `nl-ziggo-sport-6` | Ziggo Sport 6 | NL | `ZiggoSport6.nl` | vector+6 → `nl-ziggo-sport` |
+| 15 | `nl-ziggo-sport-2` | Ziggo Sport 2 | NL | `ZiggoSport2.nl` | PNG → `nl-ziggo-sport-2` |
+| 16 | `nl-ziggo-sport-3` | Ziggo Sport 3 | NL | `ZiggoSport3.nl` | PNG → `nl-ziggo-sport-3` |
+| 17 | `nl-ziggo-sport-4` | Ziggo Sport 4 | NL | `ZiggoSport4.nl` | PNG → `nl-ziggo-sport-4` |
+| 18 | `nl-ziggo-sport-5` | Ziggo Sport 5 | NL | `ZiggoSport5.nl` | PNG → `nl-ziggo-sport-5` |
+| 19 | `nl-ziggo-sport-6` | Ziggo Sport 6 | NL | `ZiggoSport6.nl` | PNG → `nl-ziggo-sport-6` |
 | 20 | `nl-espn` | ESPN | NL | `ESPN.nl` | PNG → `nl-espn` |
 | 21 | `nl-espn-2` | ESPN 2 | NL | `ESPN2.nl` | PNG → `nl-espn-2` |
 | 22 | `nl-espn-3` | ESPN 3 | NL | `ESPN3.nl` | PNG → `nl-espn-3` |
 | 23 | `nl-espn-4` | ESPN 4 | NL | `ESPN4.nl` | PNG → `nl-espn-4` |
-| 24 | `nl-viaplay-tv` | Viaplay TV | NL | `ViaplayTV.nl` | vector+TV → `nl-viaplay-tv` |
+| 24 | `nl-viaplay-tv` | Viaplay TV | NL | `ViaplayTV.nl` | PNG → `nl-viaplay-tv` |
 | 25 | `nl-rtl-z` | RTL Z | NL | `RTLZ.nl` | PNG → `nl-rtl-z` |
 | 26 | `nl-tlc` | TLC | NL | `TLC.nl` | PNG → `nl-tlc` |
 | 27 | `nl-comedy-central` | Comedy Central | NL | `ComedyCentral.nl` | PNG → `nl-comedy-central` |
@@ -76,7 +76,7 @@ Provider legacy/rebrand vocabulary remains adapter-only:
 | 44 | `be-vtm-4` | VTM4 | BE | `VTM4.be` | PNG → `be-vtm-4` |
 | 45 | `be-play-actie` | Play Actie | BE | `Play6.be` | PNG → `be-play-actie` |
 | 46 | `be-play-reality` | Play Reality | BE | `Play7.be` | PNG → `be-play-reality` |
-| 47 | `be-play-crime` | Play Crime | BE | `PlayCrime.be` | PNG → `be-play` |
+| 47 | `be-play-crime` | Play Crime | BE | `PlayCrime.be` | PNG → `be-play-crime` |
 | 48 | `be-vtm-gold` | VTM Gold | BE | `VTMGOLD.be` | PNG → `be-vtm-gold` |
 | 49 | `be-ketnet` | Ketnet | BE | `Ketnet.be` | PNG → `be-ketnet` |
 
