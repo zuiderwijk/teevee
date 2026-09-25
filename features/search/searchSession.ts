@@ -11,7 +11,7 @@ import {
   type GuideSearchApi,
   type GuideSearchApiResponse,
 } from '@/services/api/guideSearchContract';
-import { HostedGuideSearchClient } from '@/services/api/hostedGuideSearchClient';
+import { createRuntimeGuideSearchApi } from '@/services/api/guideApiRuntime';
 
 export const GUIDE_SEARCH_DEBOUNCE_MS = 220;
 
@@ -193,7 +193,7 @@ export class GuideSearchSession {
  * Deliberately not persisted: this is query/result continuity, not Search history.
  */
 export const guideSearchSession = new GuideSearchSession(
-  new HostedGuideSearchClient(),
+  createRuntimeGuideSearchApi(),
 );
 
 export function useGuideSearchSession(): GuideSearchSessionSnapshot {
