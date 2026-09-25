@@ -1,5 +1,11 @@
 # Teevee Development Logboek
 
+## 25 september 2026 — Issue #170 pickup freeze root cause refinement
+
+Focused physical iPhone re-test after the first drag-termination fix showed the surface could still freeze immediately at pickup. The deeper root cause was React tree ownership: `beginDrag` set `dragState`, after which the visible-row render replaced the active `ChannelManagementRow` with a drop-slot `View`. That unmounted the exact RNGH `GestureDetector`/native Pan recognizer that owned the gesture, so subsequent update/finalize delivery could be lost while the overlay, provisional gap and disabled ScrollView stayed active.
+
+The correction keeps the dragged `ChannelManagementRow`, its key, GestureDetector and gesture object mounted throughout pickup and provisional reordering. Only the row's sighted content becomes visually hidden while the 2-pt insertion target remains visible; the active gesture host is also excluded from layout animation. RNGH `onFinalize` is the single terminal native callback: success resolves the final pointer then drops, failure/cancel restores the original slot. Existing tokenized synchronous teardown still owns auto-scroll stop, state clearing and scroll restoration independently from Reanimated spring completion. The owner-accepted visual/product contract is unchanged. Focused iPhone re-test is still required.
+
 ## 25 september 2026 — Issue #170 physical drag-termination blocker
 
 Physical iPhone review #5823162428 on exact candidate `42e93dfcb18454a3e1d7e535e4e920c274f03e8a` found one blocking lifecycle failure in the owner-accepted two-zone Mijn-zenders drag interaction: a released/cancelled drag could keep the lifted overlay, placeholder gap and disabled parent scrolling alive when Reanimated spring completion did not finish as expected.
