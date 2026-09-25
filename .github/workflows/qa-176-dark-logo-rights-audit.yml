@@ -41,16 +41,16 @@ jobs:
             subprocess.run(["convert","-size","1400x440","xc:#10100F",str(path),"-resize","1120x280>","-gravity","center","-composite","-fill","white","-gravity","south","-pointsize","22","-annotate","+0+20",label,str(dest)],check=True)
 
           # RTL Nederland supplied raster originals; CC BY-SA 3.0 per file page.
-          rtl_titles={
-            "nl-rtl-4":"RTL%204%20Logo%202023.png",
-            "nl-rtl-5":"RTL%205%20Logo%202023.png",
-            "nl-rtl-7":"RTL%207%20Logo%202023.png",
-            "nl-rtl-8":"RTL%208%20Logo%202023.png",
-            "nl-rtl-z":"RTL%20Z%20Logo%202023.png",
+          rtl_urls={
+            "nl-rtl-4":"https://upload.wikimedia.org/wikipedia/commons/9/9a/RTL_4_Logo_2023.png",
+            "nl-rtl-5":"https://upload.wikimedia.org/wikipedia/commons/b/bf/RTL_5_Logo_2023.png",
+            "nl-rtl-7":"https://upload.wikimedia.org/wikipedia/commons/f/f0/RTL_7_Logo_2023.png",
+            "nl-rtl-8":"https://upload.wikimedia.org/wikipedia/commons/3/3d/RTL_8_Logo_2023.png",
+            "nl-rtl-z":"https://upload.wikimedia.org/wikipedia/commons/6/65/RTL_Z_Logo_2023.png",
           }
-          for cid,title in rtl_titles.items():
+          for cid,url in rtl_urls.items():
             dest=out/(cid+".png")
-            get("https://commons.wikimedia.org/wiki/Special:Redirect/file/"+title,dest)
+            get(url,dest)
             card(dest,cid+" | RTL Nederland source | CC BY-SA 3.0")
 
           # Ziggo Sport official press-kit originals (orange horizontal 402-406).
