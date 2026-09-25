@@ -194,6 +194,61 @@ export function channelManagementInsertionIndex(
   return remaining.length;
 }
 
+export function channelManagementProvisionalRowOffset(
+  order: readonly string[],
+  draggedChannelId: string,
+  targetIndex: number,
+  rowChannelId: string,
+  draggedRowHeight: number,
+): number {
+  const fromIndex = order.indexOf(draggedChannelId);
+  const rowIndex = order.indexOf(rowChannelId);
+  if (fromIndex < 0 || rowIndex < 0 || rowChannelId === draggedChannelId) {
+    return 0;
+  }
+
+  const target = Math.max(
+    0,
+    Math.min(order.length - 1, Math.trunc(targetIndex)),
+  );
+  const distance = Math.max(1, draggedRowHeight);
+
+  if (target > fromIndex && rowIndex > fromIndex && rowIndex <= target) {
+    return -distance;
+  }
+  if (target < fromIndex && rowIndex >= target && rowIndex < fromIndex) {
+    return distance;
+  }
+  return 0;
+}
+
+export function channelManagementInsertionLineOffset(
+  order: readonly string[],
+  draggedChannelId: string,
+  targetIndex: number,
+  measuredHeights: Readonly<Record<string, number>>,
+  fallbackRowHeight: number,
+): number {
+  const fromIndex = order.indexOf(draggedChannelId);
+  if (fromIndex < 0) return 0;
+
+  const originalTop = channelManagementSlotTop(
+    order,
+    draggedChannelId,
+    fromIndex,
+    measuredHeights,
+    fallbackRowHeight,
+  );
+  const targetTop = channelManagementSlotTop(
+    order,
+    draggedChannelId,
+    targetIndex,
+    measuredHeights,
+    fallbackRowHeight,
+  );
+  return targetTop - originalTop;
+}
+
 export function channelManagementSlotTop(
   order: readonly string[],
   draggedChannelId: string,
