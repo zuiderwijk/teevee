@@ -49,6 +49,17 @@ vi.mock('react-native-reanimated', async () => {
     FadeIn: { duration: () => undefined },
     FadeOut: { duration: () => undefined },
     LinearTransition: { duration: () => transition },
+    useAnimatedStyle: (factory: () => unknown) => factory(),
+    useSharedValue: (initial: number) => {
+      let current = initial;
+      return {
+        get: () => current,
+        set: (value: number) => {
+          current = value;
+        },
+      };
+    },
+    withTiming: (value: number) => value,
   };
 });
 
