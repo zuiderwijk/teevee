@@ -125,6 +125,7 @@ export default function ChannelsScreen() {
 
   const [query, setQuery] = useState('');
   const [dragState, setDragState] = useState<ChannelDragSession | null>(null);
+  const [rowHeights, setRowHeights] = useState<Record<string, number>>({});
   const queryActive = channelManagementQueryActive(query);
 
   const selectedIdsRef = useRef<readonly string[]>(selectedChannelIds);
@@ -142,6 +143,15 @@ export default function ChannelsScreen() {
 
   const rowHeightsRef = useRef<Record<string, number>>({});
   const rowRefs = useRef(new Map<string, View>());
+
+  const recordRowHeight = useCallback((channelId: string, height: number) => {
+    rowHeightsRef.current[channelId] = height;
+    setRowHeights((current) =>
+      current[channelId] === height
+        ? current
+        : { ...current, [channelId]: height },
+    );
+  }, []);
   const visibleHeadingRef = useRef<View | null>(null);
   const hiddenHeadingRef = useRef<View | null>(null);
 
@@ -702,7 +712,7 @@ export default function ChannelsScreen() {
                             selectedChannelIds,
                             dragState.channelId,
                             dragState.targetIndex,
-                            rowHeightsRef.current,
+                            rowHeights,
                             rowMetrics.minHeight,
                           )
                         : 0;
@@ -724,9 +734,7 @@ export default function ChannelsScreen() {
                         insertionLineOffsetY={insertionLineOffsetY}
                         showSeparator={displayIndex < visibleRows.length - 1}
                         rowRef={(node) => registerRowRef(channel.id, node)}
-                        onMeasure={(id, height) => {
-                          rowHeightsRef.current[id] = height;
-                        }}
+                        onMeasure={recordRowHeight}
                         onToggleVisibility={toggleVisibility}
                         onMoveOneStep={moveOneStep}
                         onDragStart={beginDrag}
