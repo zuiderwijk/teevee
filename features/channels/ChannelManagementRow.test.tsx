@@ -184,7 +184,6 @@ async function render(
         onMoveOneStep={() => undefined}
         onDragStart={() => undefined}
         onDragMove={() => undefined}
-        onDragEnd={() => undefined}
         onDragFinalize={() => undefined}
         {...overrides}
       />,
@@ -213,6 +212,35 @@ describe('ChannelManagementRow accessibility surface', () => {
     expect(focusStops[0]?.getAttribute('data-actions')).toContain(
       'Verplaats omlaag',
     );
+  });
+
+  it('keeps the active row and native drag handle mounted when pickup becomes a placeholder', async () => {
+    await render();
+
+    const rowBefore = container.querySelector(
+      '[data-testid="channels-visible-npo"]',
+    );
+    const handleBefore = container.querySelector(
+      '[data-testid="channels-drag-npo"]',
+    );
+    expect(rowBefore).not.toBeNull();
+    expect(handleBefore).not.toBeNull();
+
+    await render({ draggingPlaceholder: true });
+
+    const rowAfter = container.querySelector(
+      '[data-testid="channels-visible-npo"]',
+    );
+    const handleAfter = container.querySelector(
+      '[data-testid="channels-drag-npo"]',
+    );
+
+    expect(rowAfter).toBe(rowBefore);
+    expect(handleAfter).toBe(handleBefore);
+    expect(
+      container.querySelector('[data-testid="channels-drop-slot-npo"]'),
+    ).not.toBeNull();
+    expect(container.querySelectorAll('[data-focusable="true"]')).toHaveLength(0);
   });
 
   it('gives the eye and drag handle the full measured row-height target', async () => {
