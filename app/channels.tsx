@@ -24,7 +24,6 @@ import Animated, {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { scheduleOnRN } from 'react-native-worklets';
 
-import type { Channel } from '@/data/domain/epg';
 import { ChannelManagementRow } from '@/features/channels/ChannelManagementRow';
 import { useChannelPersonalisationSettings } from '@/features/channels/ChannelPersonalisationProvider';
 import {
@@ -33,14 +32,15 @@ import {
   channelManagementFocusAfterHide,
   channelManagementFocusAfterShow,
   channelManagementInsertionIndex,
+  channelManagementInsertionLineOffset,
   channelManagementMotionProfile,
+  channelManagementProvisionalRowOffset,
   channelManagementQueryActive,
   channelManagementRowMetrics,
   channelManagementSectionCount,
   channelManagementSlotTop,
   channelManagementZones,
   clampChannelManagementScrollOffset,
-  reorderChannelIdsToIndex,
   type ChannelManagementFocusOutcome,
 } from '@/features/channels/channelManagement';
 import {
@@ -177,24 +177,9 @@ export default function ChannelsScreen() {
     [catalog, selectedChannelIds],
   );
 
-  const provisionalIds = useMemo(
-    () =>
-      dragState
-        ? reorderChannelIdsToIndex(
-            selectedChannelIds,
-            dragState.channelId,
-            dragState.targetIndex,
-          )
-        : selectedChannelIds,
-    [dragState, selectedChannelIds],
-  );
-
-  const visibleRows = useMemo(() => {
-    if (queryActive) return baseZones.visible;
-    return provisionalIds
-      .map((id) => byId.get(id))
-      .filter((channel): channel is Channel => Boolean(channel));
-  }, [baseZones.visible, byId, provisionalIds, queryActive]);
+  // Keep the native gesture-owner row in canonical render order for the
+  // entire active drag. Neighbours move visually via translateY instead.
+  const visibleRows = queryActive ? baseZones.visible : allZones.visible;
   const hiddenRows = baseZones.hidden;
 
   const visibleCount = channelManagementSectionCount(
@@ -700,8 +685,27 @@ export default function ChannelsScreen() {
                   onLayout={handleVisibleListLayout}
                 >
                   {visibleRows.map((channel, displayIndex) => {
-                    const actualIndex = provisionalIds.indexOf(channel.id);
+                    const actualIndex = selectedChannelIds.indexOf(channel.id);
                     const isDragged = dragState?.channelId === channel.id;
+                    const provisionalOffsetY = dragState
+                      ? channelManagementProvisionalRowOffset(
+                          selectedChannelIds,
+                          dragState.channelId,
+                          dragState.targetIndex,
+                          channel.id,
+                          dragState.height,
+                        )
+                      : 0;
+                    const insertionLineOffsetY =
+                      isDragged && dragState
+                        ? channelManagementInsertionLineOffset(
+                            selectedChannelIds,
+                            dragState.channelId,
+                            dragState.targetIndex,
+                            rowHeightsRef.current,
+                            rowMetrics.minHeight,
+                          )
+                        : 0;
 
                     return (
                       <ChannelManagementRow
@@ -716,6 +720,8 @@ export default function ChannelsScreen() {
                         reorderEnabled={!queryActive}
                         reduceMotion={reduceMotion}
                         draggingPlaceholder={isDragged}
+                        provisionalOffsetY={provisionalOffsetY}
+                        insertionLineOffsetY={insertionLineOffsetY}
                         showSeparator={displayIndex < visibleRows.length - 1}
                         rowRef={(node) => registerRowRef(channel.id, node)}
                         onMeasure={(id, height) => {
