@@ -243,6 +243,62 @@ describe('ChannelManagementRow accessibility surface', () => {
     expect(container.querySelectorAll('[data-focusable="true"]')).toHaveLength(0);
   });
 
+  it('preserves the dragged handle identity while its keyed row moves between siblings', async () => {
+    const channels = ['a', 'b', 'c'].map((id, index) => ({
+      ...channel,
+      id,
+      displayName: id.toUpperCase(),
+      name: id.toUpperCase(),
+      sortOrder: index,
+    }));
+
+    const renderOrder = async (order: string[]) => {
+      await act(async () => {
+        root.render(
+          <>
+            {order.map((id, index) => {
+              const item = channels.find((candidate) => candidate.id === id)!;
+              return (
+                <ChannelManagementRow
+                  key={item.id}
+                  channel={item}
+                  visible
+                  index={index}
+                  total={order.length}
+                  minHeight={56}
+                  nameLines={1}
+                  canHide
+                  reorderEnabled
+                  reduceMotion={false}
+                  showSeparator={index < order.length - 1}
+                  draggingPlaceholder={item.id === 'b'}
+                  onToggleVisibility={() => undefined}
+                  onMoveOneStep={() => undefined}
+                  onDragStart={() => undefined}
+                  onDragMove={() => undefined}
+                  onDragFinalize={() => undefined}
+                />
+              );
+            })}
+          </>,
+        );
+      });
+    };
+
+    await renderOrder(['a', 'b', 'c']);
+    const rowBefore = container.querySelector('[data-testid="channels-visible-b"]');
+    const handleBefore = container.querySelector('[data-testid="channels-drag-b"]');
+
+    await renderOrder(['a', 'c', 'b']);
+
+    expect(
+      container.querySelector('[data-testid="channels-visible-b"]'),
+    ).toBe(rowBefore);
+    expect(
+      container.querySelector('[data-testid="channels-drag-b"]'),
+    ).toBe(handleBefore);
+  });
+
   it('gives the eye and drag handle the full measured row-height target', async () => {
     await render();
 
