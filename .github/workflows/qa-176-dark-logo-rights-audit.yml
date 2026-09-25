@@ -1,0 +1,165 @@
+name: QA 176 dark-logo rights audit
+
+on:
+  push:
+    branches:
+      - feat/issue-175-channel-expansion
+    paths:
+      - .github/workflows/qa-176-dark-logo-rights-audit.yml
+
+permissions:
+  contents: read
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - name: Install raster tooling
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y librsvg2-bin imagemagick
+      - name: Acquire rights-auditable candidates
+        shell: python
+        run: |
+          import json, os, re, subprocess, urllib.parse, urllib.request
+          from pathlib import Path
+
+          OUT = Path("qa176-logo-audit")
+          OUT.mkdir()
+          API = "https://commons.wikimedia.org/w/api.php"
+          UA = {"User-Agent": "Teevee-QA176-rights-audit/1.0"}
+
+          exact = {
+            "nl-rtl-4": ["File:RTL4 2023.svg", "File:RTL 4 Logo 2023.png"],
+            "nl-rtl-5": ["File:RTL5 2023.svg", "File:RTL 5 Logo 2023.png"],
+            "nl-rtl-7": ["File:RTL7 2023.svg", "File:RTL 7 Logo 2023.png"],
+            "nl-rtl-8": ["File:RTL8 2023.svg", "File:RTL 8 Logo 2023.png"],
+            "nl-rtl-z": ["File:RTLZ 2023.svg", "File:RTL Z Logo 2023.png", "File:RTLZ (2023, print).svg"],
+            "nl-comedy-central": ["File:Comedy Central 2018.svg", "File:Comedy Central HD.png"],
+            "nl-discovery": ["File:Discovery Channel - Logo 2019.svg"],
+            "nl-eurosport-1": ["File:Eurosport 1 Logo 2015.svg", "File:Eurosport 1 Logo 2015.png"],
+            "nl-eurosport-2": ["File:Eurosport 2 Logo 2015.svg", "File:Eurosport 2 Logo 2015.png"],
+            "nl-national-geographic": ["File:National-Geographic-Logo.svg", "File:National Geographic Logo.svg"],
+            "nl-viaplay-tv": ["File:Viaplay TV logo.svg"],
+            "nl-star-channel": ["File:Star Channel 2023.svg"],
+            "nl-ziggo-sport-2": ["File:Ziggo Sport 2.svg"],
+            "nl-ziggo-sport-3": ["File:Ziggo Sport 3.svg"],
+            "nl-ziggo-sport-4": ["File:Ziggo Sport 4.svg"],
+            "nl-ziggo-sport-5": ["File:Ziggo Sport 5.svg"],
+            "nl-ziggo-sport-6": ["File:Ziggo Sport 6.svg"],
+          }
+          searches = {
+            "nl-rtl-4": ["RTL4 white logo", "RTL 4 inverted logo"],
+            "nl-rtl-5": ["RTL5 white logo", "RTL 5 inverted logo"],
+            "nl-rtl-7": ["RTL7 white logo", "RTL 7 inverted logo"],
+            "nl-rtl-8": ["RTL8 white logo", "RTL 8 inverted logo"],
+            "nl-rtl-z": ["RTL Z white logo", "RTLZ inverted logo"],
+            "nl-comedy-central": ["Comedy Central white logo", "Comedy Central inverted logo"],
+            "nl-discovery": ["Discovery Channel white logo", "Discovery Channel inverted logo"],
+            "nl-eurosport-1": ["Eurosport 1 white logo", "Eurosport 1 inverted logo"],
+            "nl-eurosport-2": ["Eurosport 2 white logo", "Eurosport 2 inverted logo"],
+            "nl-national-geographic": ["National Geographic white logo", "National Geographic inverted logo"],
+            "nl-viaplay-tv": ["Viaplay TV white logo", "Viaplay TV inverted logo"],
+            "nl-star-channel": ["Star Channel white logo", "Star Channel inverted logo"],
+          }
+
+          def api(params):
+            q = urllib.parse.urlencode({"format":"json","formatversion":"2",**params})
+            req = urllib.request.Request(API+"?"+q, headers=UA)
+            with urllib.request.urlopen(req, timeout=45) as r:
+              return json.load(r)
+
+          def candidates_from_search(term):
+            data = api({"action":"query","generator":"search","gsrsearch":term,"gsrnamespace":"6","gsrlimit":"12","prop":"info"})
+            return [p["title"] for p in data.get("query",{}).get("pages",[])]
+
+          def image_info(title, revisions=False):
+            props = "url|mime|size|sha1|timestamp|extmetadata"
+            params={"action":"query","titles":title,"prop":"imageinfo","iiprop":props,"iilimit":"20" if revisions else "1"}
+            data=api(params)
+            pages=data.get("query",{}).get("pages",[])
+            if not pages or "imageinfo" not in pages[0]:
+              return []
+            return pages[0]["imageinfo"]
+
+          records=[]
+          downloaded=set()
+          for channel, titles in exact.items():
+            pool=list(titles)
+            for term in searches.get(channel,[]):
+              try: pool.extend(candidates_from_search(term))
+              except Exception as e: records.append({"channel":channel,"search":term,"error":str(e)})
+            seen=set()
+            for title in pool:
+              if title in seen: continue
+              seen.add(title)
+              try:
+                infos=image_info(title, revisions=channel.startswith("nl-ziggo-sport-"))
+              except Exception as e:
+                records.append({"channel":channel,"title":title,"error":str(e)})
+                continue
+              if not infos: continue
+              # Current revision always; for Ziggo also earliest available revision to capture broadcaster-uploaded white marks.
+              pick=[infos[0]]
+              if channel.startswith("nl-ziggo-sport-") and len(infos)>1:
+                pick.append(infos[-1])
+              for idx, info in enumerate(pick):
+                url=info.get("url")
+                if not url: continue
+                ext=".svg" if info.get("mime")=="image/svg+xml" else ".png" if info.get("mime")=="image/png" else None
+                if not ext: continue
+                key=(channel,title,info.get("sha1"))
+                if key in downloaded: continue
+                downloaded.add(key)
+                safe=re.sub(r"[^a-z0-9]+","-",title.lower()).strip("-")[:60]
+                tag="oldest" if idx==1 else "current"
+                source=OUT/f"{channel}__{safe}__{tag}{ext}"
+                try:
+                  req=urllib.request.Request(url,headers=UA)
+                  with urllib.request.urlopen(req,timeout=60) as r: source.write_bytes(r.read())
+                except Exception as e:
+                  records.append({"channel":channel,"title":title,"url":url,"error":str(e)})
+                  continue
+                png=source.with_suffix(".preview.png")
+                try:
+                  if ext==".svg":
+                    subprocess.run(["rsvg-convert","-w","1024","-o",str(png),str(source)],check=True)
+                  else:
+                    subprocess.run(["convert",str(source),"-resize","1024x512>",str(png)],check=True)
+                  card=source.with_suffix(".card.png")
+                  subprocess.run([
+                    "convert","-size","1200x400","xc:#10100F",
+                    str(png),"-resize","960x250>","-gravity","center","-composite",
+                    "-fill","white","-gravity","south","-pointsize","22",
+                    "-annotate","+0+18",f"{channel} | {title} | {tag}",str(card)
+                  ],check=True)
+                except Exception as e:
+                  records.append({"channel":channel,"title":title,"error":"render: "+str(e)})
+                  continue
+                meta=info.get("extmetadata",{})
+                records.append({
+                  "channel":channel,"title":title,"revision":tag,
+                  "timestamp":info.get("timestamp"),"mime":info.get("mime"),
+                  "sha1":info.get("sha1"),"url":url,
+                  "licenseShortName":(meta.get("LicenseShortName") or {}).get("value"),
+                  "licenseUrl":(meta.get("LicenseUrl") or {}).get("value"),
+                  "artist":(meta.get("Artist") or {}).get("value"),
+                  "credit":(meta.get("Credit") or {}).get("value"),
+                  "sourceFile":str(source),"preview":str(card)
+                })
+          (OUT/"metadata.json").write_text(json.dumps(records,indent=2),encoding="utf-8")
+          cards=[str(p) for p in sorted(OUT.glob("*.card.png"))]
+          if cards:
+            subprocess.run(["montage",*cards,"-tile","2x","-geometry","+12+12",str(OUT/"contact-sheet.png")],check=True)
+          print(json.dumps({"records":len(records),"cards":len(cards)},indent=2))
+      - name: Compare candidate SHA-256 against current dark assets
+        run: |
+          sha256sum assets/channels/dark/*.png > qa176-logo-audit/current-dark-sha256.txt
+          find qa176-logo-audit -type f -not -name '*.card.png' -not -name 'contact-sheet.png' -print0 | xargs -0 sha256sum > qa176-logo-audit/candidate-sha256.txt
+      - uses: actions/upload-artifact@v4
+        with:
+          name: qa176-dark-logo-rights-audit
+          path: qa176-logo-audit/
+          if-no-files-found: error
+          retention-days: 3
