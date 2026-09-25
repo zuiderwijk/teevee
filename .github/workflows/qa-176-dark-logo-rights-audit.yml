@@ -13,47 +13,43 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
-      - name: Install asset tooling
+      - name: Install audit tooling
         run: |
           sudo apt-get update
-          sudo apt-get install -y librsvg2-bin imagemagick unzip
-      - name: Build rights-safe dark candidates
+          sudo apt-get install -y imagemagick python3-pil
+      - name: Build rights-safe final dark candidate set
         shell: python
         run: |
-          import re, subprocess, urllib.request, zipfile
+          import hashlib, subprocess, urllib.request
           from pathlib import Path
+          from PIL import Image
 
           root=Path("qa176-final-audit")
-          src=root/"sources"; out=root/"final"; cards=root/"cards"
-          for p in (src,out,cards): p.mkdir(parents=True,exist_ok=True)
+          final=root/"final"; cards=root/"cards"
+          final.mkdir(parents=True); cards.mkdir()
           ua={"User-Agent":"Teevee-QA176/1.0"}
 
-          def get(url, path):
-            req=urllib.request.Request(url,headers=ua)
-            with urllib.request.urlopen(req,timeout=90) as r:
-              path.write_bytes(r.read())
+          derived=[
+            "nl-rtl-4","nl-rtl-5","nl-rtl-7","nl-rtl-8","nl-rtl-z",
+            "nl-star-channel","nl-viaplay-tv","nl-comedy-central",
+            "nl-eurosport-1","nl-eurosport-2","nl-discovery","nl-national-geographic",
+          ]
 
-          def raster(svg, dest):
-            subprocess.run(["rsvg-convert","-w","1536","-o",str(dest),str(svg)],check=True)
+          # Source is the already rights/provenance-reviewed base PNG. Preserve alpha
+          # and all brand accents. Only pixels whose strongest RGB component is < 112
+          # become white, producing a fixed vendored negative mark for dark surfaces.
+          for cid in derived:
+            src=Path("assets/channels")/(cid+".png")
+            img=Image.open(src).convert("RGBA")
+            px=img.load()
+            for y in range(img.height):
+              for x in range(img.width):
+                r,g,b,a=px[x,y]
+                if a and max(r,g,b)<112:
+                  px[x,y]=(255,255,255,a)
+            img.save(final/(cid+".png"),format="PNG",optimize=True)
 
-          def card(path,label):
-            dest=cards/(path.stem+".png")
-            subprocess.run(["convert","-size","1400x440","xc:#10100F",str(path),"-resize","1120x280>","-gravity","center","-composite","-fill","white","-gravity","south","-pointsize","22","-annotate","+0+20",label,str(dest)],check=True)
-
-          # RTL Nederland supplied raster originals; CC BY-SA 3.0 per file page.
-          rtl_urls={
-            "nl-rtl-4":"https://upload.wikimedia.org/wikipedia/commons/9/9a/RTL_4_Logo_2023.png",
-            "nl-rtl-5":"https://upload.wikimedia.org/wikipedia/commons/b/bf/RTL_5_Logo_2023.png",
-            "nl-rtl-7":"https://upload.wikimedia.org/wikipedia/commons/f/f0/RTL_7_Logo_2023.png",
-            "nl-rtl-8":"https://upload.wikimedia.org/wikipedia/commons/3/3d/RTL_8_Logo_2023.png",
-            "nl-rtl-z":"https://upload.wikimedia.org/wikipedia/commons/6/65/RTL_Z_Logo_2023.png",
-          }
-          for cid,url in rtl_urls.items():
-            dest=out/(cid+".png")
-            get(url,dest)
-            card(dest,cid+" | RTL Nederland source | CC BY-SA 3.0")
-
-          # Ziggo Sport official press-kit originals (orange horizontal 402-406).
+          # Ziggo Sport supplies explicit orange-on-dark originals in its public press kit.
           ziggo={
             "nl-ziggo-sport-2":"https://d21buns5ku92am.cloudfront.net/69874/images/638849-Ziggo%20Sport%20402%20Orange%20RGB%20v1-754a8a-original-1768301437.png?download=1",
             "nl-ziggo-sport-3":"https://d21buns5ku92am.cloudfront.net/69874/images/638850-Ziggo%20Sport%20403%20Orange%20RGB%20v1-7f8ed4-original-1768301437.png?download=1",
@@ -62,74 +58,39 @@ jobs:
             "nl-ziggo-sport-6":"https://d21buns5ku92am.cloudfront.net/69874/images/638853-Ziggo%20Sport%20406%20Orange%20RGB%20v1-9371e4-original-1768301437.png?download=1",
           }
           for cid,url in ziggo.items():
-            dest=out/(cid+".png"); get(url,dest); card(dest,cid+" | Ziggo Sport official press kit")
+            req=urllib.request.Request(url,headers=ua)
+            with urllib.request.urlopen(req,timeout=90) as r:
+              (final/(cid+".png")).write_bytes(r.read())
 
-          # Public-domain / CC0 source geometry. Dark variants change only dark
-          # wordmark fills to white; geometry and brand accents remain source-exact.
-          commons={
-            "nl-discovery":("https://upload.wikimedia.org/wikipedia/commons/2/27/Discovery_Channel_-_Logo_2019.svg","discovery"),
-            "nl-eurosport-1":("https://upload.wikimedia.org/wikipedia/commons/d/d0/Eurosport_1_Logo_2015.svg","eurosport"),
-            "nl-eurosport-2":("https://upload.wikimedia.org/wikipedia/commons/d/d8/Eurosport_2_Logo_2015.svg","eurosport"),
-            "nl-national-geographic":("https://upload.wikimedia.org/wikipedia/commons/5/53/National_Geographic_Logo.svg","natgeo"),
-            "nl-viaplay-tv":("https://upload.wikimedia.org/wikipedia/commons/9/94/Viaplay_TV_logo.svg","viaplay"),
-            "nl-star-channel":("https://upload.wikimedia.org/wikipedia/commons/c/cd/Star_Channel_2023.svg","star"),
-          }
-          for cid,(url,kind) in commons.items():
-            s=src/(cid+".svg"); get(url,s)
-            text=s.read_text(encoding="utf-8",errors="replace")
-            if kind=="discovery":
-              text=text.replace("<svg version=\"1.1\"", "<svg version=\"1.1\" fill=\"#ffffff\"",1)
-            elif kind=="eurosport":
-              # Preserve the red number block; make all dark/navy wordmark fills white.
-              def repl(m):
-                val=m.group(1)
-                if val.lower() in {"none","transparent"} or val.startswith("url("): return m.group(0)
-                if val.startswith("#"):
-                  h=val[1:]
-                  if len(h)==3: h="".join(x*2 for x in h)
-                  if len(h)>=6:
-                    r,g,b=[int(h[i:i+2],16) for i in (0,2,4)]
-                    if r>150 and r>g*1.3 and r>b*1.3: return m.group(0)
-                    return 'fill="#ffffff"'
-                return m.group(0)
-              text=re.sub(r'fill="([^"]+)"',repl,text)
-            elif kind=="natgeo":
-              # Keep National Geographic yellow; make wordmark white.
-              text=re.sub(r'fill="(#(?:000000|000|231f20|231F20))"', 'fill="#ffffff"', text)
-              if 'fill="#ffffff"' not in text:
-                text=text.replace("<svg ", "<svg fill=\"#ffffff\" ",1)
-            elif kind=="viaplay":
-              text=text.replace("#212d33","#ffffff").replace("#212D33","#ffffff")
-            elif kind=="star":
-              text=text.replace("#241c32","#ffffff").replace("#241C32","#ffffff")
-            s.write_text(text,encoding="utf-8")
-            dest=out/(cid+".png"); raster(s,dest)
-            card(dest,cid+" | fixed source-derived dark raster | "+("CC0" if kind=="star" else "PD-textlogo"))
+          # Validate exact set, PNG decoding and >=3x contain-fit density.
+          expected=set(derived)|set(ziggo)
+          actual={p.stem for p in final.glob("*.png")}
+          assert actual==expected,(actual,expected)
+          lines=[]
+          for p in sorted(final.glob("*.png")):
+            img=Image.open(p).convert("RGBA")
+            w,h=img.size
+            ppp=1/min(40/w,32/h)
+            assert ppp>=3,(p.name,w,h,ppp)
+            digest=hashlib.sha256(p.read_bytes()).hexdigest()
+            lines.append(f"{digest}  {p.name}  {w}x{h}  {ppp:.2f}x")
+            card=cards/p.name
+            subprocess.run([
+              "convert","-size","1400x440","xc:#10100F",str(p),"-resize","1120x280>",
+              "-gravity","center","-composite","-fill","white","-gravity","south",
+              "-pointsize","22","-annotate","+0+20",p.stem,str(card)
+            ],check=True)
+          (root/"candidate-sha256-dimensions.txt").write_text("\n".join(lines)+"\n")
+          subprocess.run(["montage",*map(str,sorted(cards.glob("*.png"))),"-tile","2x","-geometry","+12+12",str(root/"candidate-contact-sheet.png")],check=True)
 
-          # Official Paramount Comedy Central brand package: audit all renderable variants.
-          z=src/"Comedy-Central_Logos.zip"
-          get("https://paramount-presse.de/wp-content/uploads/2022/10/Comedy-Central_Logos.zip",z)
-          cc=src/"comedy-central-official"; cc.mkdir()
-          with zipfile.ZipFile(z) as f: f.extractall(cc)
-          (root/"comedy-central-files.txt").write_text("\n".join(sorted(str(p.relative_to(cc)) for p in cc.rglob("*") if p.is_file())))
-          cc_cards=[]
-          for i,p in enumerate(sorted(cc.rglob("*"))):
-            if not p.is_file() or p.suffix.lower() not in {".png",".svg"}: continue
-            try:
-              png=root/f"cc-{i:02d}.png"
-              if p.suffix.lower()==".svg": raster(p,png)
-              else: subprocess.run(["convert",str(p),str(png)],check=True)
-              c=cards/f"cc-{i:02d}.png"
-              subprocess.run(["convert","-size","1400x440","xc:#10100F",str(png),"-resize","1120x280>","-gravity","center","-composite","-fill","white","-gravity","south","-pointsize","20","-annotate","+0+20","Paramount official | "+str(p.relative_to(cc)),str(c)],check=True)
-              cc_cards.append(str(c))
-            except Exception as e: print("skip",p,e)
-
-          if cc_cards:
-            subprocess.run(["montage",*cc_cards,"-tile","2x","-geometry","+12+12",str(root/"comedy-central-contact-sheet.png")],check=True)
-          normal=[str(p) for p in sorted(cards.glob("nl-*.png"))]
-          subprocess.run(["montage",*normal,"-tile","2x","-geometry","+12+12",str(root/"candidate-contact-sheet.png")],check=True)
-          subprocess.run("sha256sum qa176-final-audit/final/*.png > qa176-final-audit/candidate-sha256.txt",shell=True,check=True)
-          subprocess.run("identify qa176-final-audit/final/*.png > qa176-final-audit/dimensions.txt",shell=True,check=True)
+          # Byte-difference proof against the rejected aggregator dark files.
+          old=[]
+          for p in sorted(Path("assets/channels/dark").glob("*.png")):
+            old.append((p.name,hashlib.sha256(p.read_bytes()).hexdigest()))
+          new={p.name:hashlib.sha256(p.read_bytes()).hexdigest() for p in final.glob("*.png")}
+          unchanged=[name for name,h in old if new.get(name)==h]
+          assert not unchanged, "Rejected aggregator bytes survived: "+repr(unchanged)
+          (root/"old-vs-new.txt").write_text("\n".join(f"{name} old={h} new={new[name]}" for name,h in old)+"\n")
       - uses: actions/upload-artifact@v4
         with:
           name: qa176-dark-logo-final-audit
