@@ -1,4 +1,4 @@
-name: QA 176 dark-logo rights audit
+name: QA 176 dark-logo source pack
 
 on:
   push:
@@ -9,75 +9,30 @@ permissions:
   contents: read
 
 jobs:
-  audit:
+  pack:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
-      - name: Install audit tooling
+      - name: Package accepted base sources and official Ziggo dark marks
         run: |
-          sudo apt-get update
-          sudo apt-get install -y imagemagick python3-pil
-      - name: Build rights-safe final dark candidate set
-        shell: python
-        run: |
-          import hashlib, subprocess
-          from pathlib import Path
-          from PIL import Image
+          set -eux
+          mkdir -p qa176-source-pack/base qa176-source-pack/ziggo
+          for id in             nl-rtl-4 nl-rtl-5 nl-rtl-7 nl-rtl-8 nl-rtl-z             nl-comedy-central nl-discovery nl-eurosport-1 nl-eurosport-2             nl-national-geographic nl-viaplay-tv nl-star-channel
+          do
+            cp "assets/channels/$id.png" "qa176-source-pack/base/$id.png"
+          done
 
-          root=Path("qa176-final-audit")
-          final=root/"final"; cards=root/"cards"
-          final.mkdir(parents=True); cards.mkdir()
+          curl --fail --location --retry 3 'https://d21buns5ku92am.cloudfront.net/69874/images/638906-Ziggo%20Sport%20402%20White%20Horizontal%20RGB%20v1-3a54d1-original-1768301467.png?download=1' -o qa176-source-pack/ziggo/nl-ziggo-sport-2.png
+          curl --fail --location --retry 3 'https://d21buns5ku92am.cloudfront.net/69874/images/638905-Ziggo%20Sport%20403%20White%20Horizontal%20RGB%20v1-2e3d9a-original-1768301467.png?download=1' -o qa176-source-pack/ziggo/nl-ziggo-sport-3.png
+          curl --fail --location --retry 3 'https://d21buns5ku92am.cloudfront.net/69874/images/638904-Ziggo%20Sport%20404%20White%20Horizontal%20RGB%20v1-ce7552-original-1768301467.png?download=1' -o qa176-source-pack/ziggo/nl-ziggo-sport-4.png
+          curl --fail --location --retry 3 'https://d21buns5ku92am.cloudfront.net/69874/images/638907-Ziggo%20Sport%20405%20White%20Horizontal%20RGB%20v1-8bf0fd-original-1768301467.png?download=1' -o qa176-source-pack/ziggo/nl-ziggo-sport-5.png
+          curl --fail --location --retry 3 'https://d21buns5ku92am.cloudfront.net/69874/images/638909-Ziggo%20Sport%20406%20White%20Horizontal%20RGB%20v1-b1fefb-original-1768301467.png?download=1' -o qa176-source-pack/ziggo/nl-ziggo-sport-6.png
 
-          ids=[
-            "nl-rtl-4","nl-rtl-5","nl-rtl-7","nl-rtl-8","nl-star-channel",
-            "nl-ziggo-sport-2","nl-ziggo-sport-3","nl-ziggo-sport-4",
-            "nl-ziggo-sport-5","nl-ziggo-sport-6","nl-viaplay-tv","nl-rtl-z",
-            "nl-comedy-central","nl-eurosport-1","nl-eurosport-2",
-            "nl-discovery","nl-national-geographic",
-          ]
-
-          # Every output is derived exclusively from its same-ID local base PNG,
-          # whose per-file provenance/rights basis is documented in
-          # docs/CHANNEL_LOGO_ASSETS.md. Preserve alpha and all brand accents;
-          # only low-luminance wordmark pixels become white for dark surfaces.
-          for cid in ids:
-            source=Path("assets/channels")/(cid+".png")
-            img=Image.open(source).convert("RGBA")
-            px=img.load()
-            for y in range(img.height):
-              for x in range(img.width):
-                r,g,b,a=px[x,y]
-                if a and max(r,g,b)<112:
-                  px[x,y]=(255,255,255,a)
-            dest=final/(cid+".png")
-            img.save(dest,format="PNG",optimize=True)
-
-          assert {p.stem for p in final.glob("*.png")}==set(ids)
-          lines=[]
-          old_new=[]
-          for p in sorted(final.glob("*.png")):
-            img=Image.open(p).convert("RGBA")
-            w,h=img.size
-            ppp=1/min(40/w,32/h)
-            assert ppp>=3,(p.name,w,h,ppp)
-            digest=hashlib.sha256(p.read_bytes()).hexdigest()
-            old=Path("assets/channels/dark")/p.name
-            old_digest=hashlib.sha256(old.read_bytes()).hexdigest()
-            assert digest!=old_digest, "Rejected aggregator bytes survived: "+p.name
-            lines.append(f"{digest}  {p.name}  {w}x{h}  {ppp:.2f}x")
-            old_new.append(f"{p.name} old={old_digest} new={digest}")
-            card=cards/p.name
-            subprocess.run([
-              "convert","-size","1400x440","xc:#10100F",str(p),"-resize","1120x280>",
-              "-gravity","center","-composite","-fill","white","-gravity","south",
-              "-pointsize","22","-annotate","+0+20",p.stem,str(card)
-            ],check=True)
-          (root/"candidate-sha256-dimensions.txt").write_text("\n".join(lines)+"\n")
-          (root/"old-vs-new.txt").write_text("\n".join(old_new)+"\n")
-          subprocess.run(["montage",*map(str,sorted(cards.glob("*.png"))),"-tile","2x","-geometry","+12+12",str(root/"candidate-contact-sheet.png")],check=True)
+          sha256sum qa176-source-pack/base/*.png qa176-source-pack/ziggo/*.png > qa176-source-pack/SHA256SUMS
+          file qa176-source-pack/base/*.png qa176-source-pack/ziggo/*.png > qa176-source-pack/file-types.txt
       - uses: actions/upload-artifact@v4
         with:
-          name: qa176-dark-logo-final-audit
-          path: qa176-final-audit/
+          name: qa176-dark-logo-source-pack
+          path: qa176-source-pack/
           if-no-files-found: error
           retention-days: 3
