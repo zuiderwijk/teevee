@@ -1,5 +1,13 @@
 # Teevee Development Logboek
 
+## 25 september 2026 — Issue #175 physical refinement: dark logos + 49-channel acceptance transport + capacity proof
+
+Owner physical review #5833155116 passed light-mode branding but identified 17 marks whose base/light artwork loses wordmark/suffix contrast on the dark Guide canvas. PR #176 now resolves broadcaster-specific dark-safe PNG variants centrally through the existing manifest/registry; there is no tint, runtime recolour, generic tile or per-screen map. The 17 alternate bytes are pinned to an immutable verified source snapshot and added to SHA256SUMS/provenance.
+
+The same refinement adds `npm run start:physical49`: a `__DEV__`-only transport selector behind the existing GuideScheduleApi and GuideSearchApi. It feeds all 49 canonical IDs through the production client contracts, Search session, personalisation, shared Guide projection and renderers without activating hosted production refresh topology.
+
+A separate JWT-protected read-only hosted capacity smoke exercised the exact PR #176 NL/BE source mappings and streaming parser at group size 12. On the complete 2026-09-26 06:00→06:00 Amsterdam television day all five groups were HTTP 200, coverage complete, zero diagnostics and failClosedReady=true; worst CPU was 1283 ms and worst Edge memory 13.13 MB against hosted limits of 2 s / 256 MB. The temporary proof function was then replaced with a 410-only disabled version. Production epg-refresh, cron and schema were unchanged.
+
 ## 25 september 2026 — Issue #170 / PR #173 physically accepted, QA-passed and merged
 
 Exact candidate `ee482e9de279093b29fc02bb07e5fc5cd099ad36` passed the final owner physical iPhone drag stress case, including pickup stability, upward/downward movement, same-gesture direction reversal, changed drop, scroll restoration, first/last behavior and hidden-zone coherence. Exact-head CI #1454 / run 36129289928 passed 124/124 test files and 997/997 tests plus orchestration/database smokes, exports and Android arm64 native build. Independent QA review #5317659935 then reviewed the full PR with no remaining HIGH/MEDIUM/LOW merge blocker.
