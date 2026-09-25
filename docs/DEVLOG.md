@@ -2,7 +2,7 @@
 
 ## 25 september 2026 — Issue #175 physical refinement: dark logos + 49-channel acceptance transport + capacity proof
 
-Owner physical review #5833155116 passed light-mode branding but identified 17 marks whose base/light artwork loses wordmark/suffix contrast on the dark Guide canvas. PR #176 now resolves broadcaster-specific dark-safe PNG variants centrally through the existing manifest/registry; there is no tint, runtime recolour, generic tile or per-screen map. The 17 alternate bytes are pinned to an immutable verified source snapshot and added to SHA256SUMS/provenance.
+Owner physical review #5833155116 passed light-mode branding but identified 17 marks whose base/light artwork loses wordmark/suffix contrast on the dark Guide canvas. PR #176 now resolves broadcaster-specific dark-safe PNG variants centrally through the existing manifest/registry; there is no tint, runtime recolour, generic tile or per-screen map. The 17 alternate bytes are pinned to an immutable curated dark-background source snapshot, visually/technically verified for this use, and added to SHA256SUMS/provenance. The mirror is technical provenance/transport, not an official broadcaster asset portal.
 
 The same refinement adds `npm run start:physical49`: a `__DEV__`-only transport selector behind the existing GuideScheduleApi and GuideSearchApi. It feeds all 49 canonical IDs through the production client contracts, Search session, personalisation, shared Guide projection and renderers without activating hosted production refresh topology.
 
