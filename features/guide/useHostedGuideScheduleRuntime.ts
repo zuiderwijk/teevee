@@ -9,10 +9,10 @@ import {
   runtimeGuideScheduleFor,
 } from '@/data/runtime/guideScheduleRuntime';
 import type { GuideScheduleApi } from '@/services/api/guideScheduleContract';
-import { HostedGuideScheduleClient } from '@/services/api/hostedGuideScheduleClient';
+import { createRuntimeGuideScheduleApi } from '@/services/api/guideApiRuntime';
 import { loadTwoTelevisionDayGuideScheduleBundle } from '@/services/api/guideScheduleLoader';
 
-const hostedGuideScheduleApi = new HostedGuideScheduleClient();
+const hostedGuideScheduleApi = createRuntimeGuideScheduleApi();
 const DAY_CHANGE_CHECK_MS = 30_000;
 
 /**
