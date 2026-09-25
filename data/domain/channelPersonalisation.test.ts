@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
+import { CANONICAL_CHANNEL_CATALOG } from './channelCatalog';
 import type { Channel } from './epg';
 import {
   createChannelPersonalisationPreference,
@@ -61,6 +62,45 @@ describe('channel personalisation reconciliation', () => {
       saved,
     );
     expect(next?.selectedChannelIds).toEqual(['b', 'a', 'd', 'c']);
+  });
+
+
+  it('migrates the shipped 12-channel personalised state to 49 without reviving hidden channels', () => {
+    const legacyKnown = [
+      'nl-npo-1',
+      'nl-npo-2',
+      'nl-npo-3',
+      'nl-rtl-4',
+      'nl-rtl-5',
+      'nl-sbs-6',
+      'nl-rtl-7',
+      'nl-rtl-8',
+      'nl-net-5',
+      'nl-veronica-disney-xd',
+      'nl-sbs-9',
+      'nl-rtl-z',
+    ];
+    const saved = preference(legacyKnown, [
+      'nl-rtl-z',
+      'nl-npo-1',
+      'nl-rtl-8',
+      'nl-veronica-disney-xd',
+    ]);
+
+    const next = reconcileChannelPersonalisation(
+      CANONICAL_CHANNEL_CATALOG,
+      saved,
+    );
+
+    expect(next?.knownChannelIds).toHaveLength(49);
+    expect(next?.selectedChannelIds).toHaveLength(4 + 37);
+    expect(next?.selectedChannelIds.slice(0, 4)).toEqual(saved.selectedChannelIds);
+    expect(next?.selectedChannelIds).not.toContain('nl-net-5');
+    expect(next?.selectedChannelIds.slice(4)).toEqual(
+      CANONICAL_CHANNEL_CATALOG
+        .map(({ id }) => id)
+        .filter((id) => !legacyKnown.includes(id)),
+    );
   });
 
   it('does not let catalogue reorder rewrite existing user relative order', () => {

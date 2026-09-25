@@ -1,6 +1,6 @@
 # Next channel expansion target — 2026-09-24
 
-Status: **OWNER-APPROVED PRODUCT TARGET — NOT YET IMPLEMENTED**
+Status: **OWNER-APPROVED PRODUCT TARGET — IMPLEMENTATION IN DRAFT PR #176; NOT YET PRODUCTION-ACTIVATED**
 
 This document fixes the channel set and default ordering for the next dedicated Teevee channel-expansion iteration. It is a product decision, not a claim that the current runtime, current development provider mapping or production EPG rights already support every channel.
 
@@ -107,3 +107,7 @@ The later development increment should:
 - treat channel-logo provenance/licensing and production EPG redistribution rights as separate release requirements.
 
 No runtime/provider implementation is part of this decision record.
+
+## Implementation status
+
+Issue #175 / draft PR #176 implements this exact catalogue, explicit 36-NL/13-BE provider mapping, personalisation migration coverage and local logo ownership. Production activation remains gated by PR #173 merge/reconciliation, exact-head review/QA, source-specific hosted CPU capacity proof and physical logo validation. Implementation evidence: `docs/CHANNEL_EXPANSION_IMPLEMENTATION_2026-09-24.md`.

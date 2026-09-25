@@ -3,6 +3,7 @@ import { Image, StyleSheet, Text, View } from 'react-native';
 
 import type { Channel } from '@/data/domain/epg';
 import { TEEVEE_FONT_FAMILIES } from '@/theme/typography';
+import { useTeeveeTheme } from '@/theme/useTeeveeTheme';
 
 import {
   COMPACT_GUIDE_MAX_FONT_SIZE_MULTIPLIER,
@@ -27,7 +28,8 @@ export const ChannelIdentity = memo(function ChannelIdentity({
   variant = 'default',
   accessible = true,
 }: ChannelIdentityProps) {
-  const resolvedLogo = resolveChannelLogo(channel);
+  const theme = useTeeveeTheme();
+  const resolvedLogo = resolveChannelLogo(channel, theme.dark ? 'dark' : 'light');
   const [failedLogoKey, setFailedLogoKey] = useState<string | null>(null);
   const showLogo = Boolean(resolvedLogo) && failedLogoKey !== resolvedLogo?.key;
   const totaal = variant === 'totaal';

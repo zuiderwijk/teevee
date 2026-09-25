@@ -1,6 +1,6 @@
 # Channel personalisation — Mijn zenders
 
-Status: **IMPLEMENTED IN ISSUE #170 / PR #173; pending review and physical acceptance**  
+Status: **MERGED AND CANONICAL — issue #170 / PR #173**
 Date: 2026-09-24  
 Owner: Teevee product
 

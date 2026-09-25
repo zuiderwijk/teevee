@@ -1,27 +1,145 @@
+import { createHash } from 'node:crypto';
+import { readFileSync, readdirSync } from 'node:fs';
+
 import { describe, expect, it } from 'vitest';
 
+import { CANONICAL_CHANNEL_CATALOG } from '@/data/domain/channelCatalog';
+
 import {
+  DARK_CHANNEL_LOGO_ASSET_PATHS,
+  LOCAL_CHANNEL_LOGO_ASSET_PATHS,
   localChannelLogoAssetKeyForChannelId,
+  localChannelLogoAssetPathForAppearance,
   localChannelLogoAssetPathForChannelId,
 } from './channelLogoAssetManifest';
 
-const expected = [
-  ['nl-npo-1', '../../assets/channels/nl-npo-1.png'],
-  ['nl-npo-2', '../../assets/channels/nl-npo-2.png'],
-  ['nl-npo-3', '../../assets/channels/nl-npo-3.png'],
-  ['nl-rtl-4', '../../assets/channels/nl-rtl-4.png'],
-  ['nl-rtl-5', '../../assets/channels/nl-rtl-5.png'],
-  ['nl-sbs-6', '../../assets/channels/nl-sbs-6.png'],
-] as const;
-
 describe('canonical local channel logo manifest', () => {
-  it.each(expected)('resolves %s to its Teevee-owned local asset', (channelId, path) => {
-    expect(localChannelLogoAssetKeyForChannelId(channelId)).toBe(channelId);
-    expect(localChannelLogoAssetPathForChannelId(channelId)).toBe(path);
+  it('covers every canonical channel exactly once in canonical order', () => {
+    const canonicalIds = CANONICAL_CHANNEL_CATALOG.map(({ id }) => id);
+    const logoIds = Object.keys(LOCAL_CHANNEL_LOGO_ASSET_PATHS);
+
+    expect(canonicalIds).toHaveLength(49);
+    expect(logoIds).toEqual(canonicalIds);
+    expect(new Set(logoIds).size).toBe(49);
+  });
+
+  it('maps every canonical id to its own local PNG path', () => {
+    for (const { id } of CANONICAL_CHANNEL_CATALOG) {
+      expect(localChannelLogoAssetKeyForChannelId(id)).toBe(id);
+      expect(localChannelLogoAssetPathForChannelId(id)).toBe(
+        `../../assets/channels/${id}.png`,
+      );
+    }
+  });
+
+  it('resolves the exact verified dark-safe variant set and light fallback centrally', () => {
+    const darkIds = [
+      "nl-rtl-4",
+      "nl-rtl-5",
+      "nl-rtl-7",
+      "nl-rtl-8",
+      "nl-star-channel",
+      "nl-ziggo-sport-2",
+      "nl-ziggo-sport-3",
+      "nl-ziggo-sport-4",
+      "nl-ziggo-sport-5",
+      "nl-ziggo-sport-6",
+      "nl-viaplay-tv",
+      "nl-rtl-z",
+      "nl-comedy-central",
+      "nl-eurosport-1",
+      "nl-eurosport-2",
+      "nl-discovery",
+      "nl-national-geographic"
+] as const;
+    expect(Object.keys(DARK_CHANNEL_LOGO_ASSET_PATHS)).toEqual(darkIds);
+
+    for (const { id } of CANONICAL_CHANNEL_CATALOG) {
+      expect(localChannelLogoAssetPathForAppearance(id, 'light')).toBe(
+        `../../assets/channels/${id}.png`,
+      );
+      expect(localChannelLogoAssetPathForAppearance(id, 'dark')).toBe(
+        darkIds.includes(id as (typeof darkIds)[number])
+          ? `../../assets/channels/dark/${id}.png`
+          : `../../assets/channels/${id}.png`,
+      );
+    }
   });
 
   it('keeps unknown channels on the normal fallback path', () => {
     expect(localChannelLogoAssetKeyForChannelId('nl-unknown')).toBeNull();
     expect(localChannelLogoAssetPathForChannelId('nl-unknown')).toBeNull();
   });
+
+  it('keeps channel asset paths owned only by the central manifest/registry', () => {
+    const repoRoot = new URL('../../', import.meta.url);
+    const allowed = new Set([
+      'features/guide/channelLogoAssetManifest.ts',
+      'features/guide/channelLogoAssetManifest.test.ts',
+      'features/guide/channelLogoRegistry.ts',
+    ]);
+    const violations: string[] = [];
+
+    const walk = (directory: URL, prefix: string) => {
+      for (const entry of readdirSync(directory, { withFileTypes: true })) {
+        const relative = `${prefix}${entry.name}`;
+        const entryUrl = new URL(entry.name + (entry.isDirectory() ? '/' : ''), directory);
+        if (entry.isDirectory()) {
+          walk(entryUrl, `${relative}/`);
+          continue;
+        }
+        if (!/\.(?:ts|tsx)$/.test(entry.name) || allowed.has(relative)) continue;
+        if (readFileSync(entryUrl, 'utf8').includes('assets/channels/')) {
+          violations.push(relative);
+        }
+      }
+    };
+
+    walk(new URL('app/', repoRoot), 'app/');
+    walk(new URL('features/', repoRoot), 'features/');
+    expect(violations).toEqual([]);
+  });
+
+  it('locks all 49 base and 17 dark PNG bytes to SHA256SUMS with adequate intrinsic resolution', () => {
+    const sumsUrl = new URL('../../assets/channels/SHA256SUMS', import.meta.url);
+    const entries = readFileSync(sumsUrl, 'utf8')
+      .trim()
+      .split(/\r?\n/)
+      .map((line) => {
+        const match = line.match(/^([a-f0-9]{64})  ((?:dark\/)?[^/]+\.png)$/);
+        expect(match, `Invalid SHA256SUMS line: ${line}`).not.toBeNull();
+        return { hash: match![1]!, fileName: match![2]! };
+      });
+
+    const expectedFileNames = [
+      ...Object.keys(LOCAL_CHANNEL_LOGO_ASSET_PATHS).map(
+        (channelId) => `${channelId}.png`,
+      ),
+      ...Object.keys(DARK_CHANNEL_LOGO_ASSET_PATHS).map(
+        (channelId) => `dark/${channelId}.png`,
+      ),
+    ].sort();
+
+    expect(entries.map(({ fileName }) => fileName)).toEqual(expectedFileNames);
+    expect(entries).toHaveLength(66);
+
+    for (const { hash, fileName } of entries) {
+      const bytes = readFileSync(new URL(`../../assets/channels/${fileName}`, import.meta.url));
+      expect(createHash('sha256').update(bytes).digest('hex')).toBe(hash);
+
+      expect(bytes.subarray(0, 8)).toEqual(
+        Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]),
+      );
+      const width = bytes.readUInt32BE(16);
+      const height = bytes.readUInt32BE(20);
+      expect(width).toBeGreaterThan(0);
+      expect(height).toBeGreaterThan(0);
+
+      // The smallest production identity box is 40x32 pt. A contain-fitted mark
+      // must retain at least 3x intrinsic density on that box.
+      const sourcePixelsPerPoint = 1 / Math.min(40 / width, 32 / height);
+      expect(sourcePixelsPerPoint).toBeGreaterThanOrEqual(3);
+    }
+  });
+
 });

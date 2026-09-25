@@ -1,10 +1,40 @@
 # Teevee Development Logboek
 
+## 25 september 2026 — PR #176 Independent QA rights fix: all 17 dark-logo bytes replaced (Pad B)
+
+Independent QA review #5320776684 accepted the technical #176 contracts but blocked merge on the commercial redistribution basis of the 17 dark-mode PNG bytes. The earlier owner physical PASS #5836719484 established visual suitability of that pre-fix candidate, but broadcaster-mark approval did not prove rights in third-party-supplied PNG bytes.
+
+Development therefore chose **Pad B** without reopening the accepted runtime architecture. All 17 dark bytes are replaced while the canonical-ID keyed manifest/registry and light/dark/System resolver stay unchanged. Twelve fixed dark rasters are produced from Teevee's existing base assets whose underlying works are recorded as PD-textlogo/simple-logo or CC0; the transform preserves alpha, geometry and brand accents and lifts only neutral/dark wordmark pixels to white at build time. Ziggo Sport 2–6 use exact broadcaster-supplied White Horizontal RGB PNGs from the Ziggo Sport Newsroom press kit. The final production tree contains no acquisition/generator workflow, runtime tint/recolour, hotlink, generic tile or per-screen asset map. `assets/channels/SHA256SUMS` locks the new bytes and `docs/CHANNEL_LOGO_ASSETS.md` records the per-file source/right basis separately from broadcaster/trademark authority.
+
+Because every dark asset byte changed, #5836719484 is no longer a complete logo-PASS for the new head. The next gate is focused physical iPhone revalidation of dark mode and System appearance across Per zender, Nu & Straks, Totaal, Search and Mijn zenders plus relevant Larger Text contexts. Production topology/cron/schema activation remains untouched, and Independent QA re-review follows only after that focused physical PASS.
+
+
+## 25 september 2026 — Issue #175 physical refinement: dark logos + 49-channel acceptance transport + capacity proof
+
+Owner physical review #5833155116 passed light-mode branding but identified 17 marks whose base/light artwork loses wordmark/suffix contrast on the dark Guide canvas. PR #176 resolves those IDs centrally through the existing manifest/registry with no runtime tint, recolour, generic tile or per-screen map. The first dark-byte candidate was later superseded by the Independent QA rights fix recorded above; current provenance and hashes are exclusively the replacement set in `docs/CHANNEL_LOGO_ASSETS.md`.
+
+The same refinement adds `npm run start:physical49`: a `__DEV__`-only transport selector behind the existing GuideScheduleApi and GuideSearchApi. It feeds all 49 canonical IDs through the production client contracts, Search session, personalisation, shared Guide projection and renderers without activating hosted production refresh topology.
+
+A separate JWT-protected read-only hosted capacity smoke exercised the exact PR #176 NL/BE source mappings and streaming parser at group size 12. On the complete 2026-09-26 06:00→06:00 Amsterdam television day all five groups were HTTP 200, coverage complete, zero diagnostics and failClosedReady=true; worst CPU was 1283 ms and worst Edge memory 13.13 MB against hosted limits of 2 s / 256 MB. The temporary proof function was then replaced with a 410-only disabled version. Production epg-refresh, cron and schema were unchanged.
+
+## 25 september 2026 — Issue #170 / PR #173 physically accepted, QA-passed and merged
+
+Exact candidate `ee482e9de279093b29fc02bb07e5fc5cd099ad36` passed the final owner physical iPhone drag stress case, including pickup stability, upward/downward movement, same-gesture direction reversal, changed drop, scroll restoration, first/last behavior and hidden-zone coherence. Exact-head CI #1454 / run 36129289928 passed 124/124 test files and 997/997 tests plus orchestration/database smokes, exports and Android arm64 native build. Independent QA review #5317659935 then reviewed the full PR with no remaining HIGH/MEDIUM/LOW merge blocker.
+
+PR #173 merged to canonical `main` as `a23c5a434f237859b06112217433a12955cfa725`. ADR 0013 and the shared known-vs-selected personalisation projection are therefore canonical. The 49-channel expansion remains a separate Issue #175 / PR #176 increment and must build on this merged baseline rather than reopening the accepted drag architecture.
+
+## 25 september 2026 — Issue #175 / PR #176 post-#173 integration
+
+The 49-channel expansion is now the active dependent increment after #173 merge. Its implementation remains exactly 49 provider-independent canonical IDs in owner order, 36 NL + 13 BE source ownership, deterministic 12→49 personalisation reconciliation, full-catalog Search aliases and a raster-only 49/49 local logo registry. The branch is reconciled onto canonical `main` by carrying only the Issue #175 delta; later #173 drag/runtime changes are inherited from main rather than replayed or overwritten.
+
+Source-specific hosted NL/BE capacity evidence and the earlier full 49-channel owner physical journey are complete. After the dark-byte rights replacement, production activation remains blocked by exact-head CI, focused physical logo revalidation, Independent QA re-review and the normal final release/deployment gate. No production refresh/deployment/schema/cron mutation is part of this Development fix.
+
+
 ## 25 september 2026 — Issue #170 upward drag reversal / fixed native gesture owner
 
 A second focused iPhone recording after the pickup-owner fix showed a directional residual: dragging downward across rows behaved correctly, but reversing movement upward immediately snapped the lifted channel back. The active `GestureDetector` was no longer unmounted, yet provisional order still moved that same keyed row to different sibling indices. On iOS, moving the native view that owns the active Pan to an earlier sibling position cancels/interferes with gesture ownership even when React preserves component identity.
 
-The drag presentation no longer reorders the active source row at all. Its native row/handle remains at the original sibling/layout slot for the full gesture and is only visually transparent. Intervening neighbours receive deterministic animated `translateY` offsets: rows between source and target shift up for downward drags and down for upward drags. The 2-pt insertion target is positioned relative to the fixed source using exact measured row heights, so the accepted provisional reorder remains visually equivalent without moving the recognizer host. Reduced Motion applies the same geometry synchronously. Pure tests cover both directions, variable row heights, first/no-op geometry and source-row zero offset; component tests continue to prove the gesture host remains mounted. Focused physical iPhone re-test is required.
+The drag presentation no longer reorders the active source row at all. Its native row/handle remains at the original sibling/layout slot for the full gesture and is only visually transparent. Intervening neighbours receive deterministic animated `translateY` offsets: rows between source and target shift up for downward drags and down for upward drags. The 2-pt insertion target is positioned relative to the fixed source using exact measured row heights, so the accepted provisional reorder remains visually equivalent without moving the recognizer host. Reduced Motion applies the same geometry synchronously. Pure tests cover both directions, variable row heights, first/no-op geometry and source-row zero offset; component tests continue to prove the gesture host remains mounted. Subsequent owner physical PASS #5832345388 and Independent QA PASS #5317659935 closed this gate; PR #173 then merged as `a23c5a434f237859b06112217433a12955cfa725`.
 
 ## 25 september 2026 — Issue #170 pickup freeze root cause refinement
 

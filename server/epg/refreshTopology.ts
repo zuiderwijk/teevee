@@ -2,11 +2,13 @@ import type { Channel } from '../../data/domain/epg.ts';
 
 import { guideRefreshWindows } from './guideHorizonRefresh.ts';
 import {
-  DEVELOPMENT_CHANNELS,
+  IPTV_EPG_BE_CHANNEL_MAPPINGS,
+  IPTV_EPG_BE_CHANNELS,
   IPTV_EPG_NL_CHANNEL_MAPPINGS,
+  IPTV_EPG_NL_CHANNELS,
 } from './developmentChannelCatalog.ts';
 import type { ChannelMapping } from './provider.ts';
-import { DEFAULT_DEVELOPMENT_XMLTV_URL } from './xmltvProvider.ts';
+import { IPTV_EPG_BE_XMLTV_URL, IPTV_EPG_NL_XMLTV_URL } from './xmltvProvider.ts';
 
 export type EpgRefreshSourceConfig = {
   key: string;
@@ -42,16 +44,26 @@ export type EpgRefreshWorkItemPlan = {
 export const EPG_REFRESH_MAX_WORK_ITEMS_PER_RUN = 1024;
 
 export const IPTV_EPG_NL_OPERATIONAL_MAX_PROVIDER_CHANNELS_PER_WORK_ITEM = 12;
+export const IPTV_EPG_BE_OPERATIONAL_MAX_PROVIDER_CHANNELS_PER_WORK_ITEM = 12;
 
 export const EPG_REFRESH_SOURCES = [
   {
     key: 'iptv-epg-nl',
-    providerKey: 'development-xmltv',
-    url: DEFAULT_DEVELOPMENT_XMLTV_URL,
-    canonicalChannels: DEVELOPMENT_CHANNELS,
+    providerKey: 'development-xmltv-nl',
+    url: IPTV_EPG_NL_XMLTV_URL,
+    canonicalChannels: IPTV_EPG_NL_CHANNELS,
     channelMappings: IPTV_EPG_NL_CHANNEL_MAPPINGS,
     maxProviderChannelsPerWorkItem:
       IPTV_EPG_NL_OPERATIONAL_MAX_PROVIDER_CHANNELS_PER_WORK_ITEM,
+  },
+  {
+    key: 'iptv-epg-be',
+    providerKey: 'development-xmltv-be',
+    url: IPTV_EPG_BE_XMLTV_URL,
+    canonicalChannels: IPTV_EPG_BE_CHANNELS,
+    channelMappings: IPTV_EPG_BE_CHANNEL_MAPPINGS,
+    maxProviderChannelsPerWorkItem:
+      IPTV_EPG_BE_OPERATIONAL_MAX_PROVIDER_CHANNELS_PER_WORK_ITEM,
   },
 ] as const satisfies readonly EpgRefreshSourceConfig[];
 

@@ -49,24 +49,32 @@ describe('EPG refresh topology', () => {
       .toBe('cron:2026-09-24T12');
   });
 
-  it('plans the current runtime as twelve bounded Amsterdam television-day jobs without encoding that shape in the contract', () => {
+  it('plans the 49-channel runtime as bounded NL and BE television-day jobs', () => {
     const providerChannelIds = hostedRefreshProviderChannelIds();
     const workItems = planGuideHorizonRefreshWorkItems({
       anchorMs: Date.parse('2026-09-24T09:00:00Z'),
       requestedProviderChannelIds: providerChannelIds,
     });
 
-    expect(EPG_REFRESH_SOURCES).toHaveLength(1);
-    expect(providerChannelIds).toHaveLength(12);
-    expect(workItems).toHaveLength(12);
-    expect(workItems.map(({ dayOffset }) => dayOffset)).toEqual([
-      -3, -2, -1, 0, 1, 2, 3, 4, 5, 6, 7, 8,
+    expect(EPG_REFRESH_SOURCES).toHaveLength(2);
+    expect(providerChannelIds).toHaveLength(49);
+    expect(workItems).toHaveLength(60);
+
+    const dayZero = workItems.filter(({ dayOffset }) => dayOffset === 0);
+    expect(dayZero).toHaveLength(5);
+    expect(dayZero.map(({ sourceKey, providerChannelIds: ids }) => [
+      sourceKey,
+      ids.length,
+    ])).toEqual([
+      ['iptv-epg-nl', 12],
+      ['iptv-epg-nl', 12],
+      ['iptv-epg-nl', 12],
+      ['iptv-epg-be', 12],
+      ['iptv-epg-be', 1],
     ]);
-    expect(workItems.every(({ sourceKey }) => sourceKey === 'iptv-epg-nl')).toBe(true);
-    expect(workItems.every(({ channelGroupKey }) => channelGroupKey === 'group-1')).toBe(true);
-    expect(workItems.every(({ providerChannelIds: ids }) => ids.length === 12)).toBe(true);
-    expect(workItems.every(({ canonicalChannelIds }) => canonicalChannelIds.length === 12))
-      .toBe(true);
+    expect(new Set(dayZero.flatMap(({ canonicalChannelIds }) => canonicalChannelIds)).size)
+      .toBe(49);
+    expect(new Set(workItems.map(({ dayOffset }) => dayOffset)).size).toBe(12);
   });
 
   it('plans multiple provider sources and multiple channel groups per day without changing orchestration semantics', () => {
@@ -117,8 +125,8 @@ describe('EPG refresh topology', () => {
   });
 
   it('fits the approved 49-channel multi-source catalog at group size one', () => {
-    const nlIds = Array.from({ length: 30 }, (_, index) => `nl-${index + 1}`);
-    const beIds = Array.from({ length: 19 }, (_, index) => `be-${index + 1}`);
+    const nlIds = Array.from({ length: 36 }, (_, index) => `nl-${index + 1}`);
+    const beIds = Array.from({ length: 13 }, (_, index) => `be-${index + 1}`);
     const sources = [
       source('nl', nlIds, 1),
       source('be', beIds, 1),

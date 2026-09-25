@@ -92,7 +92,7 @@ function ChannelLogo({
   hidden: boolean;
 }) {
   const theme = useTeeveeTheme();
-  const resolved = resolveChannelLogo(channel);
+  const resolved = resolveChannelLogo(channel, theme.dark ? 'dark' : 'light');
   const [failedKey, setFailedKey] = useState<string | null>(null);
   const showLogo = Boolean(resolved) && failedKey !== resolved?.key;
 
