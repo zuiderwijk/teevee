@@ -1,5 +1,11 @@
 # Teevee Development Logboek
 
+## 25 september 2026 — Issue #170 upward drag reversal / fixed native gesture owner
+
+A second focused iPhone recording after the pickup-owner fix showed a directional residual: dragging downward across rows behaved correctly, but reversing movement upward immediately snapped the lifted channel back. The active `GestureDetector` was no longer unmounted, yet provisional order still moved that same keyed row to different sibling indices. On iOS, moving the native view that owns the active Pan to an earlier sibling position cancels/interferes with gesture ownership even when React preserves component identity.
+
+The drag presentation no longer reorders the active source row at all. Its native row/handle remains at the original sibling/layout slot for the full gesture and is only visually transparent. Intervening neighbours receive deterministic animated `translateY` offsets: rows between source and target shift up for downward drags and down for upward drags. The 2-pt insertion target is positioned relative to the fixed source using exact measured row heights, so the accepted provisional reorder remains visually equivalent without moving the recognizer host. Reduced Motion applies the same geometry synchronously. Pure tests cover both directions, variable row heights, first/no-op geometry and source-row zero offset; component tests continue to prove the gesture host remains mounted. Focused physical iPhone re-test is required.
+
 ## 25 september 2026 — Issue #170 pickup freeze root cause refinement
 
 Focused physical iPhone re-test after the first drag-termination fix showed the surface could still freeze immediately at pickup. The deeper root cause was React tree ownership: `beginDrag` set `dragState`, after which the visible-row render replaced the active `ChannelManagementRow` with a drop-slot `View`. That unmounted the exact RNGH `GestureDetector`/native Pan recognizer that owned the gesture, so subsequent update/finalize delivery could be lost while the overlay, provisional gap and disabled ScrollView stayed active.
