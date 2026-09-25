@@ -11,8 +11,9 @@ export const PHYSICAL_49_MODE_ENV = 'EXPO_PUBLIC_TEEVEE_PHYSICAL_49';
 
 export function physical49ModeEnabled(
   value = process.env.EXPO_PUBLIC_TEEVEE_PHYSICAL_49,
+  development = typeof __DEV__ !== 'undefined' && __DEV__,
 ): boolean {
-  return __DEV__ && value === '1';
+  return development && value === '1';
 }
 
 export function createRuntimeGuideScheduleApi(
