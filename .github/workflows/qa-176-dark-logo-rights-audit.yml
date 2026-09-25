@@ -33,7 +33,7 @@ jobs:
           ROOT = Path(".")
           ASSETS = ROOT / "assets/channels"
           DARK = ASSETS / "dark"
-          AUDIT = ROOT / ".qa176-final-audit"
+          AUDIT = ROOT / "qa176-final-audit"
           AUDIT.mkdir(exist_ok=True)
 
           DERIVED_IDS = [
@@ -374,14 +374,14 @@ jobs:
       - uses: actions/upload-artifact@v4
         with:
           name: pr176-final-dark-logo-audit
-          path: .qa176-final-audit/
+          path: qa176-final-audit/
           if-no-files-found: error
           retention-days: 7
 
       - name: Commit production-clean QA fix
         run: |
           set -eux
-          rm -rf .qa176-final-audit
+          rm -rf qa176-final-audit
           git config user.name "teevee-qa-fix"
           git config user.email "159496541+zuiderwijk@users.noreply.github.com"
           git add -A
