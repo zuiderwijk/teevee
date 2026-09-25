@@ -1,6 +1,6 @@
 # 49-channel implementation evidence — 2026-09-24
 
-Status: **RECONCILED ON MERGED #173 BASELINE — DRAFT PR #176 — NOT YET PRODUCTION-ACTIVATED**
+Status: **INDEPENDENT QA RIGHTS FIX APPLIED — FOCUSED PHYSICAL LOGO REVALIDATION REQUIRED — NOT PRODUCTION-ACTIVATED**
 
 Owning issue: #175  
 Dependency: issue #170 / PR #173 — **SATISFIED; merged as `a23c5a434f237859b06112217433a12955cfa725`**  
@@ -104,9 +104,11 @@ The final runtime is raster-only:
 - no runtime hotlink, runtime tint/recolour, per-screen require map or provider-specific logo dictionary is introduced;
 - the earlier SVG-string/vector files, `react-native-svg`, one-shot ingest script/source manifest and write-enabled asset-generation workflows were intermediate development tooling and are removed before review.
 
-Provenance and byte hashes for all 49 base PNGs plus 17 dark variants are recorded directly in `docs/CHANNEL_LOGO_ASSETS.md`. Physical dark/system re-acceptance remains required; automated byte integrity is not a visual PASS. The dark alternates come from a pinned curated dark-background logo source and are copied byte-for-byte; they are not generated or recoloured by Teevee.
+Provenance and byte hashes for all 49 base PNGs plus 17 dark variants are recorded directly in `docs/CHANNEL_LOGO_ASSETS.md`. Independent QA review #5320776684 required replacement of the earlier 17 dark-file bytes because their third-party redistribution basis was insufficient for a paid app. The replacement set removes that byte chain: twelve fixed dark rasters are Teevee-generated from PD/CC0 base-source works, and five Ziggo Sport dark marks are exact broadcaster-supplied Newsroom PNGs. Runtime still performs no tint/recolour. Because all 17 dark bytes changed, owner physical PASS #5836719484 remains valid for the non-logo 49-channel journeys but is **not** a logo PASS for this head; focused dark/system logo revalidation is required before Independent QA re-review.
 
 ## Required physical iPhone validation
+
+Owner physical PASS #5836719484 covered the pre-QA-fix candidate. Since the Independent QA rights fix replaces all 17 dark asset bytes, the next physical gate is deliberately focused on the changed visual surface: dark mode, System appearance, Per zender, Nu & Straks, Totaal, Search, Mijn zenders and relevant Larger Text contexts, checking clipping, contrast, visible background boxes and broadcaster identity. Previously accepted non-logo #176 behavior is not reopened.
 
 Physical testing is an acceptance gate, not a substitute for automated checks. Use the final reconciled exact head.
 

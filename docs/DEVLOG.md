@@ -1,8 +1,17 @@
 # Teevee Development Logboek
 
+## 25 september 2026 — PR #176 Independent QA rights fix: all 17 dark-logo bytes replaced (Pad B)
+
+Independent QA review #5320776684 accepted the technical #176 contracts but blocked merge on the commercial redistribution basis of the 17 dark-mode PNG bytes. The earlier owner physical PASS #5836719484 established visual suitability of that pre-fix candidate, but broadcaster-mark approval did not prove rights in third-party-supplied PNG bytes.
+
+Development therefore chose **Pad B** without reopening the accepted runtime architecture. All 17 dark bytes are replaced while the canonical-ID keyed manifest/registry and light/dark/System resolver stay unchanged. Twelve fixed dark rasters are produced from Teevee's existing base assets whose underlying works are recorded as PD-textlogo/simple-logo or CC0; the transform preserves alpha, geometry and brand accents and lifts only neutral/dark wordmark pixels to white at build time. Ziggo Sport 2–6 use exact broadcaster-supplied White Horizontal RGB PNGs from the Ziggo Sport Newsroom press kit. The final production tree contains no acquisition/generator workflow, runtime tint/recolour, hotlink, generic tile or per-screen asset map. `assets/channels/SHA256SUMS` locks the new bytes and `docs/CHANNEL_LOGO_ASSETS.md` records the per-file source/right basis separately from broadcaster/trademark authority.
+
+Because every dark asset byte changed, #5836719484 is no longer a complete logo-PASS for the new head. The next gate is focused physical iPhone revalidation of dark mode and System appearance across Per zender, Nu & Straks, Totaal, Search and Mijn zenders plus relevant Larger Text contexts. Production topology/cron/schema activation remains untouched, and Independent QA re-review follows only after that focused physical PASS.
+
+
 ## 25 september 2026 — Issue #175 physical refinement: dark logos + 49-channel acceptance transport + capacity proof
 
-Owner physical review #5833155116 passed light-mode branding but identified 17 marks whose base/light artwork loses wordmark/suffix contrast on the dark Guide canvas. PR #176 now resolves broadcaster-specific dark-safe PNG variants centrally through the existing manifest/registry; there is no tint, runtime recolour, generic tile or per-screen map. The 17 alternate bytes are pinned to an immutable curated dark-background source snapshot, visually/technically verified for this use, and added to SHA256SUMS/provenance. The mirror is technical provenance/transport, not an official broadcaster asset portal.
+Owner physical review #5833155116 passed light-mode branding but identified 17 marks whose base/light artwork loses wordmark/suffix contrast on the dark Guide canvas. PR #176 resolves those IDs centrally through the existing manifest/registry with no runtime tint, recolour, generic tile or per-screen map. The first dark-byte candidate was later superseded by the Independent QA rights fix recorded above; current provenance and hashes are exclusively the replacement set in `docs/CHANNEL_LOGO_ASSETS.md`.
 
 The same refinement adds `npm run start:physical49`: a `__DEV__`-only transport selector behind the existing GuideScheduleApi and GuideSearchApi. It feeds all 49 canonical IDs through the production client contracts, Search session, personalisation, shared Guide projection and renderers without activating hosted production refresh topology.
 
@@ -18,7 +27,7 @@ PR #173 merged to canonical `main` as `a23c5a434f237859b06112217433a12955cfa725`
 
 The 49-channel expansion is now the active dependent increment after #173 merge. Its implementation remains exactly 49 provider-independent canonical IDs in owner order, 36 NL + 13 BE source ownership, deterministic 12→49 personalisation reconciliation, full-catalog Search aliases and a raster-only 49/49 local logo registry. The branch is reconciled onto canonical `main` by carrying only the Issue #175 delta; later #173 drag/runtime changes are inherited from main rather than replayed or overwritten.
 
-Production activation is still blocked by exact-head CI on the reconciled candidate, source-specific hosted NL/BE capacity evidence, physical iPhone 49-channel/logo validation and Independent QA. No production refresh/deployment/schema/cron mutation is part of this integration step.
+Source-specific hosted NL/BE capacity evidence and the earlier full 49-channel owner physical journey are complete. After the dark-byte rights replacement, production activation remains blocked by exact-head CI, focused physical logo revalidation, Independent QA re-review and the normal final release/deployment gate. No production refresh/deployment/schema/cron mutation is part of this Development fix.
 
 
 ## 25 september 2026 — Issue #170 upward drag reversal / fixed native gesture owner

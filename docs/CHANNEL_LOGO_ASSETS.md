@@ -1,6 +1,6 @@
 # Teevee channel-logo asset provenance
 
-Status: **ACTIVE LOCAL RASTER ASSET REGISTRY — PR #176 CANDIDATE**
+Status: **ACTIVE LOCAL RASTER ASSET REGISTRY — PR #176 QA-FIX CANDIDATE**
 Updated: **2026-09-25**
 
 Teevee renders canonical channel marks from local PNG assets only. Runtime does not hotlink, download, recolour or tint channel marks. Light is the canonical base asset for all 49 IDs; dark appearance may resolve a broadcaster-specific verified negative/light-on-dark variant from the same central manifest. The central resolution path is:
@@ -49,7 +49,7 @@ Byte integrity: `assets/channels/SHA256SUMS`
 | `nl-eurosport-1` | Eurosport 1 | `assets/channels/nl-eurosport-1.png` | `07c92e1a35f3774de2b1075c50caa514205a8087f6dba99933a1c3df219b09f3` | Warner Bros. Discovery | https://commons.wikimedia.org/wiki/File:Eurosport_1_Logo_2015.svg | PD-textlogo |
 | `nl-eurosport-2` | Eurosport 2 | `assets/channels/nl-eurosport-2.png` | `9415c69ac2b0339a27561651fcfffc61b6346722e624b5881dcc7e251dfc2c44` | Warner Bros. Discovery | https://commons.wikimedia.org/wiki/File:Eurosport_2_Logo_2015.svg | PD-textlogo |
 | `nl-discovery` | Discovery | `assets/channels/nl-discovery.png` | `48010e2b8eb61717088763adaf53a9990978c860f1cb00474c92a22bad1bad34` | Warner Bros. Discovery | https://commons.wikimedia.org/wiki/File:Discovery_Channel_-_Logo_2019.svg | PD-textlogo |
-| `nl-national-geographic` | National Geographic | `assets/channels/nl-national-geographic.png` | `6503b9c317270343d4c81f5f887837725b820743c59328d7b3a4422956bd267a` | National Geographic Society | https://commons.wikimedia.org/wiki/File:National_Geographic_Logo.svg | Commons file terms / trademark |
+| `nl-national-geographic` | National Geographic | `assets/channels/nl-national-geographic.png` | `6503b9c317270343d4c81f5f887837725b820743c59328d7b3a4422956bd267a` | National Geographic Society | https://commons.wikimedia.org/wiki/File:National_Geographic_Logo.svg | PD-textlogo / trademark |
 | `nl-history` | History | `assets/channels/nl-history.png` | `3182c031117d868ee2bca25ec141ca34a81b60eaace7bacfd71335a819b11ed3` | A&E Networks | https://commons.wikimedia.org/wiki/File:History_(2021).svg | PD-textlogo |
 | `nl-bbc-nl` | BBC NL | `assets/channels/nl-bbc-nl.png` | `588995b09527100fc25938a41ff3f1fbcb7ff654a0d611f58b4c2574753fe72e` | BBC Studios | https://commons.wikimedia.org/wiki/File:BBC_NL_Logo_2025.svg | Commons file terms / trademark |
 | `nl-bbc-one` | BBC One | `assets/channels/nl-bbc-one.png` | `d229c03196976b0931c83a6e509b53d738c490b68d3bb514e888428339ca3b03` | BBC | https://commons.wikimedia.org/wiki/File:BBC_One_logo_2021.svg | Commons file terms / trademark |
@@ -70,38 +70,47 @@ Byte integrity: `assets/channels/SHA256SUMS`
 
 ## Dark-safe broadcaster-specific variants
 
-Owner physical review #5833155116 established that 17 light-canvas marks were not legible on the accepted dark Guide canvas. No runtime tint, generated recolour or generic tile is used. The dark assets are pinned source bytes from the curated `tv-logo/tv-logos` Netherlands set at commit `d32e347bb7c4c640dceec23957802ad9182f58a6`; each is a broadcaster-specific negative/light-on-dark mark and was visually inspected before inclusion. Brand ownership remains the same as the corresponding base row above.
+Owner physical review #5833155116 established that 17 light/base marks lose required contrast on the accepted dark Guide canvas. Independent QA review #5320776684 then rejected the prior dark-file byte provenance because permission to use a broadcaster mark does not by itself establish commercial redistribution rights in a third-party pack's exact PNG bytes.
 
-| Canonical ID | Dark asset | SHA-256 | Pinned source path |
-| --- | --- | --- | --- |
-| `nl-comedy-central` | `assets/channels/dark/nl-comedy-central.png` | `bed5538b2c16dea1dc534a0d9b053d52ec7658c36e4e01546da3866dda64fa19` | `countries/netherlands/comedy-central-nl.png` |
-| `nl-discovery` | `assets/channels/dark/nl-discovery.png` | `5e14c6b663d42545e8b6d7e08ec90bf65322766d796afda3d1934a1a83650ebf` | `countries/netherlands/discovery-channel-nl.png` |
-| `nl-eurosport-1` | `assets/channels/dark/nl-eurosport-1.png` | `ecbf2ce89c297485b24d708c822380a435216a054bee1bb7266060551a183c7f` | `countries/netherlands/eurosport-1-nl.png` |
-| `nl-eurosport-2` | `assets/channels/dark/nl-eurosport-2.png` | `c868ef56f696390e93469ba9d87a3fe00374fd01be324c0be62ae044dda93a8a` | `countries/netherlands/eurosport-2-nl.png` |
-| `nl-national-geographic` | `assets/channels/dark/nl-national-geographic.png` | `f7e60cf3b134d8c54dc9a6b358bdfd5a10d0ed82bbe36bae0bbd9fc0ca467d38` | `countries/netherlands/national-geographic-nl.png` |
-| `nl-rtl-4` | `assets/channels/dark/nl-rtl-4.png` | `4213e3bbb612e3697db96378481dc455b2547ccd39c2119f6558c5bee2671726` | `countries/netherlands/rtl4-nl.png` |
-| `nl-rtl-5` | `assets/channels/dark/nl-rtl-5.png` | `b8c89d555a9a816bc8749eb7e2c1b813bbf5ed746e270748b29154f7d90f97c5` | `countries/netherlands/rtl5-nl.png` |
-| `nl-rtl-7` | `assets/channels/dark/nl-rtl-7.png` | `ad54c7e198028ca9b0c532d07c7888df04c9dd37a30cf422edd5024ca1a9de7a` | `countries/netherlands/rtl7-nl.png` |
-| `nl-rtl-8` | `assets/channels/dark/nl-rtl-8.png` | `5e6a9da232e3f83fe4b789eb91f169ec44e43212ff419d5128d9f6472e2d05d8` | `countries/netherlands/rtl8-nl.png` |
-| `nl-rtl-z` | `assets/channels/dark/nl-rtl-z.png` | `bd42ed2ba1547d7abab3a3b850481c89ed339374e0e833795ed8bc83a3ec582d` | `countries/netherlands/rtlz-nl.png` |
-| `nl-star-channel` | `assets/channels/dark/nl-star-channel.png` | `7fef083d116d1a18e4866e2708e0e7cfcd88c835fe7fb4bd277d5a652b144876` | `countries/netherlands/star-channel-nl.png` |
-| `nl-viaplay-tv` | `assets/channels/dark/nl-viaplay-tv.png` | `7c8089a9254e556a5e2c9869c25a8a14da6cb959b5a650a3bb136fcf56c8ba8b` | `countries/netherlands/viaplay-tv-nl.png` |
-| `nl-ziggo-sport-2` | `assets/channels/dark/nl-ziggo-sport-2.png` | `e9d23b3bfba2b1072f988fd8496e0cf4045504751dc840a7752b412e9eac6c38` | `countries/netherlands/ziggo-sport-2-nl.png` |
-| `nl-ziggo-sport-3` | `assets/channels/dark/nl-ziggo-sport-3.png` | `6ef3b885a41a159ddbd6423bbcd66d6484d5404829678379769e7c2b15192f75` | `countries/netherlands/ziggo-sport-3-nl.png` |
-| `nl-ziggo-sport-4` | `assets/channels/dark/nl-ziggo-sport-4.png` | `49c1cca25360c6868ca54c1d848341f265758aec17f91d10fa57c3fdb68342ba` | `countries/netherlands/ziggo-sport-4-nl.png` |
-| `nl-ziggo-sport-5` | `assets/channels/dark/nl-ziggo-sport-5.png` | `ed5e58657effa1a13e877db18160e0c4dd16ae0f2197a938588884f8ef524814` | `countries/netherlands/ziggo-sport-5-nl.png` |
-| `nl-ziggo-sport-6` | `assets/channels/dark/nl-ziggo-sport-6.png` | `7649f8b2540624a0056b7286b7055a07dbfa0755c2342152412bcaf6a64c47d3` | `countries/netherlands/ziggo-sport-6-nl.png` |
+The QA fix uses **Pad B — asset replacement**. All 17 prior dark PNG bytes are replaced. The runtime architecture is unchanged: the central canonical-ID keyed manifest/registry still resolves a fixed local PNG for dark appearance, with no runtime tint, recolour, hotlink, generic tile or per-screen mapping.
 
-The exact source filenames above are pinned to that immutable source commit. The source bytes are copied unchanged into Teevee, hashed locally, and never transformed at runtime.
+The rights chain is deliberately split:
 
-## Integrity and architecture
+- **Broadcaster mark / trademark authority:** Teevee's existing owner-confirmed rights authority remains the basis for using the broadcaster identities. That authority is separate from, and is not inferred from, Commons or a press portal.
+- **Exact dark-file byte/copyright authority:** twelve dark PNGs are fixed Teevee-generated raster derivatives of the already-vendored base assets whose underlying source works are recorded above as PD-textlogo/simple-logo or CC0; five Ziggo Sport PNGs are exact files supplied by Ziggo Sport in its public Newsroom logo press kit. No current dark byte is copied from a third-party logo pack.
+
+For the twelve Teevee-generated dark rasters, the transform is build-time and finite: geometry, alpha and broadcaster accent colours remain source-derived; only neutral/dark wordmark pixels are lifted to white for the accepted dark canvas. The generated PNG bytes are vendored and hash-locked. There is no runtime colour transformation and no generator/tooling dependency in the production tree.
+
+Ziggo source page: https://www.ziggosport.nl/nieuws/assets/238870/
+
+| Canonical ID | Dark asset | SHA-256 | Concrete byte/source chain | Copyright / file-rights basis |
+| --- | --- | --- | --- | --- |
+| `nl-rtl-4` | `assets/channels/dark/nl-rtl-4.png` | `70c20bb2e02c0cdae8299d1ff5ba9e42144532c2875f89d1d89fc0af50a2838d` | `assets/channels/nl-rtl-4.png` + fixed Teevee dark-raster transform | Teevee fixed dark raster from base row; source work PD/simple-logo |
+| `nl-rtl-5` | `assets/channels/dark/nl-rtl-5.png` | `faf645c04e83776ab6cfe550ce7f57756be1f138560d4bd8236e9694f4e32d1b` | `assets/channels/nl-rtl-5.png` + fixed Teevee dark-raster transform | Teevee fixed dark raster from base row; source work PD/simple-logo |
+| `nl-rtl-7` | `assets/channels/dark/nl-rtl-7.png` | `728daf8a338d9c3d7e486f5194ee1150611fb2e073942539541b80608af36dd8` | `assets/channels/nl-rtl-7.png` + fixed Teevee dark-raster transform | Teevee fixed dark raster from base row; source work PD-textlogo |
+| `nl-rtl-8` | `assets/channels/dark/nl-rtl-8.png` | `350f6f08c0869c20657aaedf4b92237d8e4f49d450d1607012402f49f24b6370` | `assets/channels/nl-rtl-8.png` + fixed Teevee dark-raster transform | Teevee fixed dark raster from base row; source work PD-textlogo |
+| `nl-star-channel` | `assets/channels/dark/nl-star-channel.png` | `ed6eefc56d3157779cabfb263f264eb06fbd9fa35d9d2835029485c752f725f2` | `assets/channels/nl-star-channel.png` + fixed Teevee dark-raster transform | Teevee fixed dark raster from base row; source work CC0 1.0 |
+| `nl-ziggo-sport-2` | `assets/channels/dark/nl-ziggo-sport-2.png` | `d26a2cc46e964f5b4a29f68f117cb2f96ce50fb15b151581588bffa786255655` | Ziggo Sport Newsroom — Ziggo Sport 402 White Horizontal RGB v1 | Exact broadcaster-supplied PNG; no third-party derivative/pack rights |
+| `nl-ziggo-sport-3` | `assets/channels/dark/nl-ziggo-sport-3.png` | `df7a851c78854de4afb2068bd92cdd09210b9f193ad2f65e9c33a422fa4a307a` | Ziggo Sport Newsroom — Ziggo Sport 403 White Horizontal RGB v1 | Exact broadcaster-supplied PNG; no third-party derivative/pack rights |
+| `nl-ziggo-sport-4` | `assets/channels/dark/nl-ziggo-sport-4.png` | `46bad5265a5affddf2ab9f3d679f5bc4f0941c490f82c78b6bbe4eff325c84c6` | Ziggo Sport Newsroom — Ziggo Sport 404 White Horizontal RGB v1 | Exact broadcaster-supplied PNG; no third-party derivative/pack rights |
+| `nl-ziggo-sport-5` | `assets/channels/dark/nl-ziggo-sport-5.png` | `857fd06924b3d3b9e7276297a53955da1b89c8e4557cd6f40b5bb2d8e9177701` | Ziggo Sport Newsroom — Ziggo Sport 405 White Horizontal RGB v1 | Exact broadcaster-supplied PNG; no third-party derivative/pack rights |
+| `nl-ziggo-sport-6` | `assets/channels/dark/nl-ziggo-sport-6.png` | `bf144d842b3a83b8fdb52a673dea5b2f94fad45be178726bddf234ade91c022e` | Ziggo Sport Newsroom — Ziggo Sport 406 White Horizontal RGB v1 | Exact broadcaster-supplied PNG; no third-party derivative/pack rights |
+| `nl-viaplay-tv` | `assets/channels/dark/nl-viaplay-tv.png` | `b3de6e15d05e4d1481cdb3e5e4bcaefbe70fda94f185c7be73b85eebaf23b1e5` | `assets/channels/nl-viaplay-tv.png` + fixed Teevee dark-raster transform | Teevee fixed dark raster from base row; source work PD-textlogo |
+| `nl-rtl-z` | `assets/channels/dark/nl-rtl-z.png` | `dbb8a2a7b22edb9f55949042464d8336e6c95f9ca1cb0881178838d5a2390c1e` | `assets/channels/nl-rtl-z.png` + fixed Teevee dark-raster transform | Teevee fixed dark raster from base row; source work PD-textlogo |
+| `nl-comedy-central` | `assets/channels/dark/nl-comedy-central.png` | `248d88ad3235788ee877d849320004fd7d387239ffa52d0fc31892376d74df4e` | `assets/channels/nl-comedy-central.png` + fixed Teevee dark-raster transform | Teevee fixed dark raster from base row; source work PD-textlogo |
+| `nl-eurosport-1` | `assets/channels/dark/nl-eurosport-1.png` | `caecc5937a07b93de0cbee4ab8ccc10927e02af621795de3016f327d0a58d8be` | `assets/channels/nl-eurosport-1.png` + fixed Teevee dark-raster transform | Teevee fixed dark raster from base row; source work PD-textlogo |
+| `nl-eurosport-2` | `assets/channels/dark/nl-eurosport-2.png` | `97bbd94d762052fd872e6fe23b28b2983dddd6887ad383d1d685f6f2fb6e9945` | `assets/channels/nl-eurosport-2.png` + fixed Teevee dark-raster transform | Teevee fixed dark raster from base row; source work PD-textlogo |
+| `nl-discovery` | `assets/channels/dark/nl-discovery.png` | `1869bc7e889b2e4a964f771aac2d200c3bcac8ecddcc878a81e9f4261d265690` | `assets/channels/nl-discovery.png` + fixed Teevee dark-raster transform | Teevee fixed dark raster from base row; source work PD-textlogo |
+| `nl-national-geographic` | `assets/channels/dark/nl-national-geographic.png` | `106e17017c79abf5a7bc02cf1e76d515ec45767d3d5a0a765b5318e8d094cf69` | `assets/channels/nl-national-geographic.png` + fixed Teevee dark-raster transform | Teevee fixed dark raster from base row; source work PD-textlogo |
+
+## Integrity contract
 
 - exactly 49 canonical IDs have exactly 49 light/base local PNG paths;
-- 17 owner-identified dark-contrast failures have explicit dark-safe PNG variants;
+- 17 owner-identified dark-contrast IDs have explicit dark-safe PNG variants;
 - every PNG filename is canonical-ID keyed;
 - `SHA256SUMS` contains all 66 runtime PNG byte hashes (49 base + 17 dark);
-- CI verifies the manifest order, file existence, byte hashes, PNG signature and minimum intrinsic density for the smallest 40x32 identity box;
-- the previous SVG-string/vector implementation and one-shot ingest/generator workflows were development-only intermediate tooling and are removed before review;
+- CI verifies manifest order, file existence, byte hashes, PNG signature and minimum intrinsic density for the smallest 40x32 identity box;
+- the final tree contains no dark-logo download/generator workflow or asset-conversion dependency;
 - `react-native-svg` is not required by the final raster-only runtime;
 - provider `logoUrl` remains a generic fallback only for non-canonical/fixture identities. Canonical 49-channel rendering resolves local assets first.
 
@@ -121,4 +130,4 @@ Do not fix these risks by runtime tinting, recolouring, fabricating a brand mark
 
 ## Production/release boundary
 
-Local availability and technical provenance do not establish commercial redistribution rights for programme data, artwork or trademarks. The existing production rights/provider/SLA gate remains separate.
+For these 17 dark files, the repository now records a byte/copyright provenance that does not depend on a third-party logo pack: twelve are Teevee-authored fixed raster derivatives of copyright-unrestricted PD/CC0 source works and five are exact broadcaster-supplied Ziggo Sport newsroom PNGs. Broadcaster/trademark use remains governed by the separate existing Teevee rights authority; it is not inferred from Commons or press-kit availability. Programme-data, programme-artwork and provider/SLA rights remain separate release gates.
