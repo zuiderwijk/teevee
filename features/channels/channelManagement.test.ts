@@ -18,6 +18,8 @@ import {
   channelManagementMotionProfile,
   channelManagementQueryActive,
   channelManagementRowMetrics,
+  channelManagementProvisionalRowOffset,
+  channelManagementInsertionLineOffset,
   channelManagementSectionCount,
   channelManagementSlotTop,
   channelManagementZones,
@@ -160,6 +162,40 @@ describe('channel management interaction contract', () => {
       false,
     );
     expect(commit).toHaveBeenCalledTimes(1);
+  });
+
+  it('keeps the dragged native owner fixed while shifting only intervening neighbours', () => {
+    const order = ['a', 'b', 'c', 'd'];
+    expect(
+      order.map((id) =>
+        channelManagementProvisionalRowOffset(order, 'b', 3, id, 56),
+      ),
+    ).toEqual([0, 0, -56, -56]);
+
+    expect(
+      order.map((id) =>
+        channelManagementProvisionalRowOffset(order, 'c', 0, id, 56),
+      ),
+    ).toEqual([56, 56, 0, 0]);
+
+    expect(
+      channelManagementProvisionalRowOffset(order, 'b', 1, 'c', 56),
+    ).toBe(0);
+  });
+
+  it('moves the insertion line to the target slot while the source row stays at its original slot', () => {
+    const order = ['a', 'b', 'c', 'd'];
+    const heights = { a: 56, b: 56, c: 68, d: 56 };
+
+    expect(
+      channelManagementInsertionLineOffset(order, 'b', 3, heights, 56),
+    ).toBe(124);
+    expect(
+      channelManagementInsertionLineOffset(order, 'c', 0, heights, 56),
+    ).toBe(-112);
+    expect(
+      channelManagementInsertionLineOffset(order, 'b', 1, heights, 56),
+    ).toBe(0);
   });
 
   it('clamps insertion targets to visible slots so hidden rows cannot be destinations', () => {
