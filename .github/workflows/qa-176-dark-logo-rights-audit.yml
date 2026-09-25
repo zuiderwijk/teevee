@@ -213,35 +213,35 @@ jobs:
 
           new_dark = """## Dark-safe broadcaster-specific variants
 
-Owner physical review #5833155116 established that 17 light/base marks lose required contrast on the accepted dark Guide canvas. Independent QA review #5320776684 then rejected the prior dark-file byte provenance because permission to use a broadcaster mark does not by itself establish commercial redistribution rights in a third-party pack's exact PNG bytes.
+          Owner physical review #5833155116 established that 17 light/base marks lose required contrast on the accepted dark Guide canvas. Independent QA review #5320776684 then rejected the prior dark-file byte provenance because permission to use a broadcaster mark does not by itself establish commercial redistribution rights in a third-party pack's exact PNG bytes.
 
-The QA fix uses **Pad B — asset replacement**. All 17 prior dark PNG bytes are replaced. The runtime architecture is unchanged: the central canonical-ID keyed manifest/registry still resolves a fixed local PNG for dark appearance, with no runtime tint, recolour, hotlink, generic tile or per-screen mapping.
+          The QA fix uses **Pad B — asset replacement**. All 17 prior dark PNG bytes are replaced. The runtime architecture is unchanged: the central canonical-ID keyed manifest/registry still resolves a fixed local PNG for dark appearance, with no runtime tint, recolour, hotlink, generic tile or per-screen mapping.
 
-The rights chain is deliberately split:
+          The rights chain is deliberately split:
 
-- **Broadcaster mark / trademark authority:** Teevee's existing owner-confirmed rights authority remains the basis for using the broadcaster identities. That authority is separate from, and is not inferred from, Commons or a press portal.
-- **Exact dark-file byte/copyright authority:** twelve dark PNGs are fixed Teevee-generated raster derivatives of the already-vendored base assets whose underlying source works are recorded above as PD-textlogo/simple-logo or CC0; five Ziggo Sport PNGs are exact files supplied by Ziggo Sport in its public Newsroom logo press kit. No current dark byte is copied from a third-party logo pack.
+          - **Broadcaster mark / trademark authority:** Teevee's existing owner-confirmed rights authority remains the basis for using the broadcaster identities. That authority is separate from, and is not inferred from, Commons or a press portal.
+          - **Exact dark-file byte/copyright authority:** twelve dark PNGs are fixed Teevee-generated raster derivatives of the already-vendored base assets whose underlying source works are recorded above as PD-textlogo/simple-logo or CC0; five Ziggo Sport PNGs are exact files supplied by Ziggo Sport in its public Newsroom logo press kit. No current dark byte is copied from a third-party logo pack.
 
-For the twelve Teevee-generated dark rasters, the transform is build-time and finite: geometry, alpha and broadcaster accent colours remain source-derived; only neutral/dark wordmark pixels are lifted to white for the accepted dark canvas. The generated PNG bytes are vendored and hash-locked. There is no runtime colour transformation and no generator/tooling dependency in the production tree.
+          For the twelve Teevee-generated dark rasters, the transform is build-time and finite: geometry, alpha and broadcaster accent colours remain source-derived; only neutral/dark wordmark pixels are lifted to white for the accepted dark canvas. The generated PNG bytes are vendored and hash-locked. There is no runtime colour transformation and no generator/tooling dependency in the production tree.
 
-Ziggo source page: https://www.ziggosport.nl/nieuws/assets/238870/
+          Ziggo source page: https://www.ziggosport.nl/nieuws/assets/238870/
 
-| Canonical ID | Dark asset | SHA-256 | Concrete byte/source chain | Copyright / file-rights basis |
-| --- | --- | --- | --- | --- |
-""" + "\n".join(rows) + """
+          | Canonical ID | Dark asset | SHA-256 | Concrete byte/source chain | Copyright / file-rights basis |
+          | --- | --- | --- | --- | --- |
+          """ + "\n".join(rows) + """
 
-## Integrity contract
+          ## Integrity contract
 
-- exactly 49 canonical IDs have exactly 49 light/base local PNG paths;
-- 17 owner-identified dark-contrast IDs have explicit dark-safe PNG variants;
-- every PNG filename is canonical-ID keyed;
-- `SHA256SUMS` contains all 66 runtime PNG byte hashes (49 base + 17 dark);
-- CI verifies manifest order, file existence, byte hashes, PNG signature and minimum intrinsic density for the smallest 40x32 identity box;
-- the final tree contains no dark-logo download/generator workflow or asset-conversion dependency;
-- `react-native-svg` is not required by the final raster-only runtime;
-- provider `logoUrl` remains a generic fallback only for non-canonical/fixture identities. Canonical 49-channel rendering resolves local assets first.
+          - exactly 49 canonical IDs have exactly 49 light/base local PNG paths;
+          - 17 owner-identified dark-contrast IDs have explicit dark-safe PNG variants;
+          - every PNG filename is canonical-ID keyed;
+          - `SHA256SUMS` contains all 66 runtime PNG byte hashes (49 base + 17 dark);
+          - CI verifies manifest order, file existence, byte hashes, PNG signature and minimum intrinsic density for the smallest 40x32 identity box;
+          - the final tree contains no dark-logo download/generator workflow or asset-conversion dependency;
+          - `react-native-svg` is not required by the final raster-only runtime;
+          - provider `logoUrl` remains a generic fallback only for non-canonical/fixture identities. Canonical 49-channel rendering resolves local assets first.
 
-"""
+          """
           text = text[:dark_start] + new_dark + text[visual_start:]
           old_boundary = "Local availability and technical provenance do not establish commercial redistribution rights for programme data, artwork or trademarks. The existing production rights/provider/SLA gate remains separate."
           new_boundary = "For these 17 dark files, the repository now records a byte/copyright provenance that does not depend on a third-party logo pack: twelve are Teevee-authored fixed raster derivatives of copyright-unrestricted PD/CC0 source works and five are exact broadcaster-supplied Ziggo Sport newsroom PNGs. Broadcaster/trademark use remains governed by the separate existing Teevee rights authority; it is not inferred from Commons or press-kit availability. Programme-data, programme-artwork and provider/SLA rights remain separate release gates."
@@ -314,15 +314,15 @@ Ziggo source page: https://www.ziggosport.nl/nieuws/assets/238870/
           heading = "# Teevee Development Logboek\n"
           assert text.startswith(heading)
           entry = """
-## 25 september 2026 — PR #176 Independent QA rights fix: all 17 dark-logo bytes replaced (Pad B)
+          ## 25 september 2026 — PR #176 Independent QA rights fix: all 17 dark-logo bytes replaced (Pad B)
 
-Independent QA review #5320776684 accepted the technical #176 contracts but blocked merge on the commercial redistribution basis of the 17 dark-mode PNG bytes. The earlier owner physical PASS #5836719484 established visual suitability of that pre-fix candidate, but broadcaster-mark approval did not prove rights in third-party-supplied PNG bytes.
+          Independent QA review #5320776684 accepted the technical #176 contracts but blocked merge on the commercial redistribution basis of the 17 dark-mode PNG bytes. The earlier owner physical PASS #5836719484 established visual suitability of that pre-fix candidate, but broadcaster-mark approval did not prove rights in third-party-supplied PNG bytes.
 
-Development therefore chose **Pad B** without reopening the accepted runtime architecture. All 17 dark bytes are replaced while the canonical-ID keyed manifest/registry and light/dark/System resolver stay unchanged. Twelve fixed dark rasters are produced from Teevee's existing base assets whose underlying works are recorded as PD-textlogo/simple-logo or CC0; the transform preserves alpha, geometry and brand accents and lifts only neutral/dark wordmark pixels to white at build time. Ziggo Sport 2–6 use exact broadcaster-supplied White Horizontal RGB PNGs from the Ziggo Sport Newsroom press kit. The final production tree contains no acquisition/generator workflow, runtime tint/recolour, hotlink, generic tile or per-screen asset map. `assets/channels/SHA256SUMS` locks the new bytes and `docs/CHANNEL_LOGO_ASSETS.md` records the per-file source/right basis separately from broadcaster/trademark authority.
+          Development therefore chose **Pad B** without reopening the accepted runtime architecture. All 17 dark bytes are replaced while the canonical-ID keyed manifest/registry and light/dark/System resolver stay unchanged. Twelve fixed dark rasters are produced from Teevee's existing base assets whose underlying works are recorded as PD-textlogo/simple-logo or CC0; the transform preserves alpha, geometry and brand accents and lifts only neutral/dark wordmark pixels to white at build time. Ziggo Sport 2–6 use exact broadcaster-supplied White Horizontal RGB PNGs from the Ziggo Sport Newsroom press kit. The final production tree contains no acquisition/generator workflow, runtime tint/recolour, hotlink, generic tile or per-screen asset map. `assets/channels/SHA256SUMS` locks the new bytes and `docs/CHANNEL_LOGO_ASSETS.md` records the per-file source/right basis separately from broadcaster/trademark authority.
 
-Because every dark asset byte changed, #5836719484 is no longer a complete logo-PASS for the new head. The next gate is focused physical iPhone revalidation of dark mode and System appearance across Per zender, Nu & Straks, Totaal, Search and Mijn zenders plus relevant Larger Text contexts. Production topology/cron/schema activation remains untouched, and Independent QA re-review follows only after that focused physical PASS.
+          Because every dark asset byte changed, #5836719484 is no longer a complete logo-PASS for the new head. The next gate is focused physical iPhone revalidation of dark mode and System appearance across Per zender, Nu & Straks, Totaal, Search and Mijn zenders plus relevant Larger Text contexts. Production topology/cron/schema activation remains untouched, and Independent QA re-review follows only after that focused physical PASS.
 
-"""
+          """
           text = heading + entry + text[len(heading):]
           old_para = "Owner physical review #5833155116 passed light-mode branding but identified 17 marks whose base/light artwork loses wordmark/suffix contrast on the dark Guide canvas. PR #176 now resolves broadcaster-specific dark-safe PNG variants centrally through the existing manifest/registry; there is no tint, runtime recolour, generic tile or per-screen map. The 17 alternate bytes are pinned to an immutable curated dark-background source snapshot, visually/technically verified for this use, and added to SHA256SUMS/provenance. The mirror is technical provenance/transport, not an official broadcaster asset portal."
           replacement = "Owner physical review #5833155116 passed light-mode branding but identified 17 marks whose base/light artwork loses wordmark/suffix contrast on the dark Guide canvas. PR #176 resolves those IDs centrally through the existing manifest/registry with no runtime tint, recolour, generic tile or per-screen map. The first dark-byte candidate was later superseded by the Independent QA rights fix recorded above; current provenance and hashes are exclusively the replacement set in `docs/CHANNEL_LOGO_ASSETS.md`."
