@@ -7,6 +7,9 @@ import type { Channel } from '@/data/domain/epg';
 
 import { ChannelIdentity } from './ChannelIdentity';
 
+const themeState = vi.hoisted(() => ({ dark: false }));
+const logoResolver = vi.hoisted(() => vi.fn());
+
 vi.mock('react-native', () => {
   type Props = {
     children?: ReactNode;
@@ -56,10 +59,22 @@ vi.mock('react-native', () => {
   };
 });
 
+vi.mock('@/theme/useTeeveeTheme', () => ({
+  useTeeveeTheme: () => ({ dark: themeState.dark }),
+}));
+
 vi.mock('./channelLogoRegistry', () => ({
-  resolveChannelLogo: (channel: { id: string; logoUrl?: string }) => {
-    if (channel.id === 'nl-npo-1') return { key: 'local:nl-npo-1', source: 1 };
-    if (channel.logoUrl) return { key: `remote:${channel.logoUrl}`, source: { uri: channel.logoUrl } };
+  resolveChannelLogo: (
+    channel: { id: string; logoUrl?: string },
+    appearance: 'light' | 'dark',
+  ) => {
+    logoResolver(channel.id, appearance);
+    if (channel.id === 'nl-npo-1') {
+      return { key: `local:${appearance}:nl-npo-1`, source: 1 };
+    }
+    if (channel.logoUrl) {
+      return { key: `remote:${channel.logoUrl}`, source: { uri: channel.logoUrl } };
+    }
     return null;
   },
 }));
@@ -77,6 +92,8 @@ let root: Root;
 
 beforeEach(() => {
   vi.stubGlobal('IS_REACT_ACT_ENVIRONMENT', true);
+  themeState.dark = false;
+  logoResolver.mockClear();
   container = document.createElement('div');
   document.body.appendChild(container);
   root = createRoot(container);
@@ -89,6 +106,31 @@ afterEach(async () => {
 });
 
 describe('ChannelIdentity', () => {
+  it('passes the active light/dark appearance to the central logo resolver', async () => {
+    await act(async () => {
+      root.render(
+        <ChannelIdentity
+          channel={{ ...baseChannel, id: 'nl-npo-1', displayName: 'NPO 1' }}
+          textColor="#111"
+          mutedTextColor="#777"
+        />,
+      );
+    });
+    expect(logoResolver).toHaveBeenLastCalledWith('nl-npo-1', 'light');
+
+    themeState.dark = true;
+    await act(async () => {
+      root.render(
+        <ChannelIdentity
+          channel={{ ...baseChannel, id: 'nl-npo-1', displayName: 'NPO 1' }}
+          textColor="#fff"
+          mutedTextColor="#aaa"
+        />,
+      );
+    });
+    expect(logoResolver).toHaveBeenLastCalledWith('nl-npo-1', 'dark');
+  });
+
   it('preserves differentiating suffixes when a text-only identity must truncate', async () => {
     await act(async () => {
       root.render(
