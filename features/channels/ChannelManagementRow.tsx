@@ -417,7 +417,9 @@ export function ChannelManagementRow({
         : {})}
       {...(!overlay && entering ? { entering } : {})}
       {...(!overlay && exiting ? { exiting } : {})}
-      {...(!overlay && layoutTransition ? { layout: layoutTransition } : {})}
+      {...(!overlay && !draggingPlaceholder && layoutTransition
+        ? { layout: layoutTransition }
+        : {})}
       pointerEvents={overlay ? 'none' : 'auto'}
       style={[
         styles.row,
