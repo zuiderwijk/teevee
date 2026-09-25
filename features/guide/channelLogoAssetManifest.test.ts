@@ -1,5 +1,5 @@
 import { createHash } from 'node:crypto';
-import { readFileSync } from 'node:fs';
+import { readFileSync, readdirSync } from 'node:fs';
 
 import { describe, expect, it } from 'vitest';
 
@@ -71,7 +71,36 @@ describe('canonical local channel logo manifest', () => {
     expect(localChannelLogoAssetPathForChannelId('nl-unknown')).toBeNull();
   });
 
-  it('locks the final 49 local PNG bytes to SHA256SUMS with adequate intrinsic resolution', () => {
+  it('keeps channel asset paths owned only by the central manifest/registry', () => {
+    const repoRoot = new URL('../../', import.meta.url);
+    const allowed = new Set([
+      'features/guide/channelLogoAssetManifest.ts',
+      'features/guide/channelLogoAssetManifest.test.ts',
+      'features/guide/channelLogoRegistry.ts',
+    ]);
+    const violations: string[] = [];
+
+    const walk = (directory: URL, prefix: string) => {
+      for (const entry of readdirSync(directory, { withFileTypes: true })) {
+        const relative = `${prefix}${entry.name}`;
+        const entryUrl = new URL(entry.name + (entry.isDirectory() ? '/' : ''), directory);
+        if (entry.isDirectory()) {
+          walk(entryUrl, `${relative}/`);
+          continue;
+        }
+        if (!/\.(?:ts|tsx)$/.test(entry.name) || allowed.has(relative)) continue;
+        if (readFileSync(entryUrl, 'utf8').includes('assets/channels/')) {
+          violations.push(relative);
+        }
+      }
+    };
+
+    walk(new URL('app/', repoRoot), 'app/');
+    walk(new URL('features/', repoRoot), 'features/');
+    expect(violations).toEqual([]);
+  });
+
+  it('locks all 49 base and 17 dark PNG bytes to SHA256SUMS with adequate intrinsic resolution', () => {
     const sumsUrl = new URL('../../assets/channels/SHA256SUMS', import.meta.url);
     const entries = readFileSync(sumsUrl, 'utf8')
       .trim()
