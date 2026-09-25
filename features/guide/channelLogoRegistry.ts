@@ -4,6 +4,7 @@ import type { Channel } from '@/data/domain/epg';
 
 import {
   localChannelLogoAssetKeyForChannelId,
+  type ChannelLogoAppearance,
   type LocalChannelLogoAssetKey,
 } from './channelLogoAssetManifest';
 
@@ -59,6 +60,27 @@ const LOCAL_CHANNEL_LOGO_ASSETS: Record<LocalChannelLogoAssetKey, ImageSourcePro
   'be-ketnet': require('../../assets/channels/be-ketnet.png'),
 };
 
+
+const DARK_CHANNEL_LOGO_ASSETS: Partial<Record<LocalChannelLogoAssetKey, ImageSourcePropType>> = {
+  'nl-rtl-4': require('../../assets/channels/dark/nl-rtl-4.png'),
+  'nl-rtl-5': require('../../assets/channels/dark/nl-rtl-5.png'),
+  'nl-rtl-7': require('../../assets/channels/dark/nl-rtl-7.png'),
+  'nl-rtl-8': require('../../assets/channels/dark/nl-rtl-8.png'),
+  'nl-star-channel': require('../../assets/channels/dark/nl-star-channel.png'),
+  'nl-ziggo-sport-2': require('../../assets/channels/dark/nl-ziggo-sport-2.png'),
+  'nl-ziggo-sport-3': require('../../assets/channels/dark/nl-ziggo-sport-3.png'),
+  'nl-ziggo-sport-4': require('../../assets/channels/dark/nl-ziggo-sport-4.png'),
+  'nl-ziggo-sport-5': require('../../assets/channels/dark/nl-ziggo-sport-5.png'),
+  'nl-ziggo-sport-6': require('../../assets/channels/dark/nl-ziggo-sport-6.png'),
+  'nl-viaplay-tv': require('../../assets/channels/dark/nl-viaplay-tv.png'),
+  'nl-rtl-z': require('../../assets/channels/dark/nl-rtl-z.png'),
+  'nl-comedy-central': require('../../assets/channels/dark/nl-comedy-central.png'),
+  'nl-eurosport-1': require('../../assets/channels/dark/nl-eurosport-1.png'),
+  'nl-eurosport-2': require('../../assets/channels/dark/nl-eurosport-2.png'),
+  'nl-discovery': require('../../assets/channels/dark/nl-discovery.png'),
+  'nl-national-geographic': require('../../assets/channels/dark/nl-national-geographic.png'),
+};
+
 export type ResolvedChannelLogo = {
   key: string;
   source: ImageSourcePropType;
@@ -66,12 +88,15 @@ export type ResolvedChannelLogo = {
 
 export function resolveChannelLogo(
   channel: Pick<Channel, 'id' | 'logoUrl'>,
+  appearance: ChannelLogoAppearance = 'light',
 ): ResolvedChannelLogo | null {
   const localKey = localChannelLogoAssetKeyForChannelId(channel.id);
   if (localKey) {
+    const darkSource =
+      appearance === 'dark' ? DARK_CHANNEL_LOGO_ASSETS[localKey] : undefined;
     return {
-      key: `local:${localKey}`,
-      source: LOCAL_CHANNEL_LOGO_ASSETS[localKey],
+      key: `local:${darkSource ? 'dark' : 'light'}:${localKey}`,
+      source: darkSource ?? LOCAL_CHANNEL_LOGO_ASSETS[localKey],
     };
   }
   if (channel.logoUrl) {
