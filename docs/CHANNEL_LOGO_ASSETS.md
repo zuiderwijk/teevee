@@ -74,25 +74,25 @@ Owner physical review #5833155116 established that 17 light-canvas marks were no
 
 | Canonical ID | Dark asset | SHA-256 | Pinned source path |
 | --- | --- | --- | --- |
-| `nl-comedy-central` | `assets/channels/dark/nl-comedy-central.png` | `bed5538b2c16dea1dc534a0d9b053d52ec7658c36e4e01546da3866dda64fa19` | `countries/netherlands/comedy-central.png-nl.png` |
-| `nl-discovery` | `assets/channels/dark/nl-discovery.png` | `5e14c6b663d42545e8b6d7e08ec90bf65322766d796afda3d1934a1a83650ebf` | `countries/netherlands/discovery-channel.png-nl.png` |
-| `nl-eurosport-1` | `assets/channels/dark/nl-eurosport-1.png` | `ecbf2ce89c297485b24d708c822380a435216a054bee1bb7266060551a183c7f` | `countries/netherlands/eurosport-1.png-nl.png` |
-| `nl-eurosport-2` | `assets/channels/dark/nl-eurosport-2.png` | `c868ef56f696390e93469ba9d87a3fe00374fd01be324c0be62ae044dda93a8a` | `countries/netherlands/eurosport-2.png-nl.png` |
-| `nl-national-geographic` | `assets/channels/dark/nl-national-geographic.png` | `f7e60cf3b134d8c54dc9a6b358bdfd5a10d0ed82bbe36bae0bbd9fc0ca467d38` | `countries/netherlands/national-geographic.png-nl.png` |
-| `nl-rtl-4` | `assets/channels/dark/nl-rtl-4.png` | `4213e3bbb612e3697db96378481dc455b2547ccd39c2119f6558c5bee2671726` | `countries/netherlands/rtl4.png-nl.png` |
-| `nl-rtl-5` | `assets/channels/dark/nl-rtl-5.png` | `b8c89d555a9a816bc8749eb7e2c1b813bbf5ed746e270748b29154f7d90f97c5` | `countries/netherlands/rtl5.png-nl.png` |
-| `nl-rtl-7` | `assets/channels/dark/nl-rtl-7.png` | `ad54c7e198028ca9b0c532d07c7888df04c9dd37a30cf422edd5024ca1a9de7a` | `countries/netherlands/rtl7.png-nl.png` |
-| `nl-rtl-8` | `assets/channels/dark/nl-rtl-8.png` | `5e6a9da232e3f83fe4b789eb91f169ec44e43212ff419d5128d9f6472e2d05d8` | `countries/netherlands/rtl8.png-nl.png` |
-| `nl-rtl-z` | `assets/channels/dark/nl-rtl-z.png` | `bd42ed2ba1547d7abab3a3b850481c89ed339374e0e833795ed8bc83a3ec582d` | `countries/netherlands/rtlz.png-nl.png` |
-| `nl-star-channel` | `assets/channels/dark/nl-star-channel.png` | `7fef083d116d1a18e4866e2708e0e7cfcd88c835fe7fb4bd277d5a652b144876` | `countries/netherlands/star-channel.png-nl.png` |
-| `nl-viaplay-tv` | `assets/channels/dark/nl-viaplay-tv.png` | `7c8089a9254e556a5e2c9869c25a8a14da6cb959b5a650a3bb136fcf56c8ba8b` | `countries/netherlands/viaplay-tv.png-nl.png` |
-| `nl-ziggo-sport-2` | `assets/channels/dark/nl-ziggo-sport-2.png` | `e9d23b3bfba2b1072f988fd8496e0cf4045504751dc840a7752b412e9eac6c38` | `countries/netherlands/ziggo-sport-2.png-nl.png` |
-| `nl-ziggo-sport-3` | `assets/channels/dark/nl-ziggo-sport-3.png` | `6ef3b885a41a159ddbd6423bbcd66d6484d5404829678379769e7c2b15192f75` | `countries/netherlands/ziggo-sport-3.png-nl.png` |
-| `nl-ziggo-sport-4` | `assets/channels/dark/nl-ziggo-sport-4.png` | `49c1cca25360c6868ca54c1d848341f265758aec17f91d10fa57c3fdb68342ba` | `countries/netherlands/ziggo-sport-4.png-nl.png` |
-| `nl-ziggo-sport-5` | `assets/channels/dark/nl-ziggo-sport-5.png` | `ed5e58657effa1a13e877db18160e0c4dd16ae0f2197a938588884f8ef524814` | `countries/netherlands/ziggo-sport-5.png-nl.png` |
-| `nl-ziggo-sport-6` | `assets/channels/dark/nl-ziggo-sport-6.png` | `7649f8b2540624a0056b7286b7055a07dbfa0755c2342152412bcaf6a64c47d3` | `countries/netherlands/ziggo-sport-6.png-nl.png` |
+| `nl-comedy-central` | `assets/channels/dark/nl-comedy-central.png` | `bed5538b2c16dea1dc534a0d9b053d52ec7658c36e4e01546da3866dda64fa19` | `countries/netherlands/comedy-central-nl.png` |
+| `nl-discovery` | `assets/channels/dark/nl-discovery.png` | `5e14c6b663d42545e8b6d7e08ec90bf65322766d796afda3d1934a1a83650ebf` | `countries/netherlands/discovery-channel-nl.png` |
+| `nl-eurosport-1` | `assets/channels/dark/nl-eurosport-1.png` | `ecbf2ce89c297485b24d708c822380a435216a054bee1bb7266060551a183c7f` | `countries/netherlands/eurosport-1-nl.png` |
+| `nl-eurosport-2` | `assets/channels/dark/nl-eurosport-2.png` | `c868ef56f696390e93469ba9d87a3fe00374fd01be324c0be62ae044dda93a8a` | `countries/netherlands/eurosport-2-nl.png` |
+| `nl-national-geographic` | `assets/channels/dark/nl-national-geographic.png` | `f7e60cf3b134d8c54dc9a6b358bdfd5a10d0ed82bbe36bae0bbd9fc0ca467d38` | `countries/netherlands/national-geographic-nl.png` |
+| `nl-rtl-4` | `assets/channels/dark/nl-rtl-4.png` | `4213e3bbb612e3697db96378481dc455b2547ccd39c2119f6558c5bee2671726` | `countries/netherlands/rtl4-nl.png` |
+| `nl-rtl-5` | `assets/channels/dark/nl-rtl-5.png` | `b8c89d555a9a816bc8749eb7e2c1b813bbf5ed746e270748b29154f7d90f97c5` | `countries/netherlands/rtl5-nl.png` |
+| `nl-rtl-7` | `assets/channels/dark/nl-rtl-7.png` | `ad54c7e198028ca9b0c532d07c7888df04c9dd37a30cf422edd5024ca1a9de7a` | `countries/netherlands/rtl7-nl.png` |
+| `nl-rtl-8` | `assets/channels/dark/nl-rtl-8.png` | `5e6a9da232e3f83fe4b789eb91f169ec44e43212ff419d5128d9f6472e2d05d8` | `countries/netherlands/rtl8-nl.png` |
+| `nl-rtl-z` | `assets/channels/dark/nl-rtl-z.png` | `bd42ed2ba1547d7abab3a3b850481c89ed339374e0e833795ed8bc83a3ec582d` | `countries/netherlands/rtlz-nl.png` |
+| `nl-star-channel` | `assets/channels/dark/nl-star-channel.png` | `7fef083d116d1a18e4866e2708e0e7cfcd88c835fe7fb4bd277d5a652b144876` | `countries/netherlands/star-channel-nl.png` |
+| `nl-viaplay-tv` | `assets/channels/dark/nl-viaplay-tv.png` | `7c8089a9254e556a5e2c9869c25a8a14da6cb959b5a650a3bb136fcf56c8ba8b` | `countries/netherlands/viaplay-tv-nl.png` |
+| `nl-ziggo-sport-2` | `assets/channels/dark/nl-ziggo-sport-2.png` | `e9d23b3bfba2b1072f988fd8496e0cf4045504751dc840a7752b412e9eac6c38` | `countries/netherlands/ziggo-sport-2-nl.png` |
+| `nl-ziggo-sport-3` | `assets/channels/dark/nl-ziggo-sport-3.png` | `6ef3b885a41a159ddbd6423bbcd66d6484d5404829678379769e7c2b15192f75` | `countries/netherlands/ziggo-sport-3-nl.png` |
+| `nl-ziggo-sport-4` | `assets/channels/dark/nl-ziggo-sport-4.png` | `49c1cca25360c6868ca54c1d848341f265758aec17f91d10fa57c3fdb68342ba` | `countries/netherlands/ziggo-sport-4-nl.png` |
+| `nl-ziggo-sport-5` | `assets/channels/dark/nl-ziggo-sport-5.png` | `ed5e58657effa1a13e877db18160e0c4dd16ae0f2197a938588884f8ef524814` | `countries/netherlands/ziggo-sport-5-nl.png` |
+| `nl-ziggo-sport-6` | `assets/channels/dark/nl-ziggo-sport-6.png` | `7649f8b2540624a0056b7286b7055a07dbfa0755c2342152412bcaf6a64c47d3` | `countries/netherlands/ziggo-sport-6-nl.png` |
 
-The exact source filenames are additionally locked by the manifest/tests; source bytes are never transformed at runtime.
+The exact source filenames above are pinned to that immutable source commit. The source bytes are copied unchanged into Teevee, hashed locally, and never transformed at runtime.
 
 ## Integrity and architecture
 
