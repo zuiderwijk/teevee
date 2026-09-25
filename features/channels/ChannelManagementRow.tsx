@@ -140,14 +140,18 @@ export type ChannelManagementRowProps = {
   reduceMotion: boolean;
   showSeparator: boolean;
   overlay?: boolean;
+  draggingPlaceholder?: boolean;
   rowRef?: (node: View | null) => void;
   onMeasure?: (channelId: string, height: number) => void;
   onToggleVisibility: (channelId: string, visible: boolean) => void;
   onMoveOneStep: (channelId: string, delta: -1 | 1) => void;
   onDragStart?: (channelId: string, absoluteY: number) => void;
   onDragMove?: (channelId: string, absoluteY: number) => void;
-  onDragEnd?: (channelId: string, absoluteY: number) => void;
-  onDragFinalize?: (channelId: string) => void;
+  onDragFinalize?: (
+    channelId: string,
+    absoluteY: number,
+    success: boolean,
+  ) => void;
 };
 
 export function ChannelManagementRow({
@@ -162,13 +166,13 @@ export function ChannelManagementRow({
   reduceMotion,
   showSeparator,
   overlay = false,
+  draggingPlaceholder = false,
   rowRef,
   onMeasure,
   onToggleVisibility,
   onMoveOneStep,
   onDragStart,
   onDragMove,
-  onDragEnd,
   onDragFinalize,
 }: ChannelManagementRowProps) {
   const theme = useTeeveeTheme();
@@ -214,20 +218,19 @@ export function ChannelManagementRow({
             scheduleOnRN(onDragMove, channel.id, event.absoluteY);
           }
         })
-        .onEnd((event) => {
-          if (onDragEnd) {
-            scheduleOnRN(onDragEnd, channel.id, event.absoluteY);
-          }
-        })
-        .onFinalize(() => {
+        .onFinalize((event, success) => {
           if (onDragFinalize) {
-            scheduleOnRN(onDragFinalize, channel.id);
+            scheduleOnRN(
+              onDragFinalize,
+              channel.id,
+              event.absoluteY,
+              success,
+            );
           }
         }),
     [
       channel.id,
       onDragFinalize,
-      onDragEnd,
       onDragMove,
       onDragStart,
       overlay,
@@ -281,9 +284,12 @@ export function ChannelManagementRow({
           accessible={false}
           accessibilityElementsHidden
           importantForAccessibility="no-hide-descendants"
-          disabled={visible && !canHide}
+          disabled={draggingPlaceholder || (visible && !canHide)}
           onPress={toggle}
-          style={styles.visibilityZone}
+          style={[
+            styles.visibilityZone,
+            draggingPlaceholder ? styles.dragSourceInvisible : null,
+          ]}
         >
           {({ pressed }) => (
             <View
@@ -306,7 +312,12 @@ export function ChannelManagementRow({
         </Pressable>
       )}
 
-      <ChannelLogo channel={channel} hidden={hidden} />
+      <View
+        pointerEvents="none"
+        style={draggingPlaceholder ? styles.dragSourceInvisible : null}
+      >
+        <ChannelLogo channel={channel} hidden={hidden} />
+      </View>
 
       <Text
         accessible={false}
@@ -316,6 +327,7 @@ export function ChannelManagementRow({
           styles.name,
           {
             color: hidden ? theme.colors.textSecondary : theme.colors.text,
+            opacity: draggingPlaceholder ? 0 : 1,
             fontFamily: visible
               ? TEEVEE_FONT_FAMILIES.medium
               : TEEVEE_FONT_FAMILIES.regular,
@@ -345,13 +357,18 @@ export function ChannelManagementRow({
               importantForAccessibility="no-hide-descendants"
               style={styles.dragZone}
             >
-              <DragGlyph color={theme.colors.textMuted} />
+              <View
+                pointerEvents="none"
+                style={draggingPlaceholder ? styles.dragSourceInvisible : null}
+              >
+                <DragGlyph color={theme.colors.textMuted} />
+              </View>
             </View>
           </GestureDetector>
         )
       ) : null}
 
-      {showSeparator && !overlay ? (
+      {showSeparator && !overlay && !draggingPlaceholder ? (
         <View
           pointerEvents="none"
           style={[
@@ -362,6 +379,17 @@ export function ChannelManagementRow({
           ]}
         />
       ) : null}
+
+      {draggingPlaceholder && !overlay ? (
+        <View
+          pointerEvents="none"
+          testID={`channels-drop-slot-${channel.id}`}
+          style={[
+            styles.dragInsertionLine,
+            { backgroundColor: theme.colors.accent },
+          ]}
+        />
+      ) : null}
     </>
   );
 
@@ -369,8 +397,8 @@ export function ChannelManagementRow({
     <Animated.View
       {...(rowRef ? { ref: rowRef } : {})}
       testID={`channels-${visible ? 'visible' : 'hidden'}-${channel.id}`}
-      accessible={!overlay}
-      {...(!overlay
+      accessible={!overlay && !draggingPlaceholder}
+      {...(!overlay && !draggingPlaceholder
         ? {
             accessibilityRole: 'button' as const,
             accessibilityLabel: visible
@@ -382,7 +410,7 @@ export function ChannelManagementRow({
             onLayout: handleLayout,
           }
         : {})}
-      {...(!overlay && visible && !canHide
+      {...(!overlay && !draggingPlaceholder && visible && !canHide
         ? {
             accessibilityHint: 'Minimaal één zender moet zichtbaar blijven',
           }
@@ -511,6 +539,17 @@ const styles = StyleSheet.create({
     alignSelf: 'stretch',
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  dragSourceInvisible: {
+    opacity: 0,
+  },
+  dragInsertionLine: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    top: 0,
+    height: CHANNEL_MANAGEMENT_METRICS.insertionLineHeight,
+    borderRadius: 1,
   },
   dragGlyph: {
     width: CHANNEL_MANAGEMENT_METRICS.dragGlyphWidth,
