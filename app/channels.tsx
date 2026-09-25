@@ -518,21 +518,16 @@ export default function ChannelsScreen() {
     ],
   );
 
-  const endDrag = useCallback(
-    (channelId: string, absoluteY: number) => {
-      updateDragPointer(channelId, absoluteY);
-      terminateDragSession(channelId, 'drop');
-    },
-    [terminateDragSession, updateDragPointer],
-  );
-
   const finalizeDrag = useCallback(
-    (channelId: string) => {
-      // onEnd normally wins and clears the token before RNGH onFinalize.
-      // If onEnd was skipped/interrupted, finalize owns a safe cancel instead.
+    (channelId: string, absoluteY: number, success: boolean) => {
+      if (success) {
+        updateDragPointer(channelId, absoluteY);
+        terminateDragSession(channelId, 'drop');
+        return;
+      }
       terminateDragSession(channelId, 'cancel');
     },
-    [terminateDragSession],
+    [terminateDragSession, updateDragPointer],
   );
 
   const handleVisibleZoneLayout = useCallback(
@@ -707,29 +702,6 @@ export default function ChannelsScreen() {
                   {visibleRows.map((channel, displayIndex) => {
                     const actualIndex = provisionalIds.indexOf(channel.id);
                     const isDragged = dragState?.channelId === channel.id;
-                    if (isDragged) {
-                      return (
-                        <View
-                          key={channel.id}
-                          testID={`channels-drop-slot-${channel.id}`}
-                          style={[
-                            styles.dropSlot,
-                            {
-                              height: draggedHeight,
-                            },
-                          ]}
-                        >
-                          <View
-                            style={[
-                              styles.insertionLine,
-                              {
-                                backgroundColor: theme.colors.accent,
-                              },
-                            ]}
-                          />
-                        </View>
-                      );
-                    }
 
                     return (
                       <ChannelManagementRow
@@ -743,6 +715,7 @@ export default function ChannelsScreen() {
                         canHide={canHideChannel(channel.id)}
                         reorderEnabled={!queryActive}
                         reduceMotion={reduceMotion}
+                        draggingPlaceholder={isDragged}
                         showSeparator={displayIndex < visibleRows.length - 1}
                         rowRef={(node) => registerRowRef(channel.id, node)}
                         onMeasure={(id, height) => {
@@ -752,7 +725,6 @@ export default function ChannelsScreen() {
                         onMoveOneStep={moveOneStep}
                         onDragStart={beginDrag}
                         onDragMove={updateDragPointer}
-                        onDragEnd={endDrag}
                         onDragFinalize={finalizeDrag}
                       />
                     );
@@ -959,18 +931,6 @@ const styles = StyleSheet.create({
     fontSize: 13,
     lineHeight: 18,
     textAlign: 'right',
-  },
-  dropSlot: {
-    width: '100%',
-    position: 'relative',
-  },
-  insertionLine: {
-    position: 'absolute',
-    left: 0,
-    right: 0,
-    top: 0,
-    height: CHANNEL_MANAGEMENT_METRICS.insertionLineHeight,
-    borderRadius: 1,
   },
   minimumHelper: {
     marginTop: 8,
