@@ -15,6 +15,10 @@ const sessionActions = vi.hoisted(() => ({
   retry: vi.fn(),
   refreshForTelevisionDay: vi.fn(),
 }));
+const personalisation = vi.hoisted(() => ({
+  visible: true,
+  addChannel: vi.fn(),
+}));
 const sessionState = vi.hoisted(() => ({
   snapshot: {
     query: '',
@@ -26,6 +30,12 @@ const sessionState = vi.hoisted(() => ({
 vi.mock('expo-router', () => ({ useRouter: () => router }));
 vi.mock('@/features/guide/guideNavigationIntent', () => ({
   publishGuideNavigationIntent: navigation.publish,
+}));
+vi.mock('@/features/channels/ChannelPersonalisationProvider', () => ({
+  useChannelPersonalisation: () => ({
+    isChannelVisible: () => personalisation.visible,
+    addChannel: personalisation.addChannel,
+  }),
 }));
 vi.mock('@/features/guide/useGuideClock', () => ({
   useGuideClock: () => Date.parse('2026-09-23T06:50:00.000Z'),
@@ -228,6 +238,7 @@ beforeEach(() => {
   vi.stubGlobal('IS_REACT_ACT_ENVIRONMENT', true);
   vi.spyOn(Date, 'now').mockReturnValue(Date.parse('2026-09-23T06:50:00.000Z'));
   vi.clearAllMocks();
+  personalisation.visible = true;
   sessionState.snapshot = {
     query: '',
     phase: 'idle',
@@ -308,6 +319,41 @@ describe('GuideSearchScreen', () => {
       referenceAt: '2026-09-23T06:50:00.000Z',
     });
     expect(router.push).toHaveBeenCalledWith('/');
+  });
+
+  it('keeps a hidden channel searchable, opens it without mutation and adds only explicitly', async () => {
+    personalisation.visible = false;
+    sessionState.snapshot = {
+      query: 'NPO',
+      phase: 'ready',
+      response: response(),
+    };
+    await render();
+
+    expect(textContent()).toContain('Niet in Mijn zenders');
+
+    await act(async () => getByTestId('search-channel-nl-npo-1').click());
+    expect(navigation.publish).toHaveBeenCalledTimes(1);
+    expect(personalisation.addChannel).not.toHaveBeenCalled();
+
+    await act(async () => getByTestId('search-channel-add-nl-npo-1').click());
+    expect(personalisation.addChannel).toHaveBeenCalledTimes(1);
+    expect(personalisation.addChannel).toHaveBeenCalledWith(channel);
+  });
+
+  it('routes approved channel-management intent to Mijn zenders without a no-result state', async () => {
+    sessionState.snapshot = {
+      query: 'mijn zenders',
+      phase: 'idle',
+      response: null,
+    };
+    await render();
+
+    expect(getByTestId('search-manage-channels')).toBeDefined();
+    expect(textContent()).not.toContain('Geen resultaten gevonden.');
+
+    await act(async () => getByTestId('search-manage-channels').click());
+    expect(router.push).toHaveBeenCalledWith('/channels');
   });
 
   it('distinguishes complete no-match, partial coverage and unavailable Search', async () => {

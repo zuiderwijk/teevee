@@ -1,6 +1,6 @@
 # Phase 5A — Guide Search Product Definition
 
-Status: **CANONICAL PRODUCT CONTRACT — Phase 5A closed; amended 24 September 2026 with queued channel-personalisation/Search bridge**  
+Status: **CANONICAL PRODUCT CONTRACT — Phase 5A closed; amended 24 September 2026 with Issue #170 / PR #173 channel-personalisation/Search bridge**  
 Activated: 2026-09-23  
 Owner: Teevee product  
 Scope: first slice of Phase 5 — Search and Discovery
@@ -204,7 +204,7 @@ This navigation is contextual. It must not silently rewrite unrelated long-term 
 
 The implementation must preserve a natural route back to Search through the existing app navigation model.
 
-### Channel personalisation bridge — queued with catalog expansion
+### Channel personalisation bridge — Issue #170 implementation
 
 TVgids.nl app Search evidence on 24 September 2026 materially strengthens channel retrieval as a Search job and establishes a future bridge to channel personalisation. Canonical evidence and interpretation: `docs/TVGIDS_APP_SEARCH_CHANNEL_EVIDENCE_2026-09-24.md`.
 
@@ -219,7 +219,7 @@ When Teevee's expanded catalog and channel selection/order capability are implem
 - this does not authorize general semantic/AI Search. It is a finite product-navigation intent set;
 - canonical channel alias normalisation should handle safe spacing/punctuation variants such as `RTL8`, `NPO1` and `RTLZ` without provider-specific mobile heuristics.
 
-The working user-facing concept is **Mijn zenders**; exact final microcopy and management-screen visual treatment remain part of the dedicated implementation/design increment.
+The user-facing concept is **Mijn zenders**. Issue #170 / PR #173 implements the first production management surface and the durable local reconciliation contract; see `docs/CHANNEL_PERSONALISATION.md` and ADR 0013. The exact 49-channel production activation remains a separate increment.
 
 ## Search screen states
 

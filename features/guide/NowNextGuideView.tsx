@@ -32,6 +32,8 @@ import { scheduleOnRN } from 'react-native-worklets';
 
 import type { Channel, Programme } from '@/data/domain/epg';
 import { GUIDE_TIME_ZONE } from '@/data/domain/guideTime';
+import { projectGuidePresentation } from '@/features/channels/channelGuideProjection';
+import { useChannelPersonalisation } from '@/features/channels/ChannelPersonalisationProvider';
 import { buildRuntimeGuideFixture } from '@/data/fixtures/runtimeGuideFixture';
 import { runtimeGuideScheduleFor } from '@/data/runtime/guideScheduleRuntime';
 import { useTeeveeTheme } from '@/theme/useTeeveeTheme';
@@ -583,6 +585,7 @@ export const NowNextGuideView = memo(function NowNextGuideView({
   onSelectProgramme,
 }: NowNextGuideViewProps) {
   const theme = useTeeveeTheme();
+  const { guideSelectedChannelIds } = useChannelPersonalisation();
   const safeAreaInsets = useSafeAreaInsets();
   const { width: windowWidth, fontScale = 1 } = useWindowDimensions();
   const effectiveFontScale =
@@ -654,12 +657,20 @@ export const NowNextGuideView = memo(function NowNextGuideView({
   );
   const schedulePresentation = useMemo(
     () =>
-      resolveNowNextSchedulePresentation(
-        runtimeSchedule,
-        establishedChannels,
-        fixtureFallback,
+      projectGuidePresentation(
+        resolveNowNextSchedulePresentation(
+          runtimeSchedule,
+          establishedChannels,
+          fixtureFallback,
+        ),
+        guideSelectedChannelIds,
       ),
-    [establishedChannels, fixtureFallback, runtimeSchedule],
+    [
+      establishedChannels,
+      fixtureFallback,
+      guideSelectedChannelIds,
+      runtimeSchedule,
+    ],
   );
   const programmesByChannel = useMemo(
     () =>

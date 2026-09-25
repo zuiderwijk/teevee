@@ -39,6 +39,18 @@ describe('Guide Search API contract', () => {
     );
   });
 
+  it('canonicalises the bounded channel aliases before hosted Search', () => {
+    expect(parseGuideSearchApiRequest({ query: 'RTL8' })).toEqual({
+      query: 'RTL 8',
+    });
+    expect(parseGuideSearchApiRequest({ query: 'BBC.NL' })).toEqual({
+      query: 'BBC NL',
+    });
+    expect(parseGuideSearchApiRequest({ query: 'ESPN1' })).toEqual({
+      query: 'ESPN',
+    });
+  });
+
   it('parses canonical programme/channel results and optional editorial metadata', () => {
     expect(
       parseGuideSearchApiResponse({

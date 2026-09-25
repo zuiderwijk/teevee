@@ -47,6 +47,35 @@ export default function SettingsScreen() {
       <ScrollView contentContainerStyle={styles.content}>
         <AppScreenHeader title="Instellingen" action={closeButton} />
 
+        <Text style={[styles.sectionLabel, { color: theme.colors.textMuted }]}>ZENDERS</Text>
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel="Mijn zenders beheren"
+          accessibilityHint="Kies zichtbare zenders en wijzig hun volgorde"
+          onPress={() => router.push('/channels')}
+          style={({ pressed }) => [
+            styles.channelSettingsRow,
+            {
+              backgroundColor: theme.colors.surface,
+              borderColor: theme.colors.border,
+              opacity: pressed ? 0.72 : 1,
+            },
+          ]}
+        >
+          <View style={styles.optionText}>
+            <Text style={[styles.optionTitle, { color: theme.colors.text }]}>Mijn zenders</Text>
+            <Text style={[styles.optionDescription, { color: theme.colors.textSecondary }]}>
+              Kies zichtbare zenders en bepaal hun volgorde.
+            </Text>
+          </View>
+          <Text
+            accessibilityElementsHidden
+            style={[styles.disclosure, { color: theme.colors.textMuted }]}
+          >
+            ›
+          </Text>
+        </Pressable>
+
         <Text style={[styles.sectionLabel, { color: theme.colors.textMuted }]}>WEERGAVE</Text>
         <View
           style={[
@@ -125,6 +154,20 @@ const styles = StyleSheet.create({
     lineHeight: 15,
     fontWeight: '800',
     letterSpacing: 1.2,
+  },
+  channelSettingsRow: {
+    minHeight: 72,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderRadius: 18,
+    borderWidth: StyleSheet.hairlineWidth,
+  },
+  disclosure: {
+    fontSize: 24,
+    lineHeight: 28,
   },
   optionGroup: {
     overflow: 'hidden',

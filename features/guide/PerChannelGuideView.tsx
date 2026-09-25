@@ -22,6 +22,8 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { type Channel } from '@/data/domain/epg';
 import { guideTelevisionDayStart, GUIDE_TIME_ZONE } from '@/data/domain/guideTime';
+import { projectGuidePresentation } from '@/features/channels/channelGuideProjection';
+import { useChannelPersonalisation } from '@/features/channels/ChannelPersonalisationProvider';
 import { buildRuntimeGuideFixture } from '@/data/fixtures/runtimeGuideFixture';
 import { runtimeGuideScheduleFor } from '@/data/runtime/guideScheduleRuntime';
 import { useTeeveeTheme } from '@/theme/useTeeveeTheme';
@@ -431,6 +433,7 @@ export const PerChannelGuideView = memo(function PerChannelGuideView({
   presentationNavigation,
 }: PerChannelGuideViewProps) {
   const theme = useTeeveeTheme();
+  const { guideSelectedChannelIds } = useChannelPersonalisation();
   const safeAreaInsets = useSafeAreaInsets();
   const { width: windowWidth, fontScale = 1 } = useWindowDimensions();
   const effectiveFontScale = Number.isFinite(fontScale) && fontScale > 0 ? Math.max(1, fontScale) : 1;
@@ -476,14 +479,27 @@ export const PerChannelGuideView = memo(function PerChannelGuideView({
         : buildRuntimeGuideFixture(selectedDayStartMs),
     [establishedChannels, guideDataVersion, selectedDayStartMs],
   );
+  const [transientChannelId, setTransientChannelId] = useState<string | null>(null);
+  const transientNavigationChannelId =
+    navigationRequest?.intent.channelId ?? transientChannelId;
   const schedulePresentation = useMemo(
     () =>
-      resolvePerChannelSchedulePresentation(
-        selectedDay.schedule,
-        establishedChannels,
-        fixtureFallback,
+      projectGuidePresentation(
+        resolvePerChannelSchedulePresentation(
+          selectedDay.schedule,
+          establishedChannels,
+          fixtureFallback,
+        ),
+        guideSelectedChannelIds,
+        transientNavigationChannelId ? [transientNavigationChannelId] : [],
       ),
-    [establishedChannels, fixtureFallback, selectedDay.schedule],
+    [
+      establishedChannels,
+      fixtureFallback,
+      guideSelectedChannelIds,
+      selectedDay.schedule,
+      transientNavigationChannelId,
+    ],
   );
   const programmeSchedule = schedulePresentation.schedule;
   const channels = schedulePresentation.channels;
@@ -676,6 +692,7 @@ export const PerChannelGuideView = memo(function PerChannelGuideView({
     viewedTimeRef.current = referenceMs;
     setStableAnchorTimeMs(referenceMs);
 
+    setTransientChannelId(navigationRequest.intent.channelId);
     if (channelChanged) {
       setSelectedChannelId(navigationRequest.intent.channelId);
     }

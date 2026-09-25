@@ -1,9 +1,11 @@
 import { Tabs } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaView, StyleSheet, Text, View } from 'react-native';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
 import { AppScreenErrorBoundary } from '@/components/AppScreenErrorBoundary';
 import { AppTabIcon } from '@/components/AppTabIcon';
+import { ChannelPersonalisationProvider } from '@/features/channels/ChannelPersonalisationProvider';
 import { AppearancePreferenceProvider } from '@/features/settings/AppearancePreferenceProvider';
 import { TEEVEE_FONT_FAMILIES } from '@/theme/typography';
 import { useTeeveeFonts } from '@/theme/useTeeveeFonts';
@@ -68,6 +70,7 @@ function ThemedTabs() {
           }}
         />
         <Tabs.Screen name="settings" options={{ title: 'Instellingen', href: null }} />
+        <Tabs.Screen name="channels" options={{ title: 'Mijn zenders', href: null }} />
       </Tabs>
     </>
   );
@@ -98,13 +101,20 @@ function FontAwareApp() {
 
 export default function RootLayout() {
   return (
-    <AppearancePreferenceProvider>
-      <FontAwareApp />
-    </AppearancePreferenceProvider>
+    <GestureHandlerRootView style={styles.gestureRoot}>
+      <AppearancePreferenceProvider>
+        <ChannelPersonalisationProvider>
+          <FontAwareApp />
+        </ChannelPersonalisationProvider>
+      </AppearancePreferenceProvider>
+    </GestureHandlerRootView>
   );
 }
 
 const styles = StyleSheet.create({
+  gestureRoot: {
+    flex: 1,
+  },
   fontFailureRoot: {
     flex: 1,
   },

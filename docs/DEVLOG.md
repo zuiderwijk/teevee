@@ -1,5 +1,22 @@
 # Teevee Development Logboek
 
+## 25 september 2026 — Issue #170 upward drag reversal / fixed native gesture owner
+
+A second focused iPhone recording after the pickup-owner fix showed a directional residual: dragging downward across rows behaved correctly, but reversing movement upward immediately snapped the lifted channel back. The active `GestureDetector` was no longer unmounted, yet provisional order still moved that same keyed row to different sibling indices. On iOS, moving the native view that owns the active Pan to an earlier sibling position cancels/interferes with gesture ownership even when React preserves component identity.
+
+The drag presentation no longer reorders the active source row at all. Its native row/handle remains at the original sibling/layout slot for the full gesture and is only visually transparent. Intervening neighbours receive deterministic animated `translateY` offsets: rows between source and target shift up for downward drags and down for upward drags. The 2-pt insertion target is positioned relative to the fixed source using exact measured row heights, so the accepted provisional reorder remains visually equivalent without moving the recognizer host. Reduced Motion applies the same geometry synchronously. Pure tests cover both directions, variable row heights, first/no-op geometry and source-row zero offset; component tests continue to prove the gesture host remains mounted. Focused physical iPhone re-test is required.
+
+## 25 september 2026 — Issue #170 pickup freeze root cause refinement
+
+Focused physical iPhone re-test after the first drag-termination fix showed the surface could still freeze immediately at pickup. The deeper root cause was React tree ownership: `beginDrag` set `dragState`, after which the visible-row render replaced the active `ChannelManagementRow` with a drop-slot `View`. That unmounted the exact RNGH `GestureDetector`/native Pan recognizer that owned the gesture, so subsequent update/finalize delivery could be lost while the overlay, provisional gap and disabled ScrollView stayed active.
+
+The correction keeps the dragged `ChannelManagementRow`, its key, GestureDetector and gesture object mounted throughout pickup and provisional reordering. Only the row's sighted content becomes visually hidden while the 2-pt insertion target remains visible; the active gesture host is also excluded from layout animation. RNGH `onFinalize` is the single terminal native callback: success resolves the final pointer then drops, failure/cancel restores the original slot. Existing tokenized synchronous teardown still owns auto-scroll stop, state clearing and scroll restoration independently from Reanimated spring completion. The owner-accepted visual/product contract is unchanged. Focused iPhone re-test is still required.
+
+## 25 september 2026 — Issue #170 physical drag-termination blocker
+
+Physical iPhone review #5823162428 on exact candidate `42e93dfcb18454a3e1d7e535e4e920c274f03e8a` found one blocking lifecycle failure in the owner-accepted two-zone Mijn-zenders drag interaction: a released/cancelled drag could keep the lifted overlay, placeholder gap and disabled parent scrolling alive when Reanimated spring completion did not finish as expected.
+
+The correction leaves all frozen Issue #170 product/architecture behavior unchanged. Drag termination now has explicit tokenized session ownership independent from animation completion. Every changed drop, no-op release and RNGH finalize/cancel synchronously stops edge auto-scroll and clears the active interaction session; changed drops still perform exactly one arbitrary-index persistence mutation plus the accepted drop haptic, while no-op/cancel paths perform neither. The settle spring is visual-only and its completion callback is stale-token guarded, so it cannot clear a later drag session. Deterministic lifecycle tests cover changed/no-op/cancel terminal plans, auto-scroll termination ownership, first/last legal targets and stale completion isolation. Focused physical iPhone re-test remains required before Independent QA.
 
 ## 24 september 2026 — Issue #167 residual full-horizon CPU ownership -> durable bounded orchestration
 

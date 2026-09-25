@@ -77,3 +77,41 @@ export function guideSearchMatchRank(kind: GuideSearchMatchKind): number {
       return 2;
   }
 }
+
+
+const GUIDE_SEARCH_CHANNEL_ALIASES = new Map<string, string>([
+  ['rtl8', 'RTL 8'],
+  ['rtl7', 'RTL 7'],
+  ['rtlz', 'RTL Z'],
+  ['npo1', 'NPO 1'],
+  ['espn1', 'ESPN'],
+  ['vrt1', 'VRT 1'],
+  ['bbcnl', 'BBC NL'],
+  ['bbc nl', 'BBC NL'],
+]);
+
+const GUIDE_SEARCH_CHANNEL_MANAGEMENT_INTENTS = new Set([
+  'zenders',
+  'alle zenders',
+  'zenderoverzicht',
+  'mijn zenders',
+  'zenders instellen',
+  'zenders toevoegen',
+  'zendervolgorde',
+]);
+
+export function canonicalGuideSearchQuery(value: string): string {
+  const trimmed = value.trim();
+  const normalized = normalizeGuideSearchText(trimmed);
+  return GUIDE_SEARCH_CHANNEL_ALIASES.get(normalized) ?? trimmed;
+}
+
+export function guideSearchChannelManagementIntent(
+  value: string,
+): 'manage-channels' | null {
+  return GUIDE_SEARCH_CHANNEL_MANAGEMENT_INTENTS.has(
+    normalizeGuideSearchText(value),
+  )
+    ? 'manage-channels'
+    : null;
+}
