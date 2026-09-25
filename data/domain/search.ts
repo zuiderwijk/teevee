@@ -88,6 +88,18 @@ const GUIDE_SEARCH_CHANNEL_ALIASES = new Map<string, string>([
   ['vrt1', 'VRT 1'],
   ['bbcnl', 'BBC NL'],
   ['bbc nl', 'BBC NL'],
+  ['fox', 'STAR Channel'],
+  ['bbc first', 'BBC NL'],
+  ['play4', 'Play'],
+  ['play 4', 'Play'],
+  ['play5', 'Play Fictie'],
+  ['play 5', 'Play Fictie'],
+  ['play6', 'Play Actie'],
+  ['play 6', 'Play Actie'],
+  ['play7', 'Play Reality'],
+  ['play 7', 'Play Reality'],
+  ['ziggosport1', 'Ziggo Sport'],
+  ['ziggo sport 1', 'Ziggo Sport'],
 ]);
 
 const GUIDE_SEARCH_CHANNEL_MANAGEMENT_INTENTS = new Set([

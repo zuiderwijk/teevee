@@ -30,6 +30,14 @@ describe('Guide Search lexical semantics', () => {
     expect(canonicalGuideSearchQuery('VRT1')).toBe('VRT 1');
     expect(canonicalGuideSearchQuery('BBCNL')).toBe('BBC NL');
     expect(canonicalGuideSearchQuery('BBC.NL')).toBe('BBC NL');
+    expect(canonicalGuideSearchQuery('FOX')).toBe('STAR Channel');
+    expect(canonicalGuideSearchQuery('BBC First')).toBe('BBC NL');
+    expect(canonicalGuideSearchQuery('Play4')).toBe('Play');
+    expect(canonicalGuideSearchQuery('Play 5')).toBe('Play Fictie');
+    expect(canonicalGuideSearchQuery('Play6')).toBe('Play Actie');
+    expect(canonicalGuideSearchQuery('Play 7')).toBe('Play Reality');
+    expect(canonicalGuideSearchQuery('ZiggoSport1')).toBe('Ziggo Sport');
+    expect(canonicalGuideSearchQuery('Ziggo Sport 1')).toBe('Ziggo Sport');
     expect(canonicalGuideSearchQuery('NPO 2')).toBe('NPO 2');
   });
 

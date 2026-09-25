@@ -9,7 +9,9 @@ import type {
   ProviderScheduleQuery,
 } from './provider';
 
-export const DEFAULT_DEVELOPMENT_XMLTV_URL = 'https://iptv-epg.org/files/epg-nl.xml';
+export const IPTV_EPG_NL_XMLTV_URL = 'https://iptv-epg.org/files/epg-nl.xml';
+export const IPTV_EPG_BE_XMLTV_URL = 'https://iptv-epg.org/files/epg-be.xml';
+export const DEFAULT_DEVELOPMENT_XMLTV_URL = IPTV_EPG_NL_XMLTV_URL;
 
 export type XmltvProviderOptions = {
   url?: string;
