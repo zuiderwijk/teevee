@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import {
   Image,
   Platform,
@@ -14,6 +14,9 @@ import Animated, {
   FadeIn,
   FadeOut,
   LinearTransition,
+  useAnimatedStyle,
+  useSharedValue,
+  withTiming,
 } from 'react-native-reanimated';
 import { scheduleOnRN } from 'react-native-worklets';
 
@@ -141,6 +144,8 @@ export type ChannelManagementRowProps = {
   showSeparator: boolean;
   overlay?: boolean;
   draggingPlaceholder?: boolean;
+  provisionalOffsetY?: number;
+  insertionLineOffsetY?: number;
   rowRef?: (node: View | null) => void;
   onMeasure?: (channelId: string, height: number) => void;
   onToggleVisibility: (channelId: string, visible: boolean) => void;
@@ -167,6 +172,8 @@ export function ChannelManagementRow({
   showSeparator,
   overlay = false,
   draggingPlaceholder = false,
+  provisionalOffsetY = 0,
+  insertionLineOffsetY = 0,
   rowRef,
   onMeasure,
   onToggleVisibility,
@@ -198,6 +205,22 @@ export function ChannelManagementRow({
   const exiting = reduceMotion
     ? undefined
     : FadeOut.duration(CHANNEL_MANAGEMENT_METRICS.zoneTransitionMs);
+
+  const neighbourOffset = useSharedValue(provisionalOffsetY);
+  useEffect(() => {
+    neighbourOffset.set(
+      reduceMotion
+        ? provisionalOffsetY
+        : withTiming(provisionalOffsetY, {
+            duration: CHANNEL_MANAGEMENT_METRICS.neighbourAnimationMs,
+            easing: Easing.out(Easing.cubic),
+          }),
+    );
+  }, [neighbourOffset, provisionalOffsetY, reduceMotion]);
+
+  const neighbourStyle = useAnimatedStyle(() => ({
+    transform: [{ translateY: neighbourOffset.get() }],
+  }));
 
   const dragGesture = useMemo(
     () =>
@@ -386,7 +409,10 @@ export function ChannelManagementRow({
           testID={`channels-drop-slot-${channel.id}`}
           style={[
             styles.dragInsertionLine,
-            { backgroundColor: theme.colors.accent },
+            {
+              backgroundColor: theme.colors.accent,
+              top: insertionLineOffsetY,
+            },
           ]}
         />
       ) : null}
@@ -423,6 +449,7 @@ export function ChannelManagementRow({
       pointerEvents={overlay ? 'none' : 'auto'}
       style={[
         styles.row,
+        neighbourStyle,
         {
           minHeight,
           backgroundColor: overlay ? theme.colors.surfaceElevated : 'transparent',
@@ -458,6 +485,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     position: 'relative',
+    overflow: 'visible',
   },
   overlayRow: {
     borderRadius: CHANNEL_MANAGEMENT_METRICS.pickedRadius,
