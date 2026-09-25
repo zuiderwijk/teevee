@@ -149,3 +149,33 @@ Before activating the 49-channel hosted refresh:
 6. exact merged Edge/runtime deployment must be followed by a protected horizon proof and the next normal six-hour cron.
 
 Public development-feed presence is not evidence of EPG redistribution rights; that existing release gate is unchanged.
+
+## Non-production 49-channel physical acceptance boundary
+
+PR #176 exposes one explicit development-only transport mode for owner/QA physical acceptance:
+
+```bash
+npm run start:physical49
+```
+
+This sets `EXPO_PUBLIC_TEEVEE_PHYSICAL_49=1`. The selector is additionally hard-gated by `__DEV__`, so the mode cannot activate in a production bundle.
+
+The mode replaces only the data-provider implementation behind the existing interfaces:
+
+- `GuideScheduleApi` -> deterministic canonical 49-channel schedule client;
+- `GuideSearchApi` -> deterministic canonical full-catalog channel-search client.
+
+It does **not** introduce alternate screen/product logic. Requests and responses still run through the same Guide/Search contracts and parsers, and the runtime continues through the same:
+
+- Search session/debounce/navigation;
+- canonical channel IDs and aliases;
+- ChannelPersonalisationProvider;
+- shared Totaal / Per zender / Nu & Straks projection;
+- hidden-channel contextual Search navigation;
+- explicit `Toevoegen` persistence;
+- production Guide/Search renderers.
+
+The deterministic schedule creates bounded one-hour test programmes inside the exact requested client window for each canonical channel. Search derives channel matches from the canonical catalogue after the normal shared request canonicalisation, including the accepted current/rebrand aliases.
+
+This boundary is intentionally **not** a staging production-data substitute. It proves the complete mobile 49-channel identity, personalisation, projection and channel-Search journeys before production topology activation; production XMLTV/provider capacity is proven separately by `docs/CHANNEL_EXPANSION_CAPACITY_SMOKE_2026-09-25.md`.
+
