@@ -2,10 +2,8 @@ name: QA 176 dark-logo rights audit
 
 on:
   push:
-    branches:
-      - feat/issue-175-channel-expansion
-    paths:
-      - .github/workflows/qa-176-dark-logo-rights-audit.yml
+    branches: [feat/issue-175-channel-expansion]
+    paths: [.github/workflows/qa-176-dark-logo-rights-audit.yml]
 
 permissions:
   contents: read
@@ -15,139 +13,126 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
-      - name: Install inspection tooling
+      - name: Install asset tooling
         run: |
           sudo apt-get update
-          sudo apt-get install -y librsvg2-bin imagemagick unzip libimage-exiftool-perl
-      - name: Inspect rights-safe source candidates
+          sudo apt-get install -y librsvg2-bin imagemagick unzip
+      - name: Build rights-safe dark candidates
         shell: python
         run: |
-          import html, json, os, re, subprocess, time, urllib.parse, urllib.request, zipfile
+          import re, subprocess, urllib.request, zipfile
           from pathlib import Path
 
-          OUT=Path("qa176-v3")
-          OUT.mkdir()
-          UA={"User-Agent":"Teevee-QA176-rights-audit/1.0"}
-          COMMONS="https://commons.wikimedia.org/w/api.php"
+          root=Path("qa176-final-audit")
+          src=root/"sources"; out=root/"final"; cards=root/"cards"
+          for p in (src,out,cards): p.mkdir(parents=True,exist_ok=True)
+          ua={"User-Agent":"Teevee-QA176/1.0"}
 
-          def get(url):
-            req=urllib.request.Request(url,headers=UA)
+          def get(url, path):
+            req=urllib.request.Request(url,headers=ua)
             with urllib.request.urlopen(req,timeout=90) as r:
-              return r.read()
+              path.write_bytes(r.read())
 
-          def api(params):
-            q=urllib.parse.urlencode({"format":"json","formatversion":"2",**params})
-            return json.loads(get(COMMONS+"?"+q))
+          def raster(svg, dest):
+            subprocess.run(["rsvg-convert","-w","1536","-o",str(dest),str(svg)],check=True)
 
-          def render(src, out, label):
-            preview=out.with_suffix(".preview.png")
-            if src.suffix.lower()==".svg":
-              subprocess.run(["rsvg-convert","-w","1536","-o",str(preview),str(src)],check=True)
-            else:
-              subprocess.run(["convert",str(src),"-resize","1536x768>",str(preview)],check=True)
-            card=out.with_suffix(".card.png")
-            subprocess.run([
-              "convert","-size","1400x440","xc:#10100F",str(preview),"-resize","1120x280>",
-              "-gravity","center","-composite","-fill","white","-gravity","south","-pointsize","22",
-              "-annotate","+0+20",label,str(card)
-            ],check=True)
-            return card
+          def card(path,label):
+            dest=cards/(path.stem+".png")
+            subprocess.run(["convert","-size","1400x440","xc:#10100F",str(path),"-resize","1120x280>","-gravity","center","-composite","-fill","white","-gravity","south","-pointsize","22","-annotate","+0+20",label,str(dest)],check=True)
 
-          # 1) Every historical RTL 2023 revision. These pages are PD-textlogo and sourced to RTL Nederland.
-          rtl_dir=OUT/"rtl-history"; rtl_dir.mkdir()
-          rtl_cards=[]
-          for channel,title in {
-            "nl-rtl-4":"File:RTL4 2023.svg","nl-rtl-5":"File:RTL5 2023.svg",
-            "nl-rtl-7":"File:RTL7 2023.svg","nl-rtl-8":"File:RTL8 2023.svg",
-            "nl-rtl-z":"File:RTLZ 2023.svg",
-          }.items():
-            data=api({"action":"query","titles":title,"prop":"imageinfo","iiprop":"url|timestamp|sha1|size","iilimit":"20"})
-            infos=data.get("query",{}).get("pages",[{}])[0].get("imageinfo",[])
-            for idx,info in enumerate(infos):
-              url=info["url"]; ts=info.get("timestamp","").replace(":","").replace("-","")
-              p=rtl_dir/f"{channel}__{idx:02d}__{ts}.svg"
-              p.write_bytes(get(url))
-              rtl_cards.append(str(render(p,p, f"{channel} | {info.get('timestamp')} | {info.get('width')}x{info.get('height')} | sha1 {info.get('sha1')}")))
-              time.sleep(1.5)
-          if rtl_cards:
-            subprocess.run(["montage",*rtl_cards,"-tile","2x","-geometry","+12+12",str(OUT/"rtl-history-contact-sheet.png")],check=True)
+          # RTL Nederland supplied raster originals; CC BY-SA 3.0 per file page.
+          rtl_titles={
+            "nl-rtl-4":"RTL%204%20Logo%202023.png",
+            "nl-rtl-5":"RTL%205%20Logo%202023.png",
+            "nl-rtl-7":"RTL%207%20Logo%202023.png",
+            "nl-rtl-8":"RTL%208%20Logo%202023.png",
+            "nl-rtl-z":"RTL%20Z%20Logo%202023.png",
+          }
+          for cid,title in rtl_titles.items():
+            dest=out/(cid+".png")
+            get("https://commons.wikimedia.org/wiki/Special:Redirect/file/"+title,dest)
+            card(dest,cid+" | RTL Nederland source | CC BY-SA 3.0")
 
-          # 2) Official Paramount Comedy Central logo package.
-          cc_zip=OUT/"Comedy-Central_Logos.zip"
-          cc_zip.write_bytes(get("https://paramount-presse.de/wp-content/uploads/2022/10/Comedy-Central_Logos.zip"))
-          cc_dir=OUT/"comedy-central-official"; cc_dir.mkdir()
-          with zipfile.ZipFile(cc_zip) as z:
-            z.extractall(cc_dir)
-          (OUT/"comedy-central-official-files.txt").write_text("\n".join(sorted(str(p.relative_to(cc_dir)) for p in cc_dir.rglob("*") if p.is_file())))
+          # Ziggo Sport official press-kit originals (orange horizontal 402-406).
+          ziggo={
+            "nl-ziggo-sport-2":"https://d21buns5ku92am.cloudfront.net/69874/images/638849-Ziggo%20Sport%20402%20Orange%20RGB%20v1-754a8a-original-1768301437.png?download=1",
+            "nl-ziggo-sport-3":"https://d21buns5ku92am.cloudfront.net/69874/images/638850-Ziggo%20Sport%20403%20Orange%20RGB%20v1-7f8ed4-original-1768301437.png?download=1",
+            "nl-ziggo-sport-4":"https://d21buns5ku92am.cloudfront.net/69874/images/638854-Ziggo%20Sport%20404%20Orange%20RGB%20v1-b0022d-original-1768301437.png?download=1",
+            "nl-ziggo-sport-5":"https://d21buns5ku92am.cloudfront.net/69874/images/638852-Ziggo%20Sport%20405%20Orange%20RGB%20v1-cafafc-original-1768301437.png?download=1",
+            "nl-ziggo-sport-6":"https://d21buns5ku92am.cloudfront.net/69874/images/638853-Ziggo%20Sport%20406%20Orange%20RGB%20v1-9371e4-original-1768301437.png?download=1",
+          }
+          for cid,url in ziggo.items():
+            dest=out/(cid+".png"); get(url,dest); card(dest,cid+" | Ziggo Sport official press kit")
+
+          # Public-domain / CC0 source geometry. Dark variants change only dark
+          # wordmark fills to white; geometry and brand accents remain source-exact.
+          commons={
+            "nl-discovery":("https://upload.wikimedia.org/wikipedia/commons/2/27/Discovery_Channel_-_Logo_2019.svg","discovery"),
+            "nl-eurosport-1":("https://upload.wikimedia.org/wikipedia/commons/d/d0/Eurosport_1_Logo_2015.svg","eurosport"),
+            "nl-eurosport-2":("https://upload.wikimedia.org/wikipedia/commons/d/d8/Eurosport_2_Logo_2015.svg","eurosport"),
+            "nl-national-geographic":("https://upload.wikimedia.org/wikipedia/commons/5/53/National_Geographic_Logo.svg","natgeo"),
+            "nl-viaplay-tv":("https://upload.wikimedia.org/wikipedia/commons/9/94/Viaplay_TV_logo.svg","viaplay"),
+            "nl-star-channel":("https://upload.wikimedia.org/wikipedia/commons/c/cd/Star_Channel_2023.svg","star"),
+          }
+          for cid,(url,kind) in commons.items():
+            s=src/(cid+".svg"); get(url,s)
+            text=s.read_text(encoding="utf-8",errors="replace")
+            if kind=="discovery":
+              text=text.replace("<svg version=\"1.1\"", "<svg version=\"1.1\" fill=\"#ffffff\"",1)
+            elif kind=="eurosport":
+              # Preserve the red number block; make all dark/navy wordmark fills white.
+              def repl(m):
+                val=m.group(1)
+                if val.lower() in {"none","transparent"} or val.startswith("url("): return m.group(0)
+                if val.startswith("#"):
+                  h=val[1:]
+                  if len(h)==3: h="".join(x*2 for x in h)
+                  if len(h)>=6:
+                    r,g,b=[int(h[i:i+2],16) for i in (0,2,4)]
+                    if r>150 and r>g*1.3 and r>b*1.3: return m.group(0)
+                    return 'fill="#ffffff"'
+                return m.group(0)
+              text=re.sub(r'fill="([^"]+)"',repl,text)
+            elif kind=="natgeo":
+              # Keep National Geographic yellow; make wordmark white.
+              text=re.sub(r'fill="(#(?:000000|000|231f20|231F20))"', 'fill="#ffffff"', text)
+              if 'fill="#ffffff"' not in text:
+                text=text.replace("<svg ", "<svg fill=\"#ffffff\" ",1)
+            elif kind=="viaplay":
+              text=text.replace("#212d33","#ffffff").replace("#212D33","#ffffff")
+            elif kind=="star":
+              text=text.replace("#241c32","#ffffff").replace("#241C32","#ffffff")
+            s.write_text(text,encoding="utf-8")
+            dest=out/(cid+".png"); raster(s,dest)
+            card(dest,cid+" | fixed source-derived dark raster | "+("CC0" if kind=="star" else "PD-textlogo"))
+
+          # Official Paramount Comedy Central brand package: audit all renderable variants.
+          z=src/"Comedy-Central_Logos.zip"
+          get("https://paramount-presse.de/wp-content/uploads/2022/10/Comedy-Central_Logos.zip",z)
+          cc=src/"comedy-central-official"; cc.mkdir()
+          with zipfile.ZipFile(z) as f: f.extractall(cc)
+          (root/"comedy-central-files.txt").write_text("\n".join(sorted(str(p.relative_to(cc)) for p in cc.rglob("*") if p.is_file())))
           cc_cards=[]
-          for p in cc_dir.rglob("*"):
-            if p.is_file() and p.suffix.lower() in {".svg",".png"}:
-              try: cc_cards.append(str(render(p,p, "Paramount official | "+str(p.relative_to(cc_dir)))))
-              except Exception as e: print("CC render skip",p,e)
+          for i,p in enumerate(sorted(cc.rglob("*"))):
+            if not p.is_file() or p.suffix.lower() not in {".png",".svg"}: continue
+            try:
+              png=root/f"cc-{i:02d}.png"
+              if p.suffix.lower()==".svg": raster(p,png)
+              else: subprocess.run(["convert",str(p),str(png)],check=True)
+              c=cards/f"cc-{i:02d}.png"
+              subprocess.run(["convert","-size","1400x440","xc:#10100F",str(png),"-resize","1120x280>","-gravity","center","-composite","-fill","white","-gravity","south","-pointsize","20","-annotate","+0+20","Paramount official | "+str(p.relative_to(cc)),str(c)],check=True)
+              cc_cards.append(str(c))
+            except Exception as e: print("skip",p,e)
+
           if cc_cards:
-            subprocess.run(["montage",*cc_cards,"-tile","2x","-geometry","+12+12",str(OUT/"comedy-central-official-contact-sheet.png")],check=True)
-
-          # 3) Official Ziggo Sport press-kit 402-406, Orange and White horizontal.
-          zig_dir=OUT/"ziggo-official"; zig_dir.mkdir()
-          zig={
-            "nl-ziggo-sport-2-orange":"https://d21buns5ku92am.cloudfront.net/69874/images/638849-Ziggo%20Sport%20402%20Orange%20RGB%20v1-754a8a-original-1768301437.png?download=1",
-            "nl-ziggo-sport-3-orange":"https://d21buns5ku92am.cloudfront.net/69874/images/638850-Ziggo%20Sport%20403%20Orange%20RGB%20v1-7f8ed4-original-1768301437.png?download=1",
-            "nl-ziggo-sport-4-orange":"https://d21buns5ku92am.cloudfront.net/69874/images/638854-Ziggo%20Sport%20404%20Orange%20RGB%20v1-b0022d-original-1768301437.png?download=1",
-            "nl-ziggo-sport-5-orange":"https://d21buns5ku92am.cloudfront.net/69874/images/638852-Ziggo%20Sport%20405%20Orange%20RGB%20v1-cafafc-original-1768301437.png?download=1",
-            "nl-ziggo-sport-6-orange":"https://d21buns5ku92am.cloudfront.net/69874/images/638853-Ziggo%20Sport%20406%20Orange%20RGB%20v1-9371e4-original-1768301437.png?download=1",
-            "nl-ziggo-sport-2-white":"https://d21buns5ku92am.cloudfront.net/69874/images/638871-Ziggo%20Sport%20402%20White%20RGB%20v1-92ddae-original-1768301450.png?download=1",
-            "nl-ziggo-sport-3-white":"https://d21buns5ku92am.cloudfront.net/69874/images/638874-Ziggo%20Sport%20403%20White%20RGB%20v1-3a8b49-original-1768301450.png?download=1",
-            "nl-ziggo-sport-4-white":"https://d21buns5ku92am.cloudfront.net/69874/images/638872-Ziggo%20Sport%20404%20White%20RGB%20v1-a6f0c3-original-1768301450.png?download=1",
-            "nl-ziggo-sport-5-white":"https://d21buns5ku92am.cloudfront.net/69874/images/638875-Ziggo%20Sport%20405%20White%20RGB%20v1-2a93dd-original-1768301450.png?download=1",
-            "nl-ziggo-sport-6-white":"https://d21buns5ku92am.cloudfront.net/69874/images/638873-Ziggo%20Sport%20406%20White%20RGB%20v1-ee7240-original-1768301450.png?download=1",
-          }
-          zig_cards=[]
-          for name,url in zig.items():
-            p=zig_dir/(name+".png"); p.write_bytes(get(url))
-            zig_cards.append(str(render(p,p,"Ziggo Sport official press kit | "+name)))
-          subprocess.run(["montage",*zig_cards,"-tile","2x","-geometry","+12+12",str(OUT/"ziggo-official-contact-sheet.png")],check=True)
-
-          # 4) PD/CC0 current source files for remaining brands; record actual source markup colors.
-          commons_dir=OUT/"commons-current"; commons_dir.mkdir()
-          titles={
-            "nl-discovery":"Discovery Channel - Logo 2019.svg",
-            "nl-eurosport-1":"Eurosport 1 Logo 2015.svg",
-            "nl-eurosport-2":"Eurosport 2 Logo 2015.svg",
-            "nl-national-geographic":"National Geographic Logo.svg",
-            "nl-viaplay-tv":"Viaplay TV logo.svg",
-            "nl-star-channel":"Star Channel 2023.svg",
-            "nl-comedy-central":"Comedy Central 2018.svg",
-          }
-          meta=[]
-          cards=[]
-          for channel,title in titles.items():
-            data=api({"action":"query","titles":"File:"+title,"prop":"imageinfo","iiprop":"url|timestamp|sha1|size|extmetadata","iilimit":"1"})
-            info=data.get("query",{}).get("pages",[{}])[0].get("imageinfo",[{}])[0]
-            url=info.get("url")
-            if not url: continue
-            ext=".svg" if info.get("mime")=="image/svg+xml" or url.lower().split("?")[0].endswith(".svg") else ".png"
-            p=commons_dir/(channel+ext); p.write_bytes(get(url))
-            cards.append(str(render(p,p,channel+" | Commons "+title)))
-            em=info.get("extmetadata",{})
-            meta.append({
-              "channel":channel,"title":title,"url":url,"sha1":info.get("sha1"),
-              "timestamp":info.get("timestamp"),
-              "license":(em.get("LicenseShortName") or {}).get("value"),
-              "licenseUrl":(em.get("LicenseUrl") or {}).get("value"),
-              "artist":(em.get("Artist") or {}).get("value"),
-              "credit":(em.get("Credit") or {}).get("value"),
-            })
-            time.sleep(1.5)
-          (OUT/"commons-current-metadata.json").write_text(json.dumps(meta,indent=2))
-          if cards:
-            subprocess.run(["montage",*cards,"-tile","2x","-geometry","+12+12",str(OUT/"commons-current-contact-sheet.png")],check=True)
-
-          # 5) Compare all candidate bytes with current dark SHA-256.
-          subprocess.run("sha256sum assets/channels/dark/*.png > qa176-v3/current-dark-sha256.txt",shell=True,check=True)
-          subprocess.run("find qa176-v3 -type f \( -name '*.png' -o -name '*.svg' -o -name '*.zip' \) -print0 | sort -z | xargs -0 sha256sum > qa176-v3/candidate-sha256.txt",shell=True,check=True)
+            subprocess.run(["montage",*cc_cards,"-tile","2x","-geometry","+12+12",str(root/"comedy-central-contact-sheet.png")],check=True)
+          normal=[str(p) for p in sorted(cards.glob("nl-*.png"))]
+          subprocess.run(["montage",*normal,"-tile","2x","-geometry","+12+12",str(root/"candidate-contact-sheet.png")],check=True)
+          subprocess.run("sha256sum qa176-final-audit/final/*.png > qa176-final-audit/candidate-sha256.txt",shell=True,check=True)
+          subprocess.run("identify qa176-final-audit/final/*.png > qa176-final-audit/dimensions.txt",shell=True,check=True)
       - uses: actions/upload-artifact@v4
         with:
-          name: qa176-dark-logo-rights-audit-v3
-          path: qa176-v3/
+          name: qa176-dark-logo-final-audit
+          path: qa176-final-audit/
           if-no-files-found: error
           retention-days: 3
